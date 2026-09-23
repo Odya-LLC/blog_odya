@@ -6,33 +6,33 @@ Quiel'ga import uchun mashina o'qiydigan nusxa (`tasks.json`) repo'dan tashqarid
 
 ## Xulosa jadvali
 
-| Ref | Vazifa | Tur | Prioritet | Rol | Ijrochi | Bog'liq | Baho |
-|---|---|---|---|---|---|---|---|
-| M0-01 | Repozitoriy skeleti: Next.js + Payload 3 + Postgres, lint, CI | CHORE | P1 | developer | AGENT | — | 1.5 kun |
-| M0-02 | Hisoblarni sozlash: Supabase, Cloudflare R2/DNS, Vercel (egasi) | INFRA | P1 | sysadmin | HUMAN | M0-01 | 0.5 kun (egasi) |
-| M0-03 | Telegram: 2 ta kanal va bot yaratish (egasi) | INFRA | P1 | sysadmin | HUMAN | — | 0.5 soat (egasi) |
-| M0-04 | Manbalar auditi va seed ma'lumotlari | CHORE | P1 | developer | AGENT | M0-01 | 1 kun |
-| M0-05 | Tahririyat hujjatlari: stil, SEO, mualliflik qoidalari, glossariy, huquqiy matnlar | CHORE | P1 | developer | AGENT | M0-01 | 2 kun |
-| M0-06 | Brend: wordmark logo, favicon, OG shablon, palitra | DESIGN | P1 | designer | AGENT | — | 1 kun |
-| M1-01 | Payload asosiy sozlash: Supabase, R2, localization, rollar | FEATURE | P1 | developer | AGENT | M0-01, M0-02 | 1 kun |
-| M1-02 | Kontent kolleksiyalari, workflow va seed | FEATURE | P1 | developer | AGENT | M1-01, M0-04, M0-05 | 2 kun |
-| M1-03 | Lotin → kirill transliteratsiya va slugify-uz | FEATURE | P1 | developer | AGENT | M1-02, M0-05 | 2 kun |
-| M1-04 | UI kit va sahifa maketlari (kodda) | DESIGN | P1 | designer | AGENT | M0-06, M0-01 | 2 kun |
-| M1-05 | Ommaviy sayt: layout, bosh sahifa, maqola, kategoriya (lotin + kirill) | FEATURE | P1 | developer | AGENT | M1-02, M1-03, M1-04 | 2 kun |
-| M1-06 | SEO: meta, hreflang, JSON-LD, sitemap, news sitemap, robots, RSS, OG rasm | FEATURE | P1 | developer | AGENT | M1-05 | 2 kun |
-| M1-07 | Qo'shimcha sahifalar: teg, muallif, statik sahifa, qidiruv, 404 + Lighthouse CI | FEATURE | P2 | developer | AGENT | M1-05 | 1.5 kun |
-| M2-01 | Scraping kolleksiyalari, jobs endpoint va pg_cron scheduler, feed.poll | FEATURE | P1 | developer | AGENT | M1-02, M0-04 | 2 kun |
-| M2-02 | item.fetch va item.extract: yuklash, robots, Readability, R2 arxiv | FEATURE | P1 | developer | AGENT | M2-01 | 2 kun |
-| M2-03 | Dedupe, klassifikatsiya, tozalash va ogohlantirishlar | FEATURE | P1 | developer | AGENT | M2-02 | 1.5 kun |
-| M2-04 | Tahririyat navbati: admin custom view va manba paneli | FEATURE | P1 | developer | AGENT | M2-01, M1-03 | 2 kun |
-| M2-05 | API kalitlar va audit log | FEATURE | P1 | developer | AGENT | M1-02 | 1 kun |
-| M2-06 | MCP server: ulanish, o'qish toollari, ko'rsatmalar (prompts/resources) | FEATURE | P1 | developer | AGENT | M2-05, M2-01, M0-05 | 1.5 kun |
-| M2-07 | MCP server: yozish toollari, validatsiya va yo'riqnoma | FEATURE | P1 | developer | AGENT | M2-06, M1-03 | 2 kun |
-| M3-01 | Telegram avtopost: lotin va kirill kanallari | FEATURE | P1 | developer | AGENT | M2-01, M1-03, M0-03 | 1.5 kun |
-| M3-02 | Xavfsizlik, health, Sentry va analitika | FEATURE | P2 | developer | AGENT | M1-05 | 1.5 kun |
-| M3-03 | Kunlik backup (pg_dump → R2) va tiklash runbook'i | INFRA | P1 | sysadmin | AGENT | M0-01, M0-02 | 1 kun |
-| M3-04 | Runbook'lar, launch checklist va e2e smoke testlar | CHORE | P1 | sysadmin | AGENT | M1-06, M1-07, M2-04, M2-07, M3-01, M3-02, M3-03 | 1 kun |
-| M3-05 | Production'ni ishga tushirish (egasi) | INFRA | P1 | sysadmin | HUMAN | M3-04 | 0.5 kun (egasi) |
+| Ref | Quiel | Vazifa | Tur | Prioritet | Rol | Ijrochi | Bog'liq | Baho |
+|---|---|---|---|---|---|---|---|---|
+| M0-01 | OBLOG-2 | Repozitoriy skeleti: Next.js + Payload 3 + Postgres, lint, CI | CHORE | P1 | developer | AGENT | — | 1.5 kun |
+| M0-02 | OBLOG-3 | Hisoblarni sozlash: Supabase, Cloudflare R2/DNS, Vercel (egasi) | INFRA | P1 | sysadmin | HUMAN | M0-01 | 0.5 kun (egasi) |
+| M0-03 | OBLOG-4 | Telegram: 2 ta kanal va bot yaratish (egasi) | INFRA | P1 | sysadmin | HUMAN | — | 0.5 soat (egasi) |
+| M0-04 | OBLOG-5 | Manbalar auditi va seed ma'lumotlari | CHORE | P1 | developer | AGENT | M0-01 | 1 kun |
+| M0-05 | OBLOG-6 | Tahririyat hujjatlari: stil, SEO, mualliflik qoidalari, glossariy, huquqiy matnlar | CHORE | P1 | developer | AGENT | M0-01 | 2 kun |
+| M0-06 | OBLOG-7 | Brend: wordmark logo, favicon, OG shablon, palitra | DESIGN | P1 | designer | AGENT | — | 1 kun |
+| M1-01 | OBLOG-8 | Payload asosiy sozlash: Supabase, R2, localization, rollar | FEATURE | P1 | developer | AGENT | M0-01, M0-02 | 1 kun |
+| M1-02 | OBLOG-9 | Kontent kolleksiyalari, workflow va seed | FEATURE | P1 | developer | AGENT | M1-01, M0-04, M0-05 | 2 kun |
+| M1-03 | OBLOG-10 | Lotin → kirill transliteratsiya va slugify-uz | FEATURE | P1 | developer | AGENT | M1-02, M0-05 | 2 kun |
+| M1-04 | OBLOG-11 | UI kit va sahifa maketlari (kodda) | DESIGN | P1 | designer | AGENT | M0-06, M0-01 | 2 kun |
+| M1-05 | OBLOG-12 | Ommaviy sayt: layout, bosh sahifa, maqola, kategoriya (lotin + kirill) | FEATURE | P1 | developer | AGENT | M1-02, M1-03, M1-04 | 2 kun |
+| M1-06 | OBLOG-13 | SEO: meta, hreflang, JSON-LD, sitemap, news sitemap, robots, RSS, OG rasm | FEATURE | P1 | developer | AGENT | M1-05 | 2 kun |
+| M1-07 | OBLOG-14 | Qo'shimcha sahifalar: teg, muallif, statik sahifa, qidiruv, 404 + Lighthouse CI | FEATURE | P2 | developer | AGENT | M1-05 | 1.5 kun |
+| M2-01 | OBLOG-15 | Scraping kolleksiyalari, jobs endpoint va pg_cron scheduler, feed.poll | FEATURE | P1 | developer | AGENT | M1-02, M0-04 | 2 kun |
+| M2-02 | OBLOG-16 | item.fetch va item.extract: yuklash, robots, Readability, R2 arxiv | FEATURE | P1 | developer | AGENT | M2-01 | 2 kun |
+| M2-03 | OBLOG-17 | Dedupe, klassifikatsiya, tozalash va ogohlantirishlar | FEATURE | P1 | developer | AGENT | M2-02 | 1.5 kun |
+| M2-04 | OBLOG-18 | Tahririyat navbati: admin custom view va manba paneli | FEATURE | P1 | developer | AGENT | M2-01, M1-03 | 2 kun |
+| M2-05 | OBLOG-19 | API kalitlar va audit log | FEATURE | P1 | developer | AGENT | M1-02 | 1 kun |
+| M2-06 | OBLOG-20 | MCP server: ulanish, o'qish toollari, ko'rsatmalar (prompts/resources) | FEATURE | P1 | developer | AGENT | M2-05, M2-01, M0-05 | 1.5 kun |
+| M2-07 | OBLOG-21 | MCP server: yozish toollari, validatsiya va yo'riqnoma | FEATURE | P1 | developer | AGENT | M2-06, M1-03 | 2 kun |
+| M3-01 | OBLOG-22 | Telegram avtopost: lotin va kirill kanallari | FEATURE | P1 | developer | AGENT | M2-01, M1-03, M0-03 | 1.5 kun |
+| M3-02 | OBLOG-23 | Xavfsizlik, health, Sentry va analitika | FEATURE | P2 | developer | AGENT | M1-05 | 1.5 kun |
+| M3-03 | OBLOG-24 | Kunlik backup (pg_dump → R2) va tiklash runbook'i | INFRA | P1 | sysadmin | AGENT | M0-01, M0-02 | 1 kun |
+| M3-04 | OBLOG-25 | Runbook'lar, launch checklist va e2e smoke testlar | CHORE | P1 | sysadmin | AGENT | M1-06, M1-07, M2-04, M2-07, M3-01, M3-02, M3-03 | 1 kun |
+| M3-05 | OBLOG-26 | Production'ni ishga tushirish (egasi) | INFRA | P1 | sysadmin | HUMAN | M3-04 | 0.5 kun (egasi) |
 
 ```mermaid
 flowchart LR
@@ -113,7 +113,7 @@ flowchart LR
 
 ## M0 — Tayyorgarlik
 
-### M0-01 — Repozitoriy skeleti: Next.js + Payload 3 + Postgres, lint, CI
+### M0-01 (OBLOG-2) — Repozitoriy skeleti: Next.js + Payload 3 + Postgres, lint, CI
 
 **Tur:** CHORE · **Prioritet:** P1 · **Rol:** developer · **Ijrochi:** AGENT
 
@@ -144,7 +144,7 @@ Asosiy hujjat: `docs/TZ.md` (v1.2). Ishni boshlashdan oldin TZ'ning ko'rsatilgan
 - `.env.example` da TZ §3.7.3 dagi barcha o'zgaruvchilar bor; repo'da hech qanday sir yo'q.
 - Lokal MinIO'ga fayl yozish/o'qish sinovi (Vitest yoki skript) o'tadi.
 
-### M0-02 — Hisoblarni sozlash: Supabase, Cloudflare R2/DNS, Vercel (egasi)
+### M0-02 (OBLOG-3) — Hisoblarni sozlash: Supabase, Cloudflare R2/DNS, Vercel (egasi)
 
 **Tur:** INFRA · **Prioritet:** P1 · **Rol:** sysadmin · **Ijrochi:** HUMAN
 
@@ -192,7 +192,7 @@ Bepul tariflardagi infratuzilmani tayyorlash va sirlarni Vercel/GitHub'ga kiriti
 - `pg_cron` va `pg_net` ikkala loyihada yoqilgan.
 - GitHub secrets va `main` himoyasi sozlangan; hech qanday sir repo'da yo'q.
 
-### M0-03 — Telegram: 2 ta kanal va bot yaratish (egasi)
+### M0-03 (OBLOG-4) — Telegram: 2 ta kanal va bot yaratish (egasi)
 
 **Tur:** INFRA · **Prioritet:** P1 · **Rol:** sysadmin · **Ijrochi:** HUMAN
 
@@ -221,7 +221,7 @@ Avtopost uchun ikkita kanal (lotin va kirill) va bitta bot tayyorlash. Asos: `do
 - Vercel Production env'da 4 ta Telegram o'zgaruvchisi kiritilgan.
 - Kanal username'lari va guruh ID vazifa izohida yozilgan (token yozilmaydi).
 
-### M0-04 — Manbalar auditi va seed ma'lumotlari
+### M0-04 (OBLOG-5) — Manbalar auditi va seed ma'lumotlari
 
 **Tur:** CHORE · **Prioritet:** P1 · **Rol:** developer · **Ijrochi:** AGENT
 
@@ -248,7 +248,7 @@ Asosiy hujjat: `docs/TZ.md` (v1.2). Ishni boshlashdan oldin TZ'ning ko'rsatilgan
 - `sources.json` va `categories.json` JSON Schema/Zod bilan validatsiyadan o'tadi (test).
 - Har bir RSS URL uchun avtomatik test (yoki skript) — 200 va parse qilinadi (CI'da o'chirilgan, qo'lda ishga tushiriladi).
 
-### M0-05 — Tahririyat hujjatlari: stil, SEO, mualliflik qoidalari, glossariy, huquqiy matnlar
+### M0-05 (OBLOG-6) — Tahririyat hujjatlari: stil, SEO, mualliflik qoidalari, glossariy, huquqiy matnlar
 
 **Tur:** CHORE · **Prioritet:** P1 · **Rol:** developer · **Ijrochi:** AGENT
 
@@ -277,7 +277,7 @@ Asosiy hujjat: `docs/TZ.md` (v1.2). Ishni boshlashdan oldin TZ'ning ko'rsatilgan
 - Glossariy ≥ 150, translit istisnolari ≥ 300 yozuv, dublikatsiz.
 - Qoidalar TZ §2.3, §5.2 bilan zid emas; har bir faylda versiya va sana.
 
-### M0-06 — Brend: wordmark logo, favicon, OG shablon, palitra
+### M0-06 (OBLOG-7) — Brend: wordmark logo, favicon, OG shablon, palitra
 
 **Tur:** DESIGN · **Prioritet:** P1 · **Rol:** designer · **Ijrochi:** AGENT
 
@@ -308,7 +308,7 @@ Asosiy hujjat: `docs/TZ.md` (v1.2). Ishni boshlashdan oldin TZ'ning ko'rsatilgan
 
 ## M1 — CMS, sayt va kirill
 
-### M1-01 — Payload asosiy sozlash: Supabase, R2, localization, rollar
+### M1-01 (OBLOG-8) — Payload asosiy sozlash: Supabase, R2, localization, rollar
 
 **Tur:** FEATURE · **Prioritet:** P1 · **Rol:** developer · **Ijrochi:** AGENT
 
@@ -336,7 +336,7 @@ Asosiy hujjat: `docs/TZ.md` (v1.2). Ishni boshlashdan oldin TZ'ning ko'rsatilgan
 - Editor foydalanuvchi yaratolmaydi, admin yaratadi (integration test).
 - Migratsiya direct URL bilan ishlaydi; runtime pooler orqali.
 
-### M1-02 — Kontent kolleksiyalari, workflow va seed
+### M1-02 (OBLOG-9) — Kontent kolleksiyalari, workflow va seed
 
 **Tur:** FEATURE · **Prioritet:** P1 · **Rol:** developer · **Ijrochi:** AGENT
 
@@ -363,7 +363,7 @@ Asosiy hujjat: `docs/TZ.md` (v1.2). Ishni boshlashdan oldin TZ'ning ko'rsatilgan
 - Ruxsat etilmagan status o'tishlari (masalan, `draft → published`, `scraped → review`) rad etiladi — TZ §4.1 diagrammasi bo'yicha testlar; rol × amal matritsasi integration testlari (§4.2).
 - `pnpm seed` toza DB'da ishlaydi va takror ishga tushirilganda dublikat yaratmaydi.
 
-### M1-03 — Lotin → kirill transliteratsiya va slugify-uz
+### M1-03 (OBLOG-10) — Lotin → kirill transliteratsiya va slugify-uz
 
 **Tur:** FEATURE · **Prioritet:** P1 · **Rol:** developer · **Ijrochi:** AGENT
 
@@ -391,7 +391,7 @@ Asosiy hujjat: `docs/TZ.md` (v1.2). Ishni boshlashdan oldin TZ'ning ko'rsatilgan
 - Post saqlanganda kirill avtomatik to'ladi; qulflangan maydon qayta yozilmaydi (integration test).
 - Slug o'zgarganda eski URL 301 bilan yangisiga o'tadi.
 
-### M1-04 — UI kit va sahifa maketlari (kodda)
+### M1-04 (OBLOG-11) — UI kit va sahifa maketlari (kodda)
 
 **Tur:** DESIGN · **Prioritet:** P1 · **Rol:** designer · **Ijrochi:** AGENT
 
@@ -416,7 +416,7 @@ Asosiy hujjat: `docs/TZ.md` (v1.2). Ishni boshlashdan oldin TZ'ning ko'rsatilgan
 - Kontrast WCAG AA, klaviatura bilan navigatsiya ishlaydi.
 - Komponentlar RSC'ga mos (client komponentlar faqat interaktiv qismlar uchun: almashtirgich, tema, menyu).
 
-### M1-05 — Ommaviy sayt: layout, bosh sahifa, maqola, kategoriya (lotin + kirill)
+### M1-05 (OBLOG-12) — Ommaviy sayt: layout, bosh sahifa, maqola, kategoriya (lotin + kirill)
 
 **Tur:** FEATURE · **Prioritet:** P1 · **Rol:** developer · **Ijrochi:** AGENT
 
@@ -445,7 +445,7 @@ Asosiy hujjat: `docs/TZ.md` (v1.2). Ishni boshlashdan oldin TZ'ning ko'rsatilgan
 - Rasmlar `media.odya.uz` dan WebP bilan yuklanadi (Network'da Vercel `/_next/image` so'rovlari yo'q).
 - Playwright smoke testi: bosh sahifa → kategoriya → maqola (ikkala yozuv).
 
-### M1-06 — SEO: meta, hreflang, JSON-LD, sitemap, news sitemap, robots, RSS, OG rasm
+### M1-06 (OBLOG-13) — SEO: meta, hreflang, JSON-LD, sitemap, news sitemap, robots, RSS, OG rasm
 
 **Tur:** FEATURE · **Prioritet:** P1 · **Rol:** developer · **Ijrochi:** AGENT
 
@@ -472,7 +472,7 @@ Asosiy hujjat: `docs/TZ.md` (v1.2). Ishni boshlashdan oldin TZ'ning ko'rsatilgan
 - Sitemap va news sitemap validatorlardan o'tadi; hreflang juftliklari o'zaro to'g'ri (unit test).
 - Preview muhitida `robots.txt` — `Disallow: /` va `noindex`.
 
-### M1-07 — Qo'shimcha sahifalar: teg, muallif, statik sahifa, qidiruv, 404 + Lighthouse CI
+### M1-07 (OBLOG-14) — Qo'shimcha sahifalar: teg, muallif, statik sahifa, qidiruv, 404 + Lighthouse CI
 
 **Tur:** FEATURE · **Prioritet:** P2 · **Rol:** developer · **Ijrochi:** AGENT
 
@@ -500,7 +500,7 @@ Asosiy hujjat: `docs/TZ.md` (v1.2). Ishni boshlashdan oldin TZ'ning ko'rsatilgan
 
 ## M2 — Scraping va MCP
 
-### M2-01 — Scraping kolleksiyalari, jobs endpoint va pg_cron scheduler, feed.poll
+### M2-01 (OBLOG-15) — Scraping kolleksiyalari, jobs endpoint va pg_cron scheduler, feed.poll
 
 **Tur:** FEATURE · **Prioritet:** P1 · **Rol:** developer · **Ijrochi:** AGENT
 
@@ -526,7 +526,7 @@ Asosiy hujjat: `docs/TZ.md` (v1.2). Ishni boshlashdan oldin TZ'ning ko'rsatilgan
 - `cron.sql` staging Supabase'da ishga tushirilgan va har 10 daqiqada chaqiruvlar Vercel loglarida ko'rinadi (PR'da skrinshot yoki log).
 - Bitta chaqiruv 60 s dan oshmaydi (deadline testi).
 
-### M2-02 — item.fetch va item.extract: yuklash, robots, Readability, R2 arxiv
+### M2-02 (OBLOG-16) — item.fetch va item.extract: yuklash, robots, Readability, R2 arxiv
 
 **Tur:** FEATURE · **Prioritet:** P1 · **Rol:** developer · **Ijrochi:** AGENT
 
@@ -552,7 +552,7 @@ Asosiy hujjat: `docs/TZ.md` (v1.2). Ishni boshlashdan oldin TZ'ning ko'rsatilgan
 - robots.txt'da taqiqlangan URL yuklanmaydi (test).
 - R2'da gzip fayllar paydo bo'ladi; DB'da HTML saqlanmaydi.
 
-### M2-03 — Dedupe, klassifikatsiya, tozalash va ogohlantirishlar
+### M2-03 (OBLOG-17) — Dedupe, klassifikatsiya, tozalash va ogohlantirishlar
 
 **Tur:** FEATURE · **Prioritet:** P1 · **Rol:** developer · **Ijrochi:** AGENT
 
@@ -577,7 +577,7 @@ Asosiy hujjat: `docs/TZ.md` (v1.2). Ishni boshlashdan oldin TZ'ning ko'rsatilgan
 - 30 ta real namunada `suggestedCategory` ≥ 80% to'g'ri (natija jadvali PR'da).
 - Cleanup job test DB'da kutilgan yozuvlarni o'chiradi/kesadi (integration test); ogohlantirish chegaralari unit testlar bilan.
 
-### M2-04 — Tahririyat navbati: admin custom view va manba paneli
+### M2-04 (OBLOG-18) — Tahririyat navbati: admin custom view va manba paneli
 
 **Tur:** FEATURE · **Prioritet:** P1 · **Rol:** developer · **Ijrochi:** AGENT
 
@@ -601,7 +601,7 @@ Asosiy hujjat: `docs/TZ.md` (v1.2). Ishni boshlashdan oldin TZ'ning ko'rsatilgan
 - Editor navbatdan element tanlab, qoralama yaratib, qo'lda yozib, publish qilishi ≤ 10 daqiqa (qo'lda sinov, PR'da qisqa video yoki skrinshotlar).
 - Rad etilgan element navbatdan yo'qoladi; qoralamaga olingan element `drafted` holatiga o'tadi.
 
-### M2-05 — API kalitlar va audit log
+### M2-05 (OBLOG-19) — API kalitlar va audit log
 
 **Tur:** FEATURE · **Prioritet:** P1 · **Rol:** developer · **Ijrochi:** AGENT
 
@@ -624,7 +624,7 @@ Asosiy hujjat: `docs/TZ.md` (v1.2). Ishni boshlashdan oldin TZ'ning ko'rsatilgan
 - Kalit bilan REST so'rov ishlaydi, bekor qilingan kalit — 401 (test).
 - Post o'zgarishi audit logda to'g'ri `channel` bilan paydo bo'ladi; audit yozuvini o'zgartirish/o'chirish rad etiladi (test).
 
-### M2-06 — MCP server: ulanish, o'qish toollari, ko'rsatmalar (prompts/resources)
+### M2-06 (OBLOG-20) — MCP server: ulanish, o'qish toollari, ko'rsatmalar (prompts/resources)
 
 **Tur:** FEATURE · **Prioritet:** P1 · **Rol:** developer · **Ijrochi:** AGENT
 
@@ -649,7 +649,7 @@ Asosiy hujjat: `docs/TZ.md` (v1.2). Ishni boshlashdan oldin TZ'ning ko'rsatilgan
 - Claude Code'da `claude mcp add --transport http odya <preview-url>/api/mcp --header "Authorization: Bearer …"` ulanadi, toollar ro'yxati ko'rinadi, `list_scraped` va `get_source` real ma'lumot qaytaradi.
 - Kalitsiz so'rov — 401; MCP client bilan integration testlar (SDK client) yashil.
 
-### M2-07 — MCP server: yozish toollari, validatsiya va yo'riqnoma
+### M2-07 (OBLOG-21) — MCP server: yozish toollari, validatsiya va yo'riqnoma
 
 **Tur:** FEATURE · **Prioritet:** P1 · **Rol:** developer · **Ijrochi:** AGENT
 
@@ -680,7 +680,7 @@ Asosiy hujjat: `docs/TZ.md` (v1.2). Ishni boshlashdan oldin TZ'ning ko'rsatilgan
 
 ## M3 — Telegram va Launch
 
-### M3-01 — Telegram avtopost: lotin va kirill kanallari
+### M3-01 (OBLOG-22) — Telegram avtopost: lotin va kirill kanallari
 
 **Tur:** FEATURE · **Prioritet:** P1 · **Rol:** developer · **Ijrochi:** AGENT
 
@@ -706,7 +706,7 @@ Asosiy hujjat: `docs/TZ.md` (v1.2). Ishni boshlashdan oldin TZ'ning ko'rsatilgan
 - Qayta saqlash/publish — dublikat xabar yo'q; sarlavha tahriri kanaldagi xabarni yangilaydi (integration test, grammY mock bilan + qo'lda e2e).
 - Token/kanal sozlanmagan bo'lsa — xato emas, ogohlantirish logi.
 
-### M3-02 — Xavfsizlik, health, Sentry va analitika
+### M3-02 (OBLOG-23) — Xavfsizlik, health, Sentry va analitika
 
 **Tur:** FEATURE · **Prioritet:** P2 · **Rol:** developer · **Ijrochi:** AGENT
 
@@ -734,7 +734,7 @@ Asosiy hujjat: `docs/TZ.md` (v1.2). Ishni boshlashdan oldin TZ'ning ko'rsatilgan
 - Sun'iy xato Sentry'da ko'rinadi (DSN berilganda).
 - Cookie rozilikisiz analitika skriptlari yuklanmaydi.
 
-### M3-03 — Kunlik backup (pg_dump → R2) va tiklash runbook'i
+### M3-03 (OBLOG-24) — Kunlik backup (pg_dump → R2) va tiklash runbook'i
 
 **Tur:** INFRA · **Prioritet:** P1 · **Rol:** sysadmin · **Ijrochi:** AGENT
 
@@ -758,7 +758,7 @@ Asosiy hujjat: `docs/TZ.md` (v1.2). Ishni boshlashdan oldin TZ'ning ko'rsatilgan
 - Runbook bo'yicha tiklash sinovi muvaffaqiyatli, sana va natija yozilgan.
 - Hech qanday sir loglarda ko'rinmaydi.
 
-### M3-04 — Runbook'lar, launch checklist va e2e smoke testlar
+### M3-04 (OBLOG-25) — Runbook'lar, launch checklist va e2e smoke testlar
 
 **Tur:** CHORE · **Prioritet:** P1 · **Rol:** sysadmin · **Ijrochi:** AGENT
 
@@ -783,7 +783,7 @@ Asosiy hujjat: `docs/TZ.md` (v1.2). Ishni boshlashdan oldin TZ'ning ko'rsatilgan
 - 4 ta hujjat mavjud va TZ bilan mos; checklist'da har bir band uchun aniq tekshirish qadami.
 - e2e smoke preview'da yashil.
 
-### M3-05 — Production'ni ishga tushirish (egasi)
+### M3-05 (OBLOG-26) — Production'ni ishga tushirish (egasi)
 
 **Tur:** INFRA · **Prioritet:** P1 · **Rol:** sysadmin · **Ijrochi:** HUMAN
 
