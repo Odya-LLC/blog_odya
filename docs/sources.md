@@ -197,7 +197,7 @@ pnpm test               # seed validatsiyasi (Zod) — CI'da ishlaydi
 pnpm check:feeds        # jonli RSS tekshiruvi — faqat qo'lda (RUN_FEED_CHECKS=1)
 ```
 
-`check:feeds` har bir feed uchun: HTTP 200, XML `Content-Type`, `rss-parser` bilan parse, ≥ 1 yozuv, `robots.txt` ruxsati (`robots-parser`, UA `OdyaBlogBot`); `rss_plus_page` manbalar uchun — birinchi maqola sahifasini (`utm_*` olib tashlangan holda) yuklab, `selectors.content` ≥ 300 belgi matn berishini tekshiradi. Domen bo'yicha so'rovlar orasida `rateLimitSec` pauza qilinadi. `pnpm test` da bu fayl avtomatik **skip** qilinadi.
+`check:feeds` har bir feed uchun: HTTP 200, XML `Content-Type`, `rss-parser` bilan parse, ≥ 1 yozuv, `robots.txt` ruxsati (`robots-parser`, UA `OdyaBlogBot`); `rss_plus_page` manbalar uchun — birinchi maqola sahifasini (`utm_*` olib tashlangan holda) yuklab, `selectors.content` ≥ 300 belgi matn berishini tekshiradi. Domen bo'yicha so'rovlar orasida `rateLimitSec` pauza qilinadi. `pnpm test`/CI da bu fayl umuman yig'ilmaydi (`vitest.config.ts` exclude) va qo'shimcha ravishda `RUN_FEED_CHECKS` bo'lmasa skip qilinadi.
 
 Istisno: HLTV feedi Cloudflare challenge (403 + `cf-mitigated: challenge`) qaytarsa, test **SKIP** (PASS emas) deb belgilanadi va ogohlantirish chiqaradi — challenge chetlab o'tilmaydi. `robots.txt` o'qib bo'lmagan manba `rss_plus_page` bo'lsa — test FAIL.
 

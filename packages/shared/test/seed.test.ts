@@ -1,18 +1,41 @@
 import { describe, expect, it } from 'vitest'
 import categoriesJson from '../seed/categories.json'
 import sourcesJson from '../seed/sources.json'
-import { categoriesSeedSchema, findUnknownCategoryRefs, sourceSchema, sourcesSeedSchema } from '../src'
+import {
+  categoriesSeedSchema,
+  findUnknownCategoryRefs,
+  sourceSchema,
+  sourcesSeedSchema,
+} from '../src'
 
 /** TZ §10.4 jadvali — manba haqiqati. */
 const TZ_CATEGORIES = [
-  { order: 1, slug: 'suniy-intellekt', latn: "Sun'iy intellekt", cyrl: 'Сунъий интеллект', menu: true },
+  {
+    order: 1,
+    slug: 'suniy-intellekt',
+    latn: "Sun'iy intellekt",
+    cyrl: 'Сунъий интеллект',
+    menu: true,
+  },
   { order: 2, slug: 'texnologiyalar', latn: 'Texnologiyalar', cyrl: 'Технологиялар', menu: true },
   { order: 3, slug: 'gadjetlar', latn: 'Gadjetlar', cyrl: 'Гаджетлар', menu: true },
   { order: 4, slug: 'dasturlash', latn: 'Dasturlash', cyrl: 'Дастурлаш', menu: true },
-  { order: 5, slug: 'kiberxavfsizlik', latn: 'Kiberxavfsizlik', cyrl: 'Киберхавфсизлик', menu: true },
+  {
+    order: 5,
+    slug: 'kiberxavfsizlik',
+    latn: 'Kiberxavfsizlik',
+    cyrl: 'Киберхавфсизлик',
+    menu: true,
+  },
   { order: 6, slug: 'kibersport', latn: 'Kibersport', cyrl: 'Киберспорт', menu: true },
   { order: 7, slug: 'oyinlar', latn: "O'yinlar", cyrl: 'Ўйинлар', menu: true },
-  { order: 8, slug: 'startaplar', latn: 'Startaplar va biznes', cyrl: 'Стартаплар ва бизнес', menu: true },
+  {
+    order: 8,
+    slug: 'startaplar',
+    latn: 'Startaplar va biznes',
+    cyrl: 'Стартаплар ва бизнес',
+    menu: true,
+  },
   { order: 9, slug: 'ilm-fan', latn: 'Ilm-fan', cyrl: 'Илм-фан', menu: false },
 ]
 
@@ -31,7 +54,13 @@ describe('categories.json', () => {
   it('TZ §10.4 jadvaliga aynan mos (slug, nomlar, tartib, menyu)', () => {
     const actual = [...categories]
       .sort((a, b) => a.order - b.order)
-      .map((c) => ({ order: c.order, slug: c.slug, latn: c.name['uz-Latn'], cyrl: c.name['uz-Cyrl'], menu: c.isInMenu }))
+      .map((c) => ({
+        order: c.order,
+        slug: c.slug,
+        latn: c.name['uz-Latn'],
+        cyrl: c.name['uz-Cyrl'],
+        menu: c.isInMenu,
+      }))
     expect(actual).toEqual(TZ_CATEGORIES)
   })
 
@@ -58,12 +87,18 @@ describe('sources.json', () => {
   })
 
   it('har bir manbada kamida bitta faol feed bor', () => {
-    for (const s of sources) expect(s.feeds.some((f) => f.isActive), s.slug).toBe(true)
+    for (const s of sources)
+      expect(
+        s.feeds.some((f) => f.isActive),
+        s.slug,
+      ).toBe(true)
   })
 
   it('9 kategoriyaning har biri kamida bitta faol feed orqali to‘ldiriladi', () => {
     const covered = new Set(
-      sources.filter((s) => s.isActive).flatMap((s) => s.feeds.filter((f) => f.isActive).map((f) => f.mapsTo)),
+      sources
+        .filter((s) => s.isActive)
+        .flatMap((s) => s.feeds.filter((f) => f.isActive).map((f) => f.mapsTo)),
     )
     expect([...covered].sort()).toEqual([...categorySlugs].sort())
   })

@@ -6,8 +6,6 @@ import { z } from 'zod'
  * (L) maydonlar `uz-Latn` / `uz-Cyrl` lokallari bo'yicha obyekt ko'rinishida beriladi.
  */
 
-export const LOCALES = ['uz-Latn', 'uz-Cyrl'] as const
-
 /** Lotin (asosiy) va kirill qiymatlari — ikkalasi ham majburiy (kirill nomlar qo'lda tasdiqlangan). */
 export const localizedText = z
   .object({
@@ -58,14 +56,20 @@ export const categoriesSeedSchema = z
     const slugs = new Set<string>()
     const orders = new Set<number>()
     cats.forEach((c, i) => {
-      if (slugs.has(c.slug)) ctx.addIssue({ code: 'custom', path: [i, 'slug'], message: `takroriy slug: ${c.slug}` })
-      if (orders.has(c.order)) ctx.addIssue({ code: 'custom', path: [i, 'order'], message: `takroriy order: ${c.order}` })
+      if (slugs.has(c.slug))
+        ctx.addIssue({ code: 'custom', path: [i, 'slug'], message: `takroriy slug: ${c.slug}` })
+      if (orders.has(c.order))
+        ctx.addIssue({ code: 'custom', path: [i, 'order'], message: `takroriy order: ${c.order}` })
       slugs.add(c.slug)
       orders.add(c.order)
     })
     cats.forEach((c, i) => {
       if (c.parent !== null && !slugs.has(c.parent))
-        ctx.addIssue({ code: 'custom', path: [i, 'parent'], message: `noma'lum parent: ${c.parent}` })
+        ctx.addIssue({
+          code: 'custom',
+          path: [i, 'parent'],
+          message: `noma'lum parent: ${c.parent}`,
+        })
     })
   })
 

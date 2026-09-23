@@ -47,7 +47,10 @@ export const keywordRuleSchema = z
       .string()
       .trim()
       .min(2)
-      .regex(/^[\p{L}\p{N}.+#-]+\*?(?: [\p{L}\p{N}.+#-]+\*?)*$/u, 'keyword formati: so‘zlar, ixtiyoriy oxirgi "*"')
+      .regex(
+        /^[\p{L}\p{N}.+#-]+\*?(?: [\p{L}\p{N}.+#-]+\*?)*$/u,
+        'keyword formati: so‘zlar, ixtiyoriy oxirgi "*"',
+      )
       .refine((s) => s === s.toLowerCase(), 'keyword kichik harflarda bo‘lishi kerak'),
     /** Bizning kategoriya slug'i (rel → categories). */
     category: slugSchema,
@@ -77,18 +80,31 @@ export const sourceSchema = z
   .strict()
   .superRefine((s, ctx) => {
     if (s.fetchMode === 'rss_plus_page' && s.selectors === null)
-      ctx.addIssue({ code: 'custom', path: ['selectors'], message: 'rss_plus_page uchun selectors.content kerak' })
+      ctx.addIssue({
+        code: 'custom',
+        path: ['selectors'],
+        message: 'rss_plus_page uchun selectors.content kerak',
+      })
     const host = new URL(s.homepageUrl).hostname.replace(/^www\./, '')
     s.feeds.forEach((f, i) => {
       const fh = new URL(f.url).hostname.replace(/^www\./, '')
       if (fh !== host)
-        ctx.addIssue({ code: 'custom', path: ['feeds', i, 'url'], message: `feed domeni (${fh}) manba domeniga (${host}) mos emas` })
+        ctx.addIssue({
+          code: 'custom',
+          path: ['feeds', i, 'url'],
+          message: `feed domeni (${fh}) manba domeniga (${host}) mos emas`,
+        })
     })
     const urls = s.feeds.map((f) => f.url)
-    if (new Set(urls).size !== urls.length) ctx.addIssue({ code: 'custom', path: ['feeds'], message: 'takroriy feed URL' })
+    if (new Set(urls).size !== urls.length)
+      ctx.addIssue({ code: 'custom', path: ['feeds'], message: 'takroriy feed URL' })
     const keys = s.keywordRules.map((r) => `${r.keyword}|${r.category}`)
     if (new Set(keys).size !== keys.length)
-      ctx.addIssue({ code: 'custom', path: ['keywordRules'], message: 'takroriy keyword+category juftligi' })
+      ctx.addIssue({
+        code: 'custom',
+        path: ['keywordRules'],
+        message: 'takroriy keyword+category juftligi',
+      })
   })
 
 export const sourcesSeedSchema = z
@@ -97,7 +113,8 @@ export const sourcesSeedSchema = z
   .superRefine((list, ctx) => {
     const slugs = new Set<string>()
     list.forEach((s, i) => {
-      if (slugs.has(s.slug)) ctx.addIssue({ code: 'custom', path: [i, 'slug'], message: `takroriy slug: ${s.slug}` })
+      if (slugs.has(s.slug))
+        ctx.addIssue({ code: 'custom', path: [i, 'slug'], message: `takroriy slug: ${s.slug}` })
       slugs.add(s.slug)
     })
   })
@@ -107,7 +124,10 @@ export type FeedSeed = z.infer<typeof feedSchema>
 export type KeywordRule = z.infer<typeof keywordRuleSchema>
 
 /** Seed ichidagi barcha kategoriya havolalari mavjud kategoriyalarga ishora qilishini tekshiradi. */
-export function findUnknownCategoryRefs(sources: SourceSeed[], categorySlugs: Iterable<string>): string[] {
+export function findUnknownCategoryRefs(
+  sources: SourceSeed[],
+  categorySlugs: Iterable<string>,
+): string[] {
   const known = new Set(categorySlugs)
   const errors: string[] = []
   for (const s of sources) {
@@ -115,7 +135,8 @@ export function findUnknownCategoryRefs(sources: SourceSeed[], categorySlugs: It
       if (!known.has(f.mapsTo)) errors.push(`${s.slug}.feeds[${i}].mapsTo = ${f.mapsTo}`)
     })
     s.keywordRules.forEach((r, i) => {
-      if (!known.has(r.category)) errors.push(`${s.slug}.keywordRules[${i}].category = ${r.category}`)
+      if (!known.has(r.category))
+        errors.push(`${s.slug}.keywordRules[${i}].category = ${r.category}`)
     })
   }
   return errors

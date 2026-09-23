@@ -1,0 +1,93 @@
+# CI: lint → typecheck → test (Postgres + MinIO) → build (TZ §9.7).
+# Yopiq repo'da bepul daqiqalarni tejash uchun faqat PR va main'ga push'da ishlaydi.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: lint · typecheck · test · build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: blog_odya
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d blog_odya"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    # Faqat CI uchun test qiymatlari — haqiqiy sirlar emas.
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/blog_odya
+      DATABASE_URL_DIRECT: postgresql://postgres:postgres@localhost:5432/blog_odya
+      PAYLOAD_SECRET: ci-only-not-a-secret-0123456789abcdef
+      S3_ENDPOINT: http://localhost:9000
+      S3_BUCKET: media
+      S3_ACCESS_KEY_ID: minioadmin
+      S3_SECRET_ACCESS_KEY: minioadmin
+      S3_REGION: us-east-1
+      S3_FORCE_PATH_STYLE: 'true'
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      JOBS_MODE: endpoint
+      NEXT_TELEMETRY_DISABLED: '1'
+      TURBO_TELEMETRY_DISABLED: '1'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Start MinIO
+        run: |
+          docker run -d --name minio -p 9000:9000 \
+            -e MINIO_ROOT_USER=minioadmin -e MINIO_ROOT_PASSWORD=minioadmin \
+            quay.io/minio/minio:RELEASE.2025-04-22T22-12-26Z server /data
+          for i in $(seq 1 30); do
+            curl -fsS http://localhost:9000/minio/health/live && break
+            sleep 1
+          done
+
+      - name: Format check
+        run: pnpm format:check
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Migrate
+        run: pnpm migrate
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
