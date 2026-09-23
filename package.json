@@ -18,6 +18,7 @@
     "check:feeds": "pnpm --filter @blog-odya/shared check:feeds",
     "migrate": "pnpm --filter @blog-odya/web migrate",
     "migrate:create": "pnpm --filter @blog-odya/web migrate:create",
+    "seed": "pnpm --filter @blog-odya/web seed",
     "payload": "pnpm --filter @blog-odya/web payload"
   },
   "devDependencies": {

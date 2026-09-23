@@ -67,18 +67,32 @@ export interface Config {
   };
   blocks: {};
   collections: {
-    users: User;
+    posts: Post;
+    pages: Page;
+    categories: Category;
+    tags: Tag;
+    authors: Author;
     media: Media;
+    users: User;
+    redirects: Redirect;
     'payload-kv': PayloadKv;
+    'payload-jobs': PayloadJob;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
   };
   collectionsJoins: {};
   collectionsSelect: {
-    users: UsersSelect<false> | UsersSelect<true>;
+    posts: PostsSelect<false> | PostsSelect<true>;
+    pages: PagesSelect<false> | PagesSelect<true>;
+    categories: CategoriesSelect<false> | CategoriesSelect<true>;
+    tags: TagsSelect<false> | TagsSelect<true>;
+    authors: AuthorsSelect<false> | AuthorsSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
+    users: UsersSelect<false> | UsersSelect<true>;
+    redirects: RedirectsSelect<false> | RedirectsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
+    'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -87,15 +101,33 @@ export interface Config {
     defaultIDType: number;
   };
   fallbackLocale: ('false' | 'none' | 'null') | false | null | ('uz-Latn' | 'uz-Cyrl') | ('uz-Latn' | 'uz-Cyrl')[];
-  globals: {};
-  globalsSelect: {};
+  globals: {
+    'site-settings': SiteSetting;
+    header: Header;
+    footer: Footer;
+    'telegram-settings': TelegramSetting;
+    'scraping-settings': ScrapingSetting;
+  };
+  globalsSelect: {
+    'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
+    header: HeaderSelect<false> | HeaderSelect<true>;
+    footer: FooterSelect<false> | FooterSelect<true>;
+    'telegram-settings': TelegramSettingsSelect<false> | TelegramSettingsSelect<true>;
+    'scraping-settings': ScrapingSettingsSelect<false> | ScrapingSettingsSelect<true>;
+  };
   locale: 'uz-Latn' | 'uz-Cyrl';
   widgets: {
     collections: CollectionsWidget;
   };
   user: User;
   jobs: {
-    tasks: unknown;
+    tasks: {
+      schedulePublish: TaskSchedulePublish;
+      inline: {
+        input: unknown;
+        output: unknown;
+      };
+    };
     workflows: unknown;
   };
 }
@@ -119,35 +151,119 @@ export interface UserAuthOperations {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "users".
+ * via the `definition` "posts".
  */
-export interface User {
+export interface Post {
   id: number;
-  name: string;
-  role: 'admin' | 'editor';
-  updatedAt: string;
-  createdAt: string;
-  enableAPIKey?: boolean | null;
-  apiKey?: string | null;
-  apiKeyIndex?: string | null;
-  hasAPIKey?: boolean | null;
-  email: string;
-  resetPasswordToken?: string | null;
-  resetPasswordExpiration?: string | null;
-  salt?: string | null;
-  hash?: string | null;
-  resetPasswordRequestedAt?: string | null;
-  loginAttempts?: number | null;
-  lockUntil?: string | null;
-  sessions?:
+  title: string;
+  excerpt?: string | null;
+  coverImage?: (number | null) | Media;
+  content?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  faq?:
     | {
-        id: string;
-        createdAt?: string | null;
-        expiresAt: string;
+        question: string;
+        answer: string;
+        id?: string | null;
       }[]
     | null;
-  password?: string | null;
-  collection: 'users';
+  /**
+   * Saytda "Manba: …" blokida ko‘rsatiladi (TZ §2.3).
+   */
+  sources?:
+    | {
+        name?: string | null;
+        url: string;
+        id?: string | null;
+      }[]
+    | null;
+  relatedPosts?: (number | Post)[] | null;
+  notesForEditor?: string | null;
+  reviewNotes?:
+    | {
+        user?: (number | null) | User;
+        createdAt?: string | null;
+        note: string;
+        id?: string | null;
+      }[]
+    | null;
+  rejectReason?: string | null;
+  telegram?:
+    | {
+        script: 'uz-Latn' | 'uz-Cyrl';
+        messageId?: string | null;
+        sentAt?: string | null;
+        error?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * { title, excerpt, content, meta } — M1-03 transliteratsiyasi boshqaradi
+   */
+  cyrlLocked?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (number | null) | Media;
+    focusKeyword?: string | null;
+    noindex?: boolean | null;
+  };
+  /**
+   * Lotin, ikkala yozuvda bir xil. Bo'sh qoldirilsa sarlavhadan yasaladi.
+   */
+  slug: string;
+  workflowStatus: 'draft' | 'in_progress' | 'review' | 'scheduled' | 'published' | 'rejected' | 'archived';
+  category: number | Category;
+  tags?: (number | Tag)[] | null;
+  authors?: (number | Author)[] | null;
+  assignee?: (number | null) | User;
+  lockedUntil?: string | null;
+  publishedAt?: string | null;
+  /**
+   * "Rejalashtirilgan" holatida shu vaqtda avtomatik chop etiladi
+   */
+  scheduledAt?: string | null;
+  rewrittenBy?: ('human' | 'ai_agent') | null;
+  /**
+   * "AI agent" tanlanganda avtomatik yoqiladi
+   */
+  aiDisclosure?: boolean | null;
+  isFeatured?: boolean | null;
+  isBreaking?: boolean | null;
+  telegramSkip?: boolean | null;
+  /**
+   * Lotin o‘zgargan, kirill qulflangan (M1-03)
+   */
+  cyrlStale?: boolean | null;
+  readingTime?: number | null;
+  views?: number | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -217,6 +333,238 @@ export interface Media {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "users".
+ */
+export interface User {
+  id: number;
+  name: string;
+  role: 'admin' | 'editor';
+  author?: (number | null) | Author;
+  updatedAt: string;
+  createdAt: string;
+  enableAPIKey?: boolean | null;
+  apiKey?: string | null;
+  apiKeyIndex?: string | null;
+  hasAPIKey?: boolean | null;
+  email: string;
+  resetPasswordToken?: string | null;
+  resetPasswordExpiration?: string | null;
+  salt?: string | null;
+  hash?: string | null;
+  resetPasswordRequestedAt?: string | null;
+  loginAttempts?: number | null;
+  lockUntil?: string | null;
+  sessions?:
+    | {
+        id: string;
+        createdAt?: string | null;
+        expiresAt: string;
+      }[]
+    | null;
+  password?: string | null;
+  collection: 'users';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "authors".
+ */
+export interface Author {
+  id: number;
+  name: string;
+  /**
+   * Lotin, ikkala yozuvda bir xil. Bo'sh qoldirilsa sarlavhadan yasaladi.
+   */
+  slug: string;
+  position?: string | null;
+  bio?: string | null;
+  avatar?: (number | null) | Media;
+  user?: (number | null) | User;
+  isActive?: boolean | null;
+  socials?:
+    | {
+        platform: 'telegram' | 'x' | 'linkedin' | 'github' | 'instagram' | 'youtube' | 'facebook' | 'website';
+        url: string;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "categories".
+ */
+export interface Category {
+  id: number;
+  name: string;
+  description?: string | null;
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (number | null) | Media;
+    focusKeyword?: string | null;
+    noindex?: boolean | null;
+  };
+  /**
+   * Lotin, ikkala yozuvda bir xil. Bo'sh qoldirilsa sarlavhadan yasaladi.
+   */
+  slug: string;
+  /**
+   * HEX, masalan #52397F (design/brand/tokens.json → category.*.solid)
+   */
+  color?: string | null;
+  order?: number | null;
+  isInMenu?: boolean | null;
+  parent?: (number | null) | Category;
+  breadcrumbs?:
+    | {
+        doc?: (number | null) | Category;
+        url?: string | null;
+        label?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tags".
+ */
+export interface Tag {
+  id: number;
+  name: string;
+  description?: string | null;
+  /**
+   * Qidiruv va klassifikatsiya uchun muqobil yozilishlar (masalan, "Counter-Strike 2")
+   */
+  synonyms?:
+    | {
+        value: string;
+        id?: string | null;
+      }[]
+    | null;
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (number | null) | Media;
+    focusKeyword?: string | null;
+    noindex?: boolean | null;
+  };
+  /**
+   * Lotin, ikkala yozuvda bir xil. Bo'sh qoldirilsa sarlavhadan yasaladi.
+   */
+  slug: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pages".
+ */
+export interface Page {
+  id: number;
+  title: string;
+  layout?: (ContentBlock | FaqBlock)[] | null;
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (number | null) | Media;
+    focusKeyword?: string | null;
+    noindex?: boolean | null;
+  };
+  /**
+   * Lotin, ikkala yozuvda bir xil. Bo'sh qoldirilsa sarlavhadan yasaladi.
+   */
+  slug: string;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ContentBlock".
+ */
+export interface ContentBlock {
+  richText: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'content';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "FaqBlock".
+ */
+export interface FaqBlock {
+  title?: string | null;
+  items?:
+    | {
+        question: string;
+        answer: string;
+        id?: string | null;
+      }[]
+    | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'faq';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "redirects".
+ */
+export interface Redirect {
+  id: number;
+  from: string;
+  to?: {
+    type?: ('reference' | 'custom') | null;
+    reference?:
+      | ({
+          relationTo: 'posts';
+          value: number | Post;
+        } | null)
+      | ({
+          relationTo: 'pages';
+          value: number | Page;
+        } | null)
+      | ({
+          relationTo: 'categories';
+          value: number | Category;
+        } | null)
+      | ({
+          relationTo: 'tags';
+          value: number | Tag;
+        } | null);
+    url?: string | null;
+  };
+  type: '301' | '302';
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -234,18 +582,134 @@ export interface PayloadKv {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-jobs".
+ */
+export interface PayloadJob {
+  id: number;
+  /**
+   * Input data provided to the job
+   */
+  input?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  taskStatus?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  completedAt?: string | null;
+  totalTried?: number | null;
+  /**
+   * If hasError is true this job will not be retried
+   */
+  hasError?: boolean | null;
+  /**
+   * If hasError is true, this is the error that caused it
+   */
+  error?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * Task execution log
+   */
+  log?:
+    | {
+        executedAt: string;
+        completedAt: string;
+        taskSlug: 'inline' | 'schedulePublish';
+        taskID: string;
+        input?:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+        output?:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+        state: 'failed' | 'succeeded';
+        error?:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+        id?: string | null;
+      }[]
+    | null;
+  taskSlug?: ('inline' | 'schedulePublish') | null;
+  queue?: string | null;
+  waitUntil?: string | null;
+  processing?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
   id: number;
   document?:
     | ({
-        relationTo: 'users';
-        value: number | User;
+        relationTo: 'posts';
+        value: number | Post;
+      } | null)
+    | ({
+        relationTo: 'pages';
+        value: number | Page;
+      } | null)
+    | ({
+        relationTo: 'categories';
+        value: number | Category;
+      } | null)
+    | ({
+        relationTo: 'tags';
+        value: number | Tag;
+      } | null)
+    | ({
+        relationTo: 'authors';
+        value: number | Author;
       } | null)
     | ({
         relationTo: 'media';
         value: number | Media;
+      } | null)
+    | ({
+        relationTo: 'users';
+        value: number | User;
+      } | null)
+    | ({
+        relationTo: 'redirects';
+        value: number | Redirect;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -291,32 +755,208 @@ export interface PayloadMigration {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "users_select".
+ * via the `definition` "posts_select".
  */
-export interface UsersSelect<T extends boolean = true> {
-  name?: T;
-  role?: T;
-  updatedAt?: T;
-  createdAt?: T;
-  enableAPIKey?: T;
-  apiKey?: T;
-  apiKeyIndex?: T;
-  hasAPIKey?: T;
-  email?: T;
-  resetPasswordToken?: T;
-  resetPasswordExpiration?: T;
-  salt?: T;
-  hash?: T;
-  resetPasswordRequestedAt?: T;
-  loginAttempts?: T;
-  lockUntil?: T;
-  sessions?:
+export interface PostsSelect<T extends boolean = true> {
+  title?: T;
+  excerpt?: T;
+  coverImage?: T;
+  content?: T;
+  faq?:
     | T
     | {
+        question?: T;
+        answer?: T;
         id?: T;
-        createdAt?: T;
-        expiresAt?: T;
       };
+  sources?:
+    | T
+    | {
+        name?: T;
+        url?: T;
+        id?: T;
+      };
+  relatedPosts?: T;
+  notesForEditor?: T;
+  reviewNotes?:
+    | T
+    | {
+        user?: T;
+        createdAt?: T;
+        note?: T;
+        id?: T;
+      };
+  rejectReason?: T;
+  telegram?:
+    | T
+    | {
+        script?: T;
+        messageId?: T;
+        sentAt?: T;
+        error?: T;
+        id?: T;
+      };
+  cyrlLocked?: T;
+  meta?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        image?: T;
+        focusKeyword?: T;
+        noindex?: T;
+      };
+  slug?: T;
+  workflowStatus?: T;
+  category?: T;
+  tags?: T;
+  authors?: T;
+  assignee?: T;
+  lockedUntil?: T;
+  publishedAt?: T;
+  scheduledAt?: T;
+  rewrittenBy?: T;
+  aiDisclosure?: T;
+  isFeatured?: T;
+  isBreaking?: T;
+  telegramSkip?: T;
+  cyrlStale?: T;
+  readingTime?: T;
+  views?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "pages_select".
+ */
+export interface PagesSelect<T extends boolean = true> {
+  title?: T;
+  layout?:
+    | T
+    | {
+        content?: T | ContentBlockSelect<T>;
+        faq?: T | FaqBlockSelect<T>;
+      };
+  meta?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        image?: T;
+        focusKeyword?: T;
+        noindex?: T;
+      };
+  slug?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ContentBlock_select".
+ */
+export interface ContentBlockSelect<T extends boolean = true> {
+  richText?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "FaqBlock_select".
+ */
+export interface FaqBlockSelect<T extends boolean = true> {
+  title?: T;
+  items?:
+    | T
+    | {
+        question?: T;
+        answer?: T;
+        id?: T;
+      };
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "categories_select".
+ */
+export interface CategoriesSelect<T extends boolean = true> {
+  name?: T;
+  description?: T;
+  meta?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        image?: T;
+        focusKeyword?: T;
+        noindex?: T;
+      };
+  slug?: T;
+  color?: T;
+  order?: T;
+  isInMenu?: T;
+  parent?: T;
+  breadcrumbs?:
+    | T
+    | {
+        doc?: T;
+        url?: T;
+        label?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tags_select".
+ */
+export interface TagsSelect<T extends boolean = true> {
+  name?: T;
+  description?: T;
+  synonyms?:
+    | T
+    | {
+        value?: T;
+        id?: T;
+      };
+  meta?:
+    | T
+    | {
+        title?: T;
+        description?: T;
+        image?: T;
+        focusKeyword?: T;
+        noindex?: T;
+      };
+  slug?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "authors_select".
+ */
+export interface AuthorsSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  position?: T;
+  bio?: T;
+  avatar?: T;
+  user?: T;
+  isActive?: T;
+  socials?:
+    | T
+    | {
+        platform?: T;
+        url?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -397,11 +1037,89 @@ export interface MediaSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "users_select".
+ */
+export interface UsersSelect<T extends boolean = true> {
+  name?: T;
+  role?: T;
+  author?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  enableAPIKey?: T;
+  apiKey?: T;
+  apiKeyIndex?: T;
+  hasAPIKey?: T;
+  email?: T;
+  resetPasswordToken?: T;
+  resetPasswordExpiration?: T;
+  salt?: T;
+  hash?: T;
+  resetPasswordRequestedAt?: T;
+  loginAttempts?: T;
+  lockUntil?: T;
+  sessions?:
+    | T
+    | {
+        id?: T;
+        createdAt?: T;
+        expiresAt?: T;
+      };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "redirects_select".
+ */
+export interface RedirectsSelect<T extends boolean = true> {
+  from?: T;
+  to?:
+    | T
+    | {
+        type?: T;
+        reference?: T;
+        url?: T;
+      };
+  type?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv_select".
  */
 export interface PayloadKvSelect<T extends boolean = true> {
   key?: T;
   data?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-jobs_select".
+ */
+export interface PayloadJobsSelect<T extends boolean = true> {
+  input?: T;
+  taskStatus?: T;
+  completedAt?: T;
+  totalTried?: T;
+  hasError?: T;
+  error?: T;
+  log?:
+    | T
+    | {
+        executedAt?: T;
+        completedAt?: T;
+        taskSlug?: T;
+        taskID?: T;
+        input?: T;
+        output?: T;
+        state?: T;
+        error?: T;
+        id?: T;
+      };
+  taskSlug?: T;
+  queue?: T;
+  waitUntil?: T;
+  processing?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -437,6 +1155,255 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "site-settings".
+ */
+export interface SiteSetting {
+  id: number;
+  siteName: string;
+  tagline?: string | null;
+  description?: string | null;
+  logo?: (number | null) | Media;
+  logoDark?: (number | null) | Media;
+  defaultOgImage?: (number | null) | Media;
+  socials?:
+    | {
+        platform: 'telegram_latn' | 'telegram_cyrl' | 'instagram' | 'youtube' | 'x' | 'facebook' | 'linkedin';
+        url: string;
+        id?: string | null;
+      }[]
+    | null;
+  analytics?: {
+    ga4MeasurementId?: string | null;
+    yandexMetrikaId?: string | null;
+    googleSiteVerification?: string | null;
+    yandexVerification?: string | null;
+  };
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "header".
+ */
+export interface Header {
+  id: number;
+  navItems?:
+    | {
+        label: string;
+        type: 'category' | 'page' | 'custom';
+        category?: (number | null) | Category;
+        page?: (number | null) | Page;
+        url?: string | null;
+        newTab?: boolean | null;
+        id?: string | null;
+      }[]
+    | null;
+  moreItems?:
+    | {
+        label: string;
+        type: 'category' | 'page' | 'custom';
+        category?: (number | null) | Category;
+        page?: (number | null) | Page;
+        url?: string | null;
+        newTab?: boolean | null;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "footer".
+ */
+export interface Footer {
+  id: number;
+  columns?:
+    | {
+        title?: string | null;
+        links?:
+          | {
+              label: string;
+              type: 'category' | 'page' | 'custom';
+              category?: (number | null) | Category;
+              page?: (number | null) | Page;
+              url?: string | null;
+              newTab?: boolean | null;
+              id?: string | null;
+            }[]
+          | null;
+        id?: string | null;
+      }[]
+    | null;
+  copyright?: string | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "telegram-settings".
+ */
+export interface TelegramSetting {
+  id: number;
+  channels?:
+    | {
+        script: 'uz-Latn' | 'uz-Cyrl';
+        chatId: string;
+        isEnabled?: boolean | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * O'rinbosarlar: {{title}}, {{excerpt}}, {{url}}, {{hashtags}}. Caption ≤ 1024 belgi.
+   */
+  template?: string | null;
+  hashtagsCount?: number | null;
+  alertChatId?: string | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "scraping-settings".
+ */
+export interface ScrapingSetting {
+  id: number;
+  isEnabled?: boolean | null;
+  minScore?: number | null;
+  jobsBatchLimit?: number | null;
+  jobsDeadlineSec?: number | null;
+  maxNewItemsPerPoll?: number | null;
+  defaultPollIntervalMin?: number | null;
+  extractedTextRetentionDays?: number | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "site-settings_select".
+ */
+export interface SiteSettingsSelect<T extends boolean = true> {
+  siteName?: T;
+  tagline?: T;
+  description?: T;
+  logo?: T;
+  logoDark?: T;
+  defaultOgImage?: T;
+  socials?:
+    | T
+    | {
+        platform?: T;
+        url?: T;
+        id?: T;
+      };
+  analytics?:
+    | T
+    | {
+        ga4MeasurementId?: T;
+        yandexMetrikaId?: T;
+        googleSiteVerification?: T;
+        yandexVerification?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "header_select".
+ */
+export interface HeaderSelect<T extends boolean = true> {
+  navItems?:
+    | T
+    | {
+        label?: T;
+        type?: T;
+        category?: T;
+        page?: T;
+        url?: T;
+        newTab?: T;
+        id?: T;
+      };
+  moreItems?:
+    | T
+    | {
+        label?: T;
+        type?: T;
+        category?: T;
+        page?: T;
+        url?: T;
+        newTab?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "footer_select".
+ */
+export interface FooterSelect<T extends boolean = true> {
+  columns?:
+    | T
+    | {
+        title?: T;
+        links?:
+          | T
+          | {
+              label?: T;
+              type?: T;
+              category?: T;
+              page?: T;
+              url?: T;
+              newTab?: T;
+              id?: T;
+            };
+        id?: T;
+      };
+  copyright?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "telegram-settings_select".
+ */
+export interface TelegramSettingsSelect<T extends boolean = true> {
+  channels?:
+    | T
+    | {
+        script?: T;
+        chatId?: T;
+        isEnabled?: T;
+        id?: T;
+      };
+  template?: T;
+  hashtagsCount?: T;
+  alertChatId?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "scraping-settings_select".
+ */
+export interface ScrapingSettingsSelect<T extends boolean = true> {
+  isEnabled?: T;
+  minScore?: T;
+  jobsBatchLimit?: T;
+  jobsDeadlineSec?: T;
+  maxNewItemsPerPoll?: T;
+  defaultPollIntervalMin?: T;
+  extractedTextRetentionDays?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "collections_widget".
  */
 export interface CollectionsWidget {
@@ -444,6 +1411,37 @@ export interface CollectionsWidget {
     [k: string]: unknown;
   };
   width: 'full';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskSchedulePublish".
+ */
+export interface TaskSchedulePublish {
+  input: {
+    type?: ('publish' | 'unpublish') | null;
+    locale?: string | null;
+    doc?: {
+      relationTo: 'posts';
+      value: number | Post;
+    } | null;
+    global?: string | null;
+    user?: {
+      relationTo: 'users';
+      value: number | User;
+    } | null;
+  };
+  output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "EmbedBlock".
+ */
+export interface EmbedBlock {
+  url: string;
+  caption?: string | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'embed';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

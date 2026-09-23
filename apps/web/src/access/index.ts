@@ -15,7 +15,8 @@ export const ROLE_LABELS: Record<Role, string> = {
 
 type MaybeUser = PayloadRequest['user'] | null | undefined
 
-function roleOf(user: MaybeUser): Role | undefined {
+/** Foydalanuvchi roli (`users` kolleksiyasidan bo'lmasa yoki noma'lum rol — `undefined`). */
+export function roleOf(user: MaybeUser): Role | undefined {
   if (!user || user.collection !== 'users') return undefined
   const role = (user as { role?: unknown }).role
   return typeof role === 'string' && (ROLES as readonly string[]).includes(role)
@@ -47,3 +48,15 @@ export const isAdminOrSelf: Access = ({ req }) => {
 
 /** Maydon darajasida: faqat admin (masalan, `role` ni o'zgartirish). */
 export const isAdminFieldLevel: FieldAccess = ({ req }) => isAdminUser(req.user)
+
+/** Hamma uchun ochiq (ommaviy sayt o'qiydigan taksonomiya, sozlamalar va h.k.). */
+export const anyone: Access = () => true
+
+/**
+ * Drafts yoqilgan kolleksiyalar uchun o'qish: admin/editor — hammasi (qoralamalar ham),
+ * boshqalar — faqat chop etilganlari.
+ */
+export const publishedOrAdminEditor: Access = ({ req }) => {
+  if (isAdminOrEditorUser(req.user)) return true
+  return { _status: { equals: 'published' } }
+}
