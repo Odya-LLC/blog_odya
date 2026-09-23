@@ -1,14 +1,24 @@
 {
   "name": "@blog-odya/guidelines",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "private": true,
   "description": "Stil qo'llanma, glossariy, SEO qoidalari — MCP prompt/resource sifatida beriladi",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./glossary.seed.json": "./glossary.seed.json",
+    "./translit-exceptions.seed.json": "./translit-exceptions.seed.json"
   },
   "scripts": {
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.6",
+    "vitest": "4.0.18"
   }
 }

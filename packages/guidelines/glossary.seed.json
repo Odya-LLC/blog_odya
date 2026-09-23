@@ -1,0 +1,2667 @@
+{
+  "version": "1.0.0",
+  "updatedAt": "2026-09-23",
+  "description": "Glossariy boshlangʻich roʻyxati: EN/RU atama → oʻzbekcha (lotin). Brendlar tarjima ham, transliteratsiya ham qilinmaydi (TZ §3.6, §5.2, §10.8).",
+  "items": [
+    {
+      "term": "OpenAI",
+      "language": "en",
+      "translation": "OpenAI",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "AI kompaniyasi"
+    },
+    {
+      "term": "ChatGPT",
+      "language": "en",
+      "translation": "ChatGPT",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "OpenAI chat-boti"
+    },
+    {
+      "term": "GPT",
+      "language": "en",
+      "translation": "GPT",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "OpenAI til modellari oilasi"
+    },
+    {
+      "term": "Sora",
+      "language": "en",
+      "translation": "Sora",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "OpenAI video generatsiya modeli"
+    },
+    {
+      "term": "Anthropic",
+      "language": "en",
+      "translation": "Anthropic",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "AI kompaniyasi"
+    },
+    {
+      "term": "Claude",
+      "language": "en",
+      "translation": "Claude",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Anthropic AI modeli"
+    },
+    {
+      "term": "Google",
+      "language": "en",
+      "translation": "Google",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Kompaniya"
+    },
+    {
+      "term": "Gemini",
+      "language": "en",
+      "translation": "Gemini",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Google AI modeli"
+    },
+    {
+      "term": "DeepMind",
+      "language": "en",
+      "translation": "DeepMind",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Google AI laboratoriyasi"
+    },
+    {
+      "term": "Microsoft",
+      "language": "en",
+      "translation": "Microsoft",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Kompaniya"
+    },
+    {
+      "term": "Copilot",
+      "language": "en",
+      "translation": "Copilot",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Microsoft va GitHub AI yordamchisi"
+    },
+    {
+      "term": "Windows",
+      "language": "en",
+      "translation": "Windows",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Operatsion tizim"
+    },
+    {
+      "term": "Azure",
+      "language": "en",
+      "translation": "Azure",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Microsoft bulut platformasi"
+    },
+    {
+      "term": "Meta",
+      "language": "en",
+      "translation": "Meta",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Kompaniya (Facebook, Instagram, WhatsApp egasi)"
+    },
+    {
+      "term": "Llama",
+      "language": "en",
+      "translation": "Llama",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Meta til modellari"
+    },
+    {
+      "term": "Facebook",
+      "language": "en",
+      "translation": "Facebook",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Ijtimoiy tarmoq"
+    },
+    {
+      "term": "Instagram",
+      "language": "en",
+      "translation": "Instagram",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Ijtimoiy tarmoq"
+    },
+    {
+      "term": "WhatsApp",
+      "language": "en",
+      "translation": "WhatsApp",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Messenjer"
+    },
+    {
+      "term": "Threads",
+      "language": "en",
+      "translation": "Threads",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Meta ijtimoiy tarmogʻi"
+    },
+    {
+      "term": "Apple",
+      "language": "en",
+      "translation": "Apple",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Kompaniya"
+    },
+    {
+      "term": "iPhone",
+      "language": "en",
+      "translation": "iPhone",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Apple smartfoni"
+    },
+    {
+      "term": "iPad",
+      "language": "en",
+      "translation": "iPad",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Apple plansheti"
+    },
+    {
+      "term": "MacBook",
+      "language": "en",
+      "translation": "MacBook",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Apple noutbuki"
+    },
+    {
+      "term": "iOS",
+      "language": "en",
+      "translation": "iOS",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Apple operatsion tizimi"
+    },
+    {
+      "term": "macOS",
+      "language": "en",
+      "translation": "macOS",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Apple operatsion tizimi"
+    },
+    {
+      "term": "Apple Watch",
+      "language": "en",
+      "translation": "Apple Watch",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Aqlli soat"
+    },
+    {
+      "term": "AirPods",
+      "language": "en",
+      "translation": "AirPods",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Simsiz quloqchinlar"
+    },
+    {
+      "term": "Vision Pro",
+      "language": "en",
+      "translation": "Vision Pro",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Apple aralash reallik shlemi"
+    },
+    {
+      "term": "Samsung",
+      "language": "en",
+      "translation": "Samsung",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Kompaniya"
+    },
+    {
+      "term": "Galaxy",
+      "language": "en",
+      "translation": "Galaxy",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Samsung qurilmalari seriyasi"
+    },
+    {
+      "term": "Xiaomi",
+      "language": "en",
+      "translation": "Xiaomi",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Kompaniya"
+    },
+    {
+      "term": "Huawei",
+      "language": "en",
+      "translation": "Huawei",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Kompaniya"
+    },
+    {
+      "term": "HarmonyOS",
+      "language": "en",
+      "translation": "HarmonyOS",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Huawei operatsion tizimi"
+    },
+    {
+      "term": "Honor",
+      "language": "en",
+      "translation": "Honor",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Smartfon brendi"
+    },
+    {
+      "term": "OnePlus",
+      "language": "en",
+      "translation": "OnePlus",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Smartfon brendi"
+    },
+    {
+      "term": "Nvidia",
+      "language": "en",
+      "translation": "Nvidia",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Chip ishlab chiqaruvchi"
+    },
+    {
+      "term": "GeForce",
+      "language": "en",
+      "translation": "GeForce",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Nvidia videokartalari"
+    },
+    {
+      "term": "AMD",
+      "language": "en",
+      "translation": "AMD",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Chip ishlab chiqaruvchi"
+    },
+    {
+      "term": "Radeon",
+      "language": "en",
+      "translation": "Radeon",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "AMD videokartalari"
+    },
+    {
+      "term": "Ryzen",
+      "language": "en",
+      "translation": "Ryzen",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "AMD protsessorlari"
+    },
+    {
+      "term": "Intel",
+      "language": "en",
+      "translation": "Intel",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Chip ishlab chiqaruvchi"
+    },
+    {
+      "term": "Qualcomm",
+      "language": "en",
+      "translation": "Qualcomm",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Chip ishlab chiqaruvchi"
+    },
+    {
+      "term": "Snapdragon",
+      "language": "en",
+      "translation": "Snapdragon",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Qualcomm protsessorlari"
+    },
+    {
+      "term": "MediaTek",
+      "language": "en",
+      "translation": "MediaTek",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Chip ishlab chiqaruvchi"
+    },
+    {
+      "term": "TSMC",
+      "language": "en",
+      "translation": "TSMC",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Tayvanlik chip ishlab chiqaruvchi"
+    },
+    {
+      "term": "Arm",
+      "language": "en",
+      "translation": "Arm",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Protsessor arxitekturasi va kompaniya"
+    },
+    {
+      "term": "Android",
+      "language": "en",
+      "translation": "Android",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Operatsion tizim"
+    },
+    {
+      "term": "Pixel",
+      "language": "en",
+      "translation": "Pixel",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Google smartfonlari"
+    },
+    {
+      "term": "YouTube",
+      "language": "en",
+      "translation": "YouTube",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Videoxosting"
+    },
+    {
+      "term": "TikTok",
+      "language": "en",
+      "translation": "TikTok",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Ijtimoiy tarmoq"
+    },
+    {
+      "term": "ByteDance",
+      "language": "en",
+      "translation": "ByteDance",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "TikTok egasi"
+    },
+    {
+      "term": "Telegram",
+      "language": "en",
+      "translation": "Telegram",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Messenjer"
+    },
+    {
+      "term": "X",
+      "language": "en",
+      "translation": "X",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Ijtimoiy tarmoq (sobiq Twitter). Birinchi uchrashida: «X (sobiq Twitter)»"
+    },
+    {
+      "term": "Amazon",
+      "language": "en",
+      "translation": "Amazon",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Kompaniya"
+    },
+    {
+      "term": "AWS",
+      "language": "en",
+      "translation": "AWS",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Amazon Web Services bulut platformasi"
+    },
+    {
+      "term": "Alexa",
+      "language": "en",
+      "translation": "Alexa",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Amazon ovozli yordamchisi"
+    },
+    {
+      "term": "Netflix",
+      "language": "en",
+      "translation": "Netflix",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Striming xizmati"
+    },
+    {
+      "term": "Spotify",
+      "language": "en",
+      "translation": "Spotify",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Musiqa striming xizmati"
+    },
+    {
+      "term": "Tesla",
+      "language": "en",
+      "translation": "Tesla",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Elektromobil ishlab chiqaruvchi"
+    },
+    {
+      "term": "SpaceX",
+      "language": "en",
+      "translation": "SpaceX",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Kosmik kompaniya"
+    },
+    {
+      "term": "Starlink",
+      "language": "en",
+      "translation": "Starlink",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "SpaceX sunʼiy yoʻldosh interneti"
+    },
+    {
+      "term": "Neuralink",
+      "language": "en",
+      "translation": "Neuralink",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Neyrointerfeys kompaniyasi"
+    },
+    {
+      "term": "xAI",
+      "language": "en",
+      "translation": "xAI",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "AI kompaniyasi"
+    },
+    {
+      "term": "Grok",
+      "language": "en",
+      "translation": "Grok",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "xAI chat-boti"
+    },
+    {
+      "term": "Mistral AI",
+      "language": "en",
+      "translation": "Mistral AI",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "AI kompaniyasi"
+    },
+    {
+      "term": "DeepSeek",
+      "language": "en",
+      "translation": "DeepSeek",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "AI kompaniyasi va modeli"
+    },
+    {
+      "term": "Perplexity",
+      "language": "en",
+      "translation": "Perplexity",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "AI qidiruv xizmati"
+    },
+    {
+      "term": "Midjourney",
+      "language": "en",
+      "translation": "Midjourney",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Rasm generatsiya xizmati"
+    },
+    {
+      "term": "Stable Diffusion",
+      "language": "en",
+      "translation": "Stable Diffusion",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Rasm generatsiya modeli"
+    },
+    {
+      "term": "Hugging Face",
+      "language": "en",
+      "translation": "Hugging Face",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "AI modellari platformasi"
+    },
+    {
+      "term": "GitHub",
+      "language": "en",
+      "translation": "GitHub",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Kod xostingi"
+    },
+    {
+      "term": "GitLab",
+      "language": "en",
+      "translation": "GitLab",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Kod xostingi"
+    },
+    {
+      "term": "Linux",
+      "language": "en",
+      "translation": "Linux",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Operatsion tizim yadrosi"
+    },
+    {
+      "term": "Ubuntu",
+      "language": "en",
+      "translation": "Ubuntu",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Linux distributivi"
+    },
+    {
+      "term": "Python",
+      "language": "en",
+      "translation": "Python",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Dasturlash tili"
+    },
+    {
+      "term": "JavaScript",
+      "language": "en",
+      "translation": "JavaScript",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Dasturlash tili"
+    },
+    {
+      "term": "TypeScript",
+      "language": "en",
+      "translation": "TypeScript",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Dasturlash tili"
+    },
+    {
+      "term": "Rust",
+      "language": "en",
+      "translation": "Rust",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Dasturlash tili"
+    },
+    {
+      "term": "Kotlin",
+      "language": "en",
+      "translation": "Kotlin",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Dasturlash tili"
+    },
+    {
+      "term": "Swift",
+      "language": "en",
+      "translation": "Swift",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Dasturlash tili"
+    },
+    {
+      "term": "Java",
+      "language": "en",
+      "translation": "Java",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Dasturlash tili"
+    },
+    {
+      "term": "Docker",
+      "language": "en",
+      "translation": "Docker",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Konteynerlash platformasi"
+    },
+    {
+      "term": "Kubernetes",
+      "language": "en",
+      "translation": "Kubernetes",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Konteynerlarni boshqarish tizimi"
+    },
+    {
+      "term": "PostgreSQL",
+      "language": "en",
+      "translation": "PostgreSQL",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Maʼlumotlar bazasi"
+    },
+    {
+      "term": "Steam",
+      "language": "en",
+      "translation": "Steam",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Oʻyin platformasi"
+    },
+    {
+      "term": "Valve",
+      "language": "en",
+      "translation": "Valve",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Oʻyin kompaniyasi"
+    },
+    {
+      "term": "PlayStation",
+      "language": "en",
+      "translation": "PlayStation",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Sony oʻyin konsoli"
+    },
+    {
+      "term": "Xbox",
+      "language": "en",
+      "translation": "Xbox",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Microsoft oʻyin konsoli"
+    },
+    {
+      "term": "Nintendo",
+      "language": "en",
+      "translation": "Nintendo",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Oʻyin kompaniyasi"
+    },
+    {
+      "term": "Nintendo Switch",
+      "language": "en",
+      "translation": "Nintendo Switch",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Oʻyin konsoli"
+    },
+    {
+      "term": "Epic Games",
+      "language": "en",
+      "translation": "Epic Games",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Oʻyin kompaniyasi"
+    },
+    {
+      "term": "Fortnite",
+      "language": "en",
+      "translation": "Fortnite",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Oʻyin"
+    },
+    {
+      "term": "Counter-Strike 2",
+      "language": "en",
+      "translation": "Counter-Strike 2",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Oʻyin. Qisqacha: CS2"
+    },
+    {
+      "term": "CS2",
+      "language": "en",
+      "translation": "CS2",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Counter-Strike 2 qisqartmasi"
+    },
+    {
+      "term": "Dota 2",
+      "language": "en",
+      "translation": "Dota 2",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Oʻyin"
+    },
+    {
+      "term": "PUBG Mobile",
+      "language": "en",
+      "translation": "PUBG Mobile",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Oʻyin"
+    },
+    {
+      "term": "Mobile Legends: Bang Bang",
+      "language": "en",
+      "translation": "Mobile Legends: Bang Bang",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Oʻyin. Qisqacha: MLBB"
+    },
+    {
+      "term": "MLBB",
+      "language": "en",
+      "translation": "MLBB",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Mobile Legends: Bang Bang qisqartmasi"
+    },
+    {
+      "term": "Valorant",
+      "language": "en",
+      "translation": "Valorant",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Oʻyin"
+    },
+    {
+      "term": "Riot Games",
+      "language": "en",
+      "translation": "Riot Games",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Oʻyin kompaniyasi"
+    },
+    {
+      "term": "League of Legends",
+      "language": "en",
+      "translation": "League of Legends",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Oʻyin"
+    },
+    {
+      "term": "Minecraft",
+      "language": "en",
+      "translation": "Minecraft",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Oʻyin"
+    },
+    {
+      "term": "Roblox",
+      "language": "en",
+      "translation": "Roblox",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Oʻyin platformasi"
+    },
+    {
+      "term": "Twitch",
+      "language": "en",
+      "translation": "Twitch",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Striming platformasi"
+    },
+    {
+      "term": "Discord",
+      "language": "en",
+      "translation": "Discord",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Messenjer"
+    },
+    {
+      "term": "HLTV",
+      "language": "en",
+      "translation": "HLTV",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Kibersport nashri (manba)"
+    },
+    {
+      "term": "Dexerto",
+      "language": "en",
+      "translation": "Dexerto",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Kibersport nashri (manba)"
+    },
+    {
+      "term": "The Verge",
+      "language": "en",
+      "translation": "The Verge",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Texnologiya nashri (manba)"
+    },
+    {
+      "term": "TechCrunch",
+      "language": "en",
+      "translation": "TechCrunch",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Texnologiya nashri (manba)"
+    },
+    {
+      "term": "Habr",
+      "language": "en",
+      "translation": "Habr",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "IT nashri (manba)"
+    },
+    {
+      "term": "iXBT",
+      "language": "en",
+      "translation": "iXBT",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Texnologiya nashri (manba)"
+    },
+    {
+      "term": "Yandex",
+      "language": "en",
+      "translation": "Yandex",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Kompaniya"
+    },
+    {
+      "term": "Uzum",
+      "language": "en",
+      "translation": "Uzum",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Oʻzbekiston texnologiya kompaniyasi"
+    },
+    {
+      "term": "Payme",
+      "language": "en",
+      "translation": "Payme",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Toʻlov xizmati"
+    },
+    {
+      "term": "Click",
+      "language": "en",
+      "translation": "Click",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Toʻlov xizmati"
+    },
+    {
+      "term": "Humo",
+      "language": "en",
+      "translation": "Humo",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Toʻlov tizimi"
+    },
+    {
+      "term": "Uzcard",
+      "language": "en",
+      "translation": "Uzcard",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Toʻlov tizimi"
+    },
+    {
+      "term": "Beeline",
+      "language": "en",
+      "translation": "Beeline",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Mobil operator"
+    },
+    {
+      "term": "Ucell",
+      "language": "en",
+      "translation": "Ucell",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Mobil operator"
+    },
+    {
+      "term": "Mobiuz",
+      "language": "en",
+      "translation": "Mobiuz",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Mobil operator"
+    },
+    {
+      "term": "IT Park",
+      "language": "en",
+      "translation": "IT Park",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Oʻzbekiston IT texnoparki"
+    },
+    {
+      "term": "Wi-Fi",
+      "language": "en",
+      "translation": "Wi-Fi",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Simsiz aloqa standarti"
+    },
+    {
+      "term": "Bluetooth",
+      "language": "en",
+      "translation": "Bluetooth",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Simsiz aloqa standarti"
+    },
+    {
+      "term": "USB-C",
+      "language": "en",
+      "translation": "USB-C",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Ulagich standarti"
+    },
+    {
+      "term": "AI",
+      "language": "en",
+      "translation": "AI",
+      "kind": "abbreviation",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "sunʼiy intellekt. Matnda asosan «sunʼiy intellekt» yoziladi; AI — qisqartma va birikmalarda (AI agent)"
+    },
+    {
+      "term": "LLM",
+      "language": "en",
+      "translation": "LLM",
+      "kind": "abbreviation",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "katta til modeli (large language model). Birinchi uchrashida ochib yoziladi"
+    },
+    {
+      "term": "GPU",
+      "language": "en",
+      "translation": "GPU",
+      "kind": "abbreviation",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "grafik protsessor"
+    },
+    {
+      "term": "CPU",
+      "language": "en",
+      "translation": "CPU",
+      "kind": "abbreviation",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "markaziy protsessor"
+    },
+    {
+      "term": "NPU",
+      "language": "en",
+      "translation": "NPU",
+      "kind": "abbreviation",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "neyron protsessor"
+    },
+    {
+      "term": "RAM",
+      "language": "en",
+      "translation": "RAM",
+      "kind": "abbreviation",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "operativ xotira"
+    },
+    {
+      "term": "SSD",
+      "language": "en",
+      "translation": "SSD",
+      "kind": "abbreviation",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "qattiq holatdagi toʻplagich"
+    },
+    {
+      "term": "API",
+      "language": "en",
+      "translation": "API",
+      "kind": "abbreviation",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "dasturiy interfeys"
+    },
+    {
+      "term": "SDK",
+      "language": "en",
+      "translation": "SDK",
+      "kind": "abbreviation",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "dasturiy ishlanmalar toʻplami"
+    },
+    {
+      "term": "VPN",
+      "language": "en",
+      "translation": "VPN",
+      "kind": "abbreviation",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "virtual xususiy tarmoq"
+    },
+    {
+      "term": "5G",
+      "language": "en",
+      "translation": "5G",
+      "kind": "abbreviation",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "beshinchi avlod mobil aloqasi"
+    },
+    {
+      "term": "IPO",
+      "language": "en",
+      "translation": "IPO",
+      "kind": "abbreviation",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "aksiyalarni birjada birlamchi ommaviy joylashtirish"
+    },
+    {
+      "term": "MVP",
+      "language": "en",
+      "translation": "MVP",
+      "kind": "abbreviation",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "kibersportda — eng qimmatli oʻyinchi"
+    },
+    {
+      "term": "DLC",
+      "language": "en",
+      "translation": "DLC",
+      "kind": "abbreviation",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "oʻyin uchun qoʻshimcha yuklab olinadigan kontent"
+    },
+    {
+      "term": "AR",
+      "language": "en",
+      "translation": "AR",
+      "kind": "abbreviation",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "toʻldirilgan reallik"
+    },
+    {
+      "term": "VR",
+      "language": "en",
+      "translation": "VR",
+      "kind": "abbreviation",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "virtual reallik"
+    },
+    {
+      "term": "OLED",
+      "language": "en",
+      "translation": "OLED",
+      "kind": "abbreviation",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "displey texnologiyasi"
+    },
+    {
+      "term": "IoT",
+      "language": "en",
+      "translation": "IoT",
+      "kind": "abbreviation",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "buyumlar interneti"
+    },
+    {
+      "term": "artificial intelligence",
+      "language": "en",
+      "translation": "sunʼiy intellekt",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "machine learning",
+      "language": "en",
+      "translation": "mashinali oʻqitish",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "deep learning",
+      "language": "en",
+      "translation": "chuqur oʻqitish",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "neural network",
+      "language": "en",
+      "translation": "neyron tarmoq",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false,
+      "note": "Qisqa shakli: neyrotarmoq"
+    },
+    {
+      "term": "large language model",
+      "language": "en",
+      "translation": "katta til modeli",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false,
+      "note": "Qisqartma: LLM"
+    },
+    {
+      "term": "generative AI",
+      "language": "en",
+      "translation": "generativ sunʼiy intellekt",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "chatbot",
+      "language": "en",
+      "translation": "chat-bot",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "AI agent",
+      "language": "en",
+      "translation": "AI agent",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false,
+      "note": "Vazifalarni mustaqil bajaradigan AI dasturi"
+    },
+    {
+      "term": "prompt",
+      "language": "en",
+      "translation": "prompt",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false,
+      "note": "Birinchi uchrashida: «prompt (AI modelga soʻrov)»"
+    },
+    {
+      "term": "dataset",
+      "language": "en",
+      "translation": "maʼlumotlar toʻplami",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "training",
+      "language": "en",
+      "translation": "oʻqitish",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false,
+      "note": "AI modelini oʻqitish maʼnosida"
+    },
+    {
+      "term": "inference",
+      "language": "en",
+      "translation": "inferens",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false,
+      "note": "Oʻqitilgan modelning javob chiqarishi"
+    },
+    {
+      "term": "fine-tuning",
+      "language": "en",
+      "translation": "qoʻshimcha oʻqitish",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "open source",
+      "language": "en",
+      "translation": "ochiq kodli",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "open-weight model",
+      "language": "en",
+      "translation": "ochiq vaznli model",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "source code",
+      "language": "en",
+      "translation": "manba kodi",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "token",
+      "language": "en",
+      "translation": "token",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "context window",
+      "language": "en",
+      "translation": "kontekst oynasi",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "hallucination",
+      "language": "en",
+      "translation": "gallyutsinatsiya",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false,
+      "note": "AI modelining oʻylab topilgan javobi"
+    },
+    {
+      "term": "benchmark",
+      "language": "en",
+      "translation": "benchmark",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false,
+      "note": "Birinchi uchrashida: «benchmark (samaradorlik testi)»"
+    },
+    {
+      "term": "computer vision",
+      "language": "en",
+      "translation": "kompyuter koʻrishi",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "speech recognition",
+      "language": "en",
+      "translation": "nutqni tanib olish",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "deepfake",
+      "language": "en",
+      "translation": "dipfeyk",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "robotics",
+      "language": "en",
+      "translation": "robototexnika",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "self-driving car",
+      "language": "en",
+      "translation": "oʻzi boshqariladigan avtomobil",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "smartphone",
+      "language": "en",
+      "translation": "smartfon",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "laptop",
+      "language": "en",
+      "translation": "noutbuk",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "tablet",
+      "language": "en",
+      "translation": "planshet",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "smartwatch",
+      "language": "en",
+      "translation": "aqlli soat",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "wearable",
+      "language": "en",
+      "translation": "taqiladigan qurilma",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "foldable",
+      "language": "en",
+      "translation": "buklanadigan smartfon",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "headphones",
+      "language": "en",
+      "translation": "quloqchinlar",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "processor",
+      "language": "en",
+      "translation": "protsessor",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "chip",
+      "language": "en",
+      "translation": "chip",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "chipmaker",
+      "language": "en",
+      "translation": "chip ishlab chiqaruvchi",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "semiconductor",
+      "language": "en",
+      "translation": "yarimoʻtkazgich",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "graphics card",
+      "language": "en",
+      "translation": "videokarta",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "storage",
+      "language": "en",
+      "translation": "xotira",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false,
+      "note": "Qurilmaning ichki xotirasi"
+    },
+    {
+      "term": "battery",
+      "language": "en",
+      "translation": "batareya",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "battery life",
+      "language": "en",
+      "translation": "avtonom ishlash vaqti",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "fast charging",
+      "language": "en",
+      "translation": "tezkor quvvatlash",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "wireless charging",
+      "language": "en",
+      "translation": "simsiz quvvatlash",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "display",
+      "language": "en",
+      "translation": "displey",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "refresh rate",
+      "language": "en",
+      "translation": "ekran yangilanish chastotasi",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "resolution",
+      "language": "en",
+      "translation": "tasvir aniqligi",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false,
+      "note": "Ekran yoki kamera maʼnosida"
+    },
+    {
+      "term": "update",
+      "language": "en",
+      "translation": "yangilanish",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "release",
+      "language": "en",
+      "translation": "reliz",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false,
+      "note": "Kontekstga qarab: «chiqarilish»"
+    },
+    {
+      "term": "beta",
+      "language": "en",
+      "translation": "beta-versiya",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "feature",
+      "language": "en",
+      "translation": "funksiya",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false,
+      "note": "Kontekstga qarab: «imkoniyat»"
+    },
+    {
+      "term": "app",
+      "language": "en",
+      "translation": "ilova",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "software",
+      "language": "en",
+      "translation": "dasturiy taʼminot",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "hardware",
+      "language": "en",
+      "translation": "apparat taʼminoti",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false,
+      "note": "Kontekstga qarab: «qurilma», «jihoz»"
+    },
+    {
+      "term": "operating system",
+      "language": "en",
+      "translation": "operatsion tizim",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "browser",
+      "language": "en",
+      "translation": "brauzer",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "search engine",
+      "language": "en",
+      "translation": "qidiruv tizimi",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "cloud",
+      "language": "en",
+      "translation": "bulut",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "cloud computing",
+      "language": "en",
+      "translation": "bulutli hisoblash",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "data center",
+      "language": "en",
+      "translation": "maʼlumotlar markazi",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "database",
+      "language": "en",
+      "translation": "maʼlumotlar bazasi",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "framework",
+      "language": "en",
+      "translation": "freymvork",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "library",
+      "language": "en",
+      "translation": "kutubxona",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false,
+      "note": "Dasturlashda"
+    },
+    {
+      "term": "programming language",
+      "language": "en",
+      "translation": "dasturlash tili",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "developer",
+      "language": "en",
+      "translation": "dasturchi",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false,
+      "note": "Kompaniya haqida: «ishlab chiquvchi»"
+    },
+    {
+      "term": "bug",
+      "language": "en",
+      "translation": "xato",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "patch",
+      "language": "en",
+      "translation": "patch",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false,
+      "note": "Birinchi uchrashida: «patch (tuzatish yangilanishi)»"
+    },
+    {
+      "term": "user",
+      "language": "en",
+      "translation": "foydalanuvchi",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "user interface",
+      "language": "en",
+      "translation": "foydalanuvchi interfeysi",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "cybersecurity",
+      "language": "en",
+      "translation": "kiberxavfsizlik",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "cyberattack",
+      "language": "en",
+      "translation": "kiberhujum",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "data breach",
+      "language": "en",
+      "translation": "maʼlumotlar sizib chiqishi",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "vulnerability",
+      "language": "en",
+      "translation": "zaiflik",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "zero-day",
+      "language": "en",
+      "translation": "nol kun zaifligi",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false,
+      "note": "Ishlab chiquvchiga hali maʼlum boʻlmagan zaiflik"
+    },
+    {
+      "term": "exploit",
+      "language": "en",
+      "translation": "eksployt",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "malware",
+      "language": "en",
+      "translation": "zararli dastur",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "ransomware",
+      "language": "en",
+      "translation": "toʻlov talab qiluvchi zararli dastur",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "phishing",
+      "language": "en",
+      "translation": "fishing",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "hacker",
+      "language": "en",
+      "translation": "xaker",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "password",
+      "language": "en",
+      "translation": "parol",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "two-factor authentication",
+      "language": "en",
+      "translation": "ikki bosqichli autentifikatsiya",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "encryption",
+      "language": "en",
+      "translation": "shifrlash",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "end-to-end encryption",
+      "language": "en",
+      "translation": "uchdan-uchgacha shifrlash",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "privacy",
+      "language": "en",
+      "translation": "maxfiylik",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "personal data",
+      "language": "en",
+      "translation": "shaxsga doir maʼlumotlar",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "startup",
+      "language": "en",
+      "translation": "startap",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "funding round",
+      "language": "en",
+      "translation": "investitsiya raundi",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "venture capital",
+      "language": "en",
+      "translation": "venchur kapital",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "valuation",
+      "language": "en",
+      "translation": "kompaniya qiymati",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false,
+      "note": "Baholash natijasidagi qiymat"
+    },
+    {
+      "term": "acquisition",
+      "language": "en",
+      "translation": "sotib olish",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false,
+      "note": "Kompaniyani sotib olish"
+    },
+    {
+      "term": "merger",
+      "language": "en",
+      "translation": "qoʻshilish",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false,
+      "note": "Kompaniyalar qoʻshilishi"
+    },
+    {
+      "term": "market cap",
+      "language": "en",
+      "translation": "bozor kapitallashuvi",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "revenue",
+      "language": "en",
+      "translation": "tushum",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "subscription",
+      "language": "en",
+      "translation": "obuna",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "layoffs",
+      "language": "en",
+      "translation": "ishdan boʻshatishlar",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "antitrust",
+      "language": "en",
+      "translation": "monopoliyaga qarshi",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "regulation",
+      "language": "en",
+      "translation": "tartibga solish",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "smart home",
+      "language": "en",
+      "translation": "aqlli uy",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "Internet of Things",
+      "language": "en",
+      "translation": "buyumlar interneti",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false,
+      "note": "Qisqartma: IoT"
+    },
+    {
+      "term": "satellite internet",
+      "language": "en",
+      "translation": "sunʼiy yoʻldosh interneti",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "electric vehicle",
+      "language": "en",
+      "translation": "elektromobil",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "blockchain",
+      "language": "en",
+      "translation": "blokcheyn",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "cryptocurrency",
+      "language": "en",
+      "translation": "kriptovalyuta",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "bitcoin",
+      "language": "en",
+      "translation": "bitkoin",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false,
+      "note": "Kichik harf bilan yoziladi"
+    },
+    {
+      "term": "esports",
+      "language": "en",
+      "translation": "kibersport",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "tournament",
+      "language": "en",
+      "translation": "turnir",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "match",
+      "language": "en",
+      "translation": "uchrashuv",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false,
+      "note": "Kibersportda"
+    },
+    {
+      "term": "map",
+      "language": "en",
+      "translation": "xarita",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false,
+      "note": "Kibersportda (CS2, Valorant)"
+    },
+    {
+      "term": "roster",
+      "language": "en",
+      "translation": "tarkib",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false,
+      "note": "Jamoa tarkibi"
+    },
+    {
+      "term": "player",
+      "language": "en",
+      "translation": "oʻyinchi",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "coach",
+      "language": "en",
+      "translation": "murabbiy",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "prize pool",
+      "language": "en",
+      "translation": "mukofot jamgʻarmasi",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "grand final",
+      "language": "en",
+      "translation": "grand final",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "playoffs",
+      "language": "en",
+      "translation": "pley-off",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "group stage",
+      "language": "en",
+      "translation": "guruh bosqichi",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "upper bracket",
+      "language": "en",
+      "translation": "yuqori setka",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "lower bracket",
+      "language": "en",
+      "translation": "quyi setka",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "transfer",
+      "language": "en",
+      "translation": "transfer",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "major",
+      "language": "en",
+      "translation": "major",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false,
+      "note": "CS2 dagi eng nufuzli turnirlar: «major turniri»"
+    },
+    {
+      "term": "patch notes",
+      "language": "en",
+      "translation": "yangilanish tavsifi",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "console",
+      "language": "en",
+      "translation": "oʻyin konsoli",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "video game",
+      "language": "en",
+      "translation": "video oʻyin",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "game developer",
+      "language": "en",
+      "translation": "oʻyin ishlab chiquvchisi",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "publisher",
+      "language": "en",
+      "translation": "noshir",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false,
+      "note": "Oʻyinlar noshiri"
+    },
+    {
+      "term": "early access",
+      "language": "en",
+      "translation": "erta kirish",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "trailer",
+      "language": "en",
+      "translation": "treyler",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "streamer",
+      "language": "en",
+      "translation": "strimer",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "livestream",
+      "language": "en",
+      "translation": "jonli efir",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "gameplay",
+      "language": "en",
+      "translation": "geympley",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "remake",
+      "language": "en",
+      "translation": "remeyk",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "open world",
+      "language": "en",
+      "translation": "ochiq dunyo",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "искусственный интеллект",
+      "language": "ru",
+      "translation": "sunʼiy intellekt",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "нейросеть",
+      "language": "ru",
+      "translation": "neyrotarmoq",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "машинное обучение",
+      "language": "ru",
+      "translation": "mashinali oʻqitish",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "языковая модель",
+      "language": "ru",
+      "translation": "til modeli",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "чат-бот",
+      "language": "ru",
+      "translation": "chat-bot",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "дипфейк",
+      "language": "ru",
+      "translation": "dipfeyk",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "смартфон",
+      "language": "ru",
+      "translation": "smartfon",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "ноутбук",
+      "language": "ru",
+      "translation": "noutbuk",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "видеокарта",
+      "language": "ru",
+      "translation": "videokarta",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "процессор",
+      "language": "ru",
+      "translation": "protsessor",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "полупроводник",
+      "language": "ru",
+      "translation": "yarimoʻtkazgich",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "аккумулятор",
+      "language": "ru",
+      "translation": "akkumulyator",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "быстрая зарядка",
+      "language": "ru",
+      "translation": "tezkor quvvatlash",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "разработчик",
+      "language": "ru",
+      "translation": "dasturchi",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false,
+      "note": "Kompaniya haqida: «ishlab chiquvchi»"
+    },
+    {
+      "term": "приложение",
+      "language": "ru",
+      "translation": "ilova",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "обновление",
+      "language": "ru",
+      "translation": "yangilanish",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "ПО",
+      "language": "ru",
+      "translation": "dasturiy taʼminot",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false,
+      "note": "Ruscha qisqartma (programmnoye obespecheniye)"
+    },
+    {
+      "term": "исходный код",
+      "language": "ru",
+      "translation": "manba kodi",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "открытый исходный код",
+      "language": "ru",
+      "translation": "ochiq kodli",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "фреймворк",
+      "language": "ru",
+      "translation": "freymvork",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "язык программирования",
+      "language": "ru",
+      "translation": "dasturlash tili",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "облако",
+      "language": "ru",
+      "translation": "bulut",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "ЦОД",
+      "language": "ru",
+      "translation": "maʼlumotlar markazi",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false,
+      "note": "Ruscha qisqartma (sentr obrabotki dannix)"
+    },
+    {
+      "term": "утечка данных",
+      "language": "ru",
+      "translation": "maʼlumotlar sizib chiqishi",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "уязвимость",
+      "language": "ru",
+      "translation": "zaiflik",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "кибератака",
+      "language": "ru",
+      "translation": "kiberhujum",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "вредоносное ПО",
+      "language": "ru",
+      "translation": "zararli dastur",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "мошенничество",
+      "language": "ru",
+      "translation": "firibgarlik",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "хакер",
+      "language": "ru",
+      "translation": "xaker",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "пароль",
+      "language": "ru",
+      "translation": "parol",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "шифрование",
+      "language": "ru",
+      "translation": "shifrlash",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "санкции",
+      "language": "ru",
+      "translation": "sanksiyalar",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "блокировка",
+      "language": "ru",
+      "translation": "bloklash",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "криптовалюта",
+      "language": "ru",
+      "translation": "kriptovalyuta",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "стартап",
+      "language": "ru",
+      "translation": "startap",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "инвестиции",
+      "language": "ru",
+      "translation": "investitsiyalar",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "киберспорт",
+      "language": "ru",
+      "translation": "kibersport",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "турнир",
+      "language": "ru",
+      "translation": "turnir",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "релиз",
+      "language": "ru",
+      "translation": "reliz",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    },
+    {
+      "term": "умный дом",
+      "language": "ru",
+      "translation": "aqlli uy",
+      "kind": "term",
+      "doNotTranslate": false,
+      "doNotTransliterate": false
+    }
+  ]
+}
