@@ -34,6 +34,10 @@ services:
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
+      # Payload clientUploads: brauzer faylni imzolangan URL bilan to'g'ridan-to'g'ri PUT qiladi —
+      # S3 API CORS ruxsati kerak. MinIO'da bucket CORS API yo'q, ruxsat server darajasida beriladi
+      # (lokal dev uchun barcha origin'lar). R2 uchun: docs/runbooks/r2-cors.md
+      MINIO_API_CORS_ALLOW_ORIGIN: '*'
     ports:
       - '${BLOG_ODYA_MINIO_PORT:-9010}:9000'
       - '${BLOG_ODYA_MINIO_CONSOLE_PORT:-9011}:9001'
