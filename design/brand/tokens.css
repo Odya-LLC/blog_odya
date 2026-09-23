@@ -1,0 +1,98 @@
+/* Generatsiya qilingan: design/brand/scripts/build.mjs (manba — tokens.json). Qo'lda tahrirlamang. */
+/* Faol aksent: blue. Boshqa variant: <html data-accent="violet">. */
+
+:root {
+  --font-sans:
+    'Inter', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  --font-display: 'Inter Display', var(--font-sans);
+  --color-bg: #ffffff;
+  --color-surface: #fafafa;
+  --color-surface-muted: #f4f4f5;
+  --color-border: #e4e4e7;
+  --color-text: #0b0b0f;
+  --color-text-muted: #52525b;
+  --color-text-subtle: #71717a;
+  --color-accent: #2563eb;
+  --color-accent-hover: #1d4ed8;
+  --color-accent-fg: #ffffff;
+  --color-accent-soft: #eff6ff;
+  --color-accent-soft-fg: #1d4ed8;
+  --cat-suniy-intellekt-solid: #52397f;
+  --cat-texnologiyalar-solid: #39577f;
+  --cat-gadjetlar-solid: #39737f;
+  --cat-dasturlash-solid: #397f59;
+  --cat-kiberxavfsizlik-solid: #7f3940;
+  --cat-kibersport-solid: #7f5239;
+  --cat-oyinlar-solid: #7f396a;
+  --cat-startaplar-solid: #7f6739;
+  --cat-ilm-fan-solid: #597f39;
+  --cat-suniy-intellekt-bg: #eee9f7;
+  --cat-suniy-intellekt-fg: #432a6f;
+  --cat-texnologiyalar-bg: #e9eff7;
+  --cat-texnologiyalar-fg: #2a486f;
+  --cat-gadjetlar-bg: #e9f4f7;
+  --cat-gadjetlar-fg: #2a636f;
+  --cat-dasturlash-bg: #e9f7ef;
+  --cat-dasturlash-fg: #2a6f4a;
+  --cat-kiberxavfsizlik-bg: #f7e9ea;
+  --cat-kiberxavfsizlik-fg: #6f2a31;
+  --cat-kibersport-bg: #f7eee9;
+  --cat-kibersport-fg: #6f432a;
+  --cat-oyinlar-bg: #f7e9f2;
+  --cat-oyinlar-fg: #6f2a5a;
+  --cat-startaplar-bg: #f7f2e9;
+  --cat-startaplar-fg: #6f582a;
+  --cat-ilm-fan-bg: #eff7e9;
+  --cat-ilm-fan-fg: #4a6f2a;
+}
+
+[data-accent='violet'] {
+  --color-accent: #7c3aed;
+  --color-accent-hover: #6d28d9;
+  --color-accent-fg: #ffffff;
+  --color-accent-soft: #f5f3ff;
+  --color-accent-soft-fg: #6d28d9;
+}
+
+.dark,
+[data-theme='dark'] {
+  --color-bg: #0b0b0f;
+  --color-surface: #18181b;
+  --color-surface-muted: #27272a;
+  --color-border: #27272a;
+  --color-text: #f4f4f5;
+  --color-text-muted: #a1a1aa;
+  --color-text-subtle: #8b8b94;
+  --color-accent: #60a5fa;
+  --color-accent-hover: #93c5fd;
+  --color-accent-fg: #0b0b0f;
+  --color-accent-soft: #172554;
+  --color-accent-soft-fg: #93c5fd;
+  --cat-suniy-intellekt-bg: #292235;
+  --cat-suniy-intellekt-fg: #bfa8e6;
+  --cat-texnologiyalar-bg: #222a35;
+  --cat-texnologiyalar-fg: #a8c3e6;
+  --cat-gadjetlar-bg: #223235;
+  --cat-gadjetlar-fg: #a8dbe6;
+  --cat-dasturlash-bg: #22352b;
+  --cat-dasturlash-fg: #a8e6c5;
+  --cat-kiberxavfsizlik-bg: #352224;
+  --cat-kiberxavfsizlik-fg: #e6a8ae;
+  --cat-kibersport-bg: #352922;
+  --cat-kibersport-fg: #e6bfa8;
+  --cat-oyinlar-bg: #35222f;
+  --cat-oyinlar-fg: #e6a8d3;
+  --cat-startaplar-bg: #352f22;
+  --cat-startaplar-fg: #e6d1a8;
+  --cat-ilm-fan-bg: #2b3522;
+  --cat-ilm-fan-fg: #c5e6a8;
+}
+
+.dark[data-accent='violet'],
+[data-theme='dark'][data-accent='violet'] {
+  --color-accent: #a78bfa;
+  --color-accent-hover: #c4b5fd;
+  --color-accent-fg: #0b0b0f;
+  --color-accent-soft: #2e1065;
+  --color-accent-soft-fg: #c4b5fd;
+}
