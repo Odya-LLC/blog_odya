@@ -1,0 +1,9 @@
+packages:
+  - apps/*
+  - packages/*
+
+# Build skriptlariga ruxsat berilgan paketlar (pnpm 11)
+allowBuilds:
+  esbuild: true
+  sharp: true
+  unrs-resolver: true

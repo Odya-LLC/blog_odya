@@ -1,0 +1,18 @@
+{
+  "name": "@blog-odya/shared",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Umumiy kod: slugify-uz, translit (lotin-kirill adapteri), umumiy tiplar",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "vitest": "4.0.18"
+  }
+}
