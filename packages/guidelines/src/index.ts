@@ -1,13 +1,18 @@
 /**
- * Tahririyat ko'rsatmalari (stil qo'llanma, glossariy, SEO qoidalari).
- * Mazmuni M0-05 (OBLOG-6) vazifasida to'ldiriladi va MCP server orqali
- * prompt/resource sifatida beriladi (TZ §5.2).
+ * Tahririyat ko'rsatmalari (stil qo'llanma, mualliflik va SEO qoidalari, chiqish sxemasi),
+ * glossariy, transliteratsiya istisnolari va huquqiy sahifalar matni.
+ * MCP server ularni prompt/resource sifatida beradi (TZ §5.2, §6.3); seed'lar M1-02/M1-03 da
+ * kolleksiyalarga yuklanadi.
  */
-export interface Guideline {
-  /** MCP resource identifikatori, masalan `guidelines://style` */
-  uri: string
-  title: string
-  markdown: string
-}
+import glossaryJson from '../glossary.seed.json' with { type: 'json' }
+import translitJson from '../translit-exceptions.seed.json' with { type: 'json' }
+import { glossarySeedSchema, translitExceptionsSeedSchema } from './schemas'
 
-export const guidelines: readonly Guideline[] = []
+export * from './schemas'
+export * from './docs'
+
+/** Glossariy seed (Zod bilan tekshirilgan). */
+export const glossarySeed = glossarySeedSchema.parse(glossaryJson)
+
+/** Transliteratsiya istisnolari seed (Zod bilan tekshirilgan). */
+export const translitExceptionsSeed = translitExceptionsSeedSchema.parse(translitJson)

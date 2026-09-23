@@ -1,0 +1,2095 @@
+{
+  "version": "1.0.0",
+  "updatedAt": "2026-09-23",
+  "description": "Lotin → kirill transliteratsiya istisnolari (boshlangʻich roʻyxat, TZ §3.6, §10.9). Adapter tartibi: avval whole_word (butun soʻz), keyin eng uzun prefix mosligi; katta-kichik harf farqlanmaydi, natijada asl soʻzning bosh harfi saqlanadi.",
+  "items": [
+    {
+      "latin": "yanvar",
+      "cyrillic": "январь",
+      "matchType": "whole_word",
+      "note": "Oy nomi: soʻz oxirida yumshoq belgi (ь)"
+    },
+    {
+      "latin": "fevral",
+      "cyrillic": "февраль",
+      "matchType": "whole_word",
+      "note": "Oy nomi: soʻz oxirida yumshoq belgi (ь)"
+    },
+    {
+      "latin": "aprel",
+      "cyrillic": "апрель",
+      "matchType": "whole_word",
+      "note": "Oy nomi: soʻz oxirida yumshoq belgi (ь)"
+    },
+    {
+      "latin": "iyun",
+      "cyrillic": "июнь",
+      "matchType": "whole_word",
+      "note": "Oy nomi: soʻz oxirida yumshoq belgi (ь)"
+    },
+    {
+      "latin": "iyul",
+      "cyrillic": "июль",
+      "matchType": "whole_word",
+      "note": "Oy nomi: soʻz oxirida yumshoq belgi (ь)"
+    },
+    {
+      "latin": "sentabr",
+      "cyrillic": "сентябрь",
+      "matchType": "whole_word",
+      "note": "Oy nomi: soʻz oxirida yumshoq belgi (ь)"
+    },
+    {
+      "latin": "oktabr",
+      "cyrillic": "октябрь",
+      "matchType": "whole_word",
+      "note": "Oy nomi: soʻz oxirida yumshoq belgi (ь)"
+    },
+    {
+      "latin": "noyabr",
+      "cyrillic": "ноябрь",
+      "matchType": "whole_word",
+      "note": "Oy nomi: soʻz oxirida yumshoq belgi (ь)"
+    },
+    {
+      "latin": "dekabr",
+      "cyrillic": "декабрь",
+      "matchType": "whole_word",
+      "note": "Oy nomi: soʻz oxirida yumshoq belgi (ь)"
+    },
+    {
+      "latin": "sentyabr",
+      "cyrillic": "сентябрь",
+      "matchType": "whole_word",
+      "note": "Oy nomi: soʻz oxirida yumshoq belgi (ь)"
+    },
+    {
+      "latin": "oktyabr",
+      "cyrillic": "октябрь",
+      "matchType": "whole_word",
+      "note": "Oy nomi: soʻz oxirida yumshoq belgi (ь)"
+    },
+    {
+      "latin": "sentab",
+      "cyrillic": "сентяб",
+      "matchType": "prefix",
+      "note": "Oy nomi oʻzagi: qoʻshimchali shakllar uchun (sentabrda → сентябрда); asosiy shakl whole_word yozuvidan olinadi"
+    },
+    {
+      "latin": "oktab",
+      "cyrillic": "октяб",
+      "matchType": "prefix",
+      "note": "Oy nomi oʻzagi: qoʻshimchali shakllar uchun (sentabrda → сентябрда); asosiy shakl whole_word yozuvidan olinadi"
+    },
+    {
+      "latin": "informatsiya",
+      "cyrillic": "информация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "operatsiya",
+      "cyrillic": "операция",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "operatsion",
+      "cyrillic": "операцион",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "integratsiya",
+      "cyrillic": "интеграция",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "optimizatsiya",
+      "cyrillic": "оптимизация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "avtomatizatsiya",
+      "cyrillic": "автоматизация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "registratsiya",
+      "cyrillic": "регистрация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "prezentatsiya",
+      "cyrillic": "презентация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "konfiguratsiya",
+      "cyrillic": "конфигурация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "migratsiya",
+      "cyrillic": "миграция",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "lokalizatsiya",
+      "cyrillic": "локализация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "transliteratsiya",
+      "cyrillic": "транслитерация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "sivilizatsiya",
+      "cyrillic": "цивилизация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "tsivilizatsiya",
+      "cyrillic": "цивилизация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "modernizatsiya",
+      "cyrillic": "модернизация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "autentifikatsiya",
+      "cyrillic": "аутентификация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "avtorizatsiya",
+      "cyrillic": "авторизация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "verifikatsiya",
+      "cyrillic": "верификация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "identifikatsiya",
+      "cyrillic": "идентификация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "klassifikatsiya",
+      "cyrillic": "классификация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "sertifikatsiya",
+      "cyrillic": "сертификация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "kommunikatsiya",
+      "cyrillic": "коммуникация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "investitsiya",
+      "cyrillic": "инвестиция",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "kompensatsiya",
+      "cyrillic": "компенсация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "korporatsiya",
+      "cyrillic": "корпорация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "federatsiya",
+      "cyrillic": "федерация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "dokumentatsiya",
+      "cyrillic": "документация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "animatsiya",
+      "cyrillic": "анимация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "generatsiya",
+      "cyrillic": "генерация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "kompilyatsiya",
+      "cyrillic": "компиляция",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "innovatsiya",
+      "cyrillic": "инновация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "inflyatsiya",
+      "cyrillic": "инфляция",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "deflyatsiya",
+      "cyrillic": "дефляция",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "devalvatsiya",
+      "cyrillic": "девальвация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "konsultatsiya",
+      "cyrillic": "консультация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "koalitsiya",
+      "cyrillic": "коалиция",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "pozitsiya",
+      "cyrillic": "позиция",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "kompozitsiya",
+      "cyrillic": "композиция",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "oppozitsiya",
+      "cyrillic": "оппозиция",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "ekspozitsiya",
+      "cyrillic": "экспозиция",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "politsiya",
+      "cyrillic": "полиция",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "ekspeditsiya",
+      "cyrillic": "экспедиция",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "konstitutsiya",
+      "cyrillic": "конституция",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "adaptatsiya",
+      "cyrillic": "адаптация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "aviatsiya",
+      "cyrillic": "авиация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "kooperatsiya",
+      "cyrillic": "кооперация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "emigratsiya",
+      "cyrillic": "эмиграция",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "immigratsiya",
+      "cyrillic": "иммиграция",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "spetsifikatsiya",
+      "cyrillic": "спецификация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "kvalifikatsiya",
+      "cyrillic": "квалификация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "diskvalifikatsiya",
+      "cyrillic": "дисквалификация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "ratifikatsiya",
+      "cyrillic": "ратификация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "modifikatsiya",
+      "cyrillic": "модификация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "dotatsiya",
+      "cyrillic": "дотация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "dissertatsiya",
+      "cyrillic": "диссертация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "transformatsiya",
+      "cyrillic": "трансформация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "deformatsiya",
+      "cyrillic": "деформация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "konsolidatsiya",
+      "cyrillic": "консолидация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "assotsiatsiya",
+      "cyrillic": "ассоциация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "eskalatsiya",
+      "cyrillic": "эскалация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "degradatsiya",
+      "cyrillic": "деградация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "nominatsiya",
+      "cyrillic": "номинация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "revolyutsiya",
+      "cyrillic": "революция",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "evolyutsiya",
+      "cyrillic": "эволюция",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "kapitalizatsiya",
+      "cyrillic": "капитализация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "sinxronizatsiya",
+      "cyrillic": "синхронизация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "vizualizatsiya",
+      "cyrillic": "визуализация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "virtualizatsiya",
+      "cyrillic": "виртуализация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "monetizatsiya",
+      "cyrillic": "монетизация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "sensatsiya",
+      "cyrillic": "сенсация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "standartizatsiya",
+      "cyrillic": "стандартизация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "legalizatsiya",
+      "cyrillic": "легализация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "liberalizatsiya",
+      "cyrillic": "либерализация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "privatizatsiya",
+      "cyrillic": "приватизация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "reorganizatsiya",
+      "cyrillic": "реорганизация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "organizatsiya",
+      "cyrillic": "организация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "navigatsiya",
+      "cyrillic": "навигация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "radiatsiya",
+      "cyrillic": "радиация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "ventilyatsiya",
+      "cyrillic": "вентиляция",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "izolyatsiya",
+      "cyrillic": "изоляция",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "simulyatsiya",
+      "cyrillic": "симуляция",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "emulyatsiya",
+      "cyrillic": "эмуляция",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "manipulyatsiya",
+      "cyrillic": "манипуляция",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "regulyatsiya",
+      "cyrillic": "регуляция",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "populyatsiya",
+      "cyrillic": "популяция",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "akkreditatsiya",
+      "cyrillic": "аккредитация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "stabilizatsiya",
+      "cyrillic": "стабилизация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "mobilizatsiya",
+      "cyrillic": "мобилизация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "realizatsiya",
+      "cyrillic": "реализация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "konsentratsiya",
+      "cyrillic": "концентрация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "reputatsiya",
+      "cyrillic": "репутация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "rotatsiya",
+      "cyrillic": "ротация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "motivatsiya",
+      "cyrillic": "мотивация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "translyatsiya",
+      "cyrillic": "трансляция",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "demonstratsiya",
+      "cyrillic": "демонстрация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "administratsiya",
+      "cyrillic": "администрация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "fragmentatsiya",
+      "cyrillic": "фрагментация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "segmentatsiya",
+      "cyrillic": "сегментация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "interpretatsiya",
+      "cyrillic": "интерпретация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "annotatsiya",
+      "cyrillic": "аннотация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "mutatsiya",
+      "cyrillic": "мутация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "konvertatsiya",
+      "cyrillic": "конвертация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "indeksatsiya",
+      "cyrillic": "индексация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "deklaratsiya",
+      "cyrillic": "декларация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "delegatsiya",
+      "cyrillic": "делегация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "situatsiya",
+      "cyrillic": "ситуация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "personalizatsiya",
+      "cyrillic": "персонализация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "geymifikatsiya",
+      "cyrillic": "геймификация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "reabilitatsiya",
+      "cyrillic": "реабилитация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "vaksinatsiya",
+      "cyrillic": "вакцинация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "ratsionalizatsiya",
+      "cyrillic": "рационализация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "gallyutsinatsiya",
+      "cyrillic": "галлюцинация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "oriyentatsiya",
+      "cyrillic": "ориентация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "kalkulyatsiya",
+      "cyrillic": "калькуляция",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "multiplikatsiya",
+      "cyrillic": "мультипликация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "falsifikatsiya",
+      "cyrillic": "фальсификация",
+      "matchType": "prefix",
+      "note": "ц: -tsiya → -ция (unlidan keyin)"
+    },
+    {
+      "latin": "stansiya",
+      "cyrillic": "станция",
+      "matchType": "prefix",
+      "note": "ц: undoshdan keyin s → ц (-nsiya, -ksiya, -psiya va boshq.)"
+    },
+    {
+      "latin": "distansiya",
+      "cyrillic": "дистанция",
+      "matchType": "prefix",
+      "note": "ц: undoshdan keyin s → ц (-nsiya, -ksiya, -psiya va boshq.)"
+    },
+    {
+      "latin": "distansion",
+      "cyrillic": "дистанцион",
+      "matchType": "prefix",
+      "note": "ц: undoshdan keyin s → ц (-nsiya, -ksiya, -psiya va boshq.)"
+    },
+    {
+      "latin": "instansiya",
+      "cyrillic": "инстанция",
+      "matchType": "prefix",
+      "note": "ц: undoshdan keyin s → ц (-nsiya, -ksiya, -psiya va boshq.)"
+    },
+    {
+      "latin": "konferensiya",
+      "cyrillic": "конференция",
+      "matchType": "prefix",
+      "note": "ц: undoshdan keyin s → ц (-nsiya, -ksiya, -psiya va boshq.)"
+    },
+    {
+      "latin": "tendensiya",
+      "cyrillic": "тенденция",
+      "matchType": "prefix",
+      "note": "ц: undoshdan keyin s → ц (-nsiya, -ksiya, -psiya va boshq.)"
+    },
+    {
+      "latin": "kompetensiya",
+      "cyrillic": "компетенция",
+      "matchType": "prefix",
+      "note": "ц: undoshdan keyin s → ц (-nsiya, -ksiya, -psiya va boshq.)"
+    },
+    {
+      "latin": "rezidensiya",
+      "cyrillic": "резиденция",
+      "matchType": "prefix",
+      "note": "ц: undoshdan keyin s → ц (-nsiya, -ksiya, -psiya va boshq.)"
+    },
+    {
+      "latin": "kvitansiya",
+      "cyrillic": "квитанция",
+      "matchType": "prefix",
+      "note": "ц: undoshdan keyin s → ц (-nsiya, -ksiya, -psiya va boshq.)"
+    },
+    {
+      "latin": "sanksiya",
+      "cyrillic": "санкция",
+      "matchType": "prefix",
+      "note": "ц: undoshdan keyin s → ц (-nsiya, -ksiya, -psiya va boshq.)"
+    },
+    {
+      "latin": "funksiya",
+      "cyrillic": "функция",
+      "matchType": "prefix",
+      "note": "ц: undoshdan keyin s → ц (-nsiya, -ksiya, -psiya va boshq.)"
+    },
+    {
+      "latin": "funksional",
+      "cyrillic": "функционал",
+      "matchType": "prefix",
+      "note": "ц: undoshdan keyin s → ц (-nsiya, -ksiya, -psiya va boshq.)"
+    },
+    {
+      "latin": "aksiya",
+      "cyrillic": "акция",
+      "matchType": "prefix",
+      "note": "ц: undoshdan keyin s → ц (-nsiya, -ksiya, -psiya va boshq.)"
+    },
+    {
+      "latin": "aksioner",
+      "cyrillic": "акционер",
+      "matchType": "prefix",
+      "note": "ц: undoshdan keyin s → ц (-nsiya, -ksiya, -psiya va boshq.)"
+    },
+    {
+      "latin": "auksion",
+      "cyrillic": "аукцион",
+      "matchType": "prefix",
+      "note": "ц: undoshdan keyin s → ц (-nsiya, -ksiya, -psiya va boshq.)"
+    },
+    {
+      "latin": "fraksiya",
+      "cyrillic": "фракция",
+      "matchType": "prefix",
+      "note": "ц: undoshdan keyin s → ц (-nsiya, -ksiya, -psiya va boshq.)"
+    },
+    {
+      "latin": "reaksiya",
+      "cyrillic": "реакция",
+      "matchType": "prefix",
+      "note": "ц: undoshdan keyin s → ц (-nsiya, -ksiya, -psiya va boshq.)"
+    },
+    {
+      "latin": "redaksiya",
+      "cyrillic": "редакция",
+      "matchType": "prefix",
+      "note": "ц: undoshdan keyin s → ц (-nsiya, -ksiya, -psiya va boshq.)"
+    },
+    {
+      "latin": "infeksiya",
+      "cyrillic": "инфекция",
+      "matchType": "prefix",
+      "note": "ц: undoshdan keyin s → ц (-nsiya, -ksiya, -psiya va boshq.)"
+    },
+    {
+      "latin": "kolleksiya",
+      "cyrillic": "коллекция",
+      "matchType": "prefix",
+      "note": "ц: undoshdan keyin s → ц (-nsiya, -ksiya, -psiya va boshq.)"
+    },
+    {
+      "latin": "leksiya",
+      "cyrillic": "лекция",
+      "matchType": "prefix",
+      "note": "ц: undoshdan keyin s → ц (-nsiya, -ksiya, -psiya va boshq.)"
+    },
+    {
+      "latin": "seksiya",
+      "cyrillic": "секция",
+      "matchType": "prefix",
+      "note": "ц: undoshdan keyin s → ц (-nsiya, -ksiya, -psiya va boshq.)"
+    },
+    {
+      "latin": "proyeksiya",
+      "cyrillic": "проекция",
+      "matchType": "prefix",
+      "note": "ц: undoshdan keyin s → ц (-nsiya, -ksiya, -psiya va boshq.)"
+    },
+    {
+      "latin": "konstruksiya",
+      "cyrillic": "конструкция",
+      "matchType": "prefix",
+      "note": "ц: undoshdan keyin s → ц (-nsiya, -ksiya, -psiya va boshq.)"
+    },
+    {
+      "latin": "instruksiya",
+      "cyrillic": "инструкция",
+      "matchType": "prefix",
+      "note": "ц: undoshdan keyin s → ц (-nsiya, -ksiya, -psiya va boshq.)"
+    },
+    {
+      "latin": "produksiya",
+      "cyrillic": "продукция",
+      "matchType": "prefix",
+      "note": "ц: undoshdan keyin s → ц (-nsiya, -ksiya, -psiya va boshq.)"
+    },
+    {
+      "latin": "tranzaksiya",
+      "cyrillic": "транзакция",
+      "matchType": "prefix",
+      "note": "ц: undoshdan keyin s → ц (-nsiya, -ksiya, -psiya va boshq.)"
+    },
+    {
+      "latin": "abstraksiya",
+      "cyrillic": "абстракция",
+      "matchType": "prefix",
+      "note": "ц: undoshdan keyin s → ц (-nsiya, -ksiya, -psiya va boshq.)"
+    },
+    {
+      "latin": "korreksiya",
+      "cyrillic": "коррекция",
+      "matchType": "prefix",
+      "note": "ц: undoshdan keyin s → ц (-nsiya, -ksiya, -psiya va boshq.)"
+    },
+    {
+      "latin": "yurisdiksiya",
+      "cyrillic": "юрисдикция",
+      "matchType": "prefix",
+      "note": "ц: undoshdan keyin s → ц (-nsiya, -ksiya, -psiya va boshq.)"
+    },
+    {
+      "latin": "seleksiya",
+      "cyrillic": "селекция",
+      "matchType": "prefix",
+      "note": "ц: undoshdan keyin s → ц (-nsiya, -ksiya, -psiya va boshq.)"
+    },
+    {
+      "latin": "konsepsiya",
+      "cyrillic": "концепция",
+      "matchType": "prefix",
+      "note": "ц: undoshdan keyin s → ц (-nsiya, -ksiya, -psiya va boshq.)"
+    },
+    {
+      "latin": "konsept",
+      "cyrillic": "концепт",
+      "matchType": "prefix",
+      "note": "ц: undoshdan keyin s → ц (-nsiya, -ksiya, -psiya va boshq.)"
+    },
+    {
+      "latin": "konsert",
+      "cyrillic": "концерт",
+      "matchType": "prefix",
+      "note": "ц: undoshdan keyin s → ц (-nsiya, -ksiya, -psiya va boshq.)"
+    },
+    {
+      "latin": "konsern",
+      "cyrillic": "концерн",
+      "matchType": "prefix",
+      "note": "ц: undoshdan keyin s → ц (-nsiya, -ksiya, -psiya va boshq.)"
+    },
+    {
+      "latin": "potensial",
+      "cyrillic": "потенциал",
+      "matchType": "prefix",
+      "note": "ц: undoshdan keyin s → ц (-nsiya, -ksiya, -psiya va boshq.)"
+    },
+    {
+      "latin": "prinsip",
+      "cyrillic": "принцип",
+      "matchType": "prefix",
+      "note": "ц: undoshdan keyin s → ц (-nsiya, -ksiya, -psiya va boshq.)"
+    },
+    {
+      "latin": "aksent",
+      "cyrillic": "акцент",
+      "matchType": "prefix",
+      "note": "ц: undoshdan keyin s → ц (-nsiya, -ksiya, -psiya va boshq.)"
+    },
+    {
+      "latin": "aksiz",
+      "cyrillic": "акциз",
+      "matchType": "prefix",
+      "note": "ц: undoshdan keyin s → ц (-nsiya, -ksiya, -psiya va boshq.)"
+    },
+    {
+      "latin": "vaksin",
+      "cyrillic": "вакцин",
+      "matchType": "prefix",
+      "note": "ц: undoshdan keyin s → ц (-nsiya, -ksiya, -psiya va boshq.)"
+    },
+    {
+      "latin": "konsorsium",
+      "cyrillic": "консорциум",
+      "matchType": "prefix",
+      "note": "ц: undoshdan keyin s → ц (-nsiya, -ksiya, -psiya va boshq.)"
+    },
+    {
+      "latin": "sentner",
+      "cyrillic": "центнер",
+      "matchType": "prefix",
+      "note": "ц: undoshdan keyin s → ц (-nsiya, -ksiya, -psiya va boshq.)"
+    },
+    {
+      "latin": "kalsiy",
+      "cyrillic": "кальций",
+      "matchType": "whole_word",
+      "note": "ц: undoshdan keyin s → ц (-nsiya, -ksiya, -psiya va boshq.)"
+    },
+    {
+      "latin": "litsenziya",
+      "cyrillic": "лицензия",
+      "matchType": "prefix",
+      "note": "ц: unlidan keyin ts → ц"
+    },
+    {
+      "latin": "litsey",
+      "cyrillic": "лицей",
+      "matchType": "prefix",
+      "note": "ц: unlidan keyin ts → ц"
+    },
+    {
+      "latin": "patsiyent",
+      "cyrillic": "пациент",
+      "matchType": "prefix",
+      "note": "ц: unlidan keyin ts → ц"
+    },
+    {
+      "latin": "koeffitsiyent",
+      "cyrillic": "коэффициент",
+      "matchType": "prefix",
+      "note": "ц: unlidan keyin ts → ц"
+    },
+    {
+      "latin": "spetsial",
+      "cyrillic": "специал",
+      "matchType": "prefix",
+      "note": "ц: unlidan keyin ts → ц"
+    },
+    {
+      "latin": "spetsifik",
+      "cyrillic": "специфик",
+      "matchType": "prefix",
+      "note": "ц: unlidan keyin ts → ц"
+    },
+    {
+      "latin": "spetseffekt",
+      "cyrillic": "спецэффект",
+      "matchType": "prefix",
+      "note": "ц: unlidan keyin ts → ц"
+    },
+    {
+      "latin": "sotsial",
+      "cyrillic": "социал",
+      "matchType": "prefix",
+      "note": "ц: unlidan keyin ts → ц"
+    },
+    {
+      "latin": "sotsiolog",
+      "cyrillic": "социолог",
+      "matchType": "prefix",
+      "note": "ц: unlidan keyin ts → ц"
+    },
+    {
+      "latin": "ratsion",
+      "cyrillic": "рацион",
+      "matchType": "prefix",
+      "note": "ц: unlidan keyin ts → ц"
+    },
+    {
+      "latin": "protsess",
+      "cyrillic": "процесс",
+      "matchType": "prefix",
+      "note": "ц: unlidan keyin ts → ц"
+    },
+    {
+      "latin": "protsent",
+      "cyrillic": "процент",
+      "matchType": "prefix",
+      "note": "ц: unlidan keyin ts → ц"
+    },
+    {
+      "latin": "protsedura",
+      "cyrillic": "процедура",
+      "matchType": "prefix",
+      "note": "ц: unlidan keyin ts → ц"
+    },
+    {
+      "latin": "emotsiya",
+      "cyrillic": "эмоция",
+      "matchType": "prefix",
+      "note": "ц: unlidan keyin ts → ц"
+    },
+    {
+      "latin": "emotsional",
+      "cyrillic": "эмоционал",
+      "matchType": "prefix",
+      "note": "ц: unlidan keyin ts → ц"
+    },
+    {
+      "latin": "munitsipal",
+      "cyrillic": "муниципал",
+      "matchType": "prefix",
+      "note": "ц: unlidan keyin ts → ц"
+    },
+    {
+      "latin": "petitsiya",
+      "cyrillic": "петиция",
+      "matchType": "prefix",
+      "note": "ц: unlidan keyin ts → ц"
+    },
+    {
+      "latin": "defitsit",
+      "cyrillic": "дефицит",
+      "matchType": "prefix",
+      "note": "ц: unlidan keyin ts → ц"
+    },
+    {
+      "latin": "initsiat",
+      "cyrillic": "инициат",
+      "matchType": "prefix",
+      "note": "ц: unlidan keyin ts → ц"
+    },
+    {
+      "latin": "retsept",
+      "cyrillic": "рецепт",
+      "matchType": "prefix",
+      "note": "ц: unlidan keyin ts → ц"
+    },
+    {
+      "latin": "retsenziya",
+      "cyrillic": "рецензия",
+      "matchType": "prefix",
+      "note": "ц: unlidan keyin ts → ц"
+    },
+    {
+      "latin": "dotsent",
+      "cyrillic": "доцент",
+      "matchType": "prefix",
+      "note": "ц: unlidan keyin ts → ц"
+    },
+    {
+      "latin": "mototsikl",
+      "cyrillic": "мотоцикл",
+      "matchType": "prefix",
+      "note": "ц: unlidan keyin ts → ц"
+    },
+    {
+      "latin": "kvadrotsikl",
+      "cyrillic": "квадроцикл",
+      "matchType": "prefix",
+      "note": "ц: unlidan keyin ts → ц"
+    },
+    {
+      "latin": "sirk",
+      "cyrillic": "цирк",
+      "matchType": "whole_word",
+      "note": "ц: soʻz boshida (s- yoki ts-)"
+    },
+    {
+      "latin": "tsirk",
+      "cyrillic": "цирк",
+      "matchType": "whole_word",
+      "note": "ц: soʻz boshida (s- yoki ts-)"
+    },
+    {
+      "latin": "sement",
+      "cyrillic": "цемент",
+      "matchType": "prefix",
+      "note": "ц: soʻz boshida (s- yoki ts-)"
+    },
+    {
+      "latin": "tsement",
+      "cyrillic": "цемент",
+      "matchType": "prefix",
+      "note": "ц: soʻz boshida (s- yoki ts-)"
+    },
+    {
+      "latin": "senzura",
+      "cyrillic": "цензура",
+      "matchType": "prefix",
+      "note": "ц: soʻz boshida (s- yoki ts-)"
+    },
+    {
+      "latin": "tsenzura",
+      "cyrillic": "цензура",
+      "matchType": "prefix",
+      "note": "ц: soʻz boshida (s- yoki ts-)"
+    },
+    {
+      "latin": "sikl",
+      "cyrillic": "цикл",
+      "matchType": "prefix",
+      "note": "ц: soʻz boshida (s- yoki ts-)"
+    },
+    {
+      "latin": "tsikl",
+      "cyrillic": "цикл",
+      "matchType": "prefix",
+      "note": "ц: soʻz boshida (s- yoki ts-)"
+    },
+    {
+      "latin": "silindr",
+      "cyrillic": "цилиндр",
+      "matchType": "prefix",
+      "note": "ц: soʻz boshida (s- yoki ts-)"
+    },
+    {
+      "latin": "tsilindr",
+      "cyrillic": "цилиндр",
+      "matchType": "prefix",
+      "note": "ц: soʻz boshida (s- yoki ts-)"
+    },
+    {
+      "latin": "sitata",
+      "cyrillic": "цитата",
+      "matchType": "prefix",
+      "note": "ц: soʻz boshida (s- yoki ts-)"
+    },
+    {
+      "latin": "tsitata",
+      "cyrillic": "цитата",
+      "matchType": "prefix",
+      "note": "ц: soʻz boshida (s- yoki ts-)"
+    },
+    {
+      "latin": "sitrus",
+      "cyrillic": "цитрус",
+      "matchType": "prefix",
+      "note": "ц: soʻz boshida (s- yoki ts-)"
+    },
+    {
+      "latin": "sent",
+      "cyrillic": "цент",
+      "matchType": "whole_word",
+      "note": "ц: soʻz boshida (s- yoki ts-)"
+    },
+    {
+      "latin": "sentr",
+      "cyrillic": "центр",
+      "matchType": "whole_word",
+      "note": "ц: soʻz boshida (s- yoki ts-)"
+    },
+    {
+      "latin": "tsentr",
+      "cyrillic": "центр",
+      "matchType": "prefix",
+      "note": "ц: soʻz boshida (s- yoki ts-)"
+    },
+    {
+      "latin": "sink",
+      "cyrillic": "цинк",
+      "matchType": "whole_word",
+      "note": "ц: soʻz boshida (s- yoki ts-)"
+    },
+    {
+      "latin": "sunami",
+      "cyrillic": "цунами",
+      "matchType": "whole_word",
+      "note": "ц: soʻz boshida (s- yoki ts-)"
+    },
+    {
+      "latin": "tsunami",
+      "cyrillic": "цунами",
+      "matchType": "whole_word",
+      "note": "ц: soʻz boshida (s- yoki ts-)"
+    },
+    {
+      "latin": "ssena",
+      "cyrillic": "сцена",
+      "matchType": "prefix",
+      "note": "ц: soʻz boshida (s- yoki ts-)"
+    },
+    {
+      "latin": "stsena",
+      "cyrillic": "сцена",
+      "matchType": "prefix",
+      "note": "ц: soʻz boshida (s- yoki ts-)"
+    },
+    {
+      "latin": "gers",
+      "cyrillic": "герц",
+      "matchType": "whole_word",
+      "note": "ц: chastota birliklari (gers → герц)"
+    },
+    {
+      "latin": "gerts",
+      "cyrillic": "герц",
+      "matchType": "whole_word",
+      "note": "ц: chastota birliklari (gers → герц)"
+    },
+    {
+      "latin": "gigagers",
+      "cyrillic": "гигагерц",
+      "matchType": "whole_word",
+      "note": "ц: chastota birliklari (gers → герц)"
+    },
+    {
+      "latin": "gigagerts",
+      "cyrillic": "гигагерц",
+      "matchType": "whole_word",
+      "note": "ц: chastota birliklari (gers → герц)"
+    },
+    {
+      "latin": "megagers",
+      "cyrillic": "мегагерц",
+      "matchType": "whole_word",
+      "note": "ц: chastota birliklari (gers → герц)"
+    },
+    {
+      "latin": "megagerts",
+      "cyrillic": "мегагерц",
+      "matchType": "whole_word",
+      "note": "ц: chastota birliklari (gers → герц)"
+    },
+    {
+      "latin": "kilogers",
+      "cyrillic": "килогерц",
+      "matchType": "whole_word",
+      "note": "ц: chastota birliklari (gers → герц)"
+    },
+    {
+      "latin": "aero",
+      "cyrillic": "аэро",
+      "matchType": "prefix",
+      "note": "э: undosh yoki unlidan keyin (rus oʻzlashmalari)"
+    },
+    {
+      "latin": "poeziya",
+      "cyrillic": "поэзия",
+      "matchType": "prefix",
+      "note": "э: undosh yoki unlidan keyin (rus oʻzlashmalari)"
+    },
+    {
+      "latin": "poet",
+      "cyrillic": "поэт",
+      "matchType": "prefix",
+      "note": "э: undosh yoki unlidan keyin (rus oʻzlashmalari)"
+    },
+    {
+      "latin": "poema",
+      "cyrillic": "поэма",
+      "matchType": "prefix",
+      "note": "э: undosh yoki unlidan keyin (rus oʻzlashmalari)"
+    },
+    {
+      "latin": "duet",
+      "cyrillic": "дуэт",
+      "matchType": "prefix",
+      "note": "э: undosh yoki unlidan keyin (rus oʻzlashmalari)"
+    },
+    {
+      "latin": "duel",
+      "cyrillic": "дуэль",
+      "matchType": "whole_word",
+      "note": "э: undosh yoki unlidan keyin (rus oʻzlashmalari)"
+    },
+    {
+      "latin": "maestro",
+      "cyrillic": "маэстро",
+      "matchType": "prefix",
+      "note": "э: undosh yoki unlidan keyin (rus oʻzlashmalari)"
+    },
+    {
+      "latin": "siluet",
+      "cyrillic": "силуэт",
+      "matchType": "prefix",
+      "note": "э: undosh yoki unlidan keyin (rus oʻzlashmalari)"
+    },
+    {
+      "latin": "mer",
+      "cyrillic": "мэр",
+      "matchType": "whole_word",
+      "note": "э: undosh yoki unlidan keyin (rus oʻzlashmalari)"
+    },
+    {
+      "latin": "meriya",
+      "cyrillic": "мэрия",
+      "matchType": "prefix",
+      "note": "э: undosh yoki unlidan keyin (rus oʻzlashmalari)"
+    },
+    {
+      "latin": "rep",
+      "cyrillic": "рэп",
+      "matchType": "whole_word",
+      "note": "э: undosh yoki unlidan keyin (rus oʻzlashmalari)"
+    },
+    {
+      "latin": "reper",
+      "cyrillic": "рэпер",
+      "matchType": "prefix",
+      "note": "э: undosh yoki unlidan keyin (rus oʻzlashmalari)"
+    },
+    {
+      "latin": "sendvich",
+      "cyrillic": "сэндвич",
+      "matchType": "prefix",
+      "note": "э: undosh yoki unlidan keyin (rus oʻzlashmalari)"
+    },
+    {
+      "latin": "rieltor",
+      "cyrillic": "риэлтор",
+      "matchType": "prefix",
+      "note": "э: undosh yoki unlidan keyin (rus oʻzlashmalari)"
+    },
+    {
+      "latin": "brandmauer",
+      "cyrillic": "брандмауэр",
+      "matchType": "prefix",
+      "note": "э: undosh yoki unlidan keyin (rus oʻzlashmalari)"
+    },
+    {
+      "latin": "emoji",
+      "cyrillic": "эмодзи",
+      "matchType": "whole_word",
+      "note": "э: undosh yoki unlidan keyin (rus oʻzlashmalari)"
+    },
+    {
+      "latin": "evro",
+      "cyrillic": "евро",
+      "matchType": "prefix",
+      "note": "е: lotin e bilan yozilgan, lekin kirillda е (э emas)"
+    },
+    {
+      "latin": "proekt",
+      "cyrillic": "проект",
+      "matchType": "prefix",
+      "note": "е: lotin e bilan yozilgan, lekin kirillda е (э emas)"
+    },
+    {
+      "latin": "pleyer",
+      "cyrillic": "плеер",
+      "matchType": "prefix",
+      "note": "е: lotin e bilan yozilgan, lekin kirillda е (э emas)"
+    },
+    {
+      "latin": "menejer",
+      "cyrillic": "менеджер",
+      "matchType": "prefix",
+      "note": "дж: lotin j → дж (ingliz oʻzlashmalari)"
+    },
+    {
+      "latin": "menejment",
+      "cyrillic": "менеджмент",
+      "matchType": "prefix",
+      "note": "дж: lotin j → дж (ingliz oʻzlashmalari)"
+    },
+    {
+      "latin": "imij",
+      "cyrillic": "имидж",
+      "matchType": "whole_word",
+      "note": "дж: lotin j → дж (ingliz oʻzlashmalari)"
+    },
+    {
+      "latin": "jaz",
+      "cyrillic": "джаз",
+      "matchType": "whole_word",
+      "note": "дж: lotin j → дж (ingliz oʻzlashmalari)"
+    },
+    {
+      "latin": "jip",
+      "cyrillic": "джип",
+      "matchType": "whole_word",
+      "note": "дж: lotin j → дж (ingliz oʻzlashmalari)"
+    },
+    {
+      "latin": "joystik",
+      "cyrillic": "джойстик",
+      "matchType": "prefix",
+      "note": "дж: lotin j → дж (ingliz oʻzlashmalari)"
+    },
+    {
+      "latin": "jentlmen",
+      "cyrillic": "джентльмен",
+      "matchType": "prefix",
+      "note": "дж: lotin j → дж (ingliz oʻzlashmalari)"
+    },
+    {
+      "latin": "jungli",
+      "cyrillic": "джунгли",
+      "matchType": "prefix",
+      "note": "дж: lotin j → дж (ingliz oʻzlashmalari)"
+    },
+    {
+      "latin": "messenjer",
+      "cyrillic": "мессенджер",
+      "matchType": "prefix",
+      "note": "дж: lotin j → дж (ingliz oʻzlashmalari)"
+    },
+    {
+      "latin": "chellenj",
+      "cyrillic": "челлендж",
+      "matchType": "whole_word",
+      "note": "дж: lotin j → дж (ingliz oʻzlashmalari)"
+    },
+    {
+      "latin": "yogurt",
+      "cyrillic": "йогурт",
+      "matchType": "prefix",
+      "note": "йо: lotin yo → йо (ё emas)"
+    },
+    {
+      "latin": "yoga",
+      "cyrillic": "йога",
+      "matchType": "whole_word",
+      "note": "йо: lotin yo → йо (ё emas)"
+    },
+    {
+      "latin": "rayon",
+      "cyrillic": "район",
+      "matchType": "whole_word",
+      "note": "йо: lotin yo → йо (ё emas)"
+    },
+    {
+      "latin": "mayonez",
+      "cyrillic": "майонез",
+      "matchType": "prefix",
+      "note": "йо: lotin yo → йо (ё emas)"
+    },
+    {
+      "latin": "mayor",
+      "cyrillic": "майор",
+      "matchType": "whole_word",
+      "note": "йо: lotin yo → йо (ё emas)"
+    },
+    {
+      "latin": "koyot",
+      "cyrillic": "койот",
+      "matchType": "prefix",
+      "note": "йо: lotin yo → йо (ё emas)"
+    },
+    {
+      "latin": "York",
+      "cyrillic": "Йорк",
+      "matchType": "whole_word",
+      "note": "йо: lotin yo → йо (ё emas)"
+    },
+    {
+      "latin": "aktyor",
+      "cyrillic": "актёр",
+      "matchType": "prefix",
+      "note": "ё: undoshdan keyin yo → ё"
+    },
+    {
+      "latin": "rejissyor",
+      "cyrillic": "режиссёр",
+      "matchType": "prefix",
+      "note": "ё: undoshdan keyin yo → ё"
+    },
+    {
+      "latin": "shofyor",
+      "cyrillic": "шофёр",
+      "matchType": "prefix",
+      "note": "ё: undoshdan keyin yo → ё"
+    },
+    {
+      "latin": "dirijyor",
+      "cyrillic": "дирижёр",
+      "matchType": "prefix",
+      "note": "ё: undoshdan keyin yo → ё"
+    },
+    {
+      "latin": "vertolyot",
+      "cyrillic": "вертолёт",
+      "matchType": "prefix",
+      "note": "ё: undoshdan keyin yo → ё"
+    },
+    {
+      "latin": "samolyot",
+      "cyrillic": "самолёт",
+      "matchType": "prefix",
+      "note": "ё: undoshdan keyin yo → ё"
+    },
+    {
+      "latin": "film",
+      "cyrillic": "фильм",
+      "matchType": "prefix",
+      "note": "ь: yumshoq belgi (soʻz ichida)"
+    },
+    {
+      "latin": "multfilm",
+      "cyrillic": "мультфильм",
+      "matchType": "prefix",
+      "note": "ь: yumshoq belgi (soʻz ichida)"
+    },
+    {
+      "latin": "kinofilm",
+      "cyrillic": "кинофильм",
+      "matchType": "prefix",
+      "note": "ь: yumshoq belgi (soʻz ichida)"
+    },
+    {
+      "latin": "albom",
+      "cyrillic": "альбом",
+      "matchType": "prefix",
+      "note": "ь: yumshoq belgi (soʻz ichida)"
+    },
+    {
+      "latin": "fotoalbom",
+      "cyrillic": "фотоальбом",
+      "matchType": "prefix",
+      "note": "ь: yumshoq belgi (soʻz ichida)"
+    },
+    {
+      "latin": "palto",
+      "cyrillic": "пальто",
+      "matchType": "whole_word",
+      "note": "ь: yumshoq belgi (soʻz ichida)"
+    },
+    {
+      "latin": "kompyuter",
+      "cyrillic": "компьютер",
+      "matchType": "prefix",
+      "note": "ь: yumshoq belgi (soʻz ichida)"
+    },
+    {
+      "latin": "superkompyuter",
+      "cyrillic": "суперкомпьютер",
+      "matchType": "prefix",
+      "note": "ь: yumshoq belgi (soʻz ichida)"
+    },
+    {
+      "latin": "kalkulyator",
+      "cyrillic": "калькулятор",
+      "matchType": "prefix",
+      "note": "ь: yumshoq belgi (soʻz ichida)"
+    },
+    {
+      "latin": "fakultet",
+      "cyrillic": "факультет",
+      "matchType": "prefix",
+      "note": "ь: yumshoq belgi (soʻz ichida)"
+    },
+    {
+      "latin": "rezultat",
+      "cyrillic": "результат",
+      "matchType": "prefix",
+      "note": "ь: yumshoq belgi (soʻz ichida)"
+    },
+    {
+      "latin": "multi",
+      "cyrillic": "мульти",
+      "matchType": "prefix",
+      "note": "ь: yumshoq belgi (soʻz ichida)"
+    },
+    {
+      "latin": "filtr",
+      "cyrillic": "фильтр",
+      "matchType": "prefix",
+      "note": "ь: yumshoq belgi (soʻz ichida)"
+    },
+    {
+      "latin": "palma",
+      "cyrillic": "пальма",
+      "matchType": "prefix",
+      "note": "ь: yumshoq belgi (soʻz ichida)"
+    },
+    {
+      "latin": "konsultant",
+      "cyrillic": "консультант",
+      "matchType": "prefix",
+      "note": "ь: yumshoq belgi (soʻz ichida)"
+    },
+    {
+      "latin": "intervyu",
+      "cyrillic": "интервью",
+      "matchType": "prefix",
+      "note": "ь: yumshoq belgi (soʻz ichida)"
+    },
+    {
+      "latin": "pyesa",
+      "cyrillic": "пьеса",
+      "matchType": "prefix",
+      "note": "ь: yumshoq belgi (soʻz ichida)"
+    },
+    {
+      "latin": "premyer",
+      "cyrillic": "премьер",
+      "matchType": "prefix",
+      "note": "ь: yumshoq belgi (soʻz ichida)"
+    },
+    {
+      "latin": "kuryer",
+      "cyrillic": "курьер",
+      "matchType": "prefix",
+      "note": "ь: yumshoq belgi (soʻz ichida)"
+    },
+    {
+      "latin": "baryer",
+      "cyrillic": "барьер",
+      "matchType": "prefix",
+      "note": "ь: yumshoq belgi (soʻz ichida)"
+    },
+    {
+      "latin": "distribyutor",
+      "cyrillic": "дистрибьютор",
+      "matchType": "prefix",
+      "note": "ь: yumshoq belgi (soʻz ichida)"
+    },
+    {
+      "latin": "pavilyon",
+      "cyrillic": "павильон",
+      "matchType": "prefix",
+      "note": "ь: yumshoq belgi (soʻz ichida)"
+    },
+    {
+      "latin": "konsyerj",
+      "cyrillic": "консьерж",
+      "matchType": "prefix",
+      "note": "ь: yumshoq belgi (soʻz ichida)"
+    },
+    {
+      "latin": "impuls",
+      "cyrillic": "импульс",
+      "matchType": "whole_word",
+      "note": "ь: yumshoq belgi (soʻz oxirida; qoʻshimchali shakllarda tushib qoladi)"
+    },
+    {
+      "latin": "puls",
+      "cyrillic": "пульс",
+      "matchType": "whole_word",
+      "note": "ь: yumshoq belgi (soʻz oxirida; qoʻshimchali shakllarda tushib qoladi)"
+    },
+    {
+      "latin": "rol",
+      "cyrillic": "роль",
+      "matchType": "whole_word",
+      "note": "ь: yumshoq belgi (soʻz oxirida; qoʻshimchali shakllarda tushib qoladi)"
+    },
+    {
+      "latin": "stil",
+      "cyrillic": "стиль",
+      "matchType": "whole_word",
+      "note": "ь: yumshoq belgi (soʻz oxirida; qoʻshimchali shakllarda tushib qoladi)"
+    },
+    {
+      "latin": "parol",
+      "cyrillic": "пароль",
+      "matchType": "whole_word",
+      "note": "ь: yumshoq belgi (soʻz oxirida; qoʻshimchali shakllarda tushib qoladi)"
+    },
+    {
+      "latin": "portfel",
+      "cyrillic": "портфель",
+      "matchType": "whole_word",
+      "note": "ь: yumshoq belgi (soʻz oxirida; qoʻshimchali shakllarda tushib qoladi)"
+    },
+    {
+      "latin": "model",
+      "cyrillic": "модель",
+      "matchType": "whole_word",
+      "note": "ь: yumshoq belgi (soʻz oxirida; qoʻshimchali shakllarda tushib qoladi)"
+    },
+    {
+      "latin": "otel",
+      "cyrillic": "отель",
+      "matchType": "whole_word",
+      "note": "ь: yumshoq belgi (soʻz oxirida; qoʻshimchali shakllarda tushib qoladi)"
+    },
+    {
+      "latin": "festival",
+      "cyrillic": "фестиваль",
+      "matchType": "whole_word",
+      "note": "ь: yumshoq belgi (soʻz oxirida; qoʻshimchali shakllarda tushib qoladi)"
+    },
+    {
+      "latin": "medal",
+      "cyrillic": "медаль",
+      "matchType": "whole_word",
+      "note": "ь: yumshoq belgi (soʻz oxirida; qoʻshimchali shakllarda tushib qoladi)"
+    },
+    {
+      "latin": "detal",
+      "cyrillic": "деталь",
+      "matchType": "whole_word",
+      "note": "ь: yumshoq belgi (soʻz oxirida; qoʻshimchali shakllarda tushib qoladi)"
+    },
+    {
+      "latin": "dvigatel",
+      "cyrillic": "двигатель",
+      "matchType": "whole_word",
+      "note": "ь: yumshoq belgi (soʻz oxirida; qoʻshimchali shakllarda tushib qoladi)"
+    },
+    {
+      "latin": "avtomobil",
+      "cyrillic": "автомобиль",
+      "matchType": "whole_word",
+      "note": "ь: yumshoq belgi (soʻz oxirida; qoʻshimchali shakllarda tushib qoladi)"
+    },
+    {
+      "latin": "mebel",
+      "cyrillic": "мебель",
+      "matchType": "whole_word",
+      "note": "ь: yumshoq belgi (soʻz oxirida; qoʻshimchali shakllarda tushib qoladi)"
+    },
+    {
+      "latin": "piksel",
+      "cyrillic": "пиксель",
+      "matchType": "whole_word",
+      "note": "ь: yumshoq belgi (soʻz oxirida; qoʻshimchali shakllarda tushib qoladi)"
+    },
+    {
+      "latin": "megapiksel",
+      "cyrillic": "мегапиксель",
+      "matchType": "whole_word",
+      "note": "ь: yumshoq belgi (soʻz oxirida; qoʻshimchali shakllarda tushib qoladi)"
+    },
+    {
+      "latin": "konsol",
+      "cyrillic": "консоль",
+      "matchType": "whole_word",
+      "note": "ь: yumshoq belgi (soʻz oxirida; qoʻshimchali shakllarda tushib qoladi)"
+    },
+    {
+      "latin": "pult",
+      "cyrillic": "пульт",
+      "matchType": "whole_word",
+      "note": "ь: yumshoq belgi (soʻz oxirida; qoʻshimchali shakllarda tushib qoladi)"
+    },
+    {
+      "latin": "shampun",
+      "cyrillic": "шампунь",
+      "matchType": "whole_word",
+      "note": "ь: yumshoq belgi (soʻz oxirida; qoʻshimchali shakllarda tushib qoladi)"
+    },
+    {
+      "latin": "kalendar",
+      "cyrillic": "календарь",
+      "matchType": "whole_word",
+      "note": "ь: yumshoq belgi (soʻz oxirida; qoʻshimchali shakllarda tushib qoladi)"
+    },
+    {
+      "latin": "sekretar",
+      "cyrillic": "секретарь",
+      "matchType": "whole_word",
+      "note": "ь: yumshoq belgi (soʻz oxirida; qoʻshimchali shakllarda tushib qoladi)"
+    },
+    {
+      "latin": "kobalt",
+      "cyrillic": "кобальт",
+      "matchType": "whole_word",
+      "note": "ь: yumshoq belgi (soʻz oxirida; qoʻshimchali shakllarda tushib qoladi)"
+    },
+    {
+      "latin": "nikel",
+      "cyrillic": "никель",
+      "matchType": "whole_word",
+      "note": "ь: yumshoq belgi (soʻz oxirida; qoʻshimchali shakllarda tushib qoladi)"
+    },
+    {
+      "latin": "tabel",
+      "cyrillic": "табель",
+      "matchType": "whole_word",
+      "note": "ь: yumshoq belgi (soʻz oxirida; qoʻshimchali shakllarda tushib qoladi)"
+    },
+    {
+      "latin": "tekstil",
+      "cyrillic": "текстиль",
+      "matchType": "whole_word",
+      "note": "ь: yumshoq belgi (soʻz oxirida; qoʻshimchali shakllarda tushib qoladi)"
+    },
+    {
+      "latin": "profil",
+      "cyrillic": "профиль",
+      "matchType": "whole_word",
+      "note": "ь: yumshoq belgi (soʻz oxirida; qoʻshimchali shakllarda tushib qoladi)"
+    },
+    {
+      "latin": "parallel",
+      "cyrillic": "параллель",
+      "matchType": "whole_word",
+      "note": "ь: yumshoq belgi (soʻz oxirida; qoʻshimchali shakllarda tushib qoladi)"
+    },
+    {
+      "latin": "pedal",
+      "cyrillic": "педаль",
+      "matchType": "whole_word",
+      "note": "ь: yumshoq belgi (soʻz oxirida; qoʻshimchali shakllarda tushib qoladi)"
+    },
+    {
+      "latin": "rul",
+      "cyrillic": "руль",
+      "matchType": "whole_word",
+      "note": "ь: yumshoq belgi (soʻz oxirida; qoʻshimchali shakllarda tushib qoladi)"
+    },
+    {
+      "latin": "modul",
+      "cyrillic": "модуль",
+      "matchType": "whole_word",
+      "note": "ь: yumshoq belgi (soʻz oxirida; qoʻshimchali shakllarda tushib qoladi)"
+    },
+    {
+      "latin": "kontrol",
+      "cyrillic": "контроль",
+      "matchType": "whole_word",
+      "note": "ь: yumshoq belgi (soʻz oxirida; qoʻshimchali shakllarda tushib qoladi)"
+    },
+    {
+      "latin": "rubl",
+      "cyrillic": "рубль",
+      "matchType": "whole_word",
+      "note": "ь: yumshoq belgi (soʻz oxirida; qoʻshimchali shakllarda tushib qoladi)"
+    },
+    {
+      "latin": "volt",
+      "cyrillic": "вольт",
+      "matchType": "whole_word",
+      "note": "ь: yumshoq belgi (soʻz oxirida; qoʻshimchali shakllarda tushib qoladi)"
+    },
+    {
+      "latin": "obyekt",
+      "cyrillic": "объект",
+      "matchType": "prefix",
+      "note": "ъ: ayirish belgisi (rus oʻzlashmalari)"
+    },
+    {
+      "latin": "subyekt",
+      "cyrillic": "субъект",
+      "matchType": "prefix",
+      "note": "ъ: ayirish belgisi (rus oʻzlashmalari)"
+    },
+    {
+      "latin": "inyeksiya",
+      "cyrillic": "инъекция",
+      "matchType": "prefix",
+      "note": "ъ: ayirish belgisi (rus oʻzlashmalari)"
+    },
+    {
+      "latin": "podyezd",
+      "cyrillic": "подъезд",
+      "matchType": "prefix",
+      "note": "ъ: ayirish belgisi (rus oʻzlashmalari)"
+    },
+    {
+      "latin": "syezd",
+      "cyrillic": "съезд",
+      "matchType": "whole_word",
+      "note": "ъ: ayirish belgisi (rus oʻzlashmalari)"
+    },
+    {
+      "latin": "konyunktura",
+      "cyrillic": "конъюнктура",
+      "matchType": "prefix",
+      "note": "ъ: ayirish belgisi (rus oʻzlashmalari)"
+    },
+    {
+      "latin": "razyom",
+      "cyrillic": "разъём",
+      "matchType": "prefix",
+      "note": "ъ: ayirish belgisi (rus oʻzlashmalari)"
+    },
+    {
+      "latin": "Fransiya",
+      "cyrillic": "Франция",
+      "matchType": "prefix",
+      "note": "Joy nomi"
+    },
+    {
+      "latin": "Shvetsiya",
+      "cyrillic": "Швеция",
+      "matchType": "prefix",
+      "note": "Joy nomi"
+    },
+    {
+      "latin": "Shveytsariya",
+      "cyrillic": "Швейцария",
+      "matchType": "prefix",
+      "note": "Joy nomi"
+    },
+    {
+      "latin": "Gretsiya",
+      "cyrillic": "Греция",
+      "matchType": "prefix",
+      "note": "Joy nomi"
+    },
+    {
+      "latin": "Venetsiya",
+      "cyrillic": "Венеция",
+      "matchType": "prefix",
+      "note": "Joy nomi"
+    },
+    {
+      "latin": "Polsha",
+      "cyrillic": "Польша",
+      "matchType": "prefix",
+      "note": "Joy nomi"
+    },
+    {
+      "latin": "Tayvan",
+      "cyrillic": "Тайвань",
+      "matchType": "whole_word",
+      "note": "Joy nomi"
+    },
+    {
+      "latin": "Vyetnam",
+      "cyrillic": "Вьетнам",
+      "matchType": "prefix",
+      "note": "Joy nomi"
+    },
+    {
+      "latin": "Belarus",
+      "cyrillic": "Беларусь",
+      "matchType": "whole_word",
+      "note": "Joy nomi"
+    },
+    {
+      "latin": "Nyu-York",
+      "cyrillic": "Нью-Йорк",
+      "matchType": "prefix",
+      "note": "Joy nomi"
+    },
+    {
+      "latin": "Nyu-Jersi",
+      "cyrillic": "Нью-Джерси",
+      "matchType": "whole_word",
+      "note": "Joy nomi"
+    },
+    {
+      "latin": "San-Fransisko",
+      "cyrillic": "Сан-Франциско",
+      "matchType": "whole_word",
+      "note": "Joy nomi"
+    },
+    {
+      "latin": "Los-Anjeles",
+      "cyrillic": "Лос-Анджелес",
+      "matchType": "prefix",
+      "note": "Joy nomi"
+    },
+    {
+      "latin": "Sietl",
+      "cyrillic": "Сиэтл",
+      "matchType": "prefix",
+      "note": "Joy nomi"
+    },
+    {
+      "latin": "Kembrij",
+      "cyrillic": "Кембридж",
+      "matchType": "prefix",
+      "note": "Joy nomi"
+    },
+    {
+      "latin": "Jakarta",
+      "cyrillic": "Джакарта",
+      "matchType": "prefix",
+      "note": "Joy nomi"
+    },
+    {
+      "latin": "Jorjiya",
+      "cyrillic": "Джорджия",
+      "matchType": "prefix",
+      "note": "Joy nomi"
+    },
+    {
+      "latin": "Syurix",
+      "cyrillic": "Цюрих",
+      "matchType": "prefix",
+      "note": "Joy nomi"
+    },
+    {
+      "latin": "pley-off",
+      "cyrillic": "плей-офф",
+      "matchType": "whole_word",
+      "note": "Sport va kibersport"
+    }
+  ]
+}
