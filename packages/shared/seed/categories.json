@@ -1,0 +1,101 @@
+[
+  {
+    "name": { "uz-Latn": "Sun'iy intellekt", "uz-Cyrl": "Сунъий интеллект" },
+    "slug": "suniy-intellekt",
+    "description": {
+      "uz-Latn": "Katta til modellari (LLM), generativ AI, AI kompaniyalari va sun'iy intellektni tartibga solish haqidagi yangiliklar.",
+      "uz-Cyrl": "Катта тил моделлари, генератив сунъий интеллект, СИ компаниялари ва сунъий интеллектни тартибга солиш ҳақидаги янгиликлар."
+    },
+    "parent": null,
+    "order": 1,
+    "isInMenu": true
+  },
+  {
+    "name": { "uz-Latn": "Texnologiyalar", "uz-Cyrl": "Технологиялар" },
+    "slug": "texnologiyalar",
+    "description": {
+      "uz-Latn": "Big tech, internet, platformalar, ijtimoiy tarmoqlar va umumiy IT yangiliklari.",
+      "uz-Cyrl": "Йирик технология компаниялари, интернет, платформалар, ижтимоий тармоқлар ва умумий АТ янгиликлари."
+    },
+    "parent": null,
+    "order": 2,
+    "isInMenu": true
+  },
+  {
+    "name": { "uz-Latn": "Gadjetlar", "uz-Cyrl": "Гаджетлар" },
+    "slug": "gadjetlar",
+    "description": {
+      "uz-Latn": "Smartfonlar, noutbuklar, kompyuter texnikasi va qurilmalar sharhlari.",
+      "uz-Cyrl": "Смартфонлар, ноутбуклар, компьютер техникаси ва қурилмалар шарҳлари."
+    },
+    "parent": null,
+    "order": 3,
+    "isInMenu": true
+  },
+  {
+    "name": { "uz-Latn": "Dasturlash", "uz-Cyrl": "Дастурлаш" },
+    "slug": "dasturlash",
+    "description": {
+      "uz-Latn": "Dasturlash tillari, frameworklar, dasturchi vositalari va ochiq kodli (open source) loyihalar.",
+      "uz-Cyrl": "Дастурлаш тиллари, фреймворклар, дастурчи воситалари ва очиқ кодли лойиҳалар."
+    },
+    "parent": null,
+    "order": 4,
+    "isInMenu": true
+  },
+  {
+    "name": { "uz-Latn": "Kiberxavfsizlik", "uz-Cyrl": "Киберхавфсизлик" },
+    "slug": "kiberxavfsizlik",
+    "description": {
+      "uz-Latn": "Buzib kirishlar, ma'lumotlar sizib chiqishi, zaifliklar va himoya bo'yicha maslahatlar.",
+      "uz-Cyrl": "Бузиб киришлар, маълумотлар сизиб чиқиши, заифликлар ва ҳимоя бўйича маслаҳатлар."
+    },
+    "parent": null,
+    "order": 5,
+    "isInMenu": true
+  },
+  {
+    "name": { "uz-Latn": "Kibersport", "uz-Cyrl": "Киберспорт" },
+    "slug": "kibersport",
+    "description": {
+      "uz-Latn": "Kibersport turnirlari, natijalar, transferlar va jamoalar.",
+      "uz-Cyrl": "Киберспорт турнирлари, натижалар, трансферлар ва жамоалар."
+    },
+    "parent": null,
+    "order": 6,
+    "isInMenu": true
+  },
+  {
+    "name": { "uz-Latn": "O'yinlar", "uz-Cyrl": "Ўйинлар" },
+    "slug": "oyinlar",
+    "description": {
+      "uz-Latn": "Video o'yinlar, konsollar va yangi relizlar.",
+      "uz-Cyrl": "Видео ўйинлар, консоллар ва янги релизлар."
+    },
+    "parent": null,
+    "order": 7,
+    "isInMenu": true
+  },
+  {
+    "name": { "uz-Latn": "Startaplar va biznes", "uz-Cyrl": "Стартаплар ва бизнес" },
+    "slug": "startaplar",
+    "description": {
+      "uz-Latn": "Investitsiyalar, IPO, texnologiya kompaniyalari va IT bozori.",
+      "uz-Cyrl": "Инвестициялар, бирламчи оммавий жойлаштиришлар, технология компаниялари ва АТ бозори."
+    },
+    "parent": null,
+    "order": 8,
+    "isInMenu": true
+  },
+  {
+    "name": { "uz-Latn": "Ilm-fan", "uz-Cyrl": "Илм-фан" },
+    "slug": "ilm-fan",
+    "description": {
+      "uz-Latn": "Kosmos, fan yutuqlari, energetika va avtomobil texnologiyalari.",
+      "uz-Cyrl": "Космос, фан ютуқлари, энергетика ва автомобиль технологиялари."
+    },
+    "parent": null,
+    "order": 9,
+    "isInMenu": false
+  }
+]

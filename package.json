@@ -15,6 +15,7 @@
     "test": "turbo run test",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "check:feeds": "pnpm --filter @blog-odya/shared check:feeds",
     "migrate": "pnpm --filter @blog-odya/web migrate",
     "migrate:create": "pnpm --filter @blog-odya/web migrate:create",
     "payload": "pnpm --filter @blog-odya/web payload"

@@ -2,17 +2,28 @@
   "name": "@blog-odya/shared",
   "version": "0.0.0",
   "private": true,
-  "description": "Umumiy kod: slugify-uz, translit (lotin-kirill adapteri), umumiy tiplar",
+  "description": "Umumiy kod: slugify-uz, translit (lotin-kirill adapteri), umumiy tiplar, Zod sxemalari va seed ma'lumotlari (manbalar, kategoriyalar)",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./seed/sources.json": "./seed/sources.json",
+    "./seed/categories.json": "./seed/categories.json"
   },
   "scripts": {
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "check:feeds": "cross-env RUN_FEED_CHECKS=1 vitest run test/feeds.live.test.ts"
+  },
+  "dependencies": {
+    "zod": "4.6.5"
   },
   "devDependencies": {
+    "@types/node": "24.13.6",
+    "cross-env": "7.0.3",
+    "linkedom": "0.18.13",
+    "robots-parser": "3.0.1",
+    "rss-parser": "3.13.0",
     "vitest": "4.0.18"
   }
 }
