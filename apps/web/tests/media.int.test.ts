@@ -134,7 +134,8 @@ describe('media: yuklash va WebP variantlar (MinIO)', () => {
     expect(latn.alt).toBe('Sinov rasmi')
     expect(cyrl.alt).toBe('Синов расми')
     // Kirill caption qo'lda kiritilmagan — lotindan avtomatik transliteratsiya (TZ §3.6).
-    expect(cyrl.caption).toBe('Лотин изоҳ')  })
+    expect(cyrl.caption).toBe('Лотин изоҳ')
+  })
 
   it('alt majburiy', async () => {
     const data = await makeJpeg(400, 300)
