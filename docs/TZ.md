@@ -4,25 +4,27 @@
 |---|---|
 | Loyiha kodi | OBLOG |
 | Domen | **blog.odya.uz** |
-| Hujjat versiyasi | 1.1 |
+| Brend | **Blog Odya** |
+| Hujjat versiyasi | 1.2 |
 | Sana | 2026-09-23 |
-| Holat | Egasining javoblari kiritilgan; qolgan ochiq savollar — [QUESTIONS.md](QUESTIONS.md) |
-| Bog'liq hujjatlar | [PLAN.md](PLAN.md), [QUESTIONS.md](QUESTIONS.md) |
+| Holat | **Tasdiqlangan — ishlab chiqishga tayyor.** Barcha savollarga javob olingan ([QUESTIONS.md](QUESTIONS.md)) |
+| Bog'liq hujjatlar | [PLAN.md](PLAN.md), [TASKS.md](TASKS.md), [QUESTIONS.md](QUESTIONS.md) |
 
-> `[Taxmin]` belgisi — egasi hali javob bermagan savol bo'yicha qabul qilingan standart qaror. Qolgan ochiq savollar [QUESTIONS.md](QUESTIONS.md) da.
+> v1.2 dan boshlab hujjatda ochiq taxminlar yo'q: egasi aniq javob bermagan masalalar bo'yicha standart qarorlar qabul qilingan va [QUESTIONS.md](QUESTIONS.md) da qayd etilgan.
 
 ### O'zgarishlar tarixi
 | Versiya | Sana | O'zgarishlar |
 |---|---|---|
 | 1.0 | 2026-09-23 | Birinchi qoralama |
 | 1.1 | 2026-09-23 | Egasining javoblari: domen `blog.odya.uz`; faktlar asosida qayta yozish modeli tasdiqlandi; manbalar va stek tasdiqlandi; rollar soddalashtirildi (admin + editor, ikkalasida publish huquqi bor); **lotin + kirill** versiyalari (avtomatik transliteratsiya, `/kr/` URL'lar); **boshlang'ich hosting: Vercel + Supabase Postgres + Cloudflare R2**, keyin Contabo'ga ko'chish yo'li; **server tomonidagi LLM pipeline olib tashlandi** — AI qayta yozish MCP orqali (Claude obunasidagi agent) yoki editor tomonidan qo'lda; **MCP server va Telegram avtopost MVP'ga o'tkazildi**; Redis/BullMQ o'rniga MVP'da Payload Jobs Queue (Postgres) |
+| 1.2 | 2026-09-23 | Egasining 2-javoblari: **bepul tariflar** (Vercel Hobby, Supabase Free, Cloudflare R2 free) — 3.7 qayta yozildi, bepul limitlar va yangilash triggerlari; scheduler — Supabase `pg_cron` + `pg_net` (Vercel Hobby cron kuniga 1 marta); DB hajmini tejash (raw/extracted HTML — R2'da, qisqa TTL, versiyalar cheklovi); brend **"Blog Odya"** (logo yo'q — dizayn vazifasi); **ikkita Telegram kanal** (lotin va kirill); kirill avtomatikasiga ishoniladi (majburiy tekshiruv yo'q); kunlik kvota yo'q; editorlar va obuna — admin panel orqali, taxmin shart emas; **kategoriyalar ro'yxati** (10.4) va **dizayn yo'nalishi** (12-bo'lim); barcha `[Taxmin]` belgilari olib tashlandi |
 
 ---
 
 ## 1. Maqsad va kontekst
 
 ### 1.1. Biznes maqsadi
-O'zbek tilida (**lotin va kirill yozuvlarida**) AI, IT, texnologiya va kibersport yo'nalishlari bo'yicha **O'zbekistondagi 1-raqamli onlayn nashrni** yaratish. Kontent jahon yetakchi IT-nashrlaridan har kuni avtomatik yig'iladi, AI agent (MCP orqali) yoki editor tomonidan o'zbek tiliga **qayta yoziladi (rewrite)**, editor tekshiradi va SEO-optimallashtirilgan holda `blog.odya.uz` da chop etadi hamda Telegram kanalga yuboradi.
+O'zbek tilida (**lotin va kirill yozuvlarida**) AI, IT, texnologiya va kibersport yo'nalishlari bo'yicha **O'zbekistondagi 1-raqamli onlayn nashrni** yaratish. Kontent jahon yetakchi IT-nashrlaridan har kuni avtomatik yig'iladi, AI agent (MCP orqali) yoki editor tomonidan o'zbek tiliga **qayta yoziladi (rewrite)**, editor tekshiradi va SEO-optimallashtirilgan holda **Blog Odya** (`blog.odya.uz`) da chop etadi hamda ikkita Telegram kanalga (lotin va kirill) yuboradi.
 
 ### 1.2. Auditoriya
 | Segment | Tavsif | Kanal |
@@ -38,16 +40,16 @@ Asosiy qurilma — **mobil (taxminan 80%+)**, internet tezligi har xil → ishla
 ### 1.3. KPI (maqsadli ko'rsatkichlar)
 | Ko'rsatkich | 3 oy | 6 oy | 12 oy |
 |---|---|---|---|
-| Kunlik chop etilgan maqolalar | 5–10 | 10–20 | 20–30 |
+| Kunlik chop etilgan maqolalar (kvota emas, mo'ljal) | 5–10 | 10–20 | 20–30 |
 | Google'da indekslangan sahifalar (lotin + kirill) | 600+ | 3 000+ | 10 000+ |
 | Oylik organik tashriflar (GSC clicks) | 5 000 | 30 000 | 150 000 |
 | Top-10 o'rindagi kalit so'zlar (uz) | 50 | 300 | 1 000+ |
-| Telegram kanal obunachilari (o'sish) | +1 000 | +5 000 | +20 000 |
+| Telegram obunachilari (ikkala kanal jami) | 1 000 | 5 000 | 20 000 |
 | Core Web Vitals (mobil, "Good" URL ulushi) | ≥ 90% | ≥ 90% | ≥ 95% |
 | Scraping → qoralama muvaffaqiyati | ≥ 95% | ≥ 97% | ≥ 98% |
 | Qoralamadan publishgacha o'rtacha vaqt | < 24 soat | < 8 soat | < 4 soat |
 
-`[Taxmin]` Raqamlar dastlabki mo'ljal; 1-oy oxirida haqiqiy ma'lumot asosida qayta ko'rib chiqiladi. Kunlik hajm — ochiq savol (QUESTIONS.md).
+Raqamlar dastlabki mo'ljal; 1-oy oxirida haqiqiy ma'lumot asosida qayta ko'rib chiqiladi. **Qat'iy kunlik kvota yo'q** (egasi qarori): manbalardan qoralamaga tushgan va editor/agent qayta yozishga ulgurgan barcha materiallar chop etiladi.
 
 ### 1.4. Scope (loyiha doirasida)
 - Manbalardan yangiliklarni har kuni avtomatik yig'ish (RSS + to'liq matn), to'liq manba nusxasini bazada saqlash.
@@ -58,7 +60,7 @@ Asosiy qurilma — **mobil (taxminan 80%+)**, internet tezligi har xil → ishla
 - Ommaviy sayt (Next.js) — tez, SEO-optimallashtirilgan, mobil-birinchi.
 - Admin panel, REST API (API kalitlar bilan).
 - Media: S3-mos saqlash (MVP — Cloudflare R2; keyin MinIO ixtiyoriy) + rasm optimizatsiyasi + CDN.
-- **Telegram kanalga avtomatik post** (MVP).
+- **Ikkita Telegram kanalga avtomatik post** — lotin va kirill (MVP).
 - Monitoring, backup, CI/CD.
 
 ### 1.5. Out-of-scope (MVP'da qilinmaydi)
@@ -124,21 +126,21 @@ Majburiy qoidalar (stil qo'llanma va MCP ko'rsatmalariga kiritiladi):
 |---|---|---|
 | Frontend (ommaviy sayt) | **Next.js (App Router)**, React Server Components, TypeScript, Tailwind CSS, shadcn/ui | ISR, `next/image`, `generateMetadata`, sitemap — ichida |
 | CMS / Backend | **Payload CMS 3.x** (Next.js ichida, bitta ilova) | 3.2 bo'limda asoslangan |
-| Ma'lumotlar bazasi | **PostgreSQL** — MVP: **Supabase** (managed); keyin: Contabo'dagi o'z Postgres'imiz | `@payloadcms/db-postgres` |
+| Ma'lumotlar bazasi | **PostgreSQL** — MVP: **Supabase Free** (managed); keyin: Supabase Pro yoki Contabo'dagi o'z Postgres'imiz | `@payloadcms/db-postgres` |
 | Ko'p yozuvlilik | **Payload localization**: `uz-Latn` (asosiy) va `uz-Cyrl` (avtomatik) | Keyinchalik `ru` — yana bitta locale |
 | Transliteratsiya | **`lotin-kirill`** (npm, MIT, tayyor kutubxona) + o'z istisnolar lug'atimiz (adapter) | 3.6 bo'lim |
-| Media saqlash | S3-mos: MVP — **Cloudflare R2** (egress bepul); zaxira — Supabase Storage (S3 protokoli); keyin — MinIO (ixtiyoriy) | `@payloadcms/storage-s3`, faqat env orqali almashadi |
+| Media saqlash | S3-mos: MVP — **Cloudflare R2 (bepul kvota)**, egress bepul; keyin — R2 (pullik) yoki MinIO | `@payloadcms/storage-s3`, faqat env orqali almashadi |
 | Rasm qayta ishlash | **sharp** (Payload ichida, yuklashda variantlar) | `thumb`, `card`, `hero`, `og`, `full` — WebP |
 | CDN | Sayt — Vercel Edge Network (MVP); media — **Cloudflare** (`media.odya.uz` → R2) | 3.7 bo'lim |
-| Fon vazifalar (scraping) | MVP: **Payload Jobs Queue** (Postgres'da saqlanadi) + **Vercel Cron**; keyin: xuddi shu job'lar Contabo'da doimiy worker jarayonida (`autoRun`) | Redis/BullMQ MVP'da kerak emas |
+| Fon vazifalar (scraping) | MVP: **Payload Jobs Queue** (Postgres'da saqlanadi) + **Supabase `pg_cron` + `pg_net`** (himoyalangan `/api/jobs/run` ni chaqiradi); keyin: xuddi shu job'lar Contabo'da doimiy worker jarayonida (`autoRun`) | Redis/BullMQ MVP'da kerak emas |
 | Scraping kutubxonalari | `rss-parser`, `undici`/`fetch`, `@mozilla/readability` + `jsdom` (yoki `linkedom`), `robots-parser`; Playwright — faqat Contabo bosqichida | |
 | Qidiruv | MVP: **PostgreSQL FTS** (`tsvector`, `pg_trgm`); keyin: Meilisearch | |
 | AI qayta yozish | **MCP server** (`mcp-handler` + `@modelcontextprotocol/sdk`, Next.js route `/api/mcp`) → Claude obunasidagi agent (Claude Code / Claude Desktop) | Server tomonida LLM chaqiruvi yo'q |
-| Telegram | **grammY** (Bot API), bot — kanal admini | MVP |
+| Telegram | **grammY** (Bot API), bitta bot — ikkala kanalda (lotin, kirill) admin | MVP |
 | Monorepo | pnpm workspaces + Turborepo: `apps/web`, `packages/shared`; `apps/worker` — Contabo bosqichida | |
-| Hosting | MVP: **Vercel Pro** + Supabase + Cloudflare (DNS, R2); keyin: **Contabo** VPS, Docker Compose + Traefik | 3.7 va 9.7 bo'limlar |
+| Hosting | MVP: **Vercel Hobby** + Supabase Free + Cloudflare (DNS, R2) — **$0/oy**; keyin: Vercel Pro yoki **Contabo** VPS, Docker Compose + Traefik | 3.7 va 9.7 bo'limlar |
 | CI/CD | GitHub Actions (lint, typecheck, test) + Vercel Git integratsiyasi (preview har bir PR uchun) | |
-| Monitoring | Sentry, uptime monitor (UptimeRobot / Better Stack bepul tarif), Vercel Analytics/Speed Insights | |
+| Monitoring | Sentry (bepul tarif), UptimeRobot (bepul tarif), Vercel Web Analytics (Hobby kvotasi doirasida) | |
 | Analitika | GA4 + Yandex Metrica + Google Search Console + Yandex Webmaster | |
 
 ### 3.2. Nima uchun Payload CMS 3 (taqqoslash)
@@ -158,7 +160,7 @@ Majburiy qoidalar (stil qo'llanma va MCP ko'rsatmalariga kiritiladi):
 
 **Qaror:** **Payload CMS 3** — bitta ilova, bitta til, Vercel'da ham, Docker'da ham bir xil ishlaydi; localization, jobs queue, drafts/versions ichida bor; MIT.
 
-### 3.3. Umumiy arxitektura (MVP: Vercel + Supabase + R2)
+### 3.3. Umumiy arxitektura (MVP: Vercel Hobby + Supabase Free + R2)
 
 ```mermaid
 flowchart LR
@@ -171,7 +173,6 @@ flowchart LR
     end
 
     subgraph Vercel["Vercel (Next.js + Payload CMS — bitta ilova)"]
-        CRON[Vercel Cron<br/>har 5–15 daqiqa]
         JOBS[Payload Jobs<br/>feed.poll / item.fetch / extract / dedupe / telegram]
         ADMIN[Admin panel /admin]
         REST[REST / GraphQL /api]
@@ -180,19 +181,24 @@ flowchart LR
         TR[Transliteratsiya hook<br/>lotin → kirill]
     end
 
-    PG[(Supabase Postgres<br/>Supavisor pooler)]
+    PG[(Supabase Postgres Free<br/>Supavisor pooler)]
+    CRON[Supabase pg_cron + pg_net<br/>har 10 daqiqa]
+    UPT[UptimeRobot<br/>/api/health har 5 daqiqa]
     R2[(Cloudflare R2<br/>media + raw HTML)]
     CFM[Cloudflare CDN<br/>media.odya.uz]
-    TGC((Telegram kanal))
+    TGC((Telegram: lotin kanal))
+    TGK((Telegram: kirill kanal))
     READERS((O'quvchilar))
     EDITOR((Editor / admin))
     AGENT((AI agent<br/>Claude Code / Desktop<br/>obuna orqali))
 
-    CRON --> JOBS
+    CRON -- "POST /api/jobs/run" --> JOBS
+    UPT --> SITE
     S1 & S2 & S3 & S4 & S5 --> JOBS
     JOBS --> PG
     JOBS --> R2
     JOBS -- "publish'dan keyin" --> TGC
+    JOBS -- "publish'dan keyin" --> TGK
     ADMIN --> TR --> PG
     MCP --> TR
     REST --> PG
@@ -213,9 +219,10 @@ blog_odya/
 │   ├── shared/         # slugify-uz, translit (lotin-kirill adapteri + istisnolar), umumiy tiplar
 │   └── guidelines/     # stil qo'llanma, glossariy, SEO qoidalari (MCP prompt/resource sifatida beriladi)
 ├── infra/
+│   ├── supabase/cron.sql        # pg_cron + pg_net scheduler
 │   ├── docker-compose.dev.yml   # lokal: Postgres + MinIO (S3 o'rnini bosuvchi)
 │   └── contabo/                 # keyingi bosqich: docker-compose.yml, traefik, backup
-├── docs/               # TZ.md, PLAN.md, QUESTIONS.md, adr/, runbooks/
+├── docs/               # TZ.md, PLAN.md, TASKS.md, QUESTIONS.md, adr/, runbooks/
 └── .github/workflows/
 ```
 
@@ -227,20 +234,21 @@ Har bir bosqich — alohida Payload **task**, `scrapeItem` **workflow** ularni k
 
 | # | Task | Vazifa | Trigger |
 |---|---|---|---|
-| 1 | `feed.poll` | Faol `source` RSS'ini o'qish, yangi URL'larni topish, `urlHash` bilan dedupe, `ETag`/`Last-Modified` | Vercel Cron (har 10 daqiqada) — `pollIntervalMin` o'tgan manbalar |
+| 1 | `feed.poll` | Faol `source` RSS'ini o'qish, yangi URL'larni topish, `urlHash` bilan dedupe, `ETag`/`Last-Modified` | Scheduler (har 10 daqiqada) — `pollIntervalMin` o'tgan manbalar |
 | 2 | `item.fetch` | Sahifani yuklash (oddiy HTTP), `robots.txt` tekshiruvi, domen bo'yicha rate limit (Postgres'da oxirgi so'rov vaqti) | yangi URL |
-| 3 | `item.extract` | Readability bilan matnni ajratish; sarlavha, muallif, sana, teglar, `og:*`; raw HTML (gzip) → R2 `raw/`; rasmlar → R2 `archive/` (ommaviy emas) | fetch'dan keyin |
+| 3 | `item.extract` | Readability bilan matnni ajratish; sarlavha, muallif, sana, teglar, `og:*`; raw HTML va tozalangan HTML (gzip) → R2 `raw/` (TTL 30 kun); DB'ga faqat `extractedText` (Markdown); manba rasmlari yuklanmaydi — faqat URL saqlanadi | fetch'dan keyin |
 | 4 | `item.dedupe` | `contentHash` (SimHash), Hamming ≤ 3 → bitta `clusterId` | extract'dan keyin |
 | 5 | `item.classify` | **LLM'siz**: manba/feed kategoriyasi → bizning kategoriya (mapping jadvali) + kalit so'z qoidalari; `score` = manba prioriteti + yangilik + klaster hajmi | dedupe'dan keyin |
-| 6 | `post.onPublish` | ISR `revalidateTag`, sitemap, Telegram post | post published bo'lganda |
+| 6 | `post.onPublish` | ISR `revalidateTag`, sitemap, Telegram post (ikkala kanal) | post published bo'lganda |
+| 7 | `maintenance.cleanup` | Eskirgan `scraped-items` matnini tozalash, eski versiyalarni kesish, DB hajmini o'lchash (> 70% → ogohlantirish) | kuniga 1 marta |
 
-**Cron:** Vercel Cron `/api/cron/run-jobs` (Pro — daqiqalik aniqlik), `CRON_SECRET` bilan himoyalangan; har chaqiruvda `payload.jobs.run({ limit })` — navbatdagi N ta job bajariladi.
+**Scheduler:** Vercel Hobby'da cron kuniga ko'pi bilan 1 marta ishlaydi — shuning uchun asosiy scheduler **Supabase `pg_cron` + `pg_net`**: har 10 daqiqada `POST https://blog.odya.uz/api/jobs/run` (`Authorization: Bearer <JOBS_SECRET>`). Endpoint `payload.jobs.run({ limit })` ni chaqiradi — kichik batch (masalan, 5–10 job), vaqt limitidan oldin to'xtaydi (ichki `deadline` ≈ 40 s). Zaxira: GitHub Actions `schedule` (har 30 daqiqa; yopiq repo'da bepul daqiqalar cheklangan) va Vercel Hobby kunlik cron. Scheduler tanlovi env/infra darajasida — kod bir xil.
 
-**Saqlanadigan "to'liq manba" (`scraped-items`):** asl URL, canonical, sarlavha, muallif, sana, til, teglar, `og:image`, `extractedText` (Markdown), `extractedHtml` (tozalangan), `rawHtmlKey` (R2), arxiv rasmlar, HTTP metadata.
+**Saqlanadigan "to'liq manba" (`scraped-items`):** DB'da — asl URL, canonical, sarlavha, muallif, sana, til, teglar, `og:image`, `extractedText` (Markdown), manba rasmlari URL'lari, HTTP metadata; R2'da — `raw/{source}/{yyyy-mm}/{id}.html.gz` va `.clean.html.gz` (30 kun).
 
 **Ishonchlilik:** har bir task — 3 marta retry (backoff); manba uchun maxsus CSS-selektorlar (`sources.selectors`); 3 marta ketma-ket xato yoki parse muvaffaqiyati < 80% → Telegram admin guruhiga ogohlantirish.
 
-**Saqlash muddati:** `raw_html` — 90 kun, `extractedText` — doimiy, `rejected` — 30 kundan keyin tozalanadi (kunlik cleanup job).
+**Saqlash muddati (bepul kvotaga moslab):** R2 dagi raw/clean HTML — 30 kun (R2 lifecycle rule); qoralamaga aylanmagan `scraped-items` ning `extractedText` i — 30 kundan keyin o'chiriladi (metadata qoladi — dublikat tekshiruvi uchun); qoralamaga aylanganlari — doimiy; `rejected` — 30 kundan keyin to'liq o'chiriladi.
 
 **Cheklov (MVP):** JavaScript bilan chiziladigan sahifalar qo'llab-quvvatlanmaydi (Playwright Vercel'da ishlamaydi). Tanlangan 5 manba server HTML beradi, shuning uchun MVP'ga ta'sir qilmaydi.
 
@@ -259,52 +267,73 @@ Har bir bosqich — alohida Payload **task**, `scrapeItem` **workflow** ularni k
 | Tanlov | Header'da "Lotin / Кирилл" almashtirgich (cookie'da eslab qoladi). `Accept-Language` bo'yicha **avtomatik redirect qilinmaydi** (SEO uchun zararli) |
 | SEO | Har bir versiyada o'z `canonical` (o'ziga); `hreflang="uz-Latn"`, `hreflang="uz-Cyrl"`, `x-default` → lotin; `<html lang="uz-Latn">` / `<html lang="uz-Cyrl">`; sitemap'da `xhtml:link` alternates; news sitemap — ikkala versiya |
 | Qidiruv | FTS ikkala locale bo'yicha; so'rov yozuvi avtomatik aniqlanadi |
-| Telegram | `[Taxmin]` Kanalga lotin versiyasi yuboriladi (ochiq savol — QUESTIONS.md) |
+| Telegram | **Ikkita kanal**: lotin kanalga lotin versiya (havola `/…`), kirill kanalga kirill versiya (havola `/kr/…`) |
+| Tekshiruv | Kirill avtomatikasiga ishoniladi (egasi qarori) — majburiy kirill tekshiruvi yo'q; editor xato ko'rsa qo'lda tuzatadi va istisnolar lug'atiga qo'shadi |
 | MCP agent | Agent **faqat lotin** yozadi; kirill avtomatik. `preview_cyrillic` tool orqali natijani ko'rish mumkin |
 
-### 3.7. Hosting: MVP (Vercel + Supabase) va Contabo'ga ko'chish
+### 3.7. Hosting: MVP bepul tariflarda (Vercel Hobby + Supabase Free + R2) va keyingi yo'l
 
-> **Egasining savoli:** "Xozircha Supabase'dan Postgres olib Vercel'ga deploy qilsa bo'ladimi?"
-> **Javob: Ha, boshlash uchun bo'ladi** — quyidagi shartlar bilan.
+> **Egasining qarori (1.2):** hisoblar (Vercel, Supabase, Cloudflare) ochilgan; **hozircha bepul tariflar**.
+> Hosting xarajati — **$0/oy** (faqat domen `odya.uz` to'lovi). Pullik tarifga o'tish — 3.7.2 dagi triggerlar bo'yicha.
 
-**MVP konfiguratsiyasi:**
+#### 3.7.1. MVP konfiguratsiyasi
 
-| Komponent | Xizmat | Muhim sozlamalar |
+| Komponent | Xizmat (bepul) | Muhim sozlamalar |
 |---|---|---|
-| Next.js + Payload (sayt, admin, API, MCP, jobs) | **Vercel Pro** | Hobby tarifi tijorat maqsadida ishlatilmaydi (Vercel shartlari) → Pro kerak. Fluid compute yoqilgan |
-| Postgres | **Supabase Pro** | Runtime: **Supavisor pooler** (transaction mode, port 6543) — serverless uchun majburiy; migratsiyalar: direct/session connection. Free tarif ishlatilmaydi (faoliyatsizlikda to'xtatiladi, backup yo'q). Region: Vercel function region bilan bir xil (masalan, Frankfurt `fra1` + `eu-central-1`) |
-| Media | **Cloudflare R2** (tavsiya) yoki Supabase Storage (S3 protokoli) | `@payloadcms/storage-s3` + **`clientUploads: true`** (Vercel function so'rov tanasi 4.5 MB bilan cheklangan — fayllar to'g'ridan-to'g'ri S3'ga yuklanadi). Ommaviy domen `media.odya.uz` |
-| DNS / CDN | **Cloudflare** | `blog.odya.uz` → Vercel (**DNS-only, proxy o'chiq** — Vercel o'z CDN'iga ega, oldiga proxy qo'yish tavsiya etilmaydi); `media.odya.uz` → R2 (proxy yoqilgan, kesh) |
-| Fon vazifalar | Vercel Cron + Payload Jobs | 3.5 bo'lim |
-| Telegram | Payload job (Vercel ichida) | |
+| Next.js + Payload (sayt, admin, API, MCP, jobs endpoint) | **Vercel Hobby** | Fluid compute yoqilgan; function region Supabase regioniga yaqin (masalan, `fra1` + Supabase `eu-central-1`) |
+| Postgres | **Supabase Free** | Runtime: **Supavisor pooler** (transaction mode, port 6543) — serverless uchun majburiy; migratsiyalar: direct/session connection. Supabase Data API/`anon` ishlatilmaydi |
+| Scheduler | **Supabase `pg_cron` + `pg_net`** | Har 10 daqiqada `POST /api/jobs/run` (`JOBS_SECRET`). SQL migratsiya fayli `infra/supabase/cron.sql` da |
+| Media | **Cloudflare R2** (bepul kvota) | `@payloadcms/storage-s3` + **`clientUploads: true`** (Vercel so'rov tanasi 4.5 MB bilan cheklangan). Ommaviy domen `media.odya.uz`. Lifecycle rule: `raw/` — 30 kun, `backups/` — 14 kun |
+| DNS / CDN | **Cloudflare Free** | `blog.odya.uz` → Vercel (**DNS-only**, proxy o'chiq — Vercel oldiga proxy qo'yish tavsiya etilmaydi); `media.odya.uz` → R2 (proxy, kesh) |
+| Backup | **GitHub Actions** (kuniga 1 marta) | `pg_dump` → `age` → R2 `backups/` |
+| Monitoring | Sentry Free, UptimeRobot Free | `/api/health` har 5 daqiqada (DB so'rovi bilan) |
+| Telegram | Payload job (Vercel ichida) | 2 kanal |
 
-**Vercel cheklovlari va yechimlar:**
+#### 3.7.2. Bepul tarif cheklovlari va yechimlar
 
-| Cheklov | Ta'sir | Yechim |
-|---|---|---|
-| Function davomiyligi cheklangan (Pro — bir necha daqiqa) | Uzoq scraping ishlamaydi | Job'lar mayda (1 feed / 1 maqola), har cron'da `limit` bilan |
-| Doimiy jarayon, WebSocket, Redis worker yo'q | BullMQ ishlamaydi | Payload Jobs (Postgres) + Vercel Cron |
-| Playwright / headless browser yo'q | JS-sahifalar scraping qilinmaydi | MVP'da kerak emas; Contabo bosqichida |
-| So'rov tanasi 4.5 MB | Katta rasm yuklash xatosi | `clientUploads: true` |
-| Image Optimization pullik (transformatsiyalar soni bo'yicha) | Xarajat o'sishi | Payload yuklashda variantlarni o'zi generatsiya qiladi (sharp); `next/image` uchun **custom loader** — tayyor variantni R2/Cloudflare'dan beradi (Vercel optimizatsiyasi ishlatilmaydi) |
-| Serverless + Postgres ulanishlar soni | Ulanish tugashi | Supavisor transaction pooler, kichik `pool.max` |
-| ISR | Muammo yo'q | `revalidateTag` publish'da |
-| Personal data joylashuvi | O'zbekiston qonuni (fuqarolar shaxsiy ma'lumotlari UZ'da) | MVP'da o'quvchilardan shaxsiy ma'lumot yig'ilmaydi; newsletter/izohlar qo'shilganda — UZ'dagi serverga ko'chish sharti |
+> Raqamlar yozilish vaqtidagi ommaviy tarif sahifalariga asoslangan; M0 da (TASKS M0-02) joriy qiymatlar tekshirilib, `docs/runbooks/free-tier.md` ga yoziladi.
 
-**Taxminiy oylik xarajat (MVP, joriy narxlarni M0 da tekshirish kerak):** Vercel Pro ~$20 / a'zo + Supabase Pro ~$25 + R2 (10 GB bepul, keyin ~$0.015/GB, egress bepul) ≈ **$45–70/oy**. AI xarajati — yo'q (obuna orqali).
+| Xizmat | Cheklov | Ta'sir | Yechim |
+|---|---|---|---|
+| **Vercel Hobby** | **Foydalanish shartlari: faqat shaxsiy, notijorat foydalanish** | Kompaniya blogi — "kulrang zona"; reklama/monetizatsiya — aniq tijorat | Boshlash va sinov uchun egasi xavfni qabul qiladi. **Reklama yoki har qanday monetizatsiyadan oldin — majburiy ravishda Vercel Pro yoki Contabo'ga o'tish** |
+| Vercel Hobby | Cron — kuniga ko'pi bilan 1 marta | Har 10 daqiqalik scraping Vercel Cron bilan ishlamaydi | Supabase `pg_cron` + `pg_net` (asosiy); zaxira — GitHub Actions `schedule` (har 30 daqiqa) |
+| Vercel Hobby | Function bajarilish vaqti cheklangan (Pro'dan qisqa; aniq qiymat Vercel hujjatida — M0 da tekshiriladi) | Uzoq job'lar uziladi | Har chaqiruvda kichik batch, ichki deadline ≈ 40 s, har task ≤ 30 s (1 feed yoki 1 maqola) |
+| Vercel Hobby | Oylik kvotalar (bandwidth, function invocations, Image Optimization transformatsiyalari) | Kvota tugasa — sayt cheklanadi | ISR kesh (DB'ga kam murojaat), media — R2/Cloudflare'dan (Vercel bandwidth'ga kirmaydi), `next/image` custom loader (Vercel Image Optimization ishlatilmaydi) |
+| Vercel Hobby | Jamoa a'zolari yo'q (bitta shaxsiy hisob) | Bir nechta dasturchi Vercel'ga kira olmaydi | Deploy GitHub orqali; Vercel'ga faqat egasi kiradi |
+| **Supabase Free** | DB hajmi **500 MB** | Kontent + lokalizatsiya + versiyalar tez o'sadi | DB'da faqat `extractedText`; raw/clean HTML — R2'da; `maxPerDoc: 10` versiya; qoralamaga aylanmagan scraped matn 30 kunda tozalanadi; hajm monitoringi (≥ 70% → ogohlantirish) |
+| Supabase Free | **7 kun faoliyatsizlikdan keyin loyiha pauza qilinadi** | Sayt ishlamay qoladi | Scheduler (har 10 daqiqa) va UptimeRobot `/api/health` (har 5 daqiqa) doimiy faollik beradi. "Faollik" ta'rifi Supabase tomonidan o'zgarishi mumkin — pauza holati UptimeRobot orqali darhol aniqlanadi |
+| Supabase Free | Backup/PITR yuklab olib bo'lmaydi | Ma'lumot yo'qolishi xavfi | O'z kunlik `pg_dump` (9.3) |
+| Supabase Free | 2 ta faol loyiha | Production + staging — limit to'la | `blog-odya-prod` va `blog-odya-staging`; lokal dev — Docker Postgres |
+| Supabase Free | Ulanishlar soni cheklangan | Serverless'da ulanish tugashi | Supavisor transaction pooler, `pool.max` = 2–3 |
+| **Cloudflare R2** | 10 GB saqlash, oylik A/B operatsiyalar kvotasi; egress bepul | Rasm va HTML arxivi | Faqat o'z media (WebP variantlar); manba rasmlari yuklanmaydi; raw HTML gzip + 30 kun TTL |
+| **GitHub Actions** | Yopiq repo'da oyiga ~2 000 bepul daqiqa | Tez-tez ishlaydigan workflow'lar kvotani yeydi | CI faqat PR'da; backup kuniga 1 marta; scheduler GitHub Actions'da emas (pg_cron) |
 
-**Contabo'ga ko'chish yo'li (config-only):**
+**Hajm hisobi (taxminiy):** kuniga ~150 scraped item × ~5 KB matn ≈ 0.75 MB/kun, 30 kunlik tozalash bilan ≈ 25 MB barqaror; kuniga 20 post × 2 locale × ~10 KB × ≤ 10 versiya ≈ 4 MB/kun eng yomon holatda → publish'dan 30 kun o'tgan postlarning versiyalari 3 tagacha kesiladi → yiliga ≈ 150–250 MB. R2: kuniga 20 muqova × ~400 KB (5 variant) ≈ 8 MB/kun → yiliga ≈ 3 GB.
 
-Barcha tashqi bog'liqliklar env orqali abstraksiyalangan: `DATABASE_URL`, `DATABASE_URL_DIRECT`, `S3_ENDPOINT`, `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_REGION`, `S3_FORCE_PATH_STYLE`, `MEDIA_PUBLIC_URL`, `JOBS_MODE` (`cron` | `autorun`), `CRON_SECRET`.
+**Pullik tarifga o'tish triggerlari:**
+
+| Trigger | Harakat |
+|---|---|
+| Reklama, homiylik yoki boshqa monetizatsiya boshlanishi | **Majburiy:** Vercel Pro yoki Contabo |
+| DB hajmi ≥ 400 MB (80%) | Supabase Pro yoki Contabo Postgres |
+| Supabase pauza hodisasi takrorlansa | Supabase Pro yoki Contabo |
+| Vercel oylik kvotasi ≥ 80% yoki function timeout'lar ko'paysa | Vercel Pro yoki worker'ni Contabo'ga ko'chirish |
+| R2 ≥ 8 GB | R2 pullik (arzon, ~$0.015/GB-oy) — o'zgarish shart emas |
+| Vercel tomonidan ogohlantirish (ToS) | Darhol Pro yoki Contabo |
+
+#### 3.7.3. Contabo'ga ko'chish yo'li (config-only)
+
+Barcha tashqi bog'liqliklar env orqali: `DATABASE_URL`, `DATABASE_URL_DIRECT`, `S3_ENDPOINT`, `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_REGION`, `S3_FORCE_PATH_STYLE`, `MEDIA_PUBLIC_URL`, `JOBS_MODE` (`endpoint` | `autorun`), `JOBS_SECRET`, `TELEGRAM_*`.
 
 | Qadam | Nima qilinadi |
 |---|---|
 | 1 | Contabo VPS: Docker Compose (`web`, `worker`, `postgres`, ixtiyoriy `minio`, `traefik`) — `infra/contabo/` |
-| 2 | **Birinchi navbatda faqat worker** ko'chiriladi (`JOBS_MODE=autorun`, Supabase va R2 ga ulanadi) — Playwright, uzoq job'lar, Vercel Cron o'chiriladi. Bu bosqich ixtiyoriy va xavfsiz |
-| 3 | DB: `pg_dump` (Supabase) → `pg_restore` (Contabo Postgres) — texnik oynada (15–30 daqiqa, admin read-only) |
-| 4 | Media: R2 qoladi (tavsiya — arzon, egress bepul) **yoki** `rclone sync` R2 → MinIO va `S3_ENDPOINT`/`MEDIA_PUBLIC_URL` almashtiriladi |
-| 5 | Web: Contabo'da Next.js konteyner; Cloudflare `blog.odya.uz` → Contabo IP, **proxy yoqiladi** (CDN, WAF) |
-| 6 | Vercel loyihasi 2 hafta zaxira sifatida saqlanadi, keyin o'chiriladi |
+| 2 | **Birinchi navbatda faqat worker** (`JOBS_MODE=autorun`, Supabase va R2 ga ulanadi) — Playwright, uzoq job'lar; `pg_cron` o'chiriladi |
+| 3 | DB: `pg_dump` (Supabase) → `pg_restore` (Contabo) — texnik oynada (15–30 daqiqa, admin read-only) |
+| 4 | Media: R2 qoladi (tavsiya) **yoki** `rclone sync` R2 → MinIO va `S3_ENDPOINT`/`MEDIA_PUBLIC_URL` almashtiriladi |
+| 5 | Web: Contabo'da Next.js konteyner; Cloudflare `blog.odya.uz` → Contabo IP, proxy yoqiladi |
+| 6 | Vercel loyihasi 2 hafta zaxira, keyin o'chiriladi |
+
 
 ---
 
@@ -319,7 +348,7 @@ Barcha tashqi bog'liqliklar env orqali abstraksiyalangan: `DATABASE_URL`, `DATAB
 | `in_progress` | Editor / AI agent | Kimdir "oldi" (lock, `assignee`), qayta yozilmoqda |
 | `review` | Editor / AI agent | Tekshiruvga tayyor |
 | `scheduled` | Admin / editor | Chop etish vaqti belgilangan |
-| `published` | Admin / editor / scheduler | Saytda ochiq (lotin + kirill), Telegram'ga yuborildi |
+| `published` | Admin / editor / scheduler | Saytda ochiq (lotin + kirill), ikkala Telegram kanalga yuborildi |
 | `rejected` | Admin / editor | Rad etildi (sabab majburiy) |
 | `archived` | Admin | Saytdan olib tashlangan (410 yoki redirect) |
 
@@ -462,7 +491,7 @@ Barcha o'zgarishlar (admin, REST, MCP, job): `actorType` (user, system), `user`,
 
 | Funksiya | Amalga oshirish | Bosqich |
 |---|---|---|
-| Postlar (drafts, autosave, versiyalar) | Payload `versions: { drafts: { autosave: true }, maxPerDoc: 50 }` | MVP |
+| Postlar (drafts, autosave, versiyalar) | Payload `versions: { drafts: { autosave: { interval: 10000 } }, maxPerDoc: 10 }` (bepul DB hajmi uchun cheklangan) | MVP |
 | Scheduled publish | Payload `schedulePublish` (jobs queue) | MVP |
 | Lotin + kirill | Payload localization + transliteratsiya hook | MVP |
 | Kategoriyalar (ierarxik) | `categories` + `@payloadcms/plugin-nested-docs` | MVP |
@@ -475,22 +504,23 @@ Barcha o'zgarishlar (admin, REST, MCP, job): `actorType` (user, system), `user`,
 | Redirects | `@payloadcms/plugin-redirects` + middleware | MVP |
 | RSS feed chiqishi | `/rss.xml`, `/kr/rss.xml`, kategoriya RSS | MVP |
 | Sitemap, news sitemap, robots | `app/sitemap.ts`, `robots.ts` (hreflang alternates) | MVP |
-| **Telegram avtopost** | Payload job + grammY | **MVP** |
+| **Telegram avtopost (2 kanal)** | Payload job + grammY | **MVP** |
 | O'xshash postlar | Teg/kategoriya kesishmasi → pgvector | MVP / M5 |
 | Mashhur postlar | Ko'rishlar hisoblagichi | M4 |
 | Newsletter | Listmonk (UZ server) | M6 |
-| Izohlar | Qaror kerak (Telegram comments / Remark42) | M6 |
+| Izohlar | Saytda yo'q; muhokama Telegram kanal izohlarida | — |
 | Rus tili | Payload localization — yangi locale | M6 |
 | Reklama joylari | `ad-slots` global | M6 |
 | Import/eksport | Payload import-export plagini | M6 |
 
-### 7.1. Telegram avtopost (MVP)
-- Bot (BotFather) kanalga **admin** sifatida qo'shiladi (faqat "post yuborish/tahrirlash" huquqi). Token — env (`TELEGRAM_BOT_TOKEN`), kanal — `telegram-settings` global (`channelId`, `isEnabled`, `script` = `uz-Latn` default, shablon).
-- Trigger: post `published` bo'lganda (`afterChange` → `telegram.post` job; scheduled postlar uchun ham).
-- Format: `sendPhoto` — muqova rasm + caption (≤ 1024 belgi): **sarlavha** (qalin), lid (1–2 jumla), "Batafsil: " havola (UTM `utm_source=telegram&utm_medium=channel`), 2–3 heshteg (kategoriya/teglardan). Rasm bo'lmasa — `sendMessage` link preview bilan. HTML parse mode, maxsus belgilar escape qilinadi.
-- `telegramMessageId` saqlanadi; post sarlavhasi/lidi o'zgarsa — `editMessageCaption`; post arxivlansa — xabar o'chirilmaydi (qo'lda).
-- Idempotentlik: bir post uchun faqat bir marta yuboriladi (`telegramMessageId` bor bo'lsa — qayta yuborilmaydi); postda "Telegram'ga yubormaslik" belgisi.
-- Xato bo'lsa — 3 marta retry, keyin admin guruhiga ogohlantirish.
+### 7.1. Telegram avtopost (MVP, ikkita kanal)
+- **Kanallar:** ikkita alohida kanal — **lotin** va **kirill**. Bitta bot (BotFather) ikkala kanalga **admin** sifatida qo'shiladi (faqat "xabar yuborish" va "xabarlarni tahrirlash" huquqlari). Kanallar va bot egasi tomonidan yaratiladi (PLAN/TASKS: HUMAN vazifa).
+- **Sozlamalar:** token — env `TELEGRAM_BOT_TOKEN`; kanal ID'lari — env `TELEGRAM_CHANNEL_LATN`, `TELEGRAM_CHANNEL_CYRL` (standart qiymat) va admin'dagi `telegram-settings` global (ustun turadi): `channels[] { script: uz-Latn | uz-Cyrl, chatId, isEnabled }`, shablon, heshteglar soni, admin ogohlantirish guruhi `alertChatId`.
+- **Trigger:** post `published` bo'lganda (`afterChange` → har bir faol kanal uchun alohida `telegram.post` job; scheduled postlar uchun ham).
+- **Format:** `sendPhoto` — muqova rasm + caption (≤ 1024 belgi): **sarlavha** (qalin), lid (1–2 jumla), "Batafsil: " havola (lotin kanal → `https://blog.odya.uz/{category}/{slug}`, kirill kanal → `https://blog.odya.uz/kr/{category}/{slug}`; UTM `utm_source=telegram&utm_medium=channel&utm_campaign=latn|cyrl`), 2–3 heshteg. Matn tegishli yozuvda (kirill kanalga — `uz-Cyrl` maydonlari). Rasm bo'lmasa — `sendMessage` link preview bilan. HTML parse mode, maxsus belgilar escape qilinadi; caption 1024 dan oshsa lid qisqartiriladi.
+- **Holat:** `posts.telegram[] { script, messageId, sentAt, error }` — har kanal uchun alohida; sarlavha/lid o'zgarsa — `editMessageCaption`; arxivlansa — xabar o'chirilmaydi.
+- **Idempotentlik:** har bir (post, kanal) juftligi uchun faqat bir marta yuboriladi; postda "Telegram'ga yubormaslik" belgisi.
+- **Xato:** 3 marta retry (429 da `retry_after` hurmat qilinadi), keyin `alertChatId` ga ogohlantirish.
 
 ---
 
@@ -512,7 +542,7 @@ Barcha o'zgarishlar (admin, REST, MCP, job): `actorType` (user, system), `user`,
 - **Slugify:** `oʻ/o'/o‘`→`o`, `gʻ`→`g`, `sh`/`ch` saqlanadi, kirill→lotin, kichik harf, `-`, ≤ 60 belgi, stop-so'zlar olib tashlanadi (`packages/shared/slugify-uz.ts`, unit testlar bilan).
 
 ### 8.2. Meta va structured data
-- `<title>`: `{seoTitle} — Odya Blog` (`[Taxmin]` brend nomi — ochiq savol); `meta description`; **canonical — har bir versiya o'ziga**; manbaga canonical qo'yilmaydi.
+- `<title>`: `{seoTitle} — Blog Odya` (kirillda `— Блог Одя`); `meta description`; **canonical — har bir versiya o'ziga**; manbaga canonical qo'yilmaydi.
 - `hreflang`: `uz-Latn`, `uz-Cyrl`, `x-default` (→ lotin) — `<link rel="alternate">` va sitemap'da.
 - OpenGraph (`og:type=article`, `og:locale=uz_UZ`, `article:*`), Twitter Card (`summary_large_image`).
 - OG rasm 1200×630; muqova bo'lmasa `next/og` bilan avtomatik (sarlavha + brend), har bir yozuv uchun alohida.
@@ -549,17 +579,18 @@ Usullar: ISR + `revalidateTag`, RSC, `next/image` custom loader (tayyor WebP var
 ## 9. Nofunksional talablar
 
 ### 9.1. Ishlash va masshtab
-- 1-yil: kuniga 100 000 gacha sahifa ko'rish — Vercel Pro + Supabase Pro yetarli.
+- MVP bepul tariflarda: kutilgan trafik (dastlabki oylar) ISR keshi tufayli bepul kvotalarga sig'adi. Limitlarga yaqinlashish — 3.7.2 dagi triggerlar bo'yicha pullik tarifga o'tish.
+- 1-yil: kuniga 100 000 gacha sahifa ko'rish — Vercel Pro + Supabase Pro yoki Contabo yetarli.
 - Scraping: kuniga 500+ element.
 
 ### 9.2. Xavfsizlik
 - HTTPS hamma joyda (Vercel / Cloudflare sertifikatlari).
-- `/admin`: kuchli parol, `maxLoginAttempts` / `lockTime`, 2FA (`[Taxmin]` M4 — Payload plagini yoki custom TOTP); foydalanuvchilar soni kichik (admin + editorlar).
+- `/admin`: kuchli parol, `maxLoginAttempts` / `lockTime`, 2FA (M4 — Payload plagini yoki custom TOTP). Foydalanuvchilarni admin panel orqali admin yaratadi (editorlar soni cheklanmagan).
 - API kalitlar — shaxsiy, bekor qilinadigan, audit log bilan; MCP'da publish tool yo'q.
 - Sirlar — Vercel Environment Variables (Production/Preview alohida), GitHub Actions secrets; repo'da emas.
 - Security headers (CSP, HSTS, X-Frame-Options, Referrer-Policy) — `next.config`.
 - Supabase: Row Level Security'ga tayanilmaydi — DB'ga faqat Payload kiradi; Supabase `anon`/Data API o'chiriladi yoki ishlatilmaydi; DB paroli kuchli, Network Restrictions (imkon bo'lsa).
-- Vercel Cron endpoint — `CRON_SECRET` bilan.
+- `/api/jobs/run` endpoint — `JOBS_SECRET` (Bearer) bilan; faqat POST; rate limit.
 - Scraped HTML — sanitizatsiya; ommaga to'g'ridan-to'g'ri chiqarilmaydi.
 - **Prompt injection (MCP):** `get_source` matni agentga "ishonchsiz ma'lumot" belgisi bilan (`<untrusted_source>` teglar ichida) beriladi; agent yozgan kontent Markdown sifatida qabul qilinib sanitizatsiya qilinadi; agentda publish huquqi yo'q — yakuniy nazorat inson.
 - Bog'liqliklar: Renovate/Dependabot, `pnpm audit` CI'da.
@@ -567,38 +598,38 @@ Usullar: ISR + `revalidateTag`, RSC, `next/image` custom loader (tayyor WebP var
 ### 9.3. Backup va tiklash
 | Bosqich | Postgres | Media |
 |---|---|---|
-| MVP (Supabase) | Supabase Pro kunlik backup (7 kun) **+** o'zimizning kunlik `pg_dump` (GitHub Actions cron → shifrlangan → R2 alohida bucket, 30 kun) — provayderga bog'lanib qolmaslik uchun | R2 — haftalik `rclone` nusxa boshqa joyga (masalan, Contabo serveri) |
+| MVP (Supabase Free) | Free tarifda yuklab olinadigan backup/PITR yo'q → **o'zimizning kunlik `pg_dump`** (GitHub Actions `schedule`, kuniga 1 marta → `age` bilan shifrlangan → R2 `backups/` bucket, 14 kun; R2 bepul kvotaga sig'adi) | R2 — haftalik `rclone` nusxa boshqa joyga (masalan, Contabo serveri) |
 | Contabo | `pg_dump` kunlik + WAL-G (PITR), 7/4/6 rotatsiya, tashqi saqlash | `mc mirror` / `rclone` tashqi joyga |
 
 **RPO ≤ 24 soat, RTO ≤ 4 soat**; oyiga bir marta tiklash sinovi (`docs/runbooks/restore.md`).
 
 ### 9.4. Monitoring va loglar
 - **Sentry** (Next.js: server, client, jobs).
-- Uptime monitor (UptimeRobot / Better Stack): sayt, `/admin`, `/api/mcp` health, har 1–5 daqiqa; ogohlantirish Telegram admin guruhiga.
-- Vercel Logs + Speed Insights; job metrikalari (manba bo'yicha muvaffaqiyat, navbat uzunligi) — admin dashboard.
+- UptimeRobot (bepul): sayt, `/api/health` (DB so'rovi bilan — Supabase faolligini ham saqlaydi), `/api/mcp`, har 5 daqiqa; ogohlantirish email/Telegram.
+- Vercel Logs (Hobby'da qisqa saqlanadi — asosiy xatolar Sentry'da); job metrikalari (manba bo'yicha muvaffaqiyat, navbat uzunligi) — admin dashboard.
 - Contabo bosqichida: Uptime Kuma, Prometheus/Grafana/Loki.
 
 ### 9.5. Analitika
 GA4 + Yandex Metrica (cookie banner bilan) + Google Search Console + Yandex Webmaster. Lotin va kirill versiyalari bo'yicha alohida segment (URL `/kr/`).
 
 ### 9.6. Huquqiy va mahalliy talablar
-- **OAV sifatida ro'yxatdan o'tish** (AOKA) — ochiq savol (QUESTIONS.md).
-- **Shaxsiy ma'lumotlar**: O'zbekiston qonuni fuqarolar shaxsiy ma'lumotlarini UZ hududida saqlashni talab qiladi. MVP'da o'quvchilardan shaxsiy ma'lumot yig'ilmaydi (faqat analitika cookie). Editor akkauntlari (bir necha xodim) — Supabase'da. Newsletter/izohlar qo'shilishidan oldin — UZ'dagi serverga ko'chish yoki yurist xulosasi.
+- **OAV sifatida ro'yxatdan o'tish** (AOKA) — egasi tizimdan mustaqil ravishda hal qiladi; saytda "Biz haqimizda" sahifasida yuridik ma'lumotlar (Odya LLC) ko'rsatiladi, guvohnoma olingach qo'shiladi.
+- **Shaxsiy ma'lumotlar**: O'zbekiston qonuni fuqarolar shaxsiy ma'lumotlarini UZ hududida saqlashni talab qiladi. MVP'da o'quvchilardan shaxsiy ma'lumot yig'ilmaydi (faqat analitika cookie). Editor akkauntlari — Supabase'da. Newsletter/izohlar qo'shilishidan oldin — UZ'dagi serverga ko'chish yoki yurist xulosasi.
 - Cookie banner, Maxfiylik siyosati, Foydalanish shartlari, Tahririyat siyosati, Mualliflik huquqi / shikoyatlar sahifasi.
-- AI shaffoflik: `[Taxmin]` post oxirida "Material AI yordamida tayyorlangan va muharrir tomonidan tekshirilgan" (post sozlamasida o'chirilishi mumkin).
+- AI shaffoflik: agent qayta yozgan postlar oxirida "Material AI yordamida tayyorlangan va muharrir tomonidan tekshirilgan" (post sozlamasida o'chirilishi mumkin).
 
 ### 9.7. Hosting va deploy
-| | MVP | Keyingi bosqich |
+| | MVP (bepul) | Keyingi bosqich |
 |---|---|---|
-| Ilova | Vercel Pro (Git integratsiya: har PR — preview, `main` — production) | Contabo VPS, Docker Compose + Traefik |
-| DB | Supabase Pro (Supavisor pooler) | Postgres 16 konteyner (Contabo) |
-| Media | Cloudflare R2 + `media.odya.uz` | R2 (qoladi) yoki MinIO |
-| Fon vazifalar | Vercel Cron → Payload Jobs | Doimiy worker (`JOBS_MODE=autorun`), Playwright |
-| DNS/CDN | Cloudflare (blog — DNS-only, media — proxy) | Cloudflare proxy + WAF |
+| Ilova | Vercel Hobby (Git integratsiya: har PR — preview, `main` — production) | Vercel Pro yoki Contabo VPS (Docker Compose + Traefik) |
+| DB | Supabase Free (Supavisor pooler) | Supabase Pro yoki Postgres 16 (Contabo) |
+| Media | Cloudflare R2 (bepul kvota) + `media.odya.uz` | R2 (pullik) yoki MinIO |
+| Fon vazifalar | Supabase `pg_cron` + `pg_net` → `/api/jobs/run` → Payload Jobs | Doimiy worker (`JOBS_MODE=autorun`), Playwright |
+| DNS/CDN | Cloudflare (blog — DNS-only, media — proxy) | Cloudflare proxy + WAF (Contabo) |
 
-- Muhitlar: `local` (`docker-compose.dev.yml`: Postgres + MinIO), `preview` (Vercel preview + alohida Supabase branch/loyiha, `noindex`), `production`.
-- **CI (GitHub Actions)**: lint, typecheck, unit/integration testlar, Playwright smoke (preview URL'ga), Lighthouse CI.
-- Payload migratsiyalari: build bosqichida emas, alohida qadam (`payload migrate` — GitHub Actions deploy workflow, direct connection bilan) — production'ga merge'dan oldin.
+- Muhitlar: `local` (`docker-compose.dev.yml`: Postgres + MinIO), `preview` (Vercel preview; Supabase Free'da 2 ta loyiha limiti bor → preview **production bilan bir DB'dan foydalanmaydi**: alohida ikkinchi Free loyiha `blog-odya-staging`, `noindex`), `production`.
+- **CI (GitHub Actions)**: lint, typecheck, unit/integration testlar (Postgres service container), build. Playwright smoke va Lighthouse CI — preview URL'ga (yopiq repo'da bepul daqiqalarni tejash uchun faqat PR'da).
+- Payload migratsiyalari: alohida GitHub Actions workflow (`payload migrate`, direct connection) — `main` ga merge'da, Vercel deploy'dan oldin.
 - Git: `gitMode = PR`, `main` himoyalangan.
 
 ---
@@ -633,9 +664,8 @@ GA4 + Yandex Metrica (cookie banner bilan) + Google Search Console + Yandex Webm
 | title, author, publishedAt, language | | |
 | excerpt | textarea | RSS description |
 | extractedText | textarea (Markdown) | To'liq matn |
-| extractedHtml | textarea | Tozalangan |
-| rawHtmlKey | text | R2 kaliti |
-| images | array { originalUrl, archiveKey, alt, width, height } | Ichki arxiv |
+| rawHtmlKey, cleanHtmlKey | text | R2 kalitlari (30 kun TTL) |
+| imageUrls | array { url, alt } | Faqat havolalar (yuklanmaydi) |
 | sourceTags | array text | |
 | wordCount | number | |
 | score | number 0–100 | Evristik |
@@ -670,12 +700,28 @@ GA4 + Yandex Metrica (cookie banner bilan) + Google Search Console + Yandex Webm
 | aiDisclosure | checkbox (default true, agar ai_agent) | |
 | isFeatured, isBreaking | checkbox | |
 | relatedPosts | rel → posts, hasMany | |
-| telegram | group { skip, messageId, sentAt, error } | |
+| telegramSkip | checkbox | Telegram'ga yubormaslik |
+| telegram | array { script, messageId, sentAt, error } | Har kanal uchun |
 | readingTime, views | number | |
 
 ### 10.4. `categories`
 `name` **(L)**, `slug`, `description` **(L)**, `parent`, `meta` **(L)**, `color`, `order`, `isInMenu`.
-Boshlang'ich (`[Taxmin]`, egasi tasdiqlashi mumkin): Sun'iy intellekt (`ai`), Texnologiyalar (`texnologiya`), Gadjetlar (`gadjetlar`), Dasturlash (`dasturlash`), Kibersport (`kibersport`), O'yinlar (`oyinlar`), Kiberxavfsizlik (`kiberxavfsizlik`), Startaplar (`startaplar`).
+
+**Boshlang'ich kategoriyalar (egasining iltimosiga ko'ra taklif, qabul qilingan):** tekis ro'yxat — o'yin/platforma nomlari (CS2, Dota 2, MLBB, PUBG Mobile, ChatGPT, iPhone va h.k.) **teg** sifatida.
+
+| # | Nomi (lotin) | Nomi (kirill) | Slug | Menyuda | Qamrov | Asosiy manbalar |
+|---|---|---|---|---|---|---|
+| 1 | Sun'iy intellekt | Сунъий интеллект | `suniy-intellekt` | ✅ | LLM, generativ AI, AI kompaniyalar, regulyatsiya | TechCrunch AI, The Verge AI, Habr |
+| 2 | Texnologiyalar | Технологиялар | `texnologiyalar` | ✅ | Big tech, internet, platformalar, ijtimoiy tarmoqlar, umumiy IT | The Verge, TechCrunch |
+| 3 | Gadjetlar | Гаджетлар | `gadjetlar` | ✅ | Smartfonlar, noutbuklar, hardware, sharhlar | iXBT, The Verge |
+| 4 | Dasturlash | Дастурлаш | `dasturlash` | ✅ | Tillar, frameworklar, dev-vositalar, open source | Habr |
+| 5 | Kiberxavfsizlik | Киберхавфсизлик | `kiberxavfsizlik` | ✅ | Buzib kirishlar, sizib chiqishlar, zaifliklar, maslahatlar | TechCrunch, Habr |
+| 6 | Kibersport | Киберспорт | `kibersport` | ✅ | Turnirlar, natijalar, transferlar, jamoalar | Dexerto, HLTV |
+| 7 | O'yinlar | Ўйинлар | `oyinlar` | ✅ | Video o'yinlar, konsollar, relizlar | iXBT, The Verge, Dexerto |
+| 8 | Startaplar va biznes | Стартаплар ва бизнес | `startaplar` | ✅ | Investitsiyalar, IPO, kompaniyalar, IT bozori | TechCrunch |
+| 9 | Ilm-fan | Илм-фан | `ilm-fan` | ➖ ("Yana" menyusida) | Kosmos, fan yutuqlari, energiya, avtomobil texnologiyalari | The Verge, iXBT |
+
+Qoidalar: har bir post — bitta asosiy kategoriya (URL'da); slug'lar lotin, ikkala yozuvda bir xil; kirill nomlari qo'lda tasdiqlangan (transliteratsiyaga tayanmaydi — `Сунъий` kabi holatlar uchun). Manba feedlari → kategoriya mapping `sources.feeds[].mapsTo` da.
 
 ### 10.5. `tags`
 `name` **(L)**, `slug`, `description` **(L)**, `meta` **(L)**, `synonyms[]`.
@@ -708,7 +754,7 @@ Payload auth: `email`, `name`, `role` (**admin**, **editor**), `author` (rel), `
 Job navbati (feed.poll, item.fetch, item.extract, item.dedupe, item.classify, telegram.post, cleanup) — Postgres'da.
 
 ### 10.15. Globals
-`site-settings` **(L)** (brend nomi, logo, ijtimoiy tarmoqlar, default OG, analitika ID'lari), `header` **(L)**, `footer` **(L)**, `telegram-settings` (channelId, isEnabled, script, template), `scraping-settings` (score chegarasi, cron limitlari), `ad-slots` (M6).
+`site-settings` **(L)** (brend nomi "Blog Odya" / "Блог Одя", logo, ijtimoiy tarmoqlar, default OG, analitika ID'lari), `header` **(L)**, `footer` **(L)**, `telegram-settings` (`channels[] { script, chatId, isEnabled }`, template, `alertChatId`), `scraping-settings` (score chegarasi, cron limitlari), `ad-slots` (M6).
 
 ### 10.16. ER diagramma (soddalashtirilgan)
 
@@ -731,14 +777,46 @@ erDiagram
 
 ---
 
+## 12. Dizayn yo'nalishi
+
+> Egasida namuna yo'q ("yordaming kerak") — quyidagi yo'nalish taklif qilinadi va qabul qilingan. Designer vazifalari: PLAN M0/M1, TASKS.
+
+### 12.1. Brend
+- **Nomi:** "Blog Odya" (kirillda "Блог Одя"). Logo yo'q → **matnli wordmark**: "Blog **Odya**" (ikkinchi so'z aksent rangda yoki qalin), kvadrat belgisi (favicon, Telegram avatar) — "O" harfi yoki "BO" monogrammasi.
+- **Ranglar:** neytral asos (oq / deyarli qora `#0B0B0F`) + **bitta aksent** (masalan, elektr-ko'k `#2563EB` yoki binafsha `#7C3AED` — designer 2 variant beradi, egasi tanlaydi). Kategoriya rang teglari — yumshoq, kam to'yingan.
+- **Shrift:** lotin kengaytirilgan + kirill subsetli, `ʻ` (U+02BB) to'g'ri ko'rinadigan: **Inter** (matn/UI) yoki **Manrope**; sarlavhalar uchun o'sha shriftning 700–800 og'irligi. `next/font` orqali self-hosted.
+- **OG rasm shabloni:** 1200×630 — sarlavha (2–3 qator), kategoriya belgisi, wordmark, fon — aksent gradient yoki muqova rasmi + qorong'i qatlam. `next/og` bilan generatsiya; lotin va kirill.
+
+### 12.2. Uslub va namunalar
+| Namuna | Nima olinadi |
+|---|---|
+| **The Verge** | Katta, qalin tipografiya; kartochkalar; kuchli bosh sahifa "hero" bloki |
+| **Habr** | O'qish qulayligi: toza maqola sahifasi, kod bloklari, teglar |
+| **kun.uz / daryo.uz** | Mahalliy auditoriyaga tanish tuzilma: "So'nggi yangiliklar" xronologik lentasi, vaqt belgilari, lotin/kirill almashtirgich joylashuvi |
+
+### 12.3. Sahifa tuzilmasi (mobil-birinchi)
+- **Header:** wordmark, kategoriyalar menyusi (mobilda gorizontal scroll yoki burger), qidiruv, **"Lotin / Кирилл"** almashtirgich, light/dark rejim tugmasi, Telegram tugmasi (joriy yozuvdagi kanalga).
+- **Bosh sahifa:** asosiy yangilik (hero) + 2–4 ta ikkinchi darajali; "So'nggi yangiliklar" lentasi (vaqt bilan); kategoriya bloklari (AI, Kibersport, Gadjetlar…); "Mashhur" (M4); Telegram obuna banneri.
+- **Maqola:** o'qish kengligi ≤ 680 px, matn 18 px / 1.7; kategoriya → sarlavha → lid → muallif, sana, o'qish vaqti → muqova 16:9 → matn → **manba bloki** ("Manba: …") → teglar → ulashish (Telegram birinchi) → o'xshash maqolalar → Telegram CTA.
+- **Kategoriya / teg:** sarlavha + SEO tavsif, kartochkalar ro'yxati, sahifalash.
+- **Footer:** kategoriyalar, huquqiy sahifalar, ikkala Telegram kanal, "© Odya LLC".
+- **Holatlar:** 404, bo'sh qidiruv, rasm yo'q kartochka (kategoriya rangidagi placeholder).
+- **Dark mode:** tizim sozlamasiga qarab + qo'lda almashtirish (cookie), FOUC yo'q.
+- **Reklama joylari:** hozir yo'q; maket o'lchamlari (header ostida, maqola ichida, sidebar) CLS'siz qo'shish uchun rezerv qilinadi.
+- **Accessibility:** WCAG AA kontrast, klaviatura navigatsiyasi, `alt` majburiy.
+
+
+---
+
 ## 11. Qabul qilish mezonlari (MVP)
-1. 5 ta manbadan har kuni avtomatik yig'ish ishlaydi (Vercel Cron + Payload Jobs), 24 soatda ≥ 95% muvaffaqiyat, dublikatlar yo'q.
+1. 5 ta manbadan har kuni avtomatik yig'ish ishlaydi (Supabase `pg_cron` → `/api/jobs/run` → Payload Jobs), 24 soatda ≥ 95% muvaffaqiyat, dublikatlar yo'q.
 2. Claude Code MCP orqali `list_scraped → create_draft → claim_draft → get_source → save_rewrite → set_seo → submit_for_review` zanjirini bajaradi; validatsiya xatolari agentga tushunarli qaytadi; hammasi audit logda (`channel = mcp`).
 3. Editor review'dagi postni admin panelda tekshirib, rasm tanlab, 10 daqiqadan kam vaqtda chop eta oladi; editor MCP'siz ham postni qo'lda to'liq yoza oladi.
 4. Chop etilgan post lotin (`/…`) va kirill (`/kr/…`) versiyalarida ochiladi; kirill avtomatik, editor qo'lda tuzatgan maydon qayta yozilmaydi; hreflang va canonical to'g'ri.
-5. Publish'dan ≤ 2 daqiqa ichida Telegram kanalda post (rasm, sarlavha, lid, havola) paydo bo'ladi; bir post ikki marta yuborilmaydi.
+5. Publish'dan ≤ 15 daqiqa ichida (keyingi scheduler tsikli; darhol yuborish — publish hook ichida urinib ko'riladi) lotin kanalda lotin, kirill kanalda kirill post (rasm, sarlavha, lid, havola) paydo bo'ladi; bir post bir kanalga ikki marta yuborilmaydi.
 6. Meta, OG, JSON-LD (Rich Results Test xatosiz), sitemap va news sitemap (ikkala versiya) to'g'ri.
 7. Lighthouse mobil Performance ≥ 90, SEO = 100, Accessibility ≥ 90.
 8. Media R2'da, `media.odya.uz` orqali Cloudflare keshidan WebP bilan beriladi; 4.5 MB dan katta rasm yuklanadi.
 9. Kunlik o'z `pg_dump` backup ishlaydi, tiklash sinovi o'tgan.
+11. Oylik hosting xarajati — $0 (domen tashqari); DB hajmi va R2 hajmi admin dashboard/ogohlantirishlarda kuzatiladi.
 10. Barcha sozlamalar env orqali — Contabo'ga ko'chish runbook'i (`docs/runbooks/migrate-to-contabo.md`) yozilgan.

@@ -1,98 +1,97 @@
-# Savollar, takliflar va kamchiliklar — OBLOG
+# Savollar, qarorlar va kamchiliklar — Blog Odya
 
-Holat: **egasining birinchi javoblari olindi (2026-09-23)** — ular [TZ.md](TZ.md) v1.1 va [PLAN.md](PLAN.md) ga kiritildi. Qolgan ochiq savollar 2-bo'limda. Ularning har biri uchun **standart taxmin** yozilgan — javob kelguncha ish shu taxmin asosida davom etadi (TZ'da `[Taxmin]` bilan belgilangan).
+Holat: **barcha savollar yopildi (2026-09-23, 2-tur).** Egasi ishlab chiqishni boshlashni so'radi. Qarorlar [TZ.md](TZ.md) v1.2, [PLAN.md](PLAN.md) va [TASKS.md](TASKS.md) ga kiritilgan.
 
-**Muhimlik:** 🔴 — tegishli vazifadan oldin javob kerak, 🟡 — MVP launch'gacha, 🟢 — keyinroq.
-
----
-
-## 1. Javob berilgan savollar ✅
-
-| # | Savol | Egasining javobi | TZ/PLAN'dagi natija |
-|---|---|---|---|
-| Q1 | Brend nomi va domen? | **blog.odya.uz** | Domen `blog.odya.uz`, media `media.odya.uz`. Saytda ko'rinadigan brend nomi — ochiq (Q1-b) |
-| Q2 | Mualliflik huquqi modeli? | **(a)** — faktlar asosida qayta yozish + atributsiya | TZ 2.3: qayta yozish, ochiq manba havolasi, manba rasmlari ishlatilmaydi |
-| Q3 | 5 ta manba ma'qulmi? | **Ma'qul** | TZ 2.2: The Verge, TechCrunch, Habr (yangiliklar), iXBT, Dexerto/HLTV |
-| Q7 | Tahririyat va publish huquqi? | Editor bo'ladi; **admin va editor**, ikkalasida publish huquqi bor | TZ 4.2: faqat 2 rol; AI agent editor kaliti bilan ishlaydi, publish qila olmaydi. Editorlar soni — ochiq (Q7-b) |
-| Q9 | Til va yozuv? | **O'zbek, kirill va lotin** | TZ 3.6: lotin — asosiy, kirill — avtomatik (`lotin-kirill` + istisnolar lug'ati), qo'lda tuzatish; URL `/kr/...`; hreflang `uz-Latn`/`uz-Cyrl`. MVP'ga kiritildi |
-| Q10 | AI inson tekshiruvisiz chop eta oladimi? | (Q7/Q17 javoblaridan) **Yo'q** — publish faqat admin/editor | MCP'da publish tool yo'q |
-| Q15 | Stek ma'qulmi? | **Ma'qul** | Next.js + Payload CMS 3 + PostgreSQL + S3-mos media |
-| Q16 | Hosting qayerda? | Server bor, hozircha aniq emas — Contabo yoki boshqa joy; Cloudflare qilinadi; **hozircha Supabase Postgres + Vercel bo'ladimi?** | **Ha, boshlash uchun bo'ladi** (TZ 3.7): Vercel Pro + Supabase Pro (Supavisor pooler) + Cloudflare R2 media; Redis/BullMQ o'rniga Payload Jobs + Vercel Cron; Vercel cheklovlari va yechimlari; Contabo'ga config-only ko'chish yo'li (PLAN M3-07, M4-01/02, M6-02) |
-| Q17 | LLM byudjeti / API kaliti? | **MCP orqali obuna ishlatamiz, yoki editor o'zi qiladi** | TZ 5: server tomonidagi LLM pipeline yo'q (M6'da ixtiyoriy); **MCP server MVP'ning asosiy qismi** (PLAN M2-08); AI xarajati — 0 (obuna) |
-| Q18 | Cloudflare ishlatish mumkinmi? | **Ha** (Q16 javobida) | DNS + R2 + media CDN; `blog` — DNS-only (Vercel davrida) |
-| Q20 | MCP'dan kim foydalanadi? | Obunadagi Claude agent (Q17) | Claude Code (asosiy), Claude Desktop (`mcp-remote`); claude.ai connector — OAuth bilan M4'da |
-| Q21 | Telegram kanal va avtopost? | **Avtopost kerak, Telegram kanal bor** | TZ 7.1, PLAN M3-01 — MVP'da. Qaysi yozuv yuborilishi — ochiq (Q21-b) |
+- ✅ **Javob berilgan** — egasi aniq javob bergan.
+- ☑️ **Standart qaror** — egasi alohida javob bermagan ("tizimni quring"); TZ'dagi tavsiya qabul qilingan. Egasi istalgan vaqtda o'zgartirishi mumkin — ta'siri ko'rsatilgan.
 
 ---
 
-## 2. Ochiq savollar
+## 1. Qarorlar jadvali
 
-### 2.1. Launch uchun muhim
-| # | Savol | Standart taxmin | Muhimlik |
-|---|---|---|---|
-| Q26 | Vercel, Supabase, Cloudflare hisoblari kimning nomiga ochiladi va kim to'laydi (Odya LLC korporativ karta)? `odya.uz` DNS allaqachon Cloudflare'dami? | Odya LLC nomiga; `odya.uz` zonasi Cloudflare'ga ko'chiriladi (agar hali bo'lmasa) — bu `odya.uz` ning boshqa yozuvlariga ham ta'sir qiladi, ehtiyotkorlik bilan | 🔴 (PLAN M0-05) |
-| Q30 | MVP hosting byudjeti taxminan **$45–70/oy** (Vercel Pro + Supabase Pro + R2) — ma'qulmi? | Ha | 🔴 |
-| Q1-b | Saytda ko'rinadigan brend nomi qanday: "Odya Blog", "Odya News" yoki boshqa? Logo bormi yoki designer yangisini chizadimi? | "Odya Blog", Odya brend ranglari asosida yangi logo varianti | 🔴 (PLAN M0-04) |
-| Q21-b | Telegram kanalga qaysi yozuvda yuboriladi — lotin, kirill yoki ikkalasi (ikki alohida kanal)? Kanal username/ID qanday? | Faqat **lotin**, bitta kanal; kanal ID M0'da olinadi | 🟡 |
-| Q7-b | Nechta editor bo'ladi va kimlar (ism, email)? Kim admin? | 1 admin + 1–2 editor | 🟡 |
-| Q27 | Qaysi Claude obunasi (Pro / Max / Team) va nechta editor agentdan foydalanadi? | Har bir editorda Pro yoki Max; kuniga 10–20 maqola uchun Max tavsiya etiladi (Pro limitlari yetmasligi mumkin) | 🟡 |
-| Q29 | Kirill versiyasini editor har bir postda tekshirishi shartmi yoki avtomatikaga ishonamizmi? | Avtomatik + sarlavha/lidni tezkor ko'z bilan tekshirish; xatolar istisnolar lug'atiga qo'shiladi | 🟡 |
-| Q8 | Kuniga nechta maqola chop etish kerak? | 1-oy 5–10, 3-oydan 20+ | 🟡 |
-| Q14 | Muqova rasmlari qayerdan olinadi (manba rasmlari ishlatilmaydi)? | Press-kit / rasmiy rasmlar + Unsplash/Pexels + editor AI yordamida generatsiya qilgan rasmlar (brend shabloni bilan) | 🟡 |
-| Q12 | Kategoriyalar ro'yxati ma'qulmi (AI, Texnologiyalar, Gadjetlar, Dasturlash, Kibersport, O'yinlar, Kiberxavfsizlik, Startaplar)? | Shu ro'yxat | 🟡 |
-| Q5 | OAV sifatida ro'yxatdan o'tish rejalashtirilganmi (Odya LLC nomidan)? | Egasi parallel hal qiladi; saytda yuridik ma'lumotlar "Biz haqimizda"da | 🟡 |
-| Q24 | Dizayn uchun namuna saytlar bormi? | shadcn/ui asosida toza yangiliklar dizayni (The Verge / Habr uslubi), light/dark | 🟡 |
+### 1.1. Biznes, brend, kontent
+| # | Savol | Qaror | Holat | TZ/PLAN'dagi natija |
+|---|---|---|---|---|
+| Q1 | Domen | **blog.odya.uz** | ✅ | `media.odya.uz` — media |
+| Q1-b | Brend nomi va logo | **"Blog Odya"**, logo yo'q | ✅ | Matnli wordmark, favicon, OG shablon — TASKS M0-06; TZ §12.1 |
+| Q2 | Mualliflik huquqi modeli | **(a)** faktlar asosida qayta yozish + atributsiya | ✅ | TZ §2.3 |
+| Q3 | Manbalar | **Ma'qul** (The Verge, TechCrunch, Habr, iXBT, Dexerto/HLTV) | ✅ | TZ §2.2, TASKS M0-04 |
+| Q7 | Rollar va publish | **admin va editor**, ikkalasida publish | ✅ | TZ §4.2 |
+| Q7-b | Editorlar soni, kimlar | Belgilanmaydi — **admin panelda admin foydalanuvchi yaratadi** | ✅ | Tizim editorlar soniga bog'liq emas |
+| Q8 | Kunlik hajm | **Kvota yo'q** — qoralamaga tushgan va ulgurilgan hammasi | ✅ | TZ §1.3 |
+| Q9 | Til va yozuv | **O'zbek: lotin va kirill** | ✅ | TZ §3.6 |
+| Q29 | Kirillni har safar tekshirish kerakmi | **Yo'q, avtomatikaga ishoniladi** | ✅ | TZ §3.6 — majburiy kirill tekshiruvi yo'q |
+| Q10 | AI o'zi publish qilsinmi | **Yo'q** — faqat admin/editor | ✅ | MCP'da publish tool yo'q |
+| Q12 | Kategoriyalar | Egasi yordam so'radi → **9 kategoriya taklif qilindi va qabul qilindi** | ✅ | TZ §10.4 (lotin/kirill nomlar, slug'lar, mapping) |
+| Q24 | Dizayn namunalari | Egasi yordam so'radi → **yo'nalish taklif qilindi** (The Verge + Habr + kun.uz, toza yangiliklar maketi, dark mode, mobil-birinchi) | ✅ | TZ §12, TASKS M0-06, M1-04 |
+| Q11 | "AI yordamida tayyorlangan" belgisi | Agent qayta yozgan postlarda — ha (post sozlamasida o'chiriladi) | ☑️ | TZ §9.6 |
+| Q13 | O'z (noyob) kontent | CMS qo'lda yozishni to'liq qo'llaydi; kontent rejasi — egasi ixtiyorida | ☑️ | — |
+| Q14 | Muqova rasmlari manbasi | Press-kit / rasmiy rasmlar, Unsplash/Pexels, editor yaratgan rasmlar; manba rasmlari ishlatilmaydi | ☑️ | TZ §2.3 |
+| Q4 | Monetizatsiya | MVP'da yo'q. **Reklamadan oldin Vercel Pro yoki Contabo majburiy** | ☑️ | TZ §3.7.2, PLAN M6-05 |
+| Q5 | OAV sifatida ro'yxatdan o'tish | Egasi tizimdan mustaqil hal qiladi | ☑️ | TZ §9.6 |
+| Q6 | Raqobatchilar | Farq: faqat IT/AI/kibersport, tezlik, lotin + kirill | ☑️ | — |
+| Q31 | Rus tili | Hozircha yo'q; arxitektura tayyor | ☑️ | PLAN M6-03 |
 
-### 2.2. Keyinroq
-| # | Savol | Standart taxmin | Muhimlik |
-|---|---|---|---|
-| Q28 | Contabo'ga qachon ko'chamiz — faqat worker (M4) yoki hammasi (M6)? | Launch'dan keyin, Vercel xarajati yoki limitlari sezilarli bo'lganda; birinchi navbatda faqat worker | 🟢 |
-| Q4 | Monetizatsiya (reklama, homiylik, Telegram reklama)? | MVP'da reklama yo'q; M6'da AdSense / Yandex RSYA joylari | 🟢 |
-| Q6 | Raqobatchilar va farqimiz? | Faqat IT/AI/kibersport, tezlik, lotin + kirill, texnik chuqurlik | 🟢 |
-| Q11 | Postlarda "AI yordamida tayyorlangan" belgisi bo'lsinmi? | Ha, agent qayta yozgan postlarda | 🟢 |
-| Q13 | O'z (noyob) kontent ham bo'ladimi — mahalliy IT yangiliklari, obzorlar? | Ha, CMS qo'llaydi; kontent rejasi — egasi | 🟢 |
-| Q22 | Izohlar kerakmi? | Yo'q; muhokama — Telegram kanal izohlarida | 🟢 |
-| Q23 | Email newsletter kerakmi? | M6 (UZ serverda) | 🟢 |
-| Q25 | Analitika hisoblari (GA4, Metrica, GSC) kimning nomiga? | Odya LLC korporativ Google/Yandex akkaunti | 🟢 |
-| Q31 | Rus tili versiyasi kerakmi? | Hozircha yo'q; arxitektura tayyor (M6) | 🟢 |
+### 1.2. Texnik va infratuzilma
+| # | Savol | Qaror | Holat | TZ/PLAN'dagi natija |
+|---|---|---|---|---|
+| Q15 | Stek | **Ma'qul** — Next.js + Payload CMS 3 + PostgreSQL + S3 | ✅ | TZ §3.1 |
+| Q16 | Hosting | Hozircha **Vercel + Supabase**, keyin Contabo | ✅ | TZ §3.7 |
+| Q26 | Hisoblar | **Vercel, Supabase, Cloudflare — ochilgan** | ✅ | TASKS M0-02 (egasi sozlaydi) |
+| Q30 | Byudjet | **Hozircha bepul tariflar** | ✅ | TZ §3.7.1–3.7.2: Vercel Hobby, Supabase Free, R2 free, scheduler `pg_cron`; **$0/oy** + domen; yangilash triggerlari |
+| Q17 | LLM / API kaliti | **MCP orqali obuna yoki editor qo'lda** | ✅ | TZ §5, §6.3; server LLM — M6 (ixtiyoriy) |
+| Q27 | Claude obunasi turi | Belgilanmaydi — har bir editor o'z obunasi bilan ulanadi | ✅ | `docs/mcp.md` (TASKS M2-07) |
+| Q18 | Cloudflare | **Ha** | ✅ | DNS, R2, media CDN |
+| Q19 | GitHub Actions | Ha (repo `Odya-LLC/blog_odya`) | ☑️ | CI, backup; bepul daqiqalar tejaladi |
+| Q20 | MCP mijozlari | Claude Code (asosiy), Claude Desktop (`mcp-remote`); claude.ai — OAuth bilan M4 | ✅ | TZ §6.3 |
+| Q28 | Contabo'ga qachon | TZ §3.7.2 triggerlari bo'yicha (monetizatsiya, DB ≥ 80%, pauza, kvota) | ☑️ | PLAN M4-01..03 |
+| Q25 | Analitika hisoblari | Odya LLC akkaunti; ID'lar admin'da kiritiladi | ☑️ | TASKS M3-05 |
+
+### 1.3. Kanallar
+| # | Savol | Qaror | Holat | TZ/PLAN'dagi natija |
+|---|---|---|---|---|
+| Q21 | Telegram avtopost | **Kerak** | ✅ | TZ §7.1, TASKS M3-01 |
+| Q21-b | Qaysi yozuvda, nechta kanal | **Ikkita alohida kanal** — lotin va kirill; kanallar hali yaratilmagan | ✅ | Egasi yaratadi — TASKS M0-03; ID'lar env/admin'da |
+| Q22 | Izohlar | Saytda yo'q; Telegram kanal izohlarida | ☑️ | TZ §7 |
+| Q23 | Newsletter | M6 (UZ serverda) | ☑️ | PLAN M6-04 |
 
 ---
 
-## 3. Kamchilik va xatolar (asl topshiriqda)
+## 2. Kamchilik va xatolar (asl topshiriqda) — holati
 
 | # | Kamchilik / xato | Holat |
 |---|---|---|
-| 1 | **Mualliflik huquqi xavfi** e'tiborga olinmagan ("to'liq manbani tarjima qilib publish"). DMCA, Google "scaled content abuse", sud xavfi | ✅ Hal qilindi — model (a) tanlandi |
-| 2 | Domen va brend nomi yo'q edi | ✅ Domen `blog.odya.uz`; brend nomi — Q1-b |
-| 3 | Til va yozuv aniqlanmagan edi | ✅ Lotin + kirill |
-| 4 | Byudjet ko'rsatilmagan | 🟡 AI — obuna; hosting — Q30 |
-| 5 | Tahririyat (odamlar) aniqlanmagan | 🟡 Rollar aniq (admin + editor); soni — Q7-b |
-| 6 | Kunlik publish hajmi aniqlanmagan | 🟡 Q8 |
-| 7 | Monetizatsiya modeli yo'q | 🟢 Q4 |
-| 8 | Izohlar va moderatsiya | 🟢 Q22 |
-| 9 | **OAV sifatida ro'yxatdan o'tish** (AOKA) eslatilmagan | 🟡 Q5 |
-| 10 | Telegram eslatilmagan edi — O'zbekistonda yangiliklarning asosiy kanali | ✅ Avtopost MVP'da |
-| 11 | O'lchanadigan KPI yo'q ("birinchi o'rin" o'lchanmaydi) | ✅ TZ 1.3 da KPI jadvali |
-| 12 | Dizayn / brending eslatilmagan | 🟡 Q1-b, Q24 |
-| 13 | AI kontent siyosati yo'q | ✅ Inson publish qiladi; belgi — Q11 |
-| 14 | Kibersport uchun faqat yangilik yetarli emas (natijalar, jadval, mahalliy jamoalar) | 🟢 M6-07 |
-| 15 | Noyob (o'z) kontent rejasi yo'q — faqat qayta yozish bilan 1-o'ringa chiqish qiyin | 🟢 Q13 |
-| 16 | Backup, xavfsizlik, huquqiy sahifalar eslatilmagan | ✅ TZ 9 |
-| 17 | Habr va iXBT ikkalasi ham rus tilida — AI/kibersport bo'yicha birlamchi manbalar ingliz tilida | ✅ EN + RU aralash 5 manba |
-| 18 | **Yangi (v1.1):** Vercel + Supabase tanlovi — O'zbekiston shaxsiy ma'lumotlar qonuni (fuqarolar ma'lumotlari UZ'da saqlanishi) | 🟡 MVP'da o'quvchi ma'lumoti yig'ilmaydi; newsletter/izohlardan oldin UZ server yoki yurist xulosasi |
-| 19 | **Yangi (v1.1):** Kirill avtomatik transliteratsiyasi 100% to'g'ri emas (rus o'zlashmalari: `sentabr → сентябрь`, `ts → ц`, `ye/e`) | ✅ Istisnolar lug'ati + qo'lda tuzatish + qulflash (TZ 3.6); Q29 |
-| 20 | **Yangi (v1.1):** Obuna orqali agent ishlashi — ish hajmi editor kompyuteri va obuna limitlariga bog'liq; avtomatik (kechasi) ishlamaydi | 🟡 Q27; kerak bo'lsa M6-01 (API bilan server pipeline) |
+| 1 | Mualliflik huquqi xavfi e'tiborga olinmagan | ✅ Model (a) |
+| 2 | Domen va brend yo'q edi | ✅ `blog.odya.uz`, "Blog Odya" |
+| 3 | Til va yozuv aniqlanmagan | ✅ Lotin + kirill |
+| 4 | Byudjet ko'rsatilmagan | ✅ $0/oy (bepul tariflar) + yangilash triggerlari |
+| 5 | Tahririyat aniqlanmagan | ✅ Rollar aniq; foydalanuvchilar admin panelda |
+| 6 | Kunlik hajm aniqlanmagan | ✅ Kvota yo'q |
+| 7 | Monetizatsiya modeli yo'q | ☑️ Keyinroq; Hobby ToS sababli tarif o'zgarishi bilan bog'langan |
+| 8 | Izohlar/moderatsiya | ☑️ Telegram izohlari |
+| 9 | OAV ro'yxatdan o'tish | ☑️ Egasi mustaqil hal qiladi |
+| 10 | Telegram eslatilmagan edi | ✅ 2 kanal, avtopost MVP'da |
+| 11 | O'lchanadigan KPI yo'q | ✅ TZ §1.3 |
+| 12 | Dizayn/brending eslatilmagan | ✅ TZ §12, M0-06, M1-04 |
+| 13 | AI kontent siyosati yo'q | ✅ Inson publish qiladi + shaffoflik belgisi |
+| 14 | Kibersport uchun faqat yangilik yetarli emas | ☑️ PLAN M6-06 |
+| 15 | Noyob kontent rejasi yo'q | ☑️ Egasi ixtiyorida (CMS tayyor) |
+| 16 | Backup, xavfsizlik, huquqiy sahifalar | ✅ TZ §9, TASKS M0-05, M3-02, M3-03 |
+| 17 | Faqat rus manbalari (Habr, iXBT) | ✅ EN + RU aralash 5 manba |
+| 18 | Serverlar UZ'dan tashqarida (shaxsiy ma'lumotlar qonuni) | ☑️ MVP'da o'quvchi ma'lumoti yig'ilmaydi; newsletter/izohlardan oldin UZ server |
+| 19 | Kirill transliteratsiyasi 100% emas | ✅ Istisnolar lug'ati + qo'lda tuzatish; egasi avtomatikaga ishonadi |
+| 20 | Agent ishi editor obunasiga bog'liq (kechasi avtomatik emas) | ☑️ Kerak bo'lsa M6-01 |
+| 21 | **Yangi (v1.2):** Vercel Hobby — faqat notijorat foydalanish; Supabase Free — pauza va backup yo'q | ✅ TZ §3.7.2: xavf qabul qilingan, himoya choralari va majburiy o'tish triggerlari |
 
 ---
 
-## 4. Takliflar
+## 3. Takliflar (o'z kuchida)
 
-1. **"Faktlar + kontekst"** — har bir postga "O'zbekiston uchun bu nimani anglatadi" bloki (narxlar so'mda, mavjudligi, mahalliy analoglar). Huquqiy xavfni kamaytiradi va SEO'da noyob qiymat beradi.
-2. **Agregatsiya** — bitta mavzu bo'yicha 2–3 manbani birlashtirib yozish (SimHash klasterlari orqali).
-3. **Telegram-first** — sayt SEO uchun, Telegram tezkor auditoriya uchun; har bir postda kanalga obuna CTA.
+1. **"Faktlar + kontekst"** — "O'zbekiston uchun bu nimani anglatadi" bloki (narxlar so'mda, mavjudligi).
+2. **Agregatsiya** — bir mavzuda 2–3 manbani birlashtirish (M5-03).
+3. **Telegram-first** — har postda kanalga obuna CTA (joriy yozuvdagi kanal).
 4. **Kibersportda mahalliy burchak** — O'zbek jamoalari va turnirlari.
-5. **Glossariy** vaqt o'tib alohida SEO-sahifa ("IT lug'at") bo'lishi mumkin — lotin va kirillda.
-6. **Kichik MVP** — ~6.5 hafta; domen indeksatsiyasi erta boshlansin.
-7. **Google News Publisher Center** va **Yandex** ga erta ro'yxatdan o'tish.
-8. **Manbalar bilan hamkorlik** — Habr, 3DNews, Cybersport.ru ga tarjima/qayta nashr ruxsati bo'yicha xat.
-9. **Agent ish tartibi** — editor har kuni ertalab va kechqurun MCP `daily_batch` prompt'i bilan 5–10 ta qoralama tayyorlaydi, keyin review qilib publish qiladi.
+5. **Glossariy** — kelajakda "IT lug'at" SEO sahifasi (lotin + kirill).
+6. **Google News Publisher Center** va **Yandex Webmaster** ga launch kuni ro'yxatdan o'tish (TASKS M3-05).
+7. **Manbalar bilan hamkorlik** — Habr, 3DNews, Cybersport.ru ga qayta nashr ruxsati bo'yicha xat.
+8. **Agent ish tartibi** — editor kuniga 1–2 marta MCP `daily_batch` prompt'i bilan 5–10 ta qoralama tayyorlaydi, keyin review qilib publish qiladi.
