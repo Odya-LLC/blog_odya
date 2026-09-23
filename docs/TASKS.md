@@ -14,7 +14,7 @@ Quiel'ga import uchun mashina o'qiydigan nusxa (`tasks.json`) repo'dan tashqarid
 | M0-04 | OBLOG-5 | Manbalar auditi va seed ma'lumotlari | CHORE | P1 | developer | AGENT | M0-01 | 1 kun |
 | M0-05 | OBLOG-6 | Tahririyat hujjatlari: stil, SEO, mualliflik qoidalari, glossariy, huquqiy matnlar | CHORE | P1 | developer | AGENT | M0-01 | 2 kun |
 | M0-06 | OBLOG-7 | Brend: wordmark logo, favicon, OG shablon, palitra | DESIGN | P1 | designer | AGENT | — | 1 kun |
-| M1-01 | OBLOG-8 | Payload asosiy sozlash: Supabase, R2, localization, rollar | FEATURE | P1 | developer | AGENT | M0-01, M0-02 | 1 kun |
+| M1-01 | OBLOG-8 | Payload asosiy sozlash: Supabase, R2, localization, rollar | FEATURE | P1 | developer | AGENT | M0-01, M0-02 (yumshoq) | 1 kun |
 | M1-02 | OBLOG-9 | Kontent kolleksiyalari, workflow va seed | FEATURE | P1 | developer | AGENT | M1-01, M0-04, M0-05 | 2 kun |
 | M1-03 | OBLOG-10 | Lotin → kirill transliteratsiya va slugify-uz | FEATURE | P1 | developer | AGENT | M1-02, M0-05 | 2 kun |
 | M1-04 | OBLOG-11 | UI kit va sahifa maketlari (kodda) | DESIGN | P1 | designer | AGENT | M0-06, M0-01 | 2 kun |
@@ -65,7 +65,7 @@ flowchart LR
     M0_01 --> M0_04
     M0_01 --> M0_05
     M0_01 --> M1_01
-    M0_02 --> M1_01
+    M0_02 -.-> M1_01
     M1_01 --> M1_02
     M0_04 --> M1_02
     M0_05 --> M1_02
@@ -106,8 +106,141 @@ flowchart LR
     M3_04 --> M3_05
 ```
 
-**Kritik yo'l:** M0-01 → M0-02 → M1-01 → M1-02 → M1-03 → M1-05 → M1-06 → M3-04 → M3-05, parallel: M2-01 → M2-02 → M2-03; M2-05 → M2-06 → M2-07.
+**Kritik yo'l:** M1-01 → M1-02 → M1-03 → M1-05 → M1-06 → M3-04 → M3-05 (batafsil — «Bog'liqliklar va bajarish tartibi» bo'limida), parallel: M2-01 → M2-02 → M2-03; M2-05 → M2-06 → M2-07.
 
+
+---
+
+## Bog'liqliklar va bajarish tartibi
+
+**Holat (2026-09-23):** OBLOG-2, OBLOG-5, OBLOG-6, OBLOG-7 bajarilgan (DONE). Quiel'da bog'liqliklarni MCP orqali o'rnatib bo'lmaydi, shuning uchun bog'liqliklar bo'yicha yagona manba — shu bo'limdagi jadval va graf.
+
+Graf: `A --> B` — A tugamaguncha B boshlanmaydi (qattiq bog'liqlik); `A -.-> B` — yumshoq bog'liqlik: OBLOG-8 lokal Docker (Postgres + MinIO) bilan ishlanadi, Supabase/R2 bilan tekshiruv OBLOG-3 dan keyin. Yashil — bajarilgan, sariq (punktir chegara) — egasi (HUMAN), qizil — kritik yo'l.
+
+```mermaid
+flowchart LR
+    O2["OBLOG-2<br/>Repo skeleti"]
+    O3["OBLOG-3<br/>Hisoblar (egasi)"]
+    O4["OBLOG-4<br/>Telegram kanallar (egasi)"]
+    O5["OBLOG-5<br/>Manbalar auditi"]
+    O6["OBLOG-6<br/>Tahririyat hujjatlari"]
+    O7["OBLOG-7<br/>Brend"]
+    O8["OBLOG-8<br/>Payload sozlash"]
+    O9["OBLOG-9<br/>Kontent kolleksiyalari"]
+    O10["OBLOG-10<br/>Transliteratsiya"]
+    O11["OBLOG-11<br/>UI kit"]
+    O12["OBLOG-12<br/>Ommaviy sayt"]
+    O13["OBLOG-13<br/>SEO"]
+    O14["OBLOG-14<br/>Qo'shimcha sahifalar"]
+    O15["OBLOG-15<br/>Scraping + scheduler"]
+    O16["OBLOG-16<br/>Fetch/extract"]
+    O17["OBLOG-17<br/>Dedupe/klassifikatsiya"]
+    O18["OBLOG-18<br/>Tahririyat navbati"]
+    O19["OBLOG-19<br/>API kalitlar/audit"]
+    O20["OBLOG-20<br/>MCP o'qish"]
+    O21["OBLOG-21<br/>MCP yozish"]
+    O22["OBLOG-22<br/>Telegram avtopost"]
+    O23["OBLOG-23<br/>Xavfsizlik/monitoring"]
+    O24["OBLOG-24<br/>Backup"]
+    O25["OBLOG-25<br/>Runbook + e2e"]
+    O26["OBLOG-26<br/>Production launch (egasi)"]
+    O2 --> O3
+    O2 --> O5
+    O2 --> O6
+    O2 --> O8
+    O2 --> O11
+    O7 --> O11
+    O8 --> O9
+    O5 --> O9
+    O6 --> O9
+    O9 --> O10
+    O6 --> O10
+    O9 --> O12
+    O10 --> O12
+    O11 --> O12
+    O12 --> O13
+    O12 --> O14
+    O12 --> O23
+    O9 --> O15
+    O5 --> O15
+    O15 --> O16
+    O16 --> O17
+    O15 --> O18
+    O10 --> O18
+    O9 --> O19
+    O19 --> O20
+    O15 --> O20
+    O6 --> O20
+    O20 --> O21
+    O10 --> O21
+    O15 --> O22
+    O10 --> O22
+    O4 --> O22
+    O3 --> O24
+    O13 --> O25
+    O14 --> O25
+    O17 --> O25
+    O18 --> O25
+    O21 --> O25
+    O22 --> O25
+    O23 --> O25
+    O24 --> O25
+    O25 --> O26
+    O3 -.->|yumshoq| O8
+    classDef done fill:#d1fae5,stroke:#059669,color:#064e3b
+    classDef human fill:#fef3c7,stroke:#d97706,color:#78350f,stroke-dasharray: 4 2
+    classDef crit fill:#fee2e2,stroke:#dc2626,stroke-width:3px,color:#7f1d1d
+    class O2,O5,O6,O7 done
+    class O3,O4,O26 human
+    class O8,O9,O10,O12,O13,O25 crit
+    class O26 crit
+    linkStyle 6,9,12,14,33,41 stroke:#dc2626,stroke-width:3px
+```
+
+**Kritik yo'l:** OBLOG-8 → OBLOG-9 → OBLOG-10 → OBLOG-12 → OBLOG-13 → OBLOG-25 → OBLOG-26 (egasi).
+
+### To'lqinlar (waves)
+
+| Wave | Vazifalar | Parallel bajarish mumkin | Izoh |
+|---|---|---|---|
+| 0 (bajarilgan) | OBLOG-2, OBLOG-5, OBLOG-6, OBLOG-7 | — | DONE |
+| 1 (hozir boshlash mumkin) | OBLOG-3 (egasi), OBLOG-4 (egasi), OBLOG-8, OBLOG-11 | Ha, hammasi | OBLOG-8 lokal Docker bilan; OBLOG-3 kritik yo'lda emas, lekin OBLOG-24 va OBLOG-8 ning Supabase/R2 tekshiruvi uni kutadi |
+| 2 | OBLOG-9, OBLOG-24 | Ha | OBLOG-24 — OBLOG-3 dan keyin |
+| 3 | OBLOG-10, OBLOG-15, OBLOG-19 | Ha | Uchalasi faqat OBLOG-9 (va wave 0) ga bog'liq |
+| 4 | OBLOG-12, OBLOG-16, OBLOG-18, OBLOG-20, OBLOG-22 | Ha | OBLOG-22 uchun OBLOG-4 ham kerak |
+| 5 | OBLOG-13, OBLOG-14, OBLOG-17, OBLOG-21, OBLOG-23 | Ha | — |
+| 6 | OBLOG-25 | — | Barcha M1–M3 vazifalari tugagach |
+| 7 | OBLOG-26 (egasi) | — | Production launch |
+
+### Har bir vazifa: nimaga bog'liq / nimani bloklaydi
+
+| Vazifa | Kutadi (blocked by) | Bloklaydi (blocks) | Rol | Ijrochi |
+|---|---|---|---|---|
+| OBLOG-2 — Repo skeleti ✅ | — | OBLOG-3, OBLOG-5, OBLOG-6, OBLOG-8, OBLOG-11 | developer | AGENT |
+| OBLOG-3 — Hisoblar (egasi) | OBLOG-2 | OBLOG-24 (+ OBLOG-8 yumshoq) | sysadmin | HUMAN |
+| OBLOG-4 — Telegram kanallar (egasi) | — | OBLOG-22 | sysadmin | HUMAN |
+| OBLOG-5 — Manbalar auditi ✅ | OBLOG-2 | OBLOG-9, OBLOG-15 | developer | AGENT |
+| OBLOG-6 — Tahririyat hujjatlari ✅ | OBLOG-2 | OBLOG-9, OBLOG-10, OBLOG-20 | developer | AGENT |
+| OBLOG-7 — Brend ✅ | — | OBLOG-11 | designer | AGENT |
+| OBLOG-8 — Payload sozlash | OBLOG-2 (+ OBLOG-3 yumshoq) | OBLOG-9 | developer | AGENT |
+| OBLOG-9 — Kontent kolleksiyalari | OBLOG-5, OBLOG-6, OBLOG-8 | OBLOG-10, OBLOG-12, OBLOG-15, OBLOG-19 | developer | AGENT |
+| OBLOG-10 — Transliteratsiya | OBLOG-6, OBLOG-9 | OBLOG-12, OBLOG-18, OBLOG-21, OBLOG-22 | developer | AGENT |
+| OBLOG-11 — UI kit | OBLOG-2, OBLOG-7 | OBLOG-12 | designer | AGENT |
+| OBLOG-12 — Ommaviy sayt | OBLOG-9, OBLOG-10, OBLOG-11 | OBLOG-13, OBLOG-14, OBLOG-23 | developer | AGENT |
+| OBLOG-13 — SEO | OBLOG-12 | OBLOG-25 | developer | AGENT |
+| OBLOG-14 — Qo'shimcha sahifalar | OBLOG-12 | OBLOG-25 | developer | AGENT |
+| OBLOG-15 — Scraping + scheduler | OBLOG-5, OBLOG-9 | OBLOG-16, OBLOG-18, OBLOG-20, OBLOG-22 | developer | AGENT |
+| OBLOG-16 — Fetch/extract | OBLOG-15 | OBLOG-17 | developer | AGENT |
+| OBLOG-17 — Dedupe/klassifikatsiya | OBLOG-16 | OBLOG-25 | developer | AGENT |
+| OBLOG-18 — Tahririyat navbati | OBLOG-10, OBLOG-15 | OBLOG-25 | developer | AGENT |
+| OBLOG-19 — API kalitlar/audit | OBLOG-9 | OBLOG-20 | developer | AGENT |
+| OBLOG-20 — MCP o'qish | OBLOG-6, OBLOG-15, OBLOG-19 | OBLOG-21 | developer | AGENT |
+| OBLOG-21 — MCP yozish | OBLOG-10, OBLOG-20 | OBLOG-25 | developer | AGENT |
+| OBLOG-22 — Telegram avtopost | OBLOG-4, OBLOG-10, OBLOG-15 | OBLOG-25 | developer | AGENT |
+| OBLOG-23 — Xavfsizlik/monitoring | OBLOG-12 | OBLOG-25 | developer | AGENT |
+| OBLOG-24 — Backup | OBLOG-3 | OBLOG-25 | sysadmin | AGENT |
+| OBLOG-25 — Runbook + e2e | OBLOG-13, OBLOG-14, OBLOG-17, OBLOG-18, OBLOG-21, OBLOG-22, OBLOG-23, OBLOG-24 | OBLOG-26 | sysadmin | AGENT |
+| OBLOG-26 — Production launch (egasi) | OBLOG-25 | — | sysadmin | HUMAN |
 
 ---
 
@@ -325,7 +458,7 @@ Asosiy hujjat: `docs/TZ.md` (v1.2). Ishni boshlashdan oldin TZ'ning ko'rsatilgan
 - `users`: `role` (`admin`, `editor`), `name`, `enableAPIKey`; access helper'lar `isAdmin`, `isAdminOrEditor`; faqat admin foydalanuvchi yaratadi.
 - Admin panel tili: o'zbekcha (custom translations, kamida asosiy UI).
 
-**Bog'liq:** M0-01, M0-02
+**Bog'liq:** M0-01; M0-02 (OBLOG-3) — yumshoq: lokal Docker (Postgres + MinIO) bilan ishlanadi, Supabase/R2 bilan tekshiruv OBLOG-3 dan keyin
 
 **Baho:** 1 kun
 
