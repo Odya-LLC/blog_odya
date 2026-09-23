@@ -16,6 +16,8 @@
     "check:feeds": "cross-env RUN_FEED_CHECKS=1 vitest run test/feeds.live.test.ts"
   },
   "dependencies": {
+    "@blog-odya/guidelines": "workspace:*",
+    "lotin-kirill": "0.1.5",
     "zod": "4.6.5"
   },
   "devDependencies": {

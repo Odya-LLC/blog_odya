@@ -115,7 +115,7 @@ describe('media: yuklash va WebP variantlar (MinIO)', () => {
     expect([meta.format, meta.width, meta.height]).toEqual(['webp', 1200, 630])
   })
 
-  it('alt/caption lokalizatsiya qilingan, kirillda lotinga fallback', async () => {
+  it('alt/caption lokalizatsiya qilingan, kirill lotindan avtomatik (OBLOG-10)', async () => {
     await payload.update({
       collection: 'media',
       id: doc.id,
@@ -133,9 +133,8 @@ describe('media: yuklash va WebP variantlar (MinIO)', () => {
     const cyrl = await payload.findByID({ collection: 'media', id: doc.id, locale: 'uz-Cyrl' })
     expect(latn.alt).toBe('Sinov rasmi')
     expect(cyrl.alt).toBe('Синов расми')
-    // Kirill caption yo'q — fallback: lotin.
-    expect(cyrl.caption).toBe('Lotin izoh')
-  })
+    // Kirill caption qo'lda kiritilmagan — lotindan avtomatik transliteratsiya (TZ §3.6).
+    expect(cyrl.caption).toBe('Лотин изоҳ')  })
 
   it('alt majburiy', async () => {
     const data = await makeJpeg(400, 300)
