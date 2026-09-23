@@ -22,6 +22,9 @@ Tizim jahon yetakchi IT-nashrlaridan (The Verge, TechCrunch, Habr, iXBT, Dexerto
 apps/web/             Next.js (App Router) + Payload CMS 3: sayt, /admin, REST/GraphQL API
   src/env.ts          Env sxemasi (Zod) — barcha o'zgaruvchilar shu yerda tekshiriladi
   src/payload.config.ts
+  src/config/         DB (pooler/direct) va S3 (MinIO/R2) sozlamalari
+  src/access/         Rollar va access helper'lar (isAdmin, isAdminOrEditor)
+  src/i18n/uz.ts      Admin panel o'zbekcha tarjimasi
   src/migrations/     Payload migratsiyalari (commit qilinadi)
   .env.example        Env namunasi (izohlar bilan)
 packages/shared/      Umumiy kod: locale'lar, keyinchalik slugify-uz, translit
@@ -66,7 +69,7 @@ infra/docker-compose.dev.yml   Lokal Postgres 16 + MinIO
    pnpm dev
    ```
 
-5. http://localhost:3000/admin ni oching va birinchi admin foydalanuvchini yarating.
+5. http://localhost:3000/admin ni oching va birinchi foydalanuvchini yarating — u avtomatik **admin** bo'ladi. Keyingi foydalanuvchilarni (admin yoki editor) faqat admin yaratadi. Admin panel tili — o'zbekcha (lotin).
 
 To'xtatish: `Ctrl+C`, keyin `docker compose -f infra/docker-compose.dev.yml down` (ma'lumotlarni ham o'chirish uchun — `down -v`).
 
@@ -88,7 +91,9 @@ To'xtatish: `Ctrl+C`, keyin `docker compose -f infra/docker-compose.dev.yml down
 - **Sxema faqat migratsiyalar orqali o'zgaradi** — dev'da ham Payload `push` o'chiq. Kolleksiya o'zgargach: `pnpm migrate:create <nom>` → `pnpm migrate`.
 - **Env:** barcha o'zgaruvchilar `apps/web/src/env.ts` da tekshiriladi, noto'g'ri bo'lsa ilova ishga tushmaydi. Sirlar yo'q muhitda build uchun: `SKIP_ENV_VALIDATION=1 pnpm build`.
 - **Sirlar** (`.env`) repo'ga commit qilinmaydi — production qiymatlari Vercel Environment Variables va GitHub secrets'da.
-- Lokal MinIO va production Cloudflare R2 o'rtasidagi farq faqat `S3_*` va `MEDIA_PUBLIC_URL` qiymatlarida.
+- Lokal MinIO va production Cloudflare R2 o'rtasidagi farq faqat `S3_*` va `MEDIA_PUBLIC_URL` qiymatlarida. Admin'dan rasm yuklash `clientUploads` bilan to'g'ridan-to'g'ri bucket'ga boradi — R2 bucket'da CORS kerak: [docs/runbooks/r2-cors.md](docs/runbooks/r2-cors.md).
+- **Postgres:** runtime — `DATABASE_URL` (Supabase: transaction pooler, `pool.max = 3`), migratsiyalar — `DATABASE_URL_DIRECT` (direct/session). Sozlama: `apps/web/src/config/database.ts`.
+- **Rollar:** `admin`, `editor` (TZ §4.2); access helper'lar — `apps/web/src/access`. Sayt locale'lari: `uz-Latn` (asosiy), `uz-Cyrl` (`fallback: true`).
 
 ## Holat
 

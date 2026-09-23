@@ -1,34 +1,51 @@
+import { DEFAULT_LOCALE, LOCALES, type Locale } from '@blog-odya/shared'
 import { postgresAdapter } from '@payloadcms/db-postgres'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import { s3Storage } from '@payloadcms/storage-s3'
 import path from 'path'
-import { buildConfig } from 'payload'
+import { buildConfig, type Config } from 'payload'
 import sharp from 'sharp'
 import { fileURLToPath } from 'url'
 
 import { Media } from './collections/Media'
 import { Users } from './collections/Users'
+import { getDatabaseMode, getDatabasePoolConfig } from './config/database'
+import { getS3StorageOptions } from './config/storage'
 import { env } from './env'
+import { ADMIN_LANGUAGE, uz } from './i18n/uz'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
-/**
- * Migratsiyalar (`pnpm migrate`, `pnpm migrate:create`) direct ulanish orqali ishlaydi
- * (Supabase: session/direct, pooler emas). Skriptlar `PAYLOAD_MIGRATING=true` o'rnatadi.
- */
-const isMigrating = process.env.PAYLOAD_MIGRATING === 'true'
-const connectionString =
-  (isMigrating ? env.DATABASE_URL_DIRECT : undefined) ?? env.DATABASE_URL ?? ''
+const LOCALE_LABELS: Record<Locale, string> = {
+  'uz-Latn': 'Lotin',
+  'uz-Cyrl': 'Кирилл',
+}
 
-const mediaPublicUrl = env.MEDIA_PUBLIC_URL?.replace(/\/+$/, '')
+/**
+ * Admin panel faqat o'zbekcha. `uz` Payload'ning `AcceptedLanguages` turida yo'q, lekin runtime
+ * kalitlarni `supportedLanguages` dan oladi — shuning uchun tur darajasida kengaytiramiz.
+ */
+const i18n = {
+  fallbackLanguage: ADMIN_LANGUAGE,
+  supportedLanguages: { [ADMIN_LANGUAGE]: uz },
+} as unknown as NonNullable<Config['i18n']>
 
 export default buildConfig({
   admin: {
     user: Users.slug,
+    // date-fns'da o'zbek locale'i yo'q — oy nomlarisiz raqamli format.
+    dateFormat: 'dd.MM.yyyy HH:mm',
     importMap: {
       baseDir: path.resolve(dirname),
     },
+  },
+  i18n,
+  // Sayt yozuvlari (TZ §3.6): lotin — asosiy, kirill — hosila; tarjima bo'lmasa lotinga qaytadi.
+  localization: {
+    locales: LOCALES.map((code) => ({ code, label: LOCALE_LABELS[code] })),
+    defaultLocale: DEFAULT_LOCALE,
+    fallback: true,
   },
   collections: [Users, Media],
   editor: lexicalEditor(),
@@ -37,10 +54,16 @@ export default buildConfig({
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),
   },
-  db: postgresAdapter({
-    pool: {
-      connectionString,
+  // Faqat server tomonidagi (multipart) yuklashlar uchun; admin'dan fayllar clientUploads bilan
+  // to'g'ridan-to'g'ri bucket'ga boradi (imzolangan URL ham shu limitni tekshiradi).
+  upload: {
+    limits: {
+      fileSize: 25 * 1024 * 1024,
     },
+  },
+  db: postgresAdapter({
+    // Runtime — pooler (DATABASE_URL), migratsiyalar — direct (DATABASE_URL_DIRECT).
+    pool: getDatabasePoolConfig(env, getDatabaseMode()),
     // Sxema faqat migratsiyalar orqali o'zgaradi (dev'da ham `push` o'chiq),
     // shunda lokal, CI va production bir xil yo'ldan yuradi.
     push: false,
@@ -49,27 +72,6 @@ export default buildConfig({
   sharp,
   plugins: [
     // Lokal: MinIO, production: Cloudflare R2 — farq faqat env'da (TZ §3.1, §3.7).
-    s3Storage({
-      enabled: Boolean(env.S3_BUCKET),
-      collections: {
-        media: mediaPublicUrl
-          ? {
-              disablePayloadAccessControl: true,
-              generateFileURL: ({ filename, prefix }) =>
-                [mediaPublicUrl, prefix, filename].filter(Boolean).join('/'),
-            }
-          : true,
-      },
-      bucket: env.S3_BUCKET ?? '',
-      config: {
-        endpoint: env.S3_ENDPOINT,
-        region: env.S3_REGION,
-        forcePathStyle: env.S3_FORCE_PATH_STYLE,
-        credentials: {
-          accessKeyId: env.S3_ACCESS_KEY_ID ?? '',
-          secretAccessKey: env.S3_SECRET_ACCESS_KEY ?? '',
-        },
-      },
-    }),
+    s3Storage(getS3StorageOptions(env)),
   ],
 })
