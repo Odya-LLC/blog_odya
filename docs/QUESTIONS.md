@@ -1,87 +1,98 @@
 # Savollar, takliflar va kamchiliklar — OBLOG
 
-Har bir savol uchun **standart taxmin** ko'rsatilgan — javob kelguncha ish shu taxmin asosida davom etadi ([TZ.md](TZ.md) da `[Taxmin]` bilan belgilangan). Javob taxmindan farq qilsa, TZ va PLAN yangilanadi.
+Holat: **egasining birinchi javoblari olindi (2026-09-23)** — ular [TZ.md](TZ.md) v1.1 va [PLAN.md](PLAN.md) ga kiritildi. Qolgan ochiq savollar 2-bo'limda. Ularning har biri uchun **standart taxmin** yozilgan — javob kelguncha ish shu taxmin asosida davom etadi (TZ'da `[Taxmin]` bilan belgilangan).
 
-**Muhimlik:** 🔴 — ish boshlashdan oldin javob kerak (bloklovchi), 🟡 — 1-bosqich oxirigacha, 🟢 — keyinroq.
-
----
-
-## 1. Kamchilik va xatolar (asl topshiriqda)
-
-| # | Kamchilik / xato | Nima uchun muhim | Taklif |
-|---|---|---|---|
-| 1 | **Mualliflik huquqi xavfi e'tiborga olinmagan.** "To'liq manbani scrap qilib, tarjima qilib publish qilish" — bu boshqa nashr kontentining hosila asarini ruxsatsiz chop etish. | DMCA shikoyatlari, Google'dan chiqarib tashlash, AdSense ban, hosting blokirovkasi, sud da'vosi. Google "scaled content abuse" siyosati tarjima-nusxa saytlarni jazolaydi — ya'ni **SEO maqsadiga ham zid**. | So'zma-so'z tarjima emas — **faktlar asosida qayta yozish** + manbaga ochiq havola + o'z kontekstimiz ("O'zbekiston uchun ahamiyati"). Manba rasmlari ishlatilmaydi. Uzoq muddatda — manbalar bilan litsenziya kelishuvi. (TZ 2.3) |
-| 2 | **Domen va brend nomi yo'q.** Loyiha nomi "Yangiliklar O'zbek tilida" — bu brend emas. | SEO, logo, Telegram kanal, Google News ro'yxati — hammasi brendga bog'liq. Domen yoshi SEO uchun muhim — qancha erta olinsa, shuncha yaxshi. | Qisqa, esda qoladigan brend + `.uz` domen (+ `.com` himoya uchun). |
-| 3 | **Til va yozuv aniqlanmagan** (lotin / kirill / rus). | Slug, shriftlar, AI prompt, SEO kalit so'zlar. | Lotin (asosiy); kirill va rus — keyingi bosqich. |
-| 4 | **Byudjet ko'rsatilmagan** (LLM, hosting, CDN, dizayn). | Model tanlovi, kunlik hajm, server hajmi byudjetga bog'liq. | Oylik byudjet chegarasini aniqlash; TZ'da AI kunlik byudjet limiti bor. |
-| 5 | **Tahririyat (odamlar) aniqlanmagan.** "Odam tarjima qiladi" — kim? nechta? | Inson tekshiruvisiz AI kontent — sifat va huquqiy xavf. Kunlik hajm odamlar soniga bog'liq. | Kamida 1 muharrir + 1–2 tarjimon/kontent muallif. |
-| 6 | **Kunlik publish hajmi aniqlanmagan.** | Worker, AI byudjet, muharrirlar yuklamasi. | 1-oy: 5–10/kun, keyin 20–30. |
-| 7 | **Monetizatsiya modeli yo'q.** | Dizaynda reklama joylari, sahifa tuzilmasi, analitika. | AdSense/Yandex RSYA + to'g'ridan-to'g'ri reklama + Telegram'da reklama postlari. |
-| 8 | **Izohlar va moderatsiya haqida so'z yo'q.** | Izohlar — moderatsiya resursi va huquqiy javobgarlik (foydalanuvchi kontenti, shaxsiy ma'lumotlar). | MVP'da izohlar yo'q; muhokama — Telegram kanal izohlarida. |
-| 9 | **OAV sifatida ro'yxatdan o'tish** eslatilmagan. | O'zbekistonda muntazam yangiliklar chiqaradigan sayt OAV sifatida ro'yxatdan o'tishi talab qilinishi mumkin (AOKA). Akkreditatsiya, rasmiy manbalar bilan ishlash, reklama shartnomalari uchun ham kerak. | Yuristdan maslahat olish; ro'yxatdan o'tish. |
-| 10 | **Telegram eslatilmagan.** | O'zbekistonda yangiliklar iste'molining asosiy kanali — Telegram. Faqat sayt + Google bilan "1-o'rin"ga chiqish qiyin. | Telegram kanal + avtopost (TZ 7-bo'lim, 2-bosqich). |
-| 11 | **Analitika va KPI yo'q.** "Birinchi o'ringa chiqish" o'lchanmaydigan maqsad. | Nimani o'lchashni bilmasak — yaxshilash mumkin emas. | TZ 1.3'dagi KPI jadvali; GA4 + Yandex Metrica + GSC. |
-| 12 | **Dizayn / brending** eslatilmagan. | Ishonch (E-E-A-T), CTR, qaytib keluvchi o'quvchilar. | Designer roli uchun alohida vazifalar (logo, UI kit, maket). |
-| 13 | **"AI bilan yozilgan" kontent siyosati** yo'q. | Google AI kontentni jazolamaydi, lekin sifatsiz ommaviy kontentni jazolaydi; o'quvchi ishonchi. | Har bir post muharrir tomonidan tekshiriladi; shaffoflik belgisi. |
-| 14 | **Kibersport uchun faqat yangilik yetarli emas.** | Kibersport auditoriyasi natijalar, jadval, turnirlarni qidiradi. | Keyingi bosqich: turnir natijalari (PandaScore / Liquipedia API), mahalliy (O'zbek) jamoalar yangiliklari — raqobatchilarda yo'q noyob kontent. |
-| 15 | **Noyob (o'z) kontent rejasi yo'q.** Faqat tarjima bilan "1-o'rin"ga chiqib bo'lmaydi. | Google va o'quvchilar birlamchi manbani afzal ko'radi. | Mahalliy IT yangiliklari (IT Park, UzCard/Payme, mahalliy startaplar), obzorlar, qo'llanmalar, intervyular — kuniga 1–2 ta o'z material. |
-| 16 | **Backup, xavfsizlik, huquqiy sahifalar** eslatilmagan. | Standart, lekin kerak. | TZ 9-bo'limga kiritildi. |
-| 17 | "Habr, IXBt" — **ikkalasi ham rus tilida**; AI va kibersport bo'yicha jahon yetakchilari asosan ingliz tilida. | Faqat rus manbalari — ikkinchi qo'l yangiliklar (ular ham ingliz manbalaridan tarjima qiladi). | EN + RU aralash 5 ta manba (TZ 2.2). |
+**Muhimlik:** 🔴 — tegishli vazifadan oldin javob kerak, 🟡 — MVP launch'gacha, 🟢 — keyinroq.
 
 ---
 
-## 2. Savollar (standart taxmin bilan)
+## 1. Javob berilgan savollar ✅
 
-### 2.1. Biznes va brend
-| # | Savol | Standart taxmin | Muhimlik |
+| # | Savol | Egasining javobi | TZ/PLAN'dagi natija |
 |---|---|---|---|
-| Q1 | Brend nomi va domen qanday? Domen sotib olinganmi? | Vaqtincha kod nomi `oblog`, domen `<brand>.uz` placeholder; brend kelguncha dizayn neytral. | 🔴 |
-| Q2 | Mualliflik huquqi bo'yicha qaysi modelni tanlaysiz: (a) faktlar asosida qayta yozish + atributsiya (tavsiya), (b) manbalar bilan litsenziya kelishuvi, (c) so'zma-so'z tarjima (tavsiya etilmaydi — yuqori xavf)? | (a) qayta yozish + atributsiya, manba rasmlari ishlatilmaydi. | 🔴 |
-| Q3 | Tanlangan 5 ta manba (The Verge, TechCrunch, Habr yangiliklari, iXBT/3DNews, Dexerto/HLTV) ma'qulmi? Qo'shish/olib tashlash kerakmi? | Shu 5 ta; iXBT va 3DNews'dan bittasi (iXBT). | 🔴 |
-| Q4 | Monetizatsiya qanday bo'ladi (reklama, homiylik, Telegram reklama)? | AdSense + Yandex RSYA uchun joylar, to'g'ridan-to'g'ri banner joylari; MVP'da reklama o'chirilgan. | 🟢 |
-| Q5 | OAV sifatida ro'yxatdan o'tish rejalashtirilganmi? Qaysi yuridik shaxs nomidan (Odya LLC)? | Odya LLC nomidan; ro'yxatdan o'tish egasi tomonidan parallel hal qilinadi; saytda yuridik ma'lumotlar "Biz haqimizda"da. | 🟡 |
-| Q6 | Raqobatchilar kimlar (Kun.uz texnologiya bo'limi, Gazeta.uz, Daryo, Spot.uz, IT-kanallar)? Ulardan qanday farq qilamiz? | Farq: faqat IT/AI/kibersport, tezlik (manbadan 1–3 soatda), sifatli o'zbek tili, texnik chuqurlik. | 🟢 |
-
-### 2.2. Kontent va tahririyat
-| # | Savol | Standart taxmin | Muhimlik |
-|---|---|---|---|
-| Q7 | Tahririyatda nechta odam bo'ladi va kimlar (muharrir, tarjimon)? Kim yakuniy "publish" qiladi? | 1 muharrir (publish huquqi bilan) + 1–2 tarjimon; AI agentlar faqat `review` gacha. | 🔴 |
-| Q8 | Kuniga nechta maqola chop etish kerak? | 1-oy 5–10, 3-oydan 20+. | 🟡 |
-| Q9 | Til: faqat o'zbek lotin? Kirill va rus versiyasi kerakmi, qachon? | Faqat lotin; arxitektura i18n'ga tayyor, rus — 4-bosqich. | 🔴 |
-| Q10 | AI inson tekshiruvisiz avtomatik chop eta oladimi (masalan, breaking news)? | **Yo'q** — har doim inson tekshiruvi. Flag bilan keyin yoqish mumkin. | 🟡 |
-| Q11 | Postlarda "AI yordamida tayyorlangan" belgisi bo'lsinmi? | Ha, kichik matn bilan post oxirida. | 🟢 |
-| Q12 | Kategoriyalar ro'yxati ma'qulmi (AI, Texnologiyalar, Gadjetlar, Dasturlash, Kibersport, O'yinlar, Kiberxavfsizlik, Startaplar)? | Shu ro'yxat. | 🟡 |
-| Q13 | O'z (noyob) kontent ham bo'ladimi — mahalliy IT yangiliklar, obzorlar? | Ha, CMS qo'lda maqola yozishni to'liq qo'llaydi; kontent rejasi — egasi tomonidan. | 🟢 |
-| Q14 | Muqova rasmlari qayerdan olinadi (AI generatsiya, stok, o'z dizayn)? | Press-kit / rasmiy rasmlar + Unsplash/Pexels + AI generatsiya (brend shabloni bilan); manba rasmlari — yo'q. | 🟡 |
-
-### 2.3. Texnik
-| # | Savol | Standart taxmin | Muhimlik |
-|---|---|---|---|
-| Q15 | Stek ma'qulmi: Next.js + **Payload CMS 3** + PostgreSQL + MinIO + Redis/BullMQ (WordPress o'rniga)? | Ha (TZ 3.2 da asoslangan). | 🔴 |
-| Q16 | Hosting qayerda: O'zbekistondagi VPS (UZINFOCOM, Beeline Cloud va b.) yoki xorij (Hetzner) + Cloudflare? Server bormi? | O'zbekistondagi VPS (shaxsiy ma'lumotlar qonuni + ping); agar yo'q bo'lsa — Hetzner + Cloudflare. Min: 8 vCPU / 16 GB RAM / 200 GB NVMe. | 🔴 |
-| Q17 | Oylik byudjet: LLM (Claude API) va hosting uchun qancha? Anthropic API kaliti bormi? | LLM ≤ $150/oy, hosting ≤ $80/oy; kunlik AI limiti $5. | 🔴 |
-| Q18 | Cloudflare ishlatish mumkinmi? | Ha, bepul tarif. | 🟡 |
-| Q19 | GitHub repo (Odya-LLC/blog_odya) — CI/CD uchun GitHub Actions va GHCR ishlatish mumkinmi? | Ha. | 🟡 |
-| Q20 | MCP server'dan qaysi agentlar foydalanadi (Claude Code, Claude Desktop, ichki agentlar)? Tashqi kirish kerakmi? | Ichki agentlar, API kalit bilan, internet orqali HTTPS. | 🟢 |
-
-### 2.4. Marketing va kanallar
-| # | Savol | Standart taxmin | Muhimlik |
-|---|---|---|---|
-| Q21 | Telegram kanal bormi? Avtopost kerakmi? Instagram/YouTube/X? | Yangi Telegram kanal ochiladi, avtopost (2-bosqich); boshqa tarmoqlar — qo'lda. | 🟡 |
-| Q22 | Izohlar kerakmi? | MVP'da yo'q; Telegram kanal izohlari. | 🟢 |
-| Q23 | Email newsletter kerakmi? | 3-bosqich (Listmonk). | 🟢 |
-| Q24 | Dizayn: dizayner bormi yoki agent (designer roli) tayyor UI kit asosida qiladimi? Namuna saytlar? | Designer agent: shadcn/ui asosida, The Verge / Habr uslubidagi toza yangiliklar dizayni, light/dark rejim. | 🟡 |
-| Q25 | Analitika hisoblari (GA4, Yandex Metrica, Search Console) kimning nomiga ochiladi? | Odya LLC korporativ Google/Yandex akkaunti. | 🟢 |
+| Q1 | Brend nomi va domen? | **blog.odya.uz** | Domen `blog.odya.uz`, media `media.odya.uz`. Saytda ko'rinadigan brend nomi — ochiq (Q1-b) |
+| Q2 | Mualliflik huquqi modeli? | **(a)** — faktlar asosida qayta yozish + atributsiya | TZ 2.3: qayta yozish, ochiq manba havolasi, manba rasmlari ishlatilmaydi |
+| Q3 | 5 ta manba ma'qulmi? | **Ma'qul** | TZ 2.2: The Verge, TechCrunch, Habr (yangiliklar), iXBT, Dexerto/HLTV |
+| Q7 | Tahririyat va publish huquqi? | Editor bo'ladi; **admin va editor**, ikkalasida publish huquqi bor | TZ 4.2: faqat 2 rol; AI agent editor kaliti bilan ishlaydi, publish qila olmaydi. Editorlar soni — ochiq (Q7-b) |
+| Q9 | Til va yozuv? | **O'zbek, kirill va lotin** | TZ 3.6: lotin — asosiy, kirill — avtomatik (`lotin-kirill` + istisnolar lug'ati), qo'lda tuzatish; URL `/kr/...`; hreflang `uz-Latn`/`uz-Cyrl`. MVP'ga kiritildi |
+| Q10 | AI inson tekshiruvisiz chop eta oladimi? | (Q7/Q17 javoblaridan) **Yo'q** — publish faqat admin/editor | MCP'da publish tool yo'q |
+| Q15 | Stek ma'qulmi? | **Ma'qul** | Next.js + Payload CMS 3 + PostgreSQL + S3-mos media |
+| Q16 | Hosting qayerda? | Server bor, hozircha aniq emas — Contabo yoki boshqa joy; Cloudflare qilinadi; **hozircha Supabase Postgres + Vercel bo'ladimi?** | **Ha, boshlash uchun bo'ladi** (TZ 3.7): Vercel Pro + Supabase Pro (Supavisor pooler) + Cloudflare R2 media; Redis/BullMQ o'rniga Payload Jobs + Vercel Cron; Vercel cheklovlari va yechimlari; Contabo'ga config-only ko'chish yo'li (PLAN M3-07, M4-01/02, M6-02) |
+| Q17 | LLM byudjeti / API kaliti? | **MCP orqali obuna ishlatamiz, yoki editor o'zi qiladi** | TZ 5: server tomonidagi LLM pipeline yo'q (M6'da ixtiyoriy); **MCP server MVP'ning asosiy qismi** (PLAN M2-08); AI xarajati — 0 (obuna) |
+| Q18 | Cloudflare ishlatish mumkinmi? | **Ha** (Q16 javobida) | DNS + R2 + media CDN; `blog` — DNS-only (Vercel davrida) |
+| Q20 | MCP'dan kim foydalanadi? | Obunadagi Claude agent (Q17) | Claude Code (asosiy), Claude Desktop (`mcp-remote`); claude.ai connector — OAuth bilan M4'da |
+| Q21 | Telegram kanal va avtopost? | **Avtopost kerak, Telegram kanal bor** | TZ 7.1, PLAN M3-01 — MVP'da. Qaysi yozuv yuborilishi — ochiq (Q21-b) |
 
 ---
 
-## 3. Takliflar
+## 2. Ochiq savollar
 
-1. **"Faktlar + kontekst" modeli** — har bir postga "O'zbekiston uchun bu nimani anglatadi" bloki: narxlar so'mda, O'zbekistonda mavjudligi, mahalliy analoglar. Bu ham huquqiy xavfni kamaytiradi, ham SEO'da noyob qiymat beradi.
-2. **Agregatsiya** — bitta mavzu bo'yicha 2–3 manbani birlashtirib yozish (SimHash klasterlar orqali avtomatik taklif).
-3. **Telegram-first** tarqatish — sayt SEO uchun, Telegram tezkor auditoriya uchun; har bir postda kanalga obuna CTA.
-4. **Kibersport uchun mahalliy burchak** — O'zbek jamoalari va o'yinchilar, mahalliy turnirlar; turnir natijalari API (PandaScore) — 3-bosqich.
-5. **Glossariy** — IT atamalarining o'zbekcha tarjimalari lug'ati; vaqt o'tib o'zi alohida SEO-sahifa ("IT lug'at") bo'lishi mumkin.
-6. **Kichik MVP** — 4–6 hafta ichida ishlaydigan sayt bilan boshlash; Google'da domen "yoshi" va indeksatsiya erta boshlansin.
-7. **Google News Publisher Center** va **Yandex Dzen** ga erta ro'yxatdan o'tish.
-8. **Manbalar bilan hamkorlik** — Habr, 3DNews, Cybersport.ru kabi RU nashrlarga tarjima huquqi bo'yicha xat yozish (ko'pincha havola evaziga ruxsat berishadi).
+### 2.1. Launch uchun muhim
+| # | Savol | Standart taxmin | Muhimlik |
+|---|---|---|---|
+| Q26 | Vercel, Supabase, Cloudflare hisoblari kimning nomiga ochiladi va kim to'laydi (Odya LLC korporativ karta)? `odya.uz` DNS allaqachon Cloudflare'dami? | Odya LLC nomiga; `odya.uz` zonasi Cloudflare'ga ko'chiriladi (agar hali bo'lmasa) — bu `odya.uz` ning boshqa yozuvlariga ham ta'sir qiladi, ehtiyotkorlik bilan | 🔴 (PLAN M0-05) |
+| Q30 | MVP hosting byudjeti taxminan **$45–70/oy** (Vercel Pro + Supabase Pro + R2) — ma'qulmi? | Ha | 🔴 |
+| Q1-b | Saytda ko'rinadigan brend nomi qanday: "Odya Blog", "Odya News" yoki boshqa? Logo bormi yoki designer yangisini chizadimi? | "Odya Blog", Odya brend ranglari asosida yangi logo varianti | 🔴 (PLAN M0-04) |
+| Q21-b | Telegram kanalga qaysi yozuvda yuboriladi — lotin, kirill yoki ikkalasi (ikki alohida kanal)? Kanal username/ID qanday? | Faqat **lotin**, bitta kanal; kanal ID M0'da olinadi | 🟡 |
+| Q7-b | Nechta editor bo'ladi va kimlar (ism, email)? Kim admin? | 1 admin + 1–2 editor | 🟡 |
+| Q27 | Qaysi Claude obunasi (Pro / Max / Team) va nechta editor agentdan foydalanadi? | Har bir editorda Pro yoki Max; kuniga 10–20 maqola uchun Max tavsiya etiladi (Pro limitlari yetmasligi mumkin) | 🟡 |
+| Q29 | Kirill versiyasini editor har bir postda tekshirishi shartmi yoki avtomatikaga ishonamizmi? | Avtomatik + sarlavha/lidni tezkor ko'z bilan tekshirish; xatolar istisnolar lug'atiga qo'shiladi | 🟡 |
+| Q8 | Kuniga nechta maqola chop etish kerak? | 1-oy 5–10, 3-oydan 20+ | 🟡 |
+| Q14 | Muqova rasmlari qayerdan olinadi (manba rasmlari ishlatilmaydi)? | Press-kit / rasmiy rasmlar + Unsplash/Pexels + editor AI yordamida generatsiya qilgan rasmlar (brend shabloni bilan) | 🟡 |
+| Q12 | Kategoriyalar ro'yxati ma'qulmi (AI, Texnologiyalar, Gadjetlar, Dasturlash, Kibersport, O'yinlar, Kiberxavfsizlik, Startaplar)? | Shu ro'yxat | 🟡 |
+| Q5 | OAV sifatida ro'yxatdan o'tish rejalashtirilganmi (Odya LLC nomidan)? | Egasi parallel hal qiladi; saytda yuridik ma'lumotlar "Biz haqimizda"da | 🟡 |
+| Q24 | Dizayn uchun namuna saytlar bormi? | shadcn/ui asosida toza yangiliklar dizayni (The Verge / Habr uslubi), light/dark | 🟡 |
+
+### 2.2. Keyinroq
+| # | Savol | Standart taxmin | Muhimlik |
+|---|---|---|---|
+| Q28 | Contabo'ga qachon ko'chamiz — faqat worker (M4) yoki hammasi (M6)? | Launch'dan keyin, Vercel xarajati yoki limitlari sezilarli bo'lganda; birinchi navbatda faqat worker | 🟢 |
+| Q4 | Monetizatsiya (reklama, homiylik, Telegram reklama)? | MVP'da reklama yo'q; M6'da AdSense / Yandex RSYA joylari | 🟢 |
+| Q6 | Raqobatchilar va farqimiz? | Faqat IT/AI/kibersport, tezlik, lotin + kirill, texnik chuqurlik | 🟢 |
+| Q11 | Postlarda "AI yordamida tayyorlangan" belgisi bo'lsinmi? | Ha, agent qayta yozgan postlarda | 🟢 |
+| Q13 | O'z (noyob) kontent ham bo'ladimi — mahalliy IT yangiliklari, obzorlar? | Ha, CMS qo'llaydi; kontent rejasi — egasi | 🟢 |
+| Q22 | Izohlar kerakmi? | Yo'q; muhokama — Telegram kanal izohlarida | 🟢 |
+| Q23 | Email newsletter kerakmi? | M6 (UZ serverda) | 🟢 |
+| Q25 | Analitika hisoblari (GA4, Metrica, GSC) kimning nomiga? | Odya LLC korporativ Google/Yandex akkaunti | 🟢 |
+| Q31 | Rus tili versiyasi kerakmi? | Hozircha yo'q; arxitektura tayyor (M6) | 🟢 |
+
+---
+
+## 3. Kamchilik va xatolar (asl topshiriqda)
+
+| # | Kamchilik / xato | Holat |
+|---|---|---|
+| 1 | **Mualliflik huquqi xavfi** e'tiborga olinmagan ("to'liq manbani tarjima qilib publish"). DMCA, Google "scaled content abuse", sud xavfi | ✅ Hal qilindi — model (a) tanlandi |
+| 2 | Domen va brend nomi yo'q edi | ✅ Domen `blog.odya.uz`; brend nomi — Q1-b |
+| 3 | Til va yozuv aniqlanmagan edi | ✅ Lotin + kirill |
+| 4 | Byudjet ko'rsatilmagan | 🟡 AI — obuna; hosting — Q30 |
+| 5 | Tahririyat (odamlar) aniqlanmagan | 🟡 Rollar aniq (admin + editor); soni — Q7-b |
+| 6 | Kunlik publish hajmi aniqlanmagan | 🟡 Q8 |
+| 7 | Monetizatsiya modeli yo'q | 🟢 Q4 |
+| 8 | Izohlar va moderatsiya | 🟢 Q22 |
+| 9 | **OAV sifatida ro'yxatdan o'tish** (AOKA) eslatilmagan | 🟡 Q5 |
+| 10 | Telegram eslatilmagan edi — O'zbekistonda yangiliklarning asosiy kanali | ✅ Avtopost MVP'da |
+| 11 | O'lchanadigan KPI yo'q ("birinchi o'rin" o'lchanmaydi) | ✅ TZ 1.3 da KPI jadvali |
+| 12 | Dizayn / brending eslatilmagan | 🟡 Q1-b, Q24 |
+| 13 | AI kontent siyosati yo'q | ✅ Inson publish qiladi; belgi — Q11 |
+| 14 | Kibersport uchun faqat yangilik yetarli emas (natijalar, jadval, mahalliy jamoalar) | 🟢 M6-07 |
+| 15 | Noyob (o'z) kontent rejasi yo'q — faqat qayta yozish bilan 1-o'ringa chiqish qiyin | 🟢 Q13 |
+| 16 | Backup, xavfsizlik, huquqiy sahifalar eslatilmagan | ✅ TZ 9 |
+| 17 | Habr va iXBT ikkalasi ham rus tilida — AI/kibersport bo'yicha birlamchi manbalar ingliz tilida | ✅ EN + RU aralash 5 manba |
+| 18 | **Yangi (v1.1):** Vercel + Supabase tanlovi — O'zbekiston shaxsiy ma'lumotlar qonuni (fuqarolar ma'lumotlari UZ'da saqlanishi) | 🟡 MVP'da o'quvchi ma'lumoti yig'ilmaydi; newsletter/izohlardan oldin UZ server yoki yurist xulosasi |
+| 19 | **Yangi (v1.1):** Kirill avtomatik transliteratsiyasi 100% to'g'ri emas (rus o'zlashmalari: `sentabr → сентябрь`, `ts → ц`, `ye/e`) | ✅ Istisnolar lug'ati + qo'lda tuzatish + qulflash (TZ 3.6); Q29 |
+| 20 | **Yangi (v1.1):** Obuna orqali agent ishlashi — ish hajmi editor kompyuteri va obuna limitlariga bog'liq; avtomatik (kechasi) ishlamaydi | 🟡 Q27; kerak bo'lsa M6-01 (API bilan server pipeline) |
+
+---
+
+## 4. Takliflar
+
+1. **"Faktlar + kontekst"** — har bir postga "O'zbekiston uchun bu nimani anglatadi" bloki (narxlar so'mda, mavjudligi, mahalliy analoglar). Huquqiy xavfni kamaytiradi va SEO'da noyob qiymat beradi.
+2. **Agregatsiya** — bitta mavzu bo'yicha 2–3 manbani birlashtirib yozish (SimHash klasterlari orqali).
+3. **Telegram-first** — sayt SEO uchun, Telegram tezkor auditoriya uchun; har bir postda kanalga obuna CTA.
+4. **Kibersportda mahalliy burchak** — O'zbek jamoalari va turnirlari.
+5. **Glossariy** vaqt o'tib alohida SEO-sahifa ("IT lug'at") bo'lishi mumkin — lotin va kirillda.
+6. **Kichik MVP** — ~6.5 hafta; domen indeksatsiyasi erta boshlansin.
+7. **Google News Publisher Center** va **Yandex** ga erta ro'yxatdan o'tish.
+8. **Manbalar bilan hamkorlik** — Habr, 3DNews, Cybersport.ru ga tarjima/qayta nashr ruxsati bo'yicha xat.
+9. **Agent ish tartibi** — editor har kuni ertalab va kechqurun MCP `daily_batch` prompt'i bilan 5–10 ta qoralama tayyorlaydi, keyin review qilib publish qiladi.
