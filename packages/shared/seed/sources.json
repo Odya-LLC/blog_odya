@@ -1,0 +1,2772 @@
+[
+  {
+    "name": "The Verge",
+    "slug": "the-verge",
+    "homepageUrl": "https://www.theverge.com",
+    "feeds": [
+      {
+        "url": "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml",
+        "feedCategory": "AI",
+        "mapsTo": "suniy-intellekt",
+        "isActive": true
+      },
+      {
+        "url": "https://www.theverge.com/rss/cyber-security/index.xml",
+        "feedCategory": "Security",
+        "mapsTo": "kiberxavfsizlik",
+        "isActive": true
+      },
+      {
+        "url": "https://www.theverge.com/rss/reviews/index.xml",
+        "feedCategory": "Reviews",
+        "mapsTo": "gadjetlar",
+        "isActive": true
+      },
+      {
+        "url": "https://www.theverge.com/rss/games/index.xml",
+        "feedCategory": "Games",
+        "mapsTo": "oyinlar",
+        "isActive": true
+      },
+      {
+        "url": "https://www.theverge.com/rss/science/index.xml",
+        "feedCategory": "Science",
+        "mapsTo": "ilm-fan",
+        "isActive": true
+      },
+      {
+        "url": "https://www.theverge.com/rss/tech/index.xml",
+        "feedCategory": "Tech",
+        "mapsTo": "texnologiyalar",
+        "isActive": true
+      },
+      {
+        "url": "https://www.theverge.com/rss/index.xml",
+        "feedCategory": "All (umumiy)",
+        "mapsTo": "texnologiyalar",
+        "isActive": true
+      }
+    ],
+    "language": "en",
+    "fetchMode": "rss_only",
+    "selectors": null,
+    "pollIntervalMin": 15,
+    "rateLimitSec": 10,
+    "robotsCheckedAt": "2026-09-23",
+    "tosNotes": "robots.txt: User-agent * uchun maqola yo'llari ochiq (faqat /admin, /login, /search va h.k. yopiq); ~100 ta AI/crawler bot (GPTBot'dan tashqari ClaudeBot, CCBot, Bytespider...) nomma-nom bloklangan — OdyaBlogBot ro'yxatda yo'q. ToS: sayt footeri PMC Terms of Use (pmc.com/terms-of-use) ga olib boradi; unda robot, spider, crawler, scraper va AI vositalari bilan kontentni yig'ish/nusxalash aniq taqiqlangan. Xulosa: faqat RSS (Atom, 10 ta yozuv, qisqa HTML matn bilan). Sahifa server HTML beradi, lekin yuklanmaydi.",
+    "priority": 45,
+    "keywordRules": [
+      {
+        "keyword": "artificial intelligence",
+        "category": "suniy-intellekt",
+        "boost": 5
+      },
+      {
+        "keyword": "generative ai",
+        "category": "suniy-intellekt",
+        "boost": 5
+      },
+      {
+        "keyword": "openai",
+        "category": "suniy-intellekt",
+        "boost": 5
+      },
+      {
+        "keyword": "chatgpt",
+        "category": "suniy-intellekt",
+        "boost": 5
+      },
+      {
+        "keyword": "llm*",
+        "category": "suniy-intellekt",
+        "boost": 5
+      },
+      {
+        "keyword": "anthropic",
+        "category": "suniy-intellekt",
+        "boost": 5
+      },
+      {
+        "keyword": "machine learning",
+        "category": "suniy-intellekt",
+        "boost": 5
+      },
+      {
+        "keyword": "chatbot*",
+        "category": "suniy-intellekt",
+        "boost": 5
+      },
+      {
+        "keyword": "big tech",
+        "category": "texnologiyalar",
+        "boost": 2
+      },
+      {
+        "keyword": "social media",
+        "category": "texnologiyalar",
+        "boost": 2
+      },
+      {
+        "keyword": "antitrust",
+        "category": "texnologiyalar",
+        "boost": 2
+      },
+      {
+        "keyword": "meta",
+        "category": "texnologiyalar",
+        "boost": 2
+      },
+      {
+        "keyword": "google",
+        "category": "texnologiyalar",
+        "boost": 2
+      },
+      {
+        "keyword": "microsoft",
+        "category": "texnologiyalar",
+        "boost": 2
+      },
+      {
+        "keyword": "tiktok",
+        "category": "texnologiyalar",
+        "boost": 2
+      },
+      {
+        "keyword": "smartphone*",
+        "category": "gadjetlar",
+        "boost": 4
+      },
+      {
+        "keyword": "iphone*",
+        "category": "gadjetlar",
+        "boost": 4
+      },
+      {
+        "keyword": "laptop*",
+        "category": "gadjetlar",
+        "boost": 4
+      },
+      {
+        "keyword": "headphone*",
+        "category": "gadjetlar",
+        "boost": 4
+      },
+      {
+        "keyword": "earbuds",
+        "category": "gadjetlar",
+        "boost": 4
+      },
+      {
+        "keyword": "smartwatch*",
+        "category": "gadjetlar",
+        "boost": 4
+      },
+      {
+        "keyword": "gpu*",
+        "category": "gadjetlar",
+        "boost": 4
+      },
+      {
+        "keyword": "wearable*",
+        "category": "gadjetlar",
+        "boost": 4
+      },
+      {
+        "keyword": "programming",
+        "category": "dasturlash",
+        "boost": 4
+      },
+      {
+        "keyword": "developer*",
+        "category": "dasturlash",
+        "boost": 4
+      },
+      {
+        "keyword": "github",
+        "category": "dasturlash",
+        "boost": 4
+      },
+      {
+        "keyword": "open source",
+        "category": "dasturlash",
+        "boost": 4
+      },
+      {
+        "keyword": "open-source",
+        "category": "dasturlash",
+        "boost": 4
+      },
+      {
+        "keyword": "python",
+        "category": "dasturlash",
+        "boost": 4
+      },
+      {
+        "keyword": "javascript",
+        "category": "dasturlash",
+        "boost": 4
+      },
+      {
+        "keyword": "api",
+        "category": "dasturlash",
+        "boost": 4
+      },
+      {
+        "keyword": "hack*",
+        "category": "kiberxavfsizlik",
+        "boost": 5
+      },
+      {
+        "keyword": "data breach*",
+        "category": "kiberxavfsizlik",
+        "boost": 5
+      },
+      {
+        "keyword": "ransomware",
+        "category": "kiberxavfsizlik",
+        "boost": 5
+      },
+      {
+        "keyword": "vulnerabilit*",
+        "category": "kiberxavfsizlik",
+        "boost": 5
+      },
+      {
+        "keyword": "malware",
+        "category": "kiberxavfsizlik",
+        "boost": 5
+      },
+      {
+        "keyword": "cyberattack*",
+        "category": "kiberxavfsizlik",
+        "boost": 5
+      },
+      {
+        "keyword": "phishing",
+        "category": "kiberxavfsizlik",
+        "boost": 5
+      },
+      {
+        "keyword": "zero-day",
+        "category": "kiberxavfsizlik",
+        "boost": 5
+      },
+      {
+        "keyword": "esports",
+        "category": "kibersport",
+        "boost": 5
+      },
+      {
+        "keyword": "tournament*",
+        "category": "kibersport",
+        "boost": 5
+      },
+      {
+        "keyword": "counter-strike",
+        "category": "kibersport",
+        "boost": 5
+      },
+      {
+        "keyword": "cs2",
+        "category": "kibersport",
+        "boost": 5
+      },
+      {
+        "keyword": "valorant",
+        "category": "kibersport",
+        "boost": 5
+      },
+      {
+        "keyword": "dota 2",
+        "category": "kibersport",
+        "boost": 5
+      },
+      {
+        "keyword": "mobile legends",
+        "category": "kibersport",
+        "boost": 5
+      },
+      {
+        "keyword": "roster*",
+        "category": "kibersport",
+        "boost": 5
+      },
+      {
+        "keyword": "video game*",
+        "category": "oyinlar",
+        "boost": 4
+      },
+      {
+        "keyword": "playstation",
+        "category": "oyinlar",
+        "boost": 4
+      },
+      {
+        "keyword": "xbox",
+        "category": "oyinlar",
+        "boost": 4
+      },
+      {
+        "keyword": "nintendo",
+        "category": "oyinlar",
+        "boost": 4
+      },
+      {
+        "keyword": "steam",
+        "category": "oyinlar",
+        "boost": 4
+      },
+      {
+        "keyword": "console*",
+        "category": "oyinlar",
+        "boost": 4
+      },
+      {
+        "keyword": "gta 6",
+        "category": "oyinlar",
+        "boost": 4
+      },
+      {
+        "keyword": "gameplay",
+        "category": "oyinlar",
+        "boost": 4
+      },
+      {
+        "keyword": "startup*",
+        "category": "startaplar",
+        "boost": 4
+      },
+      {
+        "keyword": "funding",
+        "category": "startaplar",
+        "boost": 4
+      },
+      {
+        "keyword": "series a",
+        "category": "startaplar",
+        "boost": 4
+      },
+      {
+        "keyword": "series b",
+        "category": "startaplar",
+        "boost": 4
+      },
+      {
+        "keyword": "seed round",
+        "category": "startaplar",
+        "boost": 4
+      },
+      {
+        "keyword": "ipo",
+        "category": "startaplar",
+        "boost": 4
+      },
+      {
+        "keyword": "valuation",
+        "category": "startaplar",
+        "boost": 4
+      },
+      {
+        "keyword": "acquisition*",
+        "category": "startaplar",
+        "boost": 4
+      },
+      {
+        "keyword": "nasa",
+        "category": "ilm-fan",
+        "boost": 4
+      },
+      {
+        "keyword": "spacex",
+        "category": "ilm-fan",
+        "boost": 4
+      },
+      {
+        "keyword": "rocket*",
+        "category": "ilm-fan",
+        "boost": 4
+      },
+      {
+        "keyword": "climate",
+        "category": "ilm-fan",
+        "boost": 4
+      },
+      {
+        "keyword": "electric vehicle*",
+        "category": "ilm-fan",
+        "boost": 4
+      },
+      {
+        "keyword": "fusion",
+        "category": "ilm-fan",
+        "boost": 4
+      },
+      {
+        "keyword": "astronom*",
+        "category": "ilm-fan",
+        "boost": 4
+      },
+      {
+        "keyword": "physics",
+        "category": "ilm-fan",
+        "boost": 4
+      }
+    ],
+    "isActive": true
+  },
+  {
+    "name": "TechCrunch",
+    "slug": "techcrunch",
+    "homepageUrl": "https://techcrunch.com",
+    "feeds": [
+      {
+        "url": "https://techcrunch.com/category/artificial-intelligence/feed/",
+        "feedCategory": "AI",
+        "mapsTo": "suniy-intellekt",
+        "isActive": true
+      },
+      {
+        "url": "https://techcrunch.com/category/security/feed/",
+        "feedCategory": "Security",
+        "mapsTo": "kiberxavfsizlik",
+        "isActive": true
+      },
+      {
+        "url": "https://techcrunch.com/category/startups/feed/",
+        "feedCategory": "Startups",
+        "mapsTo": "startaplar",
+        "isActive": true
+      },
+      {
+        "url": "https://techcrunch.com/category/venture/feed/",
+        "feedCategory": "Venture",
+        "mapsTo": "startaplar",
+        "isActive": true
+      },
+      {
+        "url": "https://techcrunch.com/category/hardware/feed/",
+        "feedCategory": "Hardware",
+        "mapsTo": "gadjetlar",
+        "isActive": true
+      },
+      {
+        "url": "https://techcrunch.com/category/gadgets/feed/",
+        "feedCategory": "Gadgets",
+        "mapsTo": "gadjetlar",
+        "isActive": false
+      },
+      {
+        "url": "https://techcrunch.com/feed/",
+        "feedCategory": "All (umumiy)",
+        "mapsTo": "texnologiyalar",
+        "isActive": true
+      }
+    ],
+    "language": "en",
+    "fetchMode": "rss_only",
+    "selectors": null,
+    "pollIntervalMin": 15,
+    "rateLimitSec": 10,
+    "robotsCheckedAt": "2026-09-23",
+    "tosNotes": "robots.txt: User-agent * uchun faqat /wp-admin/, /wp-json/, /search/ yopiq; AI botlar (ClaudeBot, GPTBot, CCBot...) to'liq bloklangan — OdyaBlogBot ro'yxatda yo'q. ToS (techcrunch.com/terms-of-service): robot, spider, scraper bilan ma'lumot yig'ish va materiallarni qayta nashr qilish taqiqlangan. RSS Terms (techcrunch.com/rss-terms-of-use): feed kontentini TechCrunch'ga atributsiya va to'liq maqolaga havola bilan ko'rsatish mumkin, o'zgartirish va reklama qo'shish mumkin emas. Xulosa: faqat RSS (description ~150 belgi). Gadgets feedi sust (kuniga <1) — o'chirilgan.",
+    "priority": 45,
+    "keywordRules": [
+      {
+        "keyword": "artificial intelligence",
+        "category": "suniy-intellekt",
+        "boost": 5
+      },
+      {
+        "keyword": "generative ai",
+        "category": "suniy-intellekt",
+        "boost": 5
+      },
+      {
+        "keyword": "openai",
+        "category": "suniy-intellekt",
+        "boost": 5
+      },
+      {
+        "keyword": "chatgpt",
+        "category": "suniy-intellekt",
+        "boost": 5
+      },
+      {
+        "keyword": "llm*",
+        "category": "suniy-intellekt",
+        "boost": 5
+      },
+      {
+        "keyword": "anthropic",
+        "category": "suniy-intellekt",
+        "boost": 5
+      },
+      {
+        "keyword": "machine learning",
+        "category": "suniy-intellekt",
+        "boost": 5
+      },
+      {
+        "keyword": "chatbot*",
+        "category": "suniy-intellekt",
+        "boost": 5
+      },
+      {
+        "keyword": "big tech",
+        "category": "texnologiyalar",
+        "boost": 2
+      },
+      {
+        "keyword": "social media",
+        "category": "texnologiyalar",
+        "boost": 2
+      },
+      {
+        "keyword": "antitrust",
+        "category": "texnologiyalar",
+        "boost": 2
+      },
+      {
+        "keyword": "meta",
+        "category": "texnologiyalar",
+        "boost": 2
+      },
+      {
+        "keyword": "google",
+        "category": "texnologiyalar",
+        "boost": 2
+      },
+      {
+        "keyword": "microsoft",
+        "category": "texnologiyalar",
+        "boost": 2
+      },
+      {
+        "keyword": "tiktok",
+        "category": "texnologiyalar",
+        "boost": 2
+      },
+      {
+        "keyword": "smartphone*",
+        "category": "gadjetlar",
+        "boost": 4
+      },
+      {
+        "keyword": "iphone*",
+        "category": "gadjetlar",
+        "boost": 4
+      },
+      {
+        "keyword": "laptop*",
+        "category": "gadjetlar",
+        "boost": 4
+      },
+      {
+        "keyword": "headphone*",
+        "category": "gadjetlar",
+        "boost": 4
+      },
+      {
+        "keyword": "earbuds",
+        "category": "gadjetlar",
+        "boost": 4
+      },
+      {
+        "keyword": "smartwatch*",
+        "category": "gadjetlar",
+        "boost": 4
+      },
+      {
+        "keyword": "gpu*",
+        "category": "gadjetlar",
+        "boost": 4
+      },
+      {
+        "keyword": "wearable*",
+        "category": "gadjetlar",
+        "boost": 4
+      },
+      {
+        "keyword": "programming",
+        "category": "dasturlash",
+        "boost": 4
+      },
+      {
+        "keyword": "developer*",
+        "category": "dasturlash",
+        "boost": 4
+      },
+      {
+        "keyword": "github",
+        "category": "dasturlash",
+        "boost": 4
+      },
+      {
+        "keyword": "open source",
+        "category": "dasturlash",
+        "boost": 4
+      },
+      {
+        "keyword": "open-source",
+        "category": "dasturlash",
+        "boost": 4
+      },
+      {
+        "keyword": "python",
+        "category": "dasturlash",
+        "boost": 4
+      },
+      {
+        "keyword": "javascript",
+        "category": "dasturlash",
+        "boost": 4
+      },
+      {
+        "keyword": "api",
+        "category": "dasturlash",
+        "boost": 4
+      },
+      {
+        "keyword": "hack*",
+        "category": "kiberxavfsizlik",
+        "boost": 5
+      },
+      {
+        "keyword": "data breach*",
+        "category": "kiberxavfsizlik",
+        "boost": 5
+      },
+      {
+        "keyword": "ransomware",
+        "category": "kiberxavfsizlik",
+        "boost": 5
+      },
+      {
+        "keyword": "vulnerabilit*",
+        "category": "kiberxavfsizlik",
+        "boost": 5
+      },
+      {
+        "keyword": "malware",
+        "category": "kiberxavfsizlik",
+        "boost": 5
+      },
+      {
+        "keyword": "cyberattack*",
+        "category": "kiberxavfsizlik",
+        "boost": 5
+      },
+      {
+        "keyword": "phishing",
+        "category": "kiberxavfsizlik",
+        "boost": 5
+      },
+      {
+        "keyword": "zero-day",
+        "category": "kiberxavfsizlik",
+        "boost": 5
+      },
+      {
+        "keyword": "esports",
+        "category": "kibersport",
+        "boost": 5
+      },
+      {
+        "keyword": "tournament*",
+        "category": "kibersport",
+        "boost": 5
+      },
+      {
+        "keyword": "counter-strike",
+        "category": "kibersport",
+        "boost": 5
+      },
+      {
+        "keyword": "cs2",
+        "category": "kibersport",
+        "boost": 5
+      },
+      {
+        "keyword": "valorant",
+        "category": "kibersport",
+        "boost": 5
+      },
+      {
+        "keyword": "dota 2",
+        "category": "kibersport",
+        "boost": 5
+      },
+      {
+        "keyword": "mobile legends",
+        "category": "kibersport",
+        "boost": 5
+      },
+      {
+        "keyword": "roster*",
+        "category": "kibersport",
+        "boost": 5
+      },
+      {
+        "keyword": "video game*",
+        "category": "oyinlar",
+        "boost": 4
+      },
+      {
+        "keyword": "playstation",
+        "category": "oyinlar",
+        "boost": 4
+      },
+      {
+        "keyword": "xbox",
+        "category": "oyinlar",
+        "boost": 4
+      },
+      {
+        "keyword": "nintendo",
+        "category": "oyinlar",
+        "boost": 4
+      },
+      {
+        "keyword": "steam",
+        "category": "oyinlar",
+        "boost": 4
+      },
+      {
+        "keyword": "console*",
+        "category": "oyinlar",
+        "boost": 4
+      },
+      {
+        "keyword": "gta 6",
+        "category": "oyinlar",
+        "boost": 4
+      },
+      {
+        "keyword": "gameplay",
+        "category": "oyinlar",
+        "boost": 4
+      },
+      {
+        "keyword": "startup*",
+        "category": "startaplar",
+        "boost": 4
+      },
+      {
+        "keyword": "funding",
+        "category": "startaplar",
+        "boost": 4
+      },
+      {
+        "keyword": "series a",
+        "category": "startaplar",
+        "boost": 4
+      },
+      {
+        "keyword": "series b",
+        "category": "startaplar",
+        "boost": 4
+      },
+      {
+        "keyword": "seed round",
+        "category": "startaplar",
+        "boost": 4
+      },
+      {
+        "keyword": "ipo",
+        "category": "startaplar",
+        "boost": 4
+      },
+      {
+        "keyword": "valuation",
+        "category": "startaplar",
+        "boost": 4
+      },
+      {
+        "keyword": "acquisition*",
+        "category": "startaplar",
+        "boost": 4
+      },
+      {
+        "keyword": "nasa",
+        "category": "ilm-fan",
+        "boost": 4
+      },
+      {
+        "keyword": "spacex",
+        "category": "ilm-fan",
+        "boost": 4
+      },
+      {
+        "keyword": "rocket*",
+        "category": "ilm-fan",
+        "boost": 4
+      },
+      {
+        "keyword": "climate",
+        "category": "ilm-fan",
+        "boost": 4
+      },
+      {
+        "keyword": "electric vehicle*",
+        "category": "ilm-fan",
+        "boost": 4
+      },
+      {
+        "keyword": "fusion",
+        "category": "ilm-fan",
+        "boost": 4
+      },
+      {
+        "keyword": "astronom*",
+        "category": "ilm-fan",
+        "boost": 4
+      },
+      {
+        "keyword": "physics",
+        "category": "ilm-fan",
+        "boost": 4
+      }
+    ],
+    "isActive": true
+  },
+  {
+    "name": "Habr (Новости)",
+    "slug": "habr",
+    "homepageUrl": "https://habr.com/ru/news/",
+    "feeds": [
+      {
+        "url": "https://habr.com/ru/rss/hubs/artificial_intelligence/news/",
+        "feedCategory": "Хаб «Искусственный интеллект» — новости",
+        "mapsTo": "suniy-intellekt",
+        "isActive": true
+      },
+      {
+        "url": "https://habr.com/ru/rss/hubs/infosecurity/news/",
+        "feedCategory": "Хаб «Информационная безопасность» — новости",
+        "mapsTo": "kiberxavfsizlik",
+        "isActive": true
+      },
+      {
+        "url": "https://habr.com/ru/rss/hubs/programming/news/",
+        "feedCategory": "Хаб «Программирование» — новости",
+        "mapsTo": "dasturlash",
+        "isActive": true
+      },
+      {
+        "url": "https://habr.com/ru/rss/news/",
+        "feedCategory": "Новости (umumiy)",
+        "mapsTo": "texnologiyalar",
+        "isActive": true
+      }
+    ],
+    "language": "ru",
+    "fetchMode": "rss_plus_page",
+    "selectors": {
+      "content": ".article-formatted-body",
+      "title": "h1.tm-title",
+      "author": ".tm-user-info__username",
+      "publishedAt": ".tm-article-datetime-published time[datetime]"
+    },
+    "pollIntervalMin": 15,
+    "rateLimitSec": 10,
+    "robotsCheckedAt": "2026-09-23",
+    "tosNotes": "robots.txt: User-agent * — Crawl-delay: 10; /search/, profil/kompaniya sahifalari va utm_ parametrli URL'lar (/*?*utm_) yopiq. RSS havolalarida utm_source/utm_medium/utm_campaign bor — sahifani yuklashdan oldin utm_* parametrlari olib tashlanishi SHART. Foydalanuvchi kelishuvi (account.habr.com/info/agreement): kontentni ruxsatsiz nusxalash va tijoriy foydalanish taqiqlangan; avtomatik yig'ish (parsing) alohida taqiqlanmagan. Faqat /ru/news/ (Новости) olinadi — mualliflik maqolalari (UGC) olinmaydi. Xulosa: rss_plus_page, rateLimitSec = 10 (Crawl-delay bilan mos); to'liq matn faqat ichki arxivda.",
+    "priority": 35,
+    "keywordRules": [
+      {
+        "keyword": "нейросет*",
+        "category": "suniy-intellekt",
+        "boost": 5
+      },
+      {
+        "keyword": "искусственн* интеллект*",
+        "category": "suniy-intellekt",
+        "boost": 5
+      },
+      {
+        "keyword": "ии",
+        "category": "suniy-intellekt",
+        "boost": 5
+      },
+      {
+        "keyword": "openai",
+        "category": "suniy-intellekt",
+        "boost": 5
+      },
+      {
+        "keyword": "chatgpt",
+        "category": "suniy-intellekt",
+        "boost": 5
+      },
+      {
+        "keyword": "llm*",
+        "category": "suniy-intellekt",
+        "boost": 5
+      },
+      {
+        "keyword": "машинн* обучени*",
+        "category": "suniy-intellekt",
+        "boost": 5
+      },
+      {
+        "keyword": "языков* модел*",
+        "category": "suniy-intellekt",
+        "boost": 5
+      },
+      {
+        "keyword": "яндекс*",
+        "category": "texnologiyalar",
+        "boost": 2
+      },
+      {
+        "keyword": "google",
+        "category": "texnologiyalar",
+        "boost": 2
+      },
+      {
+        "keyword": "microsoft",
+        "category": "texnologiyalar",
+        "boost": 2
+      },
+      {
+        "keyword": "социальн* сет*",
+        "category": "texnologiyalar",
+        "boost": 2
+      },
+      {
+        "keyword": "мессенджер*",
+        "category": "texnologiyalar",
+        "boost": 2
+      },
+      {
+        "keyword": "роскомнадзор*",
+        "category": "texnologiyalar",
+        "boost": 2
+      },
+      {
+        "keyword": "маркетплейс*",
+        "category": "texnologiyalar",
+        "boost": 2
+      },
+      {
+        "keyword": "смартфон*",
+        "category": "gadjetlar",
+        "boost": 4
+      },
+      {
+        "keyword": "ноутбук*",
+        "category": "gadjetlar",
+        "boost": 4
+      },
+      {
+        "keyword": "iphone*",
+        "category": "gadjetlar",
+        "boost": 4
+      },
+      {
+        "keyword": "процессор*",
+        "category": "gadjetlar",
+        "boost": 4
+      },
+      {
+        "keyword": "видеокарт*",
+        "category": "gadjetlar",
+        "boost": 4
+      },
+      {
+        "keyword": "планшет*",
+        "category": "gadjetlar",
+        "boost": 4
+      },
+      {
+        "keyword": "гаджет*",
+        "category": "gadjetlar",
+        "boost": 4
+      },
+      {
+        "keyword": "наушник*",
+        "category": "gadjetlar",
+        "boost": 4
+      },
+      {
+        "keyword": "программист*",
+        "category": "dasturlash",
+        "boost": 4
+      },
+      {
+        "keyword": "разработчик*",
+        "category": "dasturlash",
+        "boost": 4
+      },
+      {
+        "keyword": "python",
+        "category": "dasturlash",
+        "boost": 4
+      },
+      {
+        "keyword": "javascript",
+        "category": "dasturlash",
+        "boost": 4
+      },
+      {
+        "keyword": "github",
+        "category": "dasturlash",
+        "boost": 4
+      },
+      {
+        "keyword": "open source",
+        "category": "dasturlash",
+        "boost": 4
+      },
+      {
+        "keyword": "открыт* код*",
+        "category": "dasturlash",
+        "boost": 4
+      },
+      {
+        "keyword": "фреймворк*",
+        "category": "dasturlash",
+        "boost": 4
+      },
+      {
+        "keyword": "уязвимост*",
+        "category": "kiberxavfsizlik",
+        "boost": 5
+      },
+      {
+        "keyword": "хакер*",
+        "category": "kiberxavfsizlik",
+        "boost": 5
+      },
+      {
+        "keyword": "утечк*",
+        "category": "kiberxavfsizlik",
+        "boost": 5
+      },
+      {
+        "keyword": "взлом*",
+        "category": "kiberxavfsizlik",
+        "boost": 5
+      },
+      {
+        "keyword": "вредоносн*",
+        "category": "kiberxavfsizlik",
+        "boost": 5
+      },
+      {
+        "keyword": "фишинг*",
+        "category": "kiberxavfsizlik",
+        "boost": 5
+      },
+      {
+        "keyword": "кибератак*",
+        "category": "kiberxavfsizlik",
+        "boost": 5
+      },
+      {
+        "keyword": "ddos",
+        "category": "kiberxavfsizlik",
+        "boost": 5
+      },
+      {
+        "keyword": "киберспорт*",
+        "category": "kibersport",
+        "boost": 5
+      },
+      {
+        "keyword": "турнир*",
+        "category": "kibersport",
+        "boost": 5
+      },
+      {
+        "keyword": "cs2",
+        "category": "kibersport",
+        "boost": 5
+      },
+      {
+        "keyword": "counter-strike",
+        "category": "kibersport",
+        "boost": 5
+      },
+      {
+        "keyword": "dota 2",
+        "category": "kibersport",
+        "boost": 5
+      },
+      {
+        "keyword": "valorant",
+        "category": "kibersport",
+        "boost": 5
+      },
+      {
+        "keyword": "мейджор*",
+        "category": "kibersport",
+        "boost": 5
+      },
+      {
+        "keyword": "трансфер*",
+        "category": "kibersport",
+        "boost": 5
+      },
+      {
+        "keyword": "видеоигр*",
+        "category": "oyinlar",
+        "boost": 4
+      },
+      {
+        "keyword": "игр*",
+        "category": "oyinlar",
+        "boost": 4
+      },
+      {
+        "keyword": "playstation",
+        "category": "oyinlar",
+        "boost": 4
+      },
+      {
+        "keyword": "xbox",
+        "category": "oyinlar",
+        "boost": 4
+      },
+      {
+        "keyword": "nintendo",
+        "category": "oyinlar",
+        "boost": 4
+      },
+      {
+        "keyword": "steam",
+        "category": "oyinlar",
+        "boost": 4
+      },
+      {
+        "keyword": "консол*",
+        "category": "oyinlar",
+        "boost": 4
+      },
+      {
+        "keyword": "геймплей*",
+        "category": "oyinlar",
+        "boost": 4
+      },
+      {
+        "keyword": "стартап*",
+        "category": "startaplar",
+        "boost": 4
+      },
+      {
+        "keyword": "инвестиц*",
+        "category": "startaplar",
+        "boost": 4
+      },
+      {
+        "keyword": "ipo",
+        "category": "startaplar",
+        "boost": 4
+      },
+      {
+        "keyword": "раунд* финансировани*",
+        "category": "startaplar",
+        "boost": 4
+      },
+      {
+        "keyword": "выручк*",
+        "category": "startaplar",
+        "boost": 4
+      },
+      {
+        "keyword": "капитализаци*",
+        "category": "startaplar",
+        "boost": 4
+      },
+      {
+        "keyword": "поглощени*",
+        "category": "startaplar",
+        "boost": 4
+      },
+      {
+        "keyword": "венчурн*",
+        "category": "startaplar",
+        "boost": 4
+      },
+      {
+        "keyword": "космос*",
+        "category": "ilm-fan",
+        "boost": 4
+      },
+      {
+        "keyword": "космическ*",
+        "category": "ilm-fan",
+        "boost": 4
+      },
+      {
+        "keyword": "nasa",
+        "category": "ilm-fan",
+        "boost": 4
+      },
+      {
+        "keyword": "spacex",
+        "category": "ilm-fan",
+        "boost": 4
+      },
+      {
+        "keyword": "роскосмос*",
+        "category": "ilm-fan",
+        "boost": 4
+      },
+      {
+        "keyword": "ракет*",
+        "category": "ilm-fan",
+        "boost": 4
+      },
+      {
+        "keyword": "учен*",
+        "category": "ilm-fan",
+        "boost": 4
+      },
+      {
+        "keyword": "электромобил*",
+        "category": "ilm-fan",
+        "boost": 4
+      }
+    ],
+    "isActive": true
+  },
+  {
+    "name": "iXBT.com",
+    "slug": "ixbt",
+    "homepageUrl": "https://www.ixbt.com",
+    "feeds": [
+      {
+        "url": "https://www.ixbt.com/export/rss.xml?only_category_ids=66",
+        "feedCategory": "Мобильные устройства (sec_mobile)",
+        "mapsTo": "gadjetlar",
+        "isActive": true
+      },
+      {
+        "url": "https://www.ixbt.com/export/news/rss.xml",
+        "feedCategory": "Новости (umumiy)",
+        "mapsTo": "gadjetlar",
+        "isActive": true
+      }
+    ],
+    "language": "ru",
+    "fetchMode": "rss_only",
+    "selectors": null,
+    "pollIntervalMin": 15,
+    "rateLimitSec": 10,
+    "robotsCheckedAt": "2026-09-23",
+    "tosNotes": "robots.txt: User-agent * uchun /news/YYYY/... va /export/ ochiq; /live/, /blogs/, /games/, /news/soft/ yopiq. «О медиа iXBT.com» (ixbt.com/doc/about.html): materiallarni shaxsiy foydalanishdan tashqari nusxalash taqiqlangan, iqtibos uchun ma'muriyatning oldindan roziligi va ixbt.com'ga havola talab qilinadi. RSS (content:encoded) to'liq matnni beradi (~1.5–2k belgi), shuning uchun sahifani yuklash kerak emas. Xulosa: rss_only. Eski manzillar (export/news.rss, export/sec_mobile.rss) 301 bilan yangilariga yo'naltiriladi — seed'da yakuniy URL'lar.",
+    "priority": 30,
+    "keywordRules": [
+      {
+        "keyword": "нейросет*",
+        "category": "suniy-intellekt",
+        "boost": 5
+      },
+      {
+        "keyword": "искусственн* интеллект*",
+        "category": "suniy-intellekt",
+        "boost": 5
+      },
+      {
+        "keyword": "ии",
+        "category": "suniy-intellekt",
+        "boost": 5
+      },
+      {
+        "keyword": "openai",
+        "category": "suniy-intellekt",
+        "boost": 5
+      },
+      {
+        "keyword": "chatgpt",
+        "category": "suniy-intellekt",
+        "boost": 5
+      },
+      {
+        "keyword": "llm*",
+        "category": "suniy-intellekt",
+        "boost": 5
+      },
+      {
+        "keyword": "машинн* обучени*",
+        "category": "suniy-intellekt",
+        "boost": 5
+      },
+      {
+        "keyword": "языков* модел*",
+        "category": "suniy-intellekt",
+        "boost": 5
+      },
+      {
+        "keyword": "яндекс*",
+        "category": "texnologiyalar",
+        "boost": 2
+      },
+      {
+        "keyword": "google",
+        "category": "texnologiyalar",
+        "boost": 2
+      },
+      {
+        "keyword": "microsoft",
+        "category": "texnologiyalar",
+        "boost": 2
+      },
+      {
+        "keyword": "социальн* сет*",
+        "category": "texnologiyalar",
+        "boost": 2
+      },
+      {
+        "keyword": "мессенджер*",
+        "category": "texnologiyalar",
+        "boost": 2
+      },
+      {
+        "keyword": "роскомнадзор*",
+        "category": "texnologiyalar",
+        "boost": 2
+      },
+      {
+        "keyword": "маркетплейс*",
+        "category": "texnologiyalar",
+        "boost": 2
+      },
+      {
+        "keyword": "смартфон*",
+        "category": "gadjetlar",
+        "boost": 4
+      },
+      {
+        "keyword": "ноутбук*",
+        "category": "gadjetlar",
+        "boost": 4
+      },
+      {
+        "keyword": "iphone*",
+        "category": "gadjetlar",
+        "boost": 4
+      },
+      {
+        "keyword": "процессор*",
+        "category": "gadjetlar",
+        "boost": 4
+      },
+      {
+        "keyword": "видеокарт*",
+        "category": "gadjetlar",
+        "boost": 4
+      },
+      {
+        "keyword": "планшет*",
+        "category": "gadjetlar",
+        "boost": 4
+      },
+      {
+        "keyword": "гаджет*",
+        "category": "gadjetlar",
+        "boost": 4
+      },
+      {
+        "keyword": "наушник*",
+        "category": "gadjetlar",
+        "boost": 4
+      },
+      {
+        "keyword": "программист*",
+        "category": "dasturlash",
+        "boost": 4
+      },
+      {
+        "keyword": "разработчик*",
+        "category": "dasturlash",
+        "boost": 4
+      },
+      {
+        "keyword": "python",
+        "category": "dasturlash",
+        "boost": 4
+      },
+      {
+        "keyword": "javascript",
+        "category": "dasturlash",
+        "boost": 4
+      },
+      {
+        "keyword": "github",
+        "category": "dasturlash",
+        "boost": 4
+      },
+      {
+        "keyword": "open source",
+        "category": "dasturlash",
+        "boost": 4
+      },
+      {
+        "keyword": "открыт* код*",
+        "category": "dasturlash",
+        "boost": 4
+      },
+      {
+        "keyword": "фреймворк*",
+        "category": "dasturlash",
+        "boost": 4
+      },
+      {
+        "keyword": "уязвимост*",
+        "category": "kiberxavfsizlik",
+        "boost": 5
+      },
+      {
+        "keyword": "хакер*",
+        "category": "kiberxavfsizlik",
+        "boost": 5
+      },
+      {
+        "keyword": "утечк*",
+        "category": "kiberxavfsizlik",
+        "boost": 5
+      },
+      {
+        "keyword": "взлом*",
+        "category": "kiberxavfsizlik",
+        "boost": 5
+      },
+      {
+        "keyword": "вредоносн*",
+        "category": "kiberxavfsizlik",
+        "boost": 5
+      },
+      {
+        "keyword": "фишинг*",
+        "category": "kiberxavfsizlik",
+        "boost": 5
+      },
+      {
+        "keyword": "кибератак*",
+        "category": "kiberxavfsizlik",
+        "boost": 5
+      },
+      {
+        "keyword": "ddos",
+        "category": "kiberxavfsizlik",
+        "boost": 5
+      },
+      {
+        "keyword": "киберспорт*",
+        "category": "kibersport",
+        "boost": 5
+      },
+      {
+        "keyword": "турнир*",
+        "category": "kibersport",
+        "boost": 5
+      },
+      {
+        "keyword": "cs2",
+        "category": "kibersport",
+        "boost": 5
+      },
+      {
+        "keyword": "counter-strike",
+        "category": "kibersport",
+        "boost": 5
+      },
+      {
+        "keyword": "dota 2",
+        "category": "kibersport",
+        "boost": 5
+      },
+      {
+        "keyword": "valorant",
+        "category": "kibersport",
+        "boost": 5
+      },
+      {
+        "keyword": "мейджор*",
+        "category": "kibersport",
+        "boost": 5
+      },
+      {
+        "keyword": "трансфер*",
+        "category": "kibersport",
+        "boost": 5
+      },
+      {
+        "keyword": "видеоигр*",
+        "category": "oyinlar",
+        "boost": 4
+      },
+      {
+        "keyword": "игр*",
+        "category": "oyinlar",
+        "boost": 4
+      },
+      {
+        "keyword": "playstation",
+        "category": "oyinlar",
+        "boost": 4
+      },
+      {
+        "keyword": "xbox",
+        "category": "oyinlar",
+        "boost": 4
+      },
+      {
+        "keyword": "nintendo",
+        "category": "oyinlar",
+        "boost": 4
+      },
+      {
+        "keyword": "steam",
+        "category": "oyinlar",
+        "boost": 4
+      },
+      {
+        "keyword": "консол*",
+        "category": "oyinlar",
+        "boost": 4
+      },
+      {
+        "keyword": "геймплей*",
+        "category": "oyinlar",
+        "boost": 4
+      },
+      {
+        "keyword": "стартап*",
+        "category": "startaplar",
+        "boost": 4
+      },
+      {
+        "keyword": "инвестиц*",
+        "category": "startaplar",
+        "boost": 4
+      },
+      {
+        "keyword": "ipo",
+        "category": "startaplar",
+        "boost": 4
+      },
+      {
+        "keyword": "раунд* финансировани*",
+        "category": "startaplar",
+        "boost": 4
+      },
+      {
+        "keyword": "выручк*",
+        "category": "startaplar",
+        "boost": 4
+      },
+      {
+        "keyword": "капитализаци*",
+        "category": "startaplar",
+        "boost": 4
+      },
+      {
+        "keyword": "поглощени*",
+        "category": "startaplar",
+        "boost": 4
+      },
+      {
+        "keyword": "венчурн*",
+        "category": "startaplar",
+        "boost": 4
+      },
+      {
+        "keyword": "космос*",
+        "category": "ilm-fan",
+        "boost": 4
+      },
+      {
+        "keyword": "космическ*",
+        "category": "ilm-fan",
+        "boost": 4
+      },
+      {
+        "keyword": "nasa",
+        "category": "ilm-fan",
+        "boost": 4
+      },
+      {
+        "keyword": "spacex",
+        "category": "ilm-fan",
+        "boost": 4
+      },
+      {
+        "keyword": "роскосмос*",
+        "category": "ilm-fan",
+        "boost": 4
+      },
+      {
+        "keyword": "ракет*",
+        "category": "ilm-fan",
+        "boost": 4
+      },
+      {
+        "keyword": "учен*",
+        "category": "ilm-fan",
+        "boost": 4
+      },
+      {
+        "keyword": "электромобил*",
+        "category": "ilm-fan",
+        "boost": 4
+      }
+    ],
+    "isActive": true
+  },
+  {
+    "name": "Dexerto",
+    "slug": "dexerto",
+    "homepageUrl": "https://www.dexerto.com",
+    "feeds": [
+      {
+        "url": "https://www.dexerto.com/feed/category/esports/",
+        "feedCategory": "Esports",
+        "mapsTo": "kibersport",
+        "isActive": true
+      },
+      {
+        "url": "https://www.dexerto.com/feed/category/gaming/",
+        "feedCategory": "Gaming",
+        "mapsTo": "oyinlar",
+        "isActive": true
+      },
+      {
+        "url": "https://www.dexerto.com/feed/",
+        "feedCategory": "All (umumiy: ko'p ko'ngilochar kontent)",
+        "mapsTo": "oyinlar",
+        "isActive": false
+      }
+    ],
+    "language": "en",
+    "fetchMode": "rss_plus_page",
+    "selectors": {
+      "content": "#article-content",
+      "title": "h1",
+      "publishedAt": "meta[property='article:published_time']"
+    },
+    "pollIntervalMin": 20,
+    "rateLimitSec": 10,
+    "robotsCheckedAt": "2026-09-23",
+    "tosNotes": "robots.txt: User-agent * uchun faqat /search va /cdn-cgi/ yopiq; AI scraper'lar (ClaudeBot, GPTBot, Scrapy, HTTrack...) to'liq bloklangan — OdyaBlogBot ro'yxatda yo'q. Terms and Conditions (dexerto.com/terms-and-conditions): kontentni yozma ruxsatsiz tijoriy maqsadda qayta ishlab chiqarish/tarqatish taqiqlangan; avtomatik yig'ish (scraping) alohida taqiqlanmagan. Xulosa: rss_plus_page (RSS description ~140 belgi, yetarli emas); to'liq matn faqat ichki arxivda. Esports feedi juda sust (kuniga <1) — kibersport uchun asosiy manba HLTV.",
+    "priority": 30,
+    "keywordRules": [
+      {
+        "keyword": "artificial intelligence",
+        "category": "suniy-intellekt",
+        "boost": 5
+      },
+      {
+        "keyword": "generative ai",
+        "category": "suniy-intellekt",
+        "boost": 5
+      },
+      {
+        "keyword": "openai",
+        "category": "suniy-intellekt",
+        "boost": 5
+      },
+      {
+        "keyword": "chatgpt",
+        "category": "suniy-intellekt",
+        "boost": 5
+      },
+      {
+        "keyword": "llm*",
+        "category": "suniy-intellekt",
+        "boost": 5
+      },
+      {
+        "keyword": "anthropic",
+        "category": "suniy-intellekt",
+        "boost": 5
+      },
+      {
+        "keyword": "machine learning",
+        "category": "suniy-intellekt",
+        "boost": 5
+      },
+      {
+        "keyword": "chatbot*",
+        "category": "suniy-intellekt",
+        "boost": 5
+      },
+      {
+        "keyword": "big tech",
+        "category": "texnologiyalar",
+        "boost": 2
+      },
+      {
+        "keyword": "social media",
+        "category": "texnologiyalar",
+        "boost": 2
+      },
+      {
+        "keyword": "antitrust",
+        "category": "texnologiyalar",
+        "boost": 2
+      },
+      {
+        "keyword": "meta",
+        "category": "texnologiyalar",
+        "boost": 2
+      },
+      {
+        "keyword": "google",
+        "category": "texnologiyalar",
+        "boost": 2
+      },
+      {
+        "keyword": "microsoft",
+        "category": "texnologiyalar",
+        "boost": 2
+      },
+      {
+        "keyword": "tiktok",
+        "category": "texnologiyalar",
+        "boost": 2
+      },
+      {
+        "keyword": "smartphone*",
+        "category": "gadjetlar",
+        "boost": 4
+      },
+      {
+        "keyword": "iphone*",
+        "category": "gadjetlar",
+        "boost": 4
+      },
+      {
+        "keyword": "laptop*",
+        "category": "gadjetlar",
+        "boost": 4
+      },
+      {
+        "keyword": "headphone*",
+        "category": "gadjetlar",
+        "boost": 4
+      },
+      {
+        "keyword": "earbuds",
+        "category": "gadjetlar",
+        "boost": 4
+      },
+      {
+        "keyword": "smartwatch*",
+        "category": "gadjetlar",
+        "boost": 4
+      },
+      {
+        "keyword": "gpu*",
+        "category": "gadjetlar",
+        "boost": 4
+      },
+      {
+        "keyword": "wearable*",
+        "category": "gadjetlar",
+        "boost": 4
+      },
+      {
+        "keyword": "programming",
+        "category": "dasturlash",
+        "boost": 4
+      },
+      {
+        "keyword": "developer*",
+        "category": "dasturlash",
+        "boost": 4
+      },
+      {
+        "keyword": "github",
+        "category": "dasturlash",
+        "boost": 4
+      },
+      {
+        "keyword": "open source",
+        "category": "dasturlash",
+        "boost": 4
+      },
+      {
+        "keyword": "open-source",
+        "category": "dasturlash",
+        "boost": 4
+      },
+      {
+        "keyword": "python",
+        "category": "dasturlash",
+        "boost": 4
+      },
+      {
+        "keyword": "javascript",
+        "category": "dasturlash",
+        "boost": 4
+      },
+      {
+        "keyword": "api",
+        "category": "dasturlash",
+        "boost": 4
+      },
+      {
+        "keyword": "hack*",
+        "category": "kiberxavfsizlik",
+        "boost": 5
+      },
+      {
+        "keyword": "data breach*",
+        "category": "kiberxavfsizlik",
+        "boost": 5
+      },
+      {
+        "keyword": "ransomware",
+        "category": "kiberxavfsizlik",
+        "boost": 5
+      },
+      {
+        "keyword": "vulnerabilit*",
+        "category": "kiberxavfsizlik",
+        "boost": 5
+      },
+      {
+        "keyword": "malware",
+        "category": "kiberxavfsizlik",
+        "boost": 5
+      },
+      {
+        "keyword": "cyberattack*",
+        "category": "kiberxavfsizlik",
+        "boost": 5
+      },
+      {
+        "keyword": "phishing",
+        "category": "kiberxavfsizlik",
+        "boost": 5
+      },
+      {
+        "keyword": "zero-day",
+        "category": "kiberxavfsizlik",
+        "boost": 5
+      },
+      {
+        "keyword": "esports",
+        "category": "kibersport",
+        "boost": 5
+      },
+      {
+        "keyword": "tournament*",
+        "category": "kibersport",
+        "boost": 5
+      },
+      {
+        "keyword": "counter-strike",
+        "category": "kibersport",
+        "boost": 5
+      },
+      {
+        "keyword": "cs2",
+        "category": "kibersport",
+        "boost": 5
+      },
+      {
+        "keyword": "valorant",
+        "category": "kibersport",
+        "boost": 5
+      },
+      {
+        "keyword": "dota 2",
+        "category": "kibersport",
+        "boost": 5
+      },
+      {
+        "keyword": "mobile legends",
+        "category": "kibersport",
+        "boost": 5
+      },
+      {
+        "keyword": "roster*",
+        "category": "kibersport",
+        "boost": 5
+      },
+      {
+        "keyword": "video game*",
+        "category": "oyinlar",
+        "boost": 4
+      },
+      {
+        "keyword": "playstation",
+        "category": "oyinlar",
+        "boost": 4
+      },
+      {
+        "keyword": "xbox",
+        "category": "oyinlar",
+        "boost": 4
+      },
+      {
+        "keyword": "nintendo",
+        "category": "oyinlar",
+        "boost": 4
+      },
+      {
+        "keyword": "steam",
+        "category": "oyinlar",
+        "boost": 4
+      },
+      {
+        "keyword": "console*",
+        "category": "oyinlar",
+        "boost": 4
+      },
+      {
+        "keyword": "gta 6",
+        "category": "oyinlar",
+        "boost": 4
+      },
+      {
+        "keyword": "gameplay",
+        "category": "oyinlar",
+        "boost": 4
+      },
+      {
+        "keyword": "startup*",
+        "category": "startaplar",
+        "boost": 4
+      },
+      {
+        "keyword": "funding",
+        "category": "startaplar",
+        "boost": 4
+      },
+      {
+        "keyword": "series a",
+        "category": "startaplar",
+        "boost": 4
+      },
+      {
+        "keyword": "series b",
+        "category": "startaplar",
+        "boost": 4
+      },
+      {
+        "keyword": "seed round",
+        "category": "startaplar",
+        "boost": 4
+      },
+      {
+        "keyword": "ipo",
+        "category": "startaplar",
+        "boost": 4
+      },
+      {
+        "keyword": "valuation",
+        "category": "startaplar",
+        "boost": 4
+      },
+      {
+        "keyword": "acquisition*",
+        "category": "startaplar",
+        "boost": 4
+      },
+      {
+        "keyword": "nasa",
+        "category": "ilm-fan",
+        "boost": 4
+      },
+      {
+        "keyword": "spacex",
+        "category": "ilm-fan",
+        "boost": 4
+      },
+      {
+        "keyword": "rocket*",
+        "category": "ilm-fan",
+        "boost": 4
+      },
+      {
+        "keyword": "climate",
+        "category": "ilm-fan",
+        "boost": 4
+      },
+      {
+        "keyword": "electric vehicle*",
+        "category": "ilm-fan",
+        "boost": 4
+      },
+      {
+        "keyword": "fusion",
+        "category": "ilm-fan",
+        "boost": 4
+      },
+      {
+        "keyword": "astronom*",
+        "category": "ilm-fan",
+        "boost": 4
+      },
+      {
+        "keyword": "physics",
+        "category": "ilm-fan",
+        "boost": 4
+      }
+    ],
+    "isActive": true
+  },
+  {
+    "name": "HLTV.org",
+    "slug": "hltv",
+    "homepageUrl": "https://www.hltv.org",
+    "feeds": [
+      {
+        "url": "https://www.hltv.org/rss/news",
+        "feedCategory": "News (CS2)",
+        "mapsTo": "kibersport",
+        "isActive": true
+      }
+    ],
+    "language": "en",
+    "fetchMode": "rss_only",
+    "selectors": null,
+    "pollIntervalMin": 20,
+    "rateLimitSec": 15,
+    "robotsCheckedAt": "2026-09-23",
+    "tosNotes": "robots.txt va /terms OdyaBlogBot uchun Cloudflare challenge (HTTP 403) qaytardi — tekshirib bo'lmadi. RSS (/rss/news) va maqola sahifasi 200 qaytardi (server HTML, .newstext-con). Robots/ToS tasdiqlanmagani uchun ehtiyotkorlik bilan: faqat RSS (sarlavha + 1 jumla description). ToS'ni brauzer orqali qo'lda tekshirish kerak (QUESTIONS). Faqat CS2.",
+    "priority": 25,
+    "keywordRules": [
+      {
+        "keyword": "artificial intelligence",
+        "category": "suniy-intellekt",
+        "boost": 5
+      },
+      {
+        "keyword": "generative ai",
+        "category": "suniy-intellekt",
+        "boost": 5
+      },
+      {
+        "keyword": "openai",
+        "category": "suniy-intellekt",
+        "boost": 5
+      },
+      {
+        "keyword": "chatgpt",
+        "category": "suniy-intellekt",
+        "boost": 5
+      },
+      {
+        "keyword": "llm*",
+        "category": "suniy-intellekt",
+        "boost": 5
+      },
+      {
+        "keyword": "anthropic",
+        "category": "suniy-intellekt",
+        "boost": 5
+      },
+      {
+        "keyword": "machine learning",
+        "category": "suniy-intellekt",
+        "boost": 5
+      },
+      {
+        "keyword": "chatbot*",
+        "category": "suniy-intellekt",
+        "boost": 5
+      },
+      {
+        "keyword": "big tech",
+        "category": "texnologiyalar",
+        "boost": 2
+      },
+      {
+        "keyword": "social media",
+        "category": "texnologiyalar",
+        "boost": 2
+      },
+      {
+        "keyword": "antitrust",
+        "category": "texnologiyalar",
+        "boost": 2
+      },
+      {
+        "keyword": "meta",
+        "category": "texnologiyalar",
+        "boost": 2
+      },
+      {
+        "keyword": "google",
+        "category": "texnologiyalar",
+        "boost": 2
+      },
+      {
+        "keyword": "microsoft",
+        "category": "texnologiyalar",
+        "boost": 2
+      },
+      {
+        "keyword": "tiktok",
+        "category": "texnologiyalar",
+        "boost": 2
+      },
+      {
+        "keyword": "smartphone*",
+        "category": "gadjetlar",
+        "boost": 4
+      },
+      {
+        "keyword": "iphone*",
+        "category": "gadjetlar",
+        "boost": 4
+      },
+      {
+        "keyword": "laptop*",
+        "category": "gadjetlar",
+        "boost": 4
+      },
+      {
+        "keyword": "headphone*",
+        "category": "gadjetlar",
+        "boost": 4
+      },
+      {
+        "keyword": "earbuds",
+        "category": "gadjetlar",
+        "boost": 4
+      },
+      {
+        "keyword": "smartwatch*",
+        "category": "gadjetlar",
+        "boost": 4
+      },
+      {
+        "keyword": "gpu*",
+        "category": "gadjetlar",
+        "boost": 4
+      },
+      {
+        "keyword": "wearable*",
+        "category": "gadjetlar",
+        "boost": 4
+      },
+      {
+        "keyword": "programming",
+        "category": "dasturlash",
+        "boost": 4
+      },
+      {
+        "keyword": "developer*",
+        "category": "dasturlash",
+        "boost": 4
+      },
+      {
+        "keyword": "github",
+        "category": "dasturlash",
+        "boost": 4
+      },
+      {
+        "keyword": "open source",
+        "category": "dasturlash",
+        "boost": 4
+      },
+      {
+        "keyword": "open-source",
+        "category": "dasturlash",
+        "boost": 4
+      },
+      {
+        "keyword": "python",
+        "category": "dasturlash",
+        "boost": 4
+      },
+      {
+        "keyword": "javascript",
+        "category": "dasturlash",
+        "boost": 4
+      },
+      {
+        "keyword": "api",
+        "category": "dasturlash",
+        "boost": 4
+      },
+      {
+        "keyword": "hack*",
+        "category": "kiberxavfsizlik",
+        "boost": 5
+      },
+      {
+        "keyword": "data breach*",
+        "category": "kiberxavfsizlik",
+        "boost": 5
+      },
+      {
+        "keyword": "ransomware",
+        "category": "kiberxavfsizlik",
+        "boost": 5
+      },
+      {
+        "keyword": "vulnerabilit*",
+        "category": "kiberxavfsizlik",
+        "boost": 5
+      },
+      {
+        "keyword": "malware",
+        "category": "kiberxavfsizlik",
+        "boost": 5
+      },
+      {
+        "keyword": "cyberattack*",
+        "category": "kiberxavfsizlik",
+        "boost": 5
+      },
+      {
+        "keyword": "phishing",
+        "category": "kiberxavfsizlik",
+        "boost": 5
+      },
+      {
+        "keyword": "zero-day",
+        "category": "kiberxavfsizlik",
+        "boost": 5
+      },
+      {
+        "keyword": "esports",
+        "category": "kibersport",
+        "boost": 5
+      },
+      {
+        "keyword": "tournament*",
+        "category": "kibersport",
+        "boost": 5
+      },
+      {
+        "keyword": "counter-strike",
+        "category": "kibersport",
+        "boost": 5
+      },
+      {
+        "keyword": "cs2",
+        "category": "kibersport",
+        "boost": 5
+      },
+      {
+        "keyword": "valorant",
+        "category": "kibersport",
+        "boost": 5
+      },
+      {
+        "keyword": "dota 2",
+        "category": "kibersport",
+        "boost": 5
+      },
+      {
+        "keyword": "mobile legends",
+        "category": "kibersport",
+        "boost": 5
+      },
+      {
+        "keyword": "roster*",
+        "category": "kibersport",
+        "boost": 5
+      },
+      {
+        "keyword": "video game*",
+        "category": "oyinlar",
+        "boost": 4
+      },
+      {
+        "keyword": "playstation",
+        "category": "oyinlar",
+        "boost": 4
+      },
+      {
+        "keyword": "xbox",
+        "category": "oyinlar",
+        "boost": 4
+      },
+      {
+        "keyword": "nintendo",
+        "category": "oyinlar",
+        "boost": 4
+      },
+      {
+        "keyword": "steam",
+        "category": "oyinlar",
+        "boost": 4
+      },
+      {
+        "keyword": "console*",
+        "category": "oyinlar",
+        "boost": 4
+      },
+      {
+        "keyword": "gta 6",
+        "category": "oyinlar",
+        "boost": 4
+      },
+      {
+        "keyword": "gameplay",
+        "category": "oyinlar",
+        "boost": 4
+      },
+      {
+        "keyword": "startup*",
+        "category": "startaplar",
+        "boost": 4
+      },
+      {
+        "keyword": "funding",
+        "category": "startaplar",
+        "boost": 4
+      },
+      {
+        "keyword": "series a",
+        "category": "startaplar",
+        "boost": 4
+      },
+      {
+        "keyword": "series b",
+        "category": "startaplar",
+        "boost": 4
+      },
+      {
+        "keyword": "seed round",
+        "category": "startaplar",
+        "boost": 4
+      },
+      {
+        "keyword": "ipo",
+        "category": "startaplar",
+        "boost": 4
+      },
+      {
+        "keyword": "valuation",
+        "category": "startaplar",
+        "boost": 4
+      },
+      {
+        "keyword": "acquisition*",
+        "category": "startaplar",
+        "boost": 4
+      },
+      {
+        "keyword": "nasa",
+        "category": "ilm-fan",
+        "boost": 4
+      },
+      {
+        "keyword": "spacex",
+        "category": "ilm-fan",
+        "boost": 4
+      },
+      {
+        "keyword": "rocket*",
+        "category": "ilm-fan",
+        "boost": 4
+      },
+      {
+        "keyword": "climate",
+        "category": "ilm-fan",
+        "boost": 4
+      },
+      {
+        "keyword": "electric vehicle*",
+        "category": "ilm-fan",
+        "boost": 4
+      },
+      {
+        "keyword": "fusion",
+        "category": "ilm-fan",
+        "boost": 4
+      },
+      {
+        "keyword": "astronom*",
+        "category": "ilm-fan",
+        "boost": 4
+      },
+      {
+        "keyword": "physics",
+        "category": "ilm-fan",
+        "boost": 4
+      }
+    ],
+    "isActive": true
+  },
+  {
+    "name": "3DNews (zaxira)",
+    "slug": "3dnews",
+    "homepageUrl": "https://3dnews.ru",
+    "feeds": [
+      {
+        "url": "https://3dnews.ru/news/rss/",
+        "feedCategory": "Новости (umumiy)",
+        "mapsTo": "gadjetlar",
+        "isActive": true
+      }
+    ],
+    "language": "ru",
+    "fetchMode": "rss_only",
+    "selectors": null,
+    "pollIntervalMin": 30,
+    "rateLimitSec": 10,
+    "robotsCheckedAt": "2026-09-23",
+    "tosNotes": "Zaxira manba (TZ §2.2) — MVP'da o'chiq. robots.txt: User-agent * — Allow: / (faqat ?from= va preview yopiq). ToS tekshirilmadi; yoqishdan oldin huquqiy audit kerak. RSS 200, ~66 yozuv, har bir yozuvda kategoriya bor.",
+    "priority": 20,
+    "keywordRules": [
+      {
+        "keyword": "нейросет*",
+        "category": "suniy-intellekt",
+        "boost": 5
+      },
+      {
+        "keyword": "искусственн* интеллект*",
+        "category": "suniy-intellekt",
+        "boost": 5
+      },
+      {
+        "keyword": "ии",
+        "category": "suniy-intellekt",
+        "boost": 5
+      },
+      {
+        "keyword": "openai",
+        "category": "suniy-intellekt",
+        "boost": 5
+      },
+      {
+        "keyword": "chatgpt",
+        "category": "suniy-intellekt",
+        "boost": 5
+      },
+      {
+        "keyword": "llm*",
+        "category": "suniy-intellekt",
+        "boost": 5
+      },
+      {
+        "keyword": "машинн* обучени*",
+        "category": "suniy-intellekt",
+        "boost": 5
+      },
+      {
+        "keyword": "языков* модел*",
+        "category": "suniy-intellekt",
+        "boost": 5
+      },
+      {
+        "keyword": "яндекс*",
+        "category": "texnologiyalar",
+        "boost": 2
+      },
+      {
+        "keyword": "google",
+        "category": "texnologiyalar",
+        "boost": 2
+      },
+      {
+        "keyword": "microsoft",
+        "category": "texnologiyalar",
+        "boost": 2
+      },
+      {
+        "keyword": "социальн* сет*",
+        "category": "texnologiyalar",
+        "boost": 2
+      },
+      {
+        "keyword": "мессенджер*",
+        "category": "texnologiyalar",
+        "boost": 2
+      },
+      {
+        "keyword": "роскомнадзор*",
+        "category": "texnologiyalar",
+        "boost": 2
+      },
+      {
+        "keyword": "маркетплейс*",
+        "category": "texnologiyalar",
+        "boost": 2
+      },
+      {
+        "keyword": "смартфон*",
+        "category": "gadjetlar",
+        "boost": 4
+      },
+      {
+        "keyword": "ноутбук*",
+        "category": "gadjetlar",
+        "boost": 4
+      },
+      {
+        "keyword": "iphone*",
+        "category": "gadjetlar",
+        "boost": 4
+      },
+      {
+        "keyword": "процессор*",
+        "category": "gadjetlar",
+        "boost": 4
+      },
+      {
+        "keyword": "видеокарт*",
+        "category": "gadjetlar",
+        "boost": 4
+      },
+      {
+        "keyword": "планшет*",
+        "category": "gadjetlar",
+        "boost": 4
+      },
+      {
+        "keyword": "гаджет*",
+        "category": "gadjetlar",
+        "boost": 4
+      },
+      {
+        "keyword": "наушник*",
+        "category": "gadjetlar",
+        "boost": 4
+      },
+      {
+        "keyword": "программист*",
+        "category": "dasturlash",
+        "boost": 4
+      },
+      {
+        "keyword": "разработчик*",
+        "category": "dasturlash",
+        "boost": 4
+      },
+      {
+        "keyword": "python",
+        "category": "dasturlash",
+        "boost": 4
+      },
+      {
+        "keyword": "javascript",
+        "category": "dasturlash",
+        "boost": 4
+      },
+      {
+        "keyword": "github",
+        "category": "dasturlash",
+        "boost": 4
+      },
+      {
+        "keyword": "open source",
+        "category": "dasturlash",
+        "boost": 4
+      },
+      {
+        "keyword": "открыт* код*",
+        "category": "dasturlash",
+        "boost": 4
+      },
+      {
+        "keyword": "фреймворк*",
+        "category": "dasturlash",
+        "boost": 4
+      },
+      {
+        "keyword": "уязвимост*",
+        "category": "kiberxavfsizlik",
+        "boost": 5
+      },
+      {
+        "keyword": "хакер*",
+        "category": "kiberxavfsizlik",
+        "boost": 5
+      },
+      {
+        "keyword": "утечк*",
+        "category": "kiberxavfsizlik",
+        "boost": 5
+      },
+      {
+        "keyword": "взлом*",
+        "category": "kiberxavfsizlik",
+        "boost": 5
+      },
+      {
+        "keyword": "вредоносн*",
+        "category": "kiberxavfsizlik",
+        "boost": 5
+      },
+      {
+        "keyword": "фишинг*",
+        "category": "kiberxavfsizlik",
+        "boost": 5
+      },
+      {
+        "keyword": "кибератак*",
+        "category": "kiberxavfsizlik",
+        "boost": 5
+      },
+      {
+        "keyword": "ddos",
+        "category": "kiberxavfsizlik",
+        "boost": 5
+      },
+      {
+        "keyword": "киберспорт*",
+        "category": "kibersport",
+        "boost": 5
+      },
+      {
+        "keyword": "турнир*",
+        "category": "kibersport",
+        "boost": 5
+      },
+      {
+        "keyword": "cs2",
+        "category": "kibersport",
+        "boost": 5
+      },
+      {
+        "keyword": "counter-strike",
+        "category": "kibersport",
+        "boost": 5
+      },
+      {
+        "keyword": "dota 2",
+        "category": "kibersport",
+        "boost": 5
+      },
+      {
+        "keyword": "valorant",
+        "category": "kibersport",
+        "boost": 5
+      },
+      {
+        "keyword": "мейджор*",
+        "category": "kibersport",
+        "boost": 5
+      },
+      {
+        "keyword": "трансфер*",
+        "category": "kibersport",
+        "boost": 5
+      },
+      {
+        "keyword": "видеоигр*",
+        "category": "oyinlar",
+        "boost": 4
+      },
+      {
+        "keyword": "игр*",
+        "category": "oyinlar",
+        "boost": 4
+      },
+      {
+        "keyword": "playstation",
+        "category": "oyinlar",
+        "boost": 4
+      },
+      {
+        "keyword": "xbox",
+        "category": "oyinlar",
+        "boost": 4
+      },
+      {
+        "keyword": "nintendo",
+        "category": "oyinlar",
+        "boost": 4
+      },
+      {
+        "keyword": "steam",
+        "category": "oyinlar",
+        "boost": 4
+      },
+      {
+        "keyword": "консол*",
+        "category": "oyinlar",
+        "boost": 4
+      },
+      {
+        "keyword": "геймплей*",
+        "category": "oyinlar",
+        "boost": 4
+      },
+      {
+        "keyword": "стартап*",
+        "category": "startaplar",
+        "boost": 4
+      },
+      {
+        "keyword": "инвестиц*",
+        "category": "startaplar",
+        "boost": 4
+      },
+      {
+        "keyword": "ipo",
+        "category": "startaplar",
+        "boost": 4
+      },
+      {
+        "keyword": "раунд* финансировани*",
+        "category": "startaplar",
+        "boost": 4
+      },
+      {
+        "keyword": "выручк*",
+        "category": "startaplar",
+        "boost": 4
+      },
+      {
+        "keyword": "капитализаци*",
+        "category": "startaplar",
+        "boost": 4
+      },
+      {
+        "keyword": "поглощени*",
+        "category": "startaplar",
+        "boost": 4
+      },
+      {
+        "keyword": "венчурн*",
+        "category": "startaplar",
+        "boost": 4
+      },
+      {
+        "keyword": "космос*",
+        "category": "ilm-fan",
+        "boost": 4
+      },
+      {
+        "keyword": "космическ*",
+        "category": "ilm-fan",
+        "boost": 4
+      },
+      {
+        "keyword": "nasa",
+        "category": "ilm-fan",
+        "boost": 4
+      },
+      {
+        "keyword": "spacex",
+        "category": "ilm-fan",
+        "boost": 4
+      },
+      {
+        "keyword": "роскосмос*",
+        "category": "ilm-fan",
+        "boost": 4
+      },
+      {
+        "keyword": "ракет*",
+        "category": "ilm-fan",
+        "boost": 4
+      },
+      {
+        "keyword": "учен*",
+        "category": "ilm-fan",
+        "boost": 4
+      },
+      {
+        "keyword": "электромобил*",
+        "category": "ilm-fan",
+        "boost": 4
+      }
+    ],
+    "isActive": false
+  }
+]

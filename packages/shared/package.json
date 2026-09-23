@@ -1,0 +1,28 @@
+{
+  "name": "@blog-odya/shared",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Umumiy tiplar, Zod sxemalari va seed ma'lumotlari (manbalar, kategoriyalar)",
+  "exports": {
+    ".": "./src/index.ts",
+    "./seed/sources.json": "./seed/sources.json",
+    "./seed/categories.json": "./seed/categories.json"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "check:feeds": "RUN_FEED_CHECKS=1 vitest run test/feeds.live.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "zod": "^4.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "linkedom": "^0.18.0",
+    "robots-parser": "^3.0.1",
+    "rss-parser": "^3.13.0",
+    "typescript": "^5.9.0",
+    "vitest": "^3.2.0"
+  }
+}

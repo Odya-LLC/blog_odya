@@ -1,0 +1,3 @@
+node_modules/
+# Lockfile root darajasida (pnpm workspace, M0-01) saqlanadi
+pnpm-lock.yaml
