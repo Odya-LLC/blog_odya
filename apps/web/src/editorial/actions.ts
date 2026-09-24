@@ -214,6 +214,179 @@ export async function takeScrapedItem(
   })
 }
 
+export interface TakeManyResult {
+  post: TakeResult['post']
+  items: ScrapedItem[]
+  /** `false` — asosiy element allaqachon olingan, mavjud post qaytarildi. */
+  created: boolean
+}
+
+/** Elementlar atributsiyasi (URL bo'yicha takrorlanmas) — `sources[]`. */
+export function buildSources(items: ScrapedItem[]): NonNullable<Post['sources']> {
+  const seen = new Set<string>()
+  const sources: NonNullable<Post['sources']> = []
+  for (const item of items) {
+    const [source] = buildDraftPostData(item, { categoryId: 0, userId: 0, slug: '' }).sources
+    if (!source || seen.has(source.url)) continue
+    seen.add(source.url)
+    sources.push(source)
+  }
+  return sources
+}
+
+/**
+ * Bir nechta elementdan (masalan, bitta klaster) bitta qoralama — MCP `create_draft` (M2-07).
+ * Birinchi element — asosiy (sarlavha, slug, kategoriya); qolganlari `sources[]` ga qo'shiladi.
+ * Hammasi bitta tranzaksiyada, elementlar ID tartibida qulflanadi (deadlock bo'lmasin).
+ *
+ * - Asosiy element allaqachon olingan bo'lsa — mavjud post qaytariladi (idempotent), qolgan
+ *   elementlar hali hech qaysi postga bog'lanmagan bo'lsa, shu postga qo'shiladi.
+ * - Rad etilgan yoki boshqa postga bog'langan qo'shimcha element — 409.
+ */
+export async function takeScrapedItems(
+  req: PayloadRequest,
+  args: { ids: Id[]; categoryId?: Id | null },
+): Promise<TakeManyResult> {
+  const userId = assertEditor(req)
+  const ids = [...new Set(args.ids)]
+  const primaryId = ids[0]
+  if (primaryId === undefined) throw new EditorialError('Kamida bitta element ID kerak.', 400)
+
+  return inTransaction(req, async () => {
+    const byId = new Map<Id, ScrapedItem>()
+    for (const id of [...ids].sort((a, b) => a - b)) byId.set(id, await loadItem(req, id))
+    const items = ids.map((id) => byId.get(id) as ScrapedItem)
+    const primary = items[0] as ScrapedItem
+
+    for (const item of items) {
+      if (item.status === 'rejected') {
+        throw new EditorialError(
+          `Element #${item.id} rad etilgan — qoralamaga olib bo'lmaydi.`,
+          409,
+        )
+      }
+    }
+
+    // Asosiy element allaqachon qoralamaga olinganmi (post mavjud)?
+    let post: Post | null = null
+    const existingId = relId(primary.post)
+    if (existingId !== null) {
+      post = await req.payload.findByID({
+        collection: 'posts',
+        id: existingId,
+        depth: 0,
+        draft: true,
+        req,
+        overrideAccess: false,
+        disableErrors: true,
+      })
+    }
+    for (const item of items.slice(1)) {
+      const linked = relId(item.post)
+      if (linked !== null && linked !== post?.id) {
+        throw new EditorialError(
+          `Element #${item.id} allaqachon boshqa qoralamaga (post #${linked}) olingan.`,
+          409,
+        )
+      }
+    }
+
+    const created = post === null
+    if (!post) {
+      const categoryId =
+        args.categoryId ??
+        items.map((item) => relId(item.suggestedCategory)).find((id) => id !== null) ??
+        null
+      if (!categoryId) {
+        throw new EditorialError(
+          "Kategoriyani tanlang — elementlarda taklif qilingan kategoriya yo'q.",
+          400,
+        )
+      }
+      post = await req.payload.create({
+        collection: 'posts',
+        data: {
+          ...buildDraftPostData(primary, {
+            categoryId,
+            userId,
+            slug: await uniqueSlug(req, primary),
+          }),
+          sources: buildSources(items),
+        },
+        draft: true,
+        depth: 0,
+        req,
+        overrideAccess: false,
+      })
+    } else {
+      const known = new Set((post.sources ?? []).map((source) => source.url))
+      const extra = buildSources(items).filter((source) => !known.has(source.url))
+      if (extra.length && !['draft', 'in_progress'].includes(post.workflowStatus)) {
+        throw new EditorialError(
+          `Element #${primary.id} ning posti (#${post.id}) "${post.workflowStatus}" holatida — ` +
+            "unga yangi manba qo'shib bo'lmaydi.",
+          409,
+        )
+      }
+      if (extra.length) {
+        post = await req.payload.update({
+          collection: 'posts',
+          id: post.id,
+          data: {
+            sources: [
+              ...(post.sources ?? []).map((source) => ({
+                name: source.name ?? null,
+                url: source.url,
+                scrapedItem: relId(source.scrapedItem),
+              })),
+              ...extra,
+            ],
+          },
+          depth: 0,
+          req,
+          overrideAccess: false,
+        })
+      }
+    }
+
+    const postId = post.id
+    const updated: ScrapedItem[] = []
+    for (const item of items) {
+      if (item.status === 'drafted' && relId(item.post) === postId) {
+        updated.push(item)
+        continue
+      }
+      updated.push(
+        await req.payload.update({
+          collection: 'scraped-items',
+          id: item.id,
+          data: {
+            status: 'drafted',
+            post: postId,
+            handledBy: userId,
+            handledAt: new Date().toISOString(),
+            rejectReason: null,
+          },
+          depth: 0,
+          req,
+          overrideAccess: false,
+        }),
+      )
+    }
+
+    return {
+      post: {
+        id: post.id,
+        title: post.title,
+        slug: post.slug,
+        workflowStatus: post.workflowStatus,
+      },
+      items: updated,
+      created,
+    }
+  })
+}
+
 export interface RejectResult {
   item: ScrapedItem
   /** `false` — element allaqachon rad etilgan edi. */

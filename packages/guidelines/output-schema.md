@@ -1,8 +1,8 @@
 ---
 id: output-schema
 title: Chiqish sxemasi (save_rewrite / set_seo)
-version: 1.0.0
-updatedAt: 2026-09-23
+version: 1.1.0
+updatedAt: 2026-09-24
 ---
 
 # Blog Odya — chiqish sxemasi: `save_rewrite` va `set_seo`
@@ -26,14 +26,14 @@ Umumiy qoidalar:
 
 ## `save_rewrite`
 
-| Maydon     | Tip               | Majburiy | Qoida                                                                                                                                                                                  |
-| ---------- | ----------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `postId`   | string            | ha       | `create_draft` / `list_drafts` / `claim_draft` qaytargan post identifikatori                                                                                                           |
-| `title`    | string            | ha       | ≤ 70 belgi; clickbait yoʻq; oxirida nuqta yoʻq; focus keyword bor (`style.md` 4, `seo.md` 1–2)                                                                                         |
-| `excerpt`  | string            | ha       | Lid: 1–2 gap, 160–300 belgi; focus keyword bor; sarlavhani takrorlamaydi                                                                                                               |
-| `body`     | string (Markdown) | ha       | 400–900 soʻz; `##` (H2) va `###` (H3); `#` (H1) ishlatilmaydi; 2–5 ichki havola (`/{kategoriya}/{slug}`); 1+ tashqi havola (manba). Server Markdown matnini Lexical formatiga oʻgiradi |
-| `category` | string            | ha       | Bitta kategoriya slugi (`list_categories`): `suniy-intellekt`, `texnologiyalar`, `gadjetlar`, `dasturlash`, `kiberxavfsizlik`, `kibersport`, `oyinlar`, `startaplar`, `ilm-fan`        |
-| `tags`     | string[]          | ha       | 3–7 ta teg nomi (lotin). Avval mavjud teglar (`list_tags`); mos teg yoʻq boʻlsa yangisi yaratiladi                                                                                     |
+| Maydon     | Tip                | Majburiy | Qoida                                                                                                                                                                                  |
+| ---------- | ------------------ | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `postId`   | number             | ha       | `create_draft` / `list_drafts` / `claim_draft` qaytargan post identifikatori                                                                                                           |
+| `title`    | string             | ha       | ≤ 70 belgi; clickbait yoʻq; oxirida nuqta yoʻq; focus keyword bor (`style.md` 4, `seo.md` 1–2)                                                                                         |
+| `excerpt`  | string             | ha       | Lid: 1–2 gap, 160–300 belgi; focus keyword bor; sarlavhani takrorlamaydi                                                                                                               |
+| `body`     | string (Markdown)  | ha       | 400–900 soʻz; `##` (H2) va `###` (H3); `#` (H1) ishlatilmaydi; 2–5 ichki havola (`/{kategoriya}/{slug}`); 1+ tashqi havola (manba). Server Markdown matnini Lexical formatiga oʻgiradi |
+| `category` | string             | ha       | Bitta kategoriya slugi (`list_categories`): `suniy-intellekt`, `texnologiyalar`, `gadjetlar`, `dasturlash`, `kiberxavfsizlik`, `kibersport`, `oyinlar`, `startaplar`, `ilm-fan`        |
+| `tags`     | (string\|number)[] | ha       | 3–7 ta teg nomi (lotin) yoki ID. Avval mavjud teglar (`list_tags`); mos teg yoʻq boʻlsa yangisi yaratiladi                                                                             |
 
 Ruxsat etilgan Markdown: abzaslar, `##`/`###` sarlavhalar, `**qalin**`, `*kursiv*`, roʻyxatlar, havolalar, `>` iqtibos, kod (`` ` `` va ` ``` `), jadvallar. HTML teglari, rasmlar (`![]()`) va skriptlar olib tashlanadi — rasmni muharrir qoʻshadi.
 
@@ -45,7 +45,7 @@ Atributsiya (`sources`) `create_draft` paytida scraped item(lar)dan avtomatik to
 
 | Maydon            | Tip                                      | Majburiy | Qoida                                                                                  |
 | ----------------- | ---------------------------------------- | -------- | -------------------------------------------------------------------------------------- |
-| `postId`          | string                                   | ha       | Post identifikatori                                                                    |
+| `postId`          | number                                   | ha       | Post identifikatori                                                                    |
 | `seoTitle`        | string                                   | ha       | ≤ 60 belgi; focus keyword boshida; «— Blog Odya» qoʻshilmaydi (sayt oʻzi qoʻshadi)     |
 | `metaDescription` | string                                   | ha       | 140–160 belgi; focus keyword bor; lidni soʻzma-soʻz takrorlamaydi                      |
 | `focusKeyword`    | string                                   | ha       | 1–4 soʻzli ibora, lotin; `title`, `seoTitle`, `excerpt`, `metaDescription` da uchraydi |
@@ -77,9 +77,11 @@ Ikkala tool bir xil tuzilmadagi javob qaytaradi:
 }
 ```
 
-- `ok: false` — saqlanmadi; `errors` dagi barcha xatolar tuzatilib, tool qayta chaqiriladi.
+- `ok: false` — saqlanmadi (MCP javobida `isError: true`); `errors` dagi barcha xatolar tuzatilib, tool qayta chaqiriladi.
 - `ok: true` + `warnings` — saqlandi, lekin eʼtibor talab qilinadi.
-- `seoScore` — 0–100, maʼlumot uchun.
+- `seoScore` — 0–100, maʼlumot uchun (`seo.md` 10-boʻlimdagi tekshiruv roʻyxati boʻyicha vaznli ball).
+- Muvaffaqiyatli javobda qoʻshimcha: `post` (id, slug, holat, lock muddati), `tags` (yaratilganlari belgilangan), `cyrillic` (yangilangan kirill maydonlari), `similarity`.
+- Holat yoki egalik xatosi (masalan, post `published` yoki boshqa muharrirga biriktirilgan) — JSON emas, oddiy matnli xato (`isError: true`).
 
 Asosiy tekshiruvlar (TZ §5.3): lotin maydonlarida kirill harflari yoʻqligi; uzunlik chegaralari; slug unikalligi (slug `slugify-uz` bilan avtomatik yaratiladi, agent yubormaydi); manba bilan n-gram oʻxshashlik; `sources` boʻsh emasligi.
 
@@ -87,7 +89,7 @@ Asosiy tekshiruvlar (TZ §5.3): lotin maydonlarida kirill harflari yoʻqligi; uz
 
 | Maydon           | Tip    | Majburiy | Qoida                                                                                                                                                                                                         |
 | ---------------- | ------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `postId`         | string | ha       | Post identifikatori                                                                                                                                                                                           |
+| `postId`         | number | ha       | Post identifikatori                                                                                                                                                                                           |
 | `notesForEditor` | string | yoʻq     | Muharrir uchun izoh: tekshirib boʻlmagan faktlar, manbalar orasidagi farqlar, mos rasm taklifi, topilmagan ichki havolalar, «Oʻzbekiston uchun ahamiyati» uchun tekshirilishi kerak boʻlgan mahalliy maʼlumot |
 
 ## Toʻliq namuna
@@ -98,7 +100,7 @@ Namunadagi faktlar shartli — faqat formatni koʻrsatish uchun.
 
 ```json
 {
-  "postId": "123",
+  "postId": 123,
   "title": "Apple iPhone 18 taqdimotini oktabrga koʻchirdi",
   "excerpt": "Apple iPhone 18 taqdimotini 2026-yil oktabr oyiga koʻchirdi. Bloomberg maʼlumotiga koʻra, kechikishga yangi protsessor ishlab chiqarishdagi muammolar sabab boʻlgan.",
   "body": "Kompaniya rasmiy sanani hali eʼlon qilmagan...\n\n## Kechikish sababi\n\n...\n\n## Oʻzbekiston uchun ahamiyati\n\n...",
@@ -111,7 +113,7 @@ Namunadagi faktlar shartli — faqat formatni koʻrsatish uchun.
 
 ```json
 {
-  "postId": "123",
+  "postId": 123,
   "seoTitle": "iPhone 18 taqdimoti oktabrga koʻchirildi",
   "metaDescription": "iPhone 18 taqdimoti oktabrga koʻchirildi: Bloomberg maʼlumotiga koʻra, sabab — yangi protsessor ishlab chiqarishdagi muammolar. Sanalar va tafsilotlar.",
   "focusKeyword": "iPhone 18 taqdimoti",

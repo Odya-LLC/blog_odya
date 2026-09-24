@@ -172,6 +172,10 @@ export interface Post {
   title: string;
   excerpt?: string | null;
   coverImage?: (number | null) | Media;
+  /**
+   * AI agent taklifi (MCP set_seo): muqova rasmi tanlanganda uning alt matni sifatida ishlating
+   */
+  coverAlt?: string | null;
   content?: {
     root: {
       type: string;
@@ -982,6 +986,7 @@ export interface PostsSelect<T extends boolean = true> {
   title?: T;
   excerpt?: T;
   coverImage?: T;
+  coverAlt?: T;
   content?: T;
   faq?:
     | T

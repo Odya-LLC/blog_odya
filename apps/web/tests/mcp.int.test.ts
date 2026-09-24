@@ -7,6 +7,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { apiKeyRateLimiter, createRateLimiter } from '@/auth/rate-limit'
 import { createMcpRoute, MCP_PATH } from '@/mcp/route'
 import { READ_TOOL_NAMES } from '@/mcp/tools'
+import { WRITE_TOOL_NAMES } from '@/mcp/write-tools'
 import type { Category, Post, ScrapedItem, Source, Tag, User } from '@/payload-types'
 
 import {
@@ -256,8 +257,13 @@ describe('MCP server (/api/mcp)', () => {
     expect(client.getInstructions()).toContain('untrusted_source')
 
     const { tools } = await client.listTools()
-    expect(tools.map((tool) => tool.name).sort()).toEqual([...READ_TOOL_NAMES].sort())
-    expect(tools.every((tool) => tool.annotations?.readOnlyHint)).toBe(true)
+    expect(tools.map((tool) => tool.name).sort()).toEqual(
+      [...READ_TOOL_NAMES, ...WRITE_TOOL_NAMES].sort(),
+    )
+    const readTools = tools.filter((tool) =>
+      (READ_TOOL_NAMES as readonly string[]).includes(tool.name),
+    )
+    expect(readTools.every((tool) => tool.annotations?.readOnlyHint)).toBe(true)
     expect(tools.some((tool) => /publish/.test(tool.name))).toBe(false)
     const listScraped = tools.find((tool) => tool.name === 'list_scraped')
     expect(listScraped?.inputSchema.properties).toHaveProperty('minScore')
