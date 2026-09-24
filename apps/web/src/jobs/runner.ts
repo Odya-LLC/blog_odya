@@ -6,7 +6,13 @@ import { runWithAuditChannel } from '@/audit/channel'
 import { TELEGRAM_TIMEOUT_MS } from '@/lib/telegram'
 
 import { type AlertRunResult, runAlertChecks } from './alerts'
-import { MAX_BATCH_LIMIT, MAX_DEADLINE_SEC, TASK_GRACE_MS } from './constants'
+import {
+  BATCH_START_LIMIT_MS,
+  MAX_BATCH_LIMIT,
+  MAX_DEADLINE_SEC,
+  RESPONSE_BUDGET_MS,
+  TASK_GRACE_MS,
+} from './constants'
 import { runWithDeadline } from './context'
 import { activeRunQueues } from './scrapeDeps'
 import {
@@ -20,18 +26,22 @@ import { getJobsSettings } from './settings'
 /**
  * Job'larni vaqt chegarasi bilan ishga tushirish (TZ §3.5, §3.7.2).
  *
- * `payload.jobs.run({ limit })` batch'lari ketma-ket chaqiriladi (batch ichida job'lar parallel):
- * navbat bo'shaguncha yoki ichki deadline'gacha. Deadline'dan keyin yangi batch boshlanmaydi,
- * boshlangan task'lar esa `taskDeadlineAt` (= deadline + grace) ichida tugaydi.
+ * `payload.jobs.run({ limit })` batch'lari ketma-ket chaqiriladi (batch ichida `limit` ta job
+ * parallel — `scraping-settings.jobsBatchLimit`): navbat bo'shaguncha yoki ichki deadline'gacha.
+ * Deadline `startedAt` dan (so'rov boshidan) hisoblanadi — pre-step'lar sarflagan vaqt ham
+ * byudjetga kiradi. Deadline'dan keyin yangi batch boshlanmaydi, boshlangan task'lar esa
+ * `taskDeadlineAt` (= deadline + grace) ichida tugaydi.
  */
 
 type JobsRun = Pick<Payload['jobs'], 'run'>
 
 export interface RunWithDeadlineOptions {
-  /** Bitta `payload.jobs.run` chaqiruvidagi maksimal job'lar soni. */
+  /** Bitta `payload.jobs.run` chaqiruvidagi maksimal (parallel) job'lar soni. */
   limit: number
-  /** Yangi batch boshlanmaydigan vaqt (chaqiruv boshidan, ms). */
+  /** Yangi batch boshlanmaydigan vaqt (`startedAt` dan, ms). */
   deadlineMs: number
+  /** Byudjet boshlanishi (epoch ms) — odatda so'rov kelgan vaqt; default — hozir. */
+  startedAt?: number
   /** Deadline'dan keyin boshlangan task'lar tugashi uchun qo'shimcha vaqt (ms). */
   graceMs?: number
   queues?: readonly string[]
@@ -51,7 +61,7 @@ export async function runJobsWithDeadline(
 ): Promise<RunWithDeadlineResult> {
   const now = options.now ?? Date.now
   const queues = options.queues ?? activeRunQueues()
-  const deadlineAt = now() + options.deadlineMs
+  const deadlineAt = (options.startedAt ?? now()) + options.deadlineMs
   const taskDeadlineAt = deadlineAt + (options.graceMs ?? TASK_GRACE_MS)
   const result: RunWithDeadlineResult = {
     batches: 0,
@@ -94,9 +104,13 @@ export function isAuthorized(header: string | null, secret: string): boolean {
 
 /**
  * Ogohlantirishlar job'lardan keyin tekshiriladi — faqat chaqiruv boshidan shu vaqtgacha
- * (Vercel function limiti 60 s). Vaqt qolmasa, keyingi chaqiruvda (10 daqiqadan keyin).
+ * (`RESPONSE_BUDGET_MS`; Vercel function limiti 60 s). Vaqt qolmasa, keyingi chaqiruvda
+ * (10 daqiqadan keyin).
  */
-export const ALERTS_HARD_LIMIT_MS = 55_000
+export const ALERTS_HARD_LIMIT_MS = RESPONSE_BUDGET_MS
+
+/** Pre-step'lar deadline'ni yeb qo'ysa o'tkazib yuboriladigan qadamlar (keyingi tick'da). */
+export type SkippedStep = 'feedPolls' | 'cleanup' | 'alerts'
 
 export interface JobsRunResponse {
   ok: true
@@ -113,7 +127,11 @@ export interface JobsRunResponse {
   /** Navbatda qolgan (retry kutayotganlari bilan) job'lar. */
   remaining: number
   deadlineReached: boolean
+  /** Vaqt yetmagani uchun bu chaqiruvda bajarilmagan qadamlar. */
+  skipped: SkippedStep[]
+  /** Bitta batch'dagi (parallel) job'lar soni: `jobsBatchLimit` yoki `?limit=` (≤ 50). */
   limit: number
+  /** Amaldagi ichki deadline (so'rov boshidan, s): `min(jobsDeadlineSec, 35)`. */
   deadlineSec: number
   durationMs: number
 }
@@ -123,6 +141,8 @@ export interface HandleJobsRunDeps {
   secret: string | undefined
   /** Testlar uchun: deadline/grace'ni qisqartirish. */
   overrides?: { deadlineMs?: number; graceMs?: number }
+  /** Testlar uchun soat (so'rov boshi va barcha chegaralar shu bilan o'lchanadi). */
+  now?: () => number
 }
 
 function json(body: unknown, status: number, headers: Record<string, string> = {}) {
@@ -140,7 +160,8 @@ export async function handleJobsRunRequest(
   request: Request,
   deps: HandleJobsRunDeps,
 ): Promise<Response> {
-  const startedAt = Date.now()
+  // Byudjet shu yerdan: Payload init (sovuq start'da DB ulanishi) ham unga kiradi.
+  const startedAt = (deps.now ?? Date.now)()
   if (!deps.secret) {
     return json({ ok: false, error: 'JOBS_SECRET sozlanmagan — endpoint yopiq' }, 503)
   }
@@ -159,6 +180,7 @@ async function runJobsRequest(
   deps: HandleJobsRunDeps,
   startedAt: number,
 ): Promise<Response> {
+  const now = deps.now ?? Date.now
   try {
     const settings = await getJobsSettings(payload)
     const limitParam = Number(new URL(request.url).searchParams.get('limit'))
@@ -166,44 +188,61 @@ async function runJobsRequest(
       Number.isInteger(limitParam) && limitParam > 0
         ? Math.min(limitParam, MAX_BATCH_LIMIT)
         : settings.batchLimit
-    const deadlineSec = Math.min(settings.deadlineSec, MAX_DEADLINE_SEC)
+    const deadlineMs =
+      deps.overrides?.deadlineMs ??
+      Math.min(Math.min(settings.deadlineSec, MAX_DEADLINE_SEC) * 1000, BATCH_START_LIMIT_MS)
+    // Yangi batch'lar shu vaqtgacha (so'rov boshidan) — pre-step'lar ham shu byudjetdan.
+    const batchDeadlineAt = startedAt + deadlineMs
+    const skipped: SkippedStep[] = []
 
+    // Bitta UPDATE — har doim (aks holda uzilgan job'lar navbatni to'sib turadi).
     const releasedStale = await releaseStaleJobs(payload)
-    const { enqueued, disabled } = await enqueueDueFeedPolls(payload, { settings })
-    const cleanupEnqueued = await enqueueDailyCleanup(payload)
+    // Deadline pre-step'larning o'zida o'tib ketgan bo'lsa (sekin sovuq start), navbatga qo'yish
+    // keyingi tick'ga qoldiriladi: bu chaqiruvda baribir bajarib bo'lmaydi.
+    const polls = now() < batchDeadlineAt ? await enqueueDueFeedPolls(payload, { settings }) : null
+    if (!polls) skipped.push('feedPolls')
+    let cleanupEnqueued = false
+    if (now() < batchDeadlineAt) cleanupEnqueued = await enqueueDailyCleanup(payload)
+    else skipped.push('cleanup')
+
     const queues = activeRunQueues()
     const run = await runJobsWithDeadline(payload.jobs, {
       queues,
       limit,
-      deadlineMs: deps.overrides?.deadlineMs ?? deadlineSec * 1000,
+      startedAt,
+      deadlineMs,
       graceMs: deps.overrides?.graceMs,
+      now,
     })
     const remaining = await countRemainingJobs(payload, queues)
-    const timeLeft = ALERTS_HARD_LIMIT_MS - (Date.now() - startedAt)
-    const alerts =
-      timeLeft >= 1_000
-        ? await runAlertChecks(payload, { timeoutMs: Math.min(TELEGRAM_TIMEOUT_MS, timeLeft) })
-        : null
+    const timeLeft = ALERTS_HARD_LIMIT_MS - (now() - startedAt)
+    let alerts: AlertRunResult | null = null
+    if (timeLeft >= 1_000) {
+      alerts = await runAlertChecks(payload, {
+        timeoutMs: Math.min(TELEGRAM_TIMEOUT_MS, timeLeft),
+      })
+    } else skipped.push('alerts')
 
     const body: JobsRunResponse = {
       ok: true,
-      enqueued,
+      enqueued: polls?.enqueued ?? 0,
       cleanupEnqueued,
       alerts,
-      scrapingDisabled: disabled,
+      scrapingDisabled: polls?.disabled ?? !settings.isEnabled,
       releasedStale,
       batches: run.batches,
       done: { succeeded: run.succeeded, failed: run.failed },
       remaining,
       deadlineReached: run.deadlineReached,
+      skipped,
       limit,
-      deadlineSec,
-      durationMs: Date.now() - startedAt,
+      deadlineSec: Math.round(deadlineMs / 1000),
+      durationMs: now() - startedAt,
     }
     payload.logger.info({ msg: 'jobs/run', ...body })
     return json(body, 200)
   } catch (error) {
     payload.logger.error({ err: error, msg: 'jobs/run xatosi' })
-    return json({ ok: false, error: 'Internal error', durationMs: Date.now() - startedAt }, 500)
+    return json({ ok: false, error: 'Internal error', durationMs: now() - startedAt }, 500)
   }
 }

@@ -4,6 +4,7 @@ import { gunzip as gunzipCb, gzip as gzipCb } from 'node:zlib'
 import { GetObjectCommand, NoSuchKey, PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
 
 import type { Env } from '@/env'
+import { boundedTimeout } from '@/jobs/context'
 
 /**
  * "To'liq manba" arxivi (TZ §3.5, §3.7.2): raw va tozalangan HTML — gzip, **yopiq** bucket'da
@@ -16,7 +17,10 @@ import type { Env } from '@/env'
 const gzip = promisify(gzipCb)
 const gunzip = promisify(gunzipCb)
 
-/** S3 operatsiyasi uchun timeout — task byudjetidan (≤ 30 s) chiqmaslik uchun. */
+/**
+ * S3 operatsiyasi uchun timeout — task byudjetidan (≤ 30 s) chiqmaslik uchun. `/api/jobs/run`
+ * ichida run deadline'igacha qolgan vaqtdan ham oshmaydi (`boundedTimeout`).
+ */
 export const ARCHIVE_TIMEOUT_MS = 10_000
 
 export type ArchiveKind = 'raw' | 'clean'
@@ -92,13 +96,13 @@ export function createS3ArchiveStorage(env: ArchiveEnv): ArchiveStorage | null {
     async put(key, body, contentType) {
       await client.send(
         new PutObjectCommand({ Bucket: bucket, Key: key, Body: body, ContentType: contentType }),
-        { abortSignal: AbortSignal.timeout(ARCHIVE_TIMEOUT_MS) },
+        { abortSignal: AbortSignal.timeout(boundedTimeout(ARCHIVE_TIMEOUT_MS)) },
       )
     },
     async get(key) {
       try {
         const result = await client.send(new GetObjectCommand({ Bucket: bucket, Key: key }), {
-          abortSignal: AbortSignal.timeout(ARCHIVE_TIMEOUT_MS),
+          abortSignal: AbortSignal.timeout(boundedTimeout(ARCHIVE_TIMEOUT_MS)),
         })
         return Buffer.from((await result.Body?.transformToByteArray()) ?? [])
       } catch (error) {

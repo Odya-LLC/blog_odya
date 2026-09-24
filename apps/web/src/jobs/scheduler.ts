@@ -1,3 +1,4 @@
+import { type PostgresAdapter, sql } from '@payloadcms/db-postgres'
 import type { Payload, Where } from 'payload'
 
 import { localDate } from '@/editorial/queue'
@@ -107,20 +108,22 @@ export async function enqueueDailyCleanup(payload: Payload, now = Date.now()): P
 /**
  * Function timeout yoki jarayon uzilishi sababli `processing: true` holatida qolib ketgan
  * job'larni qayta navbatga qaytaradi (aks holda ular abadiy "band" bo'lib qoladi).
+ *
+ * Bitta `UPDATE` (OBLOG-33): Payload'ning bulk `payload.update` i har hujjatni bitta
+ * tranzaksiya ulanishida **parallel** yangilaydi (`Promise.all(docs.map(processDocument))`) —
+ * pg `DeprecationWarning: Calling client.query() when the client is already executing a query`
+ * va har job uchun bir necha so'rov (region'lar farq qilsa har biri ~200 ms). Job'larda hook
+ * yo'q (`jobs.runHooks` o'chiq), shuning uchun xom SQL yetarli.
  */
 export async function releaseStaleJobs(payload: Payload, now = Date.now()): Promise<number> {
-  const { docs } = await payload.update({
-    collection: 'payload-jobs',
-    where: {
-      and: [
-        { processing: { equals: true } },
-        { updatedAt: { less_than: new Date(now - STALE_JOB_MS).toISOString() } },
-      ],
-    },
-    data: { processing: false },
-    depth: 0,
-  })
-  return docs.length
+  const staleBefore = new Date(now - STALE_JOB_MS).toISOString()
+  const result = (await (payload.db as unknown as PostgresAdapter).drizzle.execute(sql`
+    UPDATE "payload_jobs"
+    SET "processing" = false, "updated_at" = ${new Date(now).toISOString()}::timestamptz
+    WHERE "processing" = true AND "updated_at" < ${staleBefore}::timestamptz
+    RETURNING "id"
+  `)) as unknown as { rows: { id: number }[] }
+  return result.rows.length
 }
 
 /** Berilgan navbatlardagi hali bajarilmagan (retry kutayotganlari ham) job'lar soni. */

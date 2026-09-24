@@ -5,6 +5,7 @@ import type { Payload } from 'payload'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { SCRAPE_ITEM_WORKFLOW, SCRAPE_QUEUE } from '@/jobs/constants'
+import { runWithDeadline } from '@/jobs/context'
 import { scrapeDeps } from '@/jobs/scrapeDeps'
 import type { ScrapedItem, Source } from '@/payload-types'
 import { gunzipHtml, GZIP_CONTENT_TYPE, MemoryArchiveStorage } from '@/scraping/archive'
@@ -307,6 +308,91 @@ describe('scrapeItem: item.fetch → item.extract', () => {
     // Keyingi slot: lastRequestAt + max(rateLimitSec, Crawl-delay) = +12 s.
     expect(Date.parse(jobs[0]!.waitUntil!)).toBe(busyUntil + 12_000)
     expect(jobs[0]!.hasError).toBeFalsy()
+  })
+
+  describe('run deadline (OBLOG-33): bosqich oldidan vaqt yetmasa — resume, retry sarflanmaydi', () => {
+    /** `/api/jobs/run` konteksti; `ctx.taskDeadlineAt` ni o'zgartirib "vaqt o'tdi" deymiz. */
+    async function runInContext(ctx: { taskDeadlineAt: number }) {
+      return runWithDeadline(ctx, () => runScrapeQueue())
+    }
+
+    it('fetch’dan keyin vaqt tugadi → extract keyingi chaqiruvda, sahifa qayta yuklanmaydi', async () => {
+      const pageUrl = hashUrl(fixture('habr', '1').meta.url)!.url
+      const ctx = { taskDeadlineAt: Date.now() + 20_000 }
+      // Sahifa yuklanishi uzoq davom etdi: deadline'gacha 3 s qoldi (< 5 s bosqich oynasi).
+      scrapeDeps.fetchImpl = async (input, init) => {
+        const url =
+          typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+        if (url === pageUrl) ctx.taskDeadlineAt = Date.now() + 3_000
+        return web.fetch(input, init)
+      }
+      const item = await enqueueItem('habr', '1')
+
+      const first = await runInContext(ctx)
+      expect(Object.values(first.jobStatus ?? {}).map((s) => s.status)).toEqual(['success'])
+      expect(web.count(pageUrl)).toBe(1)
+      const pending = await getItem(item.id)
+      expect(pending.status).toBe('pending')
+      expect(pending.extractedText ?? null).toBeNull()
+      // Yangi job: bajarilgan fetch natijasi bilan, retry sarflanmagan, RSS matnisiz.
+      const [resumed, ...others] = await scrapeJobs()
+      expect(others).toHaveLength(0)
+      expect(resumed!.totalTried ?? 0).toBe(0)
+      expect(resumed!.hasError).toBeFalsy()
+      expect(resumed!.waitUntil ?? null).toBeNull()
+      const input = resumed!.input as { resume?: { fetched?: { rawHtmlKey?: string } } }
+      expect(input).not.toHaveProperty('contentHtml')
+      expect(input.resume?.fetched?.rawHtmlKey).toBe(
+        `raw/habr/${item.createdAt.slice(0, 7)}/${item.id}.html.gz`,
+      )
+      expect(storage.objects.has(input.resume!.fetched!.rawHtmlKey!)).toBe(true)
+
+      // Keyingi chaqiruv: fetch qayta bajarilmaydi, qolgan bosqichlar tugaydi.
+      const second = await runInContext({ taskDeadlineAt: Date.now() + 45_000 })
+      expect(Object.values(second.jobStatus ?? {}).map((s) => s.status)).toEqual(['success'])
+      expect(web.count(pageUrl)).toBe(1)
+      const doc = await getItem(item.id)
+      expect(doc.status).toBe('scraped')
+      expect(doc.extractedText!.length).toBeGreaterThan(500)
+      expect(doc.contentHash).toMatch(/^[0-9a-f]{16}$/)
+      expect(typeof doc.score).toBe('number')
+      expect(await scrapeJobs()).toHaveLength(0)
+    })
+
+    it('extract’dan keyin vaqt tugadi → dedupe/classify keyingi chaqiruvda, extract qayta bajarilmaydi', async () => {
+      const ctx = { taskDeadlineAt: Date.now() + 45_000 }
+      const puts: string[] = []
+      const put = storage.put.bind(storage)
+      storage.put = async (key, body, contentType) => {
+        puts.push(key)
+        // Tozalangan HTML yozildi (extract oxiri) — deadline'gacha 2 s qoldi.
+        if (key.endsWith('.clean.html.gz')) ctx.taskDeadlineAt = Date.now() + 2_000
+        return put(key, body, contentType)
+      }
+      const item = await enqueueItem('the-verge', '1')
+
+      await runInContext(ctx)
+      const extracted = await getItem(item.id)
+      expect(extracted.status).toBe('scraped')
+      expect(extracted.contentHash ?? null).toBeNull()
+      expect(extracted.score ?? null).toBeNull()
+      const [resumed] = await scrapeJobs()
+      expect(resumed!.input).toMatchObject({
+        resume: { fetched: { status: 'rss' }, extracted: { status: 'scraped' } },
+      })
+      expect(resumed!.totalTried ?? 0).toBe(0)
+      expect(puts).toHaveLength(2)
+
+      await runInContext({ taskDeadlineAt: Date.now() + 45_000 })
+      // raw va clean qayta yozilmagan — fetch ham, extract ham qayta ishlamagan.
+      expect(puts).toHaveLength(2)
+      const doc = await getItem(item.id)
+      expect(doc.status).toBe('scraped')
+      expect(doc.contentHash).toMatch(/^[0-9a-f]{16}$/)
+      expect(doc.clusterId).toBeTruthy()
+      expect(typeof doc.score).toBe('number')
+      expect(await scrapeJobs()).toHaveLength(0)
+    })
   })
 
   it('404 — retry’siz status = error', async () => {

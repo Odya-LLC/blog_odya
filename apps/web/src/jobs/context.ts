@@ -20,3 +20,13 @@ export function runWithDeadline<T>(context: RunContext, fn: () => Promise<T>): P
 export function getRunDeadline(): number | undefined {
   return storage.getStore()?.taskDeadlineAt
 }
+
+/**
+ * I/O timeout'i: `maxMs`, lekin run deadline'igacha qolgan vaqtdan oshmaydi (kamida `minMs` —
+ * aks holda so'rov boshlanmasdan uziladi). Kontekst yo'q (`autorun`, testlar) — `maxMs`.
+ */
+export function boundedTimeout(maxMs: number, minMs = 1_000, now = Date.now()): number {
+  const deadline = getRunDeadline()
+  if (deadline === undefined) return maxMs
+  return Math.max(minMs, Math.min(maxMs, deadline - now))
+}
