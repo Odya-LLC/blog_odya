@@ -356,3 +356,17 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+/* Navbat sahifalash paneli (OBLOG-40): Payload `Pagination` + `PerPage`. */
+.editorial__pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--base);
+  margin-top: var(--base);
+  font-size: 13px;
+}
+
+.editorial__pagination .per-page {
+  margin-left: auto;
+}

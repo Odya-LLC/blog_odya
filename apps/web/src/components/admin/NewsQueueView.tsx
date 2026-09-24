@@ -1,25 +1,28 @@
 import type { AdminViewServerProps, PayloadRequest } from 'payload'
 
-import { SCRAPED_ITEM_STATUSES, type ScrapedItemStatus } from '@/collections/ScrapedItems'
+import type { ScrapedItemStatus } from '@/collections/ScrapedItems'
 import {
-  buildQueueWhere,
   dayRange,
-  groupByCluster,
+  DEFAULT_QUEUE_PAGE_SIZE,
   localDate,
   parseQueueFilters,
+  parseQueuePagination,
   QUEUE_STATUS_FILTER_LABELS,
   QUEUE_STATUS_FILTERS,
   type QueueFilters,
-  scoringStatus,
+  queueSearchParams,
 } from '@/editorial/queue'
-import type { ScrapedItem } from '@/payload-types'
+import {
+  loadQueuePage,
+  QUEUE_SCAN_LIMIT,
+  type QueueOption,
+  type QueueRowItem,
+} from '@/editorial/queuePage'
 
 import { EditorialShell } from './EditorialShell'
 import { QueueItemActions } from './QueueItemActions'
-import { formatAdminDate, relId, relName, snippet } from './utils'
-
-/** Bir kunda ko'rsatiladigan elementlar chegarasi (5 manba × ~30/kun — yetarli zaxira bilan). */
-const QUEUE_LIMIT = 500
+import { QueuePagination } from './QueuePagination'
+import { formatAdminDate } from './utils'
 
 const STATUS_LABELS: Record<ScrapedItemStatus, string> = {
   pending: 'Navbatda',
@@ -34,7 +37,8 @@ const PATH = '/news-queue'
 
 /**
  * "Yangiliklar navbati" (TZ §6.1, TASKS M2-04) — `/admin/news-queue`.
- * Filtrlar URL'da (`?date=YYYY-MM-DD&status=new&source=1&category=2`), oddiy GET forma.
+ * Filtrlar URL'da (`?date=YYYY-MM-DD&status=new&source=1&category=2`), oddiy GET forma;
+ * sahifalash — `?page=2&limit=50` (klaster guruhlari bo'yicha; filtr o'zgarsa — 1-sahifa).
  */
 export function NewsQueueView(props: AdminViewServerProps) {
   return (
@@ -49,12 +53,14 @@ function shiftDate(date: string, days: number): string {
   return localDate(new Date(new Date(from).getTime() + days * 24 * 60 * 60 * 1000 + 60_000))
 }
 
-function queueHref(adminRoute: string, filters: QueueFilters, patch: Partial<QueueFilters>) {
-  const next = { ...filters, ...patch }
-  const params = new URLSearchParams({ date: next.date, status: next.status })
-  if (next.source) params.set('source', String(next.source))
-  if (next.category) params.set('category', String(next.category))
-  return `${adminRoute}${PATH}?${params.toString()}`
+/** Kun navigatsiyasi havolalari: filtrlar saqlanadi, sahifa 1 ga qaytadi (limit saqlanadi). */
+function queueHref(
+  adminRoute: string,
+  filters: QueueFilters,
+  patch: Partial<QueueFilters>,
+  limit: number,
+) {
+  return `${adminRoute}${PATH}?${queueSearchParams({ ...filters, ...patch }, { limit }).toString()}`
 }
 
 async function NewsQueue({
@@ -64,75 +70,26 @@ async function NewsQueue({
   req: PayloadRequest
   searchParams: AdminViewServerProps['searchParams']
 }) {
-  const { payload } = req
-  const adminRoute = payload.config.routes.admin
-  const apiRoute = payload.config.routes.api
-  const filters = parseQueueFilters(searchParams as Record<string, string | string[] | undefined>)
+  const adminRoute = req.payload.config.routes.admin
+  const apiRoute = req.payload.config.routes.api
+  const params = searchParams as Record<string, string | string[] | undefined>
+  const filters = parseQueueFilters(params)
+  const pagination = parseQueuePagination(params)
   const today = localDate()
-  const access = { overrideAccess: false, req } as const
 
-  const [items, sources, categories] = await Promise.all([
-    payload.find({
-      collection: 'scraped-items',
-      where: buildQueueWhere(filters),
-      sort: '-createdAt',
-      limit: QUEUE_LIMIT,
-      depth: 1,
-      select: {
-        title: true,
-        url: true,
-        canonicalUrl: true,
-        source: true,
-        status: true,
-        score: true,
-        clusterId: true,
-        publishedAt: true,
-        language: true,
-        excerpt: true,
-        extractedText: true,
-        wordCount: true,
-        suggestedCategory: true,
-        post: true,
-        rejectReason: true,
-        createdAt: true,
-      },
-      populate: {
-        sources: { name: true },
-        categories: { name: true },
-        posts: { title: true },
-      },
-      ...access,
-    }),
-    payload.find({
-      collection: 'sources',
-      sort: 'name',
-      limit: 100,
-      depth: 0,
-      select: { name: true },
-      ...access,
-    }),
-    payload.find({
-      collection: 'categories',
-      sort: 'name',
-      limit: 200,
-      depth: 0,
-      select: { name: true },
-      ...access,
-    }),
-  ])
-
-  const docs = items.docs as ScrapedItem[]
-  const groups = groupByCluster(docs)
-  const { hasScore, hasClusters } = scoringStatus(docs)
-  const categoryOptions = categories.docs.map((c) => ({ id: c.id, name: c.name }))
+  const data = await loadQueuePage({ req, filters, pagination })
+  const { groups, pageInfo, totalDocs, hasScore, hasClusters, categories } = data
+  const shown = groups.reduce((sum, group) => sum + group.items.length, 0)
 
   return (
     <>
       <header className="editorial__header">
         <h1>Yangiliklar navbati</h1>
         <span className="editorial__muted" data-testid="queue-total">
-          {filters.date === today ? 'Bugun' : filters.date}: {items.totalDocs} ta element
-          {items.totalDocs > docs.length ? ` (ko‘rsatilgan: ${docs.length})` : ''}
+          {filters.date === today ? 'Bugun' : filters.date}: {totalDocs} ta element
+          {pageInfo.totalPages > 1
+            ? ` · ${pageInfo.page}/${pageInfo.totalPages}-sahifa (ko‘rsatilgan: ${shown})`
+            : ''}
         </span>
       </header>
 
@@ -155,7 +112,7 @@ async function NewsQueue({
           Manba
           <select name="source" defaultValue={filters.source ? String(filters.source) : ''}>
             <option value="">Hammasi</option>
-            {sources.docs.map((source) => (
+            {data.sources.map((source) => (
               <option key={source.id} value={source.id}>
                 {source.name}
               </option>
@@ -166,32 +123,57 @@ async function NewsQueue({
           Kategoriya
           <select name="category" defaultValue={filters.category ? String(filters.category) : ''}>
             <option value="">Hammasi</option>
-            {categoryOptions.map((category) => (
+            {categories.map((category) => (
               <option key={category.id} value={category.id}>
                 {category.name}
               </option>
             ))}
           </select>
         </label>
+        {/* Filtr yuborilganda `page` yo'q — 1-sahifa; tanlangan sahifa hajmi saqlanadi. */}
+        {pagination.limit !== DEFAULT_QUEUE_PAGE_SIZE && (
+          <input type="hidden" name="limit" value={pagination.limit} />
+        )}
         <button type="submit" className="editorial__btn">
           Ko‘rsatish
         </button>
         <nav className="editorial__day-nav" aria-label="Kunlar">
-          <a href={queueHref(adminRoute, filters, { date: shiftDate(filters.date, -1) })}>
+          <a
+            href={queueHref(
+              adminRoute,
+              filters,
+              { date: shiftDate(filters.date, -1) },
+              pagination.limit,
+            )}
+          >
             ← Oldingi kun
           </a>
           {filters.date !== today && (
             <>
-              <a href={queueHref(adminRoute, filters, { date: shiftDate(filters.date, 1) })}>
+              <a
+                href={queueHref(
+                  adminRoute,
+                  filters,
+                  { date: shiftDate(filters.date, 1) },
+                  pagination.limit,
+                )}
+              >
                 Keyingi kun →
               </a>
-              <a href={queueHref(adminRoute, filters, { date: today })}>Bugun</a>
+              <a href={queueHref(adminRoute, filters, { date: today }, pagination.limit)}>Bugun</a>
             </>
           )}
         </nav>
       </form>
 
-      {docs.length > 0 && (!hasScore || !hasClusters) && (
+      {data.truncated && (
+        <p className="editorial__notice" data-testid="queue-truncated">
+          Bu kunda {totalDocs} ta element — faqat eng yangi {QUEUE_SCAN_LIMIT} tasi ko‘rsatilmoqda.
+          Filtrlar bilan toraytiring.
+        </p>
+      )}
+
+      {totalDocs > 0 && (!hasScore || !hasClusters) && (
         <p className="editorial__notice" data-testid="scoring-notice">
           {!hasScore &&
             'Score hali hisoblanmagan — navbat eng yangi yangiliklar bo‘yicha saralangan. '}
@@ -219,7 +201,7 @@ async function NewsQueue({
                     item={item}
                     adminRoute={adminRoute}
                     apiRoute={apiRoute}
-                    categories={categoryOptions}
+                    categories={categories}
                   />
                 ))}
               </section>
@@ -229,12 +211,14 @@ async function NewsQueue({
                 item={group.items[0]}
                 adminRoute={adminRoute}
                 apiRoute={apiRoute}
-                categories={categoryOptions}
+                categories={categories}
               />
             ),
           )}
         </div>
       )}
+
+      {totalDocs > 0 && <QueuePagination info={pageInfo} />}
     </>
   )
 }
@@ -245,16 +229,12 @@ function QueueRow({
   apiRoute,
   categories,
 }: {
-  item: ScrapedItem
+  item: QueueRowItem
   adminRoute: string
   apiRoute: string
-  categories: { id: number; name: string }[]
+  categories: QueueOption[]
 }) {
-  const status = (SCRAPED_ITEM_STATUSES as readonly string[]).includes(item.status)
-    ? item.status
-    : 'pending'
-  const text = snippet(item.extractedText || item.excerpt)
-  const url = item.canonicalUrl || item.url
+  const { status } = item
   return (
     <article className="editorial__row" data-testid="queue-item" data-item-id={item.id}>
       <div className="editorial__score" title="Score (0–100)">
@@ -263,17 +243,17 @@ function QueueRow({
       </div>
       <div>
         <h2 className="editorial__title">
-          <a href={url} target="_blank" rel="noopener noreferrer">
-            {item.title || url}
+          <a href={item.url} target="_blank" rel="noopener noreferrer">
+            {item.title || item.url}
           </a>
         </h2>
         <div className="editorial__meta">
-          <span>{relName(item.source) ?? 'Manba'}</span>
+          <span>{item.source?.name || 'Manba'}</span>
           {item.language && <span>{item.language.toUpperCase()}</span>}
           <span title="Manbada chop etilgan">
             {formatAdminDate(item.publishedAt ?? item.createdAt)}
           </span>
-          {relName(item.suggestedCategory) && <span>→ {relName(item.suggestedCategory)}</span>}
+          {item.suggestedCategory?.name && <span>→ {item.suggestedCategory.name}</span>}
           {item.wordCount ? <span>{item.wordCount} so‘z</span> : null}
           <span
             className={`editorial__pill${status === 'rejected' ? ' editorial__pill--rejected' : ''}`}
@@ -282,7 +262,7 @@ function QueueRow({
           </span>
           <a href={`${adminRoute}/collections/scraped-items/${item.id}`}>Batafsil</a>
         </div>
-        {text && <p className="editorial__excerpt">{text}</p>}
+        {item.text && <p className="editorial__excerpt">{item.text}</p>}
         {status === 'rejected' && item.rejectReason && (
           <p className="editorial__notes">Rad etish sababi: {item.rejectReason}</p>
         )}
@@ -291,9 +271,9 @@ function QueueRow({
         apiRoute={apiRoute}
         itemId={item.id}
         status={status}
-        postTitle={relName(item.post, 'title')}
-        postUrl={relId(item.post) ? `${adminRoute}/collections/posts/${relId(item.post)}` : null}
-        suggestedCategoryId={relId(item.suggestedCategory)}
+        postTitle={item.post?.title ?? null}
+        postUrl={item.post ? `${adminRoute}/collections/posts/${item.post.id}` : null}
+        suggestedCategoryId={item.suggestedCategory?.id ?? null}
         categories={categories}
       />
     </article>

@@ -5,10 +5,14 @@ import {
   buildQueueWhere,
   compareQueueItems,
   dayRange,
+  DEFAULT_QUEUE_PAGE_SIZE,
   groupByCluster,
   isValidDate,
   localDate,
+  paginateGroups,
   parseQueueFilters,
+  parseQueuePagination,
+  queueSearchParams,
   scoringStatus,
   type QueueItemLike,
 } from '@/editorial/queue'
@@ -151,5 +155,64 @@ describe('editorial: qoralama post ma‘lumotlari', () => {
     )
     expect(baseSlugFor({ id: 42, title: 'Новая модель от OpenAI' })).toBe('openai')
     expect(baseSlugFor({ id: 42, title: 'Новости' })).toBe('yangilik-42')
+  })
+})
+
+describe('editorial queue: sahifalash (OBLOG-40)', () => {
+  it('parseQueuePagination — default 1-sahifa / 25; noto‘g‘ri qiymatlar e‘tiborsiz', () => {
+    expect(parseQueuePagination(undefined)).toEqual({ page: 1, limit: DEFAULT_QUEUE_PAGE_SIZE })
+    expect(parseQueuePagination({ page: '3', limit: '50' })).toEqual({ page: 3, limit: 50 })
+    expect(parseQueuePagination({ page: '0', limit: '7' })).toEqual({ page: 1, limit: 25 })
+    expect(parseQueuePagination({ page: '-2', limit: '100000' })).toEqual({ page: 1, limit: 25 })
+    expect(parseQueuePagination({ page: ['2', '5'], limit: 'abc' })).toEqual({ page: 2, limit: 25 })
+  })
+
+  const groups = Array.from({ length: 7 }, (_, i) => i + 1)
+
+  it('paginateGroups — sahifa kesimi va ma’lumotlari', () => {
+    expect(paginateGroups(groups, { page: 1, limit: 3 })).toEqual({
+      groups: [1, 2, 3],
+      info: {
+        page: 1,
+        limit: 3,
+        totalPages: 3,
+        totalGroups: 7,
+        hasPrevPage: false,
+        hasNextPage: true,
+        prevPage: null,
+        nextPage: 2,
+      },
+    })
+    const middle = paginateGroups(groups, { page: 2, limit: 3 })
+    expect(middle.groups).toEqual([4, 5, 6])
+    expect(middle.info).toMatchObject({ prevPage: 1, nextPage: 2 + 1 })
+    const last = paginateGroups(groups, { page: 3, limit: 3 })
+    expect(last.groups).toEqual([7])
+    expect(last.info).toMatchObject({ hasNextPage: false, nextPage: null, prevPage: 2 })
+  })
+
+  it('paginateGroups — chegaradan tashqari sahifa oxirgisiga, bo‘sh ro‘yxat — 1/1', () => {
+    expect(paginateGroups(groups, { page: 99, limit: 3 }).info.page).toBe(3)
+    expect(paginateGroups(groups, { page: 99, limit: 3 }).groups).toEqual([7])
+    expect(paginateGroups(groups, { page: 0, limit: 3 }).info.page).toBe(1)
+    expect(paginateGroups(groups, { page: 1, limit: 10 }).info).toMatchObject({
+      totalPages: 1,
+      hasNextPage: false,
+    })
+    expect(paginateGroups([], { page: 4, limit: 25 })).toMatchObject({
+      groups: [],
+      info: { page: 1, totalPages: 1, totalGroups: 0, hasPrevPage: false, hasNextPage: false },
+    })
+  })
+
+  it('queueSearchParams — filtrlar + sahifa; default qiymatlar yozilmaydi', () => {
+    const filters = { date: '2026-09-20', status: 'new' as const, source: 3 }
+    expect(queueSearchParams(filters).toString()).toBe('date=2026-09-20&status=new&source=3')
+    expect(queueSearchParams(filters, { page: 1, limit: 25 }).toString()).toBe(
+      'date=2026-09-20&status=new&source=3',
+    )
+    expect(queueSearchParams(filters, { page: 4, limit: 50 }).toString()).toBe(
+      'date=2026-09-20&status=new&source=3&limit=50&page=4',
+    )
   })
 })
