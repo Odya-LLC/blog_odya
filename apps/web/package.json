@@ -19,7 +19,8 @@
     "migrate:status": "cross-env NODE_OPTIONS=--no-deprecation PAYLOAD_MIGRATING=true payload migrate:status",
     "generate:types": "cross-env NODE_OPTIONS=--no-deprecation payload generate:types",
     "generate:importmap": "cross-env NODE_OPTIONS=--no-deprecation payload generate:importmap",
-    "seed": "pnpm run migrate && cross-env NODE_OPTIONS=--no-deprecation payload run src/seed/run.ts"
+    "seed": "pnpm run migrate && cross-env NODE_OPTIONS=--no-deprecation payload run src/seed/run.ts",
+    "seed:translit": "cross-env NODE_OPTIONS=--no-deprecation payload run src/scripts/seed-translit.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.1138.0",

@@ -8,6 +8,7 @@ import * as migration_20260924_105254_m2_05_api_keys_audit from './20260924_1052
 import * as migration_20260924_113155_m2_03_dedupe_classify_cleanup from './20260924_113155_m2_03_dedupe_classify_cleanup';
 import * as migration_20260924_123153_m1_07_search from './20260924_123153_m1_07_search';
 import * as migration_20260924_141221_m2_07_mcp_write from './20260924_141221_m2_07_mcp_write';
+import * as migration_20260924_145141_m1_03c_translit from './20260924_145141_m1_03c_translit';
 
 export const migrations = [
   {
@@ -58,6 +59,11 @@ export const migrations = [
   {
     up: migration_20260924_141221_m2_07_mcp_write.up,
     down: migration_20260924_141221_m2_07_mcp_write.down,
-    name: '20260924_141221_m2_07_mcp_write'
+    name: '20260924_141221_m2_07_mcp_write',
+  },
+  {
+    up: migration_20260924_145141_m1_03c_translit.up,
+    down: migration_20260924_145141_m1_03c_translit.down,
+    name: '20260924_145141_m1_03c_translit'
   },
 ];

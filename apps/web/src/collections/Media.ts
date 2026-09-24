@@ -26,6 +26,8 @@ export const MEDIA_LICENSES = [
 /**
  * Media (TZ §10.7). Fayllar S3-mos saqlashda: lokal — MinIO, production — Cloudflare R2
  * (`@payloadcms/storage-s3`, `clientUploads: true` — `payload.config.ts` ga qarang).
+ *
+ * `alt` va `caption` — kirill versiyasi lotindan avtomatik (`cyrlSyncPlugin`, TZ §3.6).
  */
 export const Media: CollectionConfig = {
   slug: 'media',

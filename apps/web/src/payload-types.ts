@@ -76,6 +76,8 @@ export interface Config {
     users: User;
     sources: Source;
     'scraped-items': ScrapedItem;
+    glossary: Glossary;
+    'translit-exceptions': TranslitException;
     redirects: Redirect;
     'audit-logs': AuditLog;
     'payload-kv': PayloadKv;
@@ -95,6 +97,8 @@ export interface Config {
     users: UsersSelect<false> | UsersSelect<true>;
     sources: SourcesSelect<false> | SourcesSelect<true>;
     'scraped-items': ScrapedItemsSelect<false> | ScrapedItemsSelect<true>;
+    glossary: GlossarySelect<false> | GlossarySelect<true>;
+    'translit-exceptions': TranslitExceptionsSelect<false> | TranslitExceptionsSelect<true>;
     redirects: RedirectsSelect<false> | RedirectsSelect<true>;
     'audit-logs': AuditLogsSelect<false> | AuditLogsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
@@ -230,7 +234,7 @@ export interface Post {
       }[]
     | null;
   /**
-   * { title, excerpt, content, meta } — M1-03 transliteratsiyasi boshqaradi
+   * { title, excerpt, content, meta, faq, coverAlt } — kirill qoʻlda tuzatilganda avtomatik qulflanadi; "Kirillni qayta generatsiya qilish" qulfni oladi
    */
   cyrlLocked?:
     | {
@@ -275,7 +279,7 @@ export interface Post {
   isBreaking?: boolean | null;
   telegramSkip?: boolean | null;
   /**
-   * Lotin o‘zgargan, kirill qulflangan (M1-03)
+   * Lotin o‘zgargan, lekin qulflangan kirill maydonlari yangilanmadi. Tekshirib, belgini oling yoki kirillni qayta generatsiya qiling.
    */
   cyrlStale?: boolean | null;
   readingTime?: number | null;
@@ -295,6 +299,22 @@ export interface Media {
   credit?: string | null;
   license?: ('own' | 'press_kit' | 'unsplash' | 'pexels' | 'cc_by' | 'ai_generated' | 'other') | null;
   licenseUrl?: string | null;
+  /**
+   * Kirill matni qoʻlda tuzatilgan maydonlar: avtomatik qayta yozilmaydi.
+   */
+  cyrlLocked?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * Lotin matni oʻzgardi, lekin qulflangan kirill maydonlari yangilanmadi. Tekshirib, belgini oling yoki kirillni qayta generatsiya qiling.
+   */
+  cyrlStale?: boolean | null;
   _objectKey?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -621,6 +641,22 @@ export interface Tag {
    * Lotin, ikkala yozuvda bir xil. Bo'sh qoldirilsa sarlavhadan yasaladi.
    */
   slug: string;
+  /**
+   * Kirill matni qoʻlda tuzatilgan maydonlar: avtomatik qayta yozilmaydi.
+   */
+  cyrlLocked?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * Lotin matni oʻzgardi, lekin qulflangan kirill maydonlari yangilanmadi. Tekshirib, belgini oling yoki kirillni qayta generatsiya qiling.
+   */
+  cyrlStale?: boolean | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -690,6 +726,37 @@ export interface FaqBlock {
   id?: string | null;
   blockName?: string | null;
   blockType: 'faq';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "glossary".
+ */
+export interface Glossary {
+  id: number;
+  term: string;
+  language: 'en' | 'ru';
+  kind: 'term' | 'brand' | 'abbreviation';
+  translation: string;
+  doNotTranslate?: boolean | null;
+  doNotTransliterate?: boolean | null;
+  note?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Lotin → kirill: avval butun soʻz, keyin eng uzun prefiks. Katta-kichik harf farqlanmaydi.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "translit-exceptions".
+ */
+export interface TranslitException {
+  id: number;
+  latin: string;
+  cyrillic: string;
+  matchType: 'whole_word' | 'prefix';
+  note?: string | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -929,6 +996,14 @@ export interface PayloadLockedDocument {
         value: number | ScrapedItem;
       } | null)
     | ({
+        relationTo: 'glossary';
+        value: number | Glossary;
+      } | null)
+    | ({
+        relationTo: 'translit-exceptions';
+        value: number | TranslitException;
+      } | null)
+    | ({
         relationTo: 'redirects';
         value: number | Redirect;
       } | null)
@@ -1160,6 +1235,8 @@ export interface TagsSelect<T extends boolean = true> {
         noindex?: T;
       };
   slug?: T;
+  cyrlLocked?: T;
+  cyrlStale?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -1195,6 +1272,8 @@ export interface MediaSelect<T extends boolean = true> {
   credit?: T;
   license?: T;
   licenseUrl?: T;
+  cyrlLocked?: T;
+  cyrlStale?: T;
   _objectKey?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -1378,6 +1457,33 @@ export interface ScrapedItemsSelect<T extends boolean = true> {
   rejectReason?: T;
   handledBy?: T;
   handledAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "glossary_select".
+ */
+export interface GlossarySelect<T extends boolean = true> {
+  term?: T;
+  language?: T;
+  kind?: T;
+  translation?: T;
+  doNotTranslate?: T;
+  doNotTransliterate?: T;
+  note?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "translit-exceptions_select".
+ */
+export interface TranslitExceptionsSelect<T extends boolean = true> {
+  latin?: T;
+  cyrillic?: T;
+  matchType?: T;
+  note?: T;
   updatedAt?: T;
   createdAt?: T;
 }

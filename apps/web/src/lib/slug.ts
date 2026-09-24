@@ -1,6 +1,7 @@
 /**
- * Vaqtinchalik (minimal) slug yordamchilari. To'liq o'zbekcha slugify (`packages/shared/slugify-uz`,
- * TZ §8.1) — M1-03 da; u tayyor bo'lgach `toSlug` shu funksiyaga almashtiriladi.
+ * Slug validatsiyasi (sayt marshrutlari) va minimal `toSlug` (faqat lotin harflari — kirill
+ * tashlanadi; tahririyat qoralamalari: `editorial/actions.ts`). To'liq o'zbekcha slugify —
+ * `@blog-odya/shared` `slugifyUz` (TZ §8.1): `slugField` (`fields/slug.ts`) va MCP ishlatadi.
  */
 export const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 
