@@ -7,7 +7,9 @@ import { buildConfig, type Config } from 'payload'
 import sharp from 'sharp'
 import { fileURLToPath } from 'url'
 
+import { Glossary } from './collections/Glossary'
 import { Media } from './collections/Media'
+import { TranslitExceptions } from './collections/TranslitExceptions'
 import { Users } from './collections/Users'
 import { getDatabaseMode, getDatabasePoolConfig } from './config/database'
 import { getS3StorageOptions } from './config/storage'
@@ -47,7 +49,7 @@ export default buildConfig({
     defaultLocale: DEFAULT_LOCALE,
     fallback: true,
   },
-  collections: [Users, Media],
+  collections: [Users, Media, Glossary, TranslitExceptions],
   editor: lexicalEditor(),
   secret: env.PAYLOAD_SECRET ?? '',
   serverURL: env.NEXT_PUBLIC_SITE_URL,

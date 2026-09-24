@@ -69,6 +69,8 @@ export interface Config {
   collections: {
     users: User;
     media: Media;
+    glossary: Glossary;
+    'translit-exceptions': TranslitException;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -78,6 +80,8 @@ export interface Config {
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
+    glossary: GlossarySelect<false> | GlossarySelect<true>;
+    'translit-exceptions': TranslitExceptionsSelect<false> | TranslitExceptionsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -160,6 +164,22 @@ export interface Media {
   credit?: string | null;
   license?: ('own' | 'press_kit' | 'unsplash' | 'pexels' | 'cc_by' | 'ai_generated' | 'other') | null;
   licenseUrl?: string | null;
+  /**
+   * Kirill matni qoʻlda tuzatilgan maydonlar: avtomatik qayta yozilmaydi.
+   */
+  cyrlLocked?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * Lotin matni oʻzgardi, lekin qulflangan kirill maydonlari yangilanmadi. Tekshirib, belgini oling yoki kirillni qayta generatsiya qiling.
+   */
+  cyrlStale?: boolean | null;
   _objectKey?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -217,6 +237,37 @@ export interface Media {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "glossary".
+ */
+export interface Glossary {
+  id: number;
+  term: string;
+  language: 'en' | 'ru';
+  kind: 'term' | 'brand' | 'abbreviation';
+  translation: string;
+  doNotTranslate?: boolean | null;
+  doNotTransliterate?: boolean | null;
+  note?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Lotin → kirill: avval butun soʻz, keyin eng uzun prefiks. Katta-kichik harf farqlanmaydi.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "translit-exceptions".
+ */
+export interface TranslitException {
+  id: number;
+  latin: string;
+  cyrillic: string;
+  matchType: 'whole_word' | 'prefix';
+  note?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -246,6 +297,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'media';
         value: number | Media;
+      } | null)
+    | ({
+        relationTo: 'glossary';
+        value: number | Glossary;
+      } | null)
+    | ({
+        relationTo: 'translit-exceptions';
+        value: number | TranslitException;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -328,6 +387,8 @@ export interface MediaSelect<T extends boolean = true> {
   credit?: T;
   license?: T;
   licenseUrl?: T;
+  cyrlLocked?: T;
+  cyrlStale?: T;
   _objectKey?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -394,6 +455,33 @@ export interface MediaSelect<T extends boolean = true> {
               filename?: T;
             };
       };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "glossary_select".
+ */
+export interface GlossarySelect<T extends boolean = true> {
+  term?: T;
+  language?: T;
+  kind?: T;
+  translation?: T;
+  doNotTranslate?: T;
+  doNotTransliterate?: T;
+  note?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "translit-exceptions_select".
+ */
+export interface TranslitExceptionsSelect<T extends boolean = true> {
+  latin?: T;
+  cyrillic?: T;
+  matchType?: T;
+  note?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

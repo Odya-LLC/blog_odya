@@ -1,6 +1,7 @@
 import type { CollectionConfig, ImageSize } from 'payload'
 
 import { isAdmin, isAdminOrEditor } from '@/access'
+import { withCyrlSync } from '@/translit/cyrlSync'
 
 /** Rasm variantlari (TZ §3.1, §10.7) — hammasi WebP. */
 const webp: ImageSize['formatOptions'] = { format: 'webp', options: { quality: 80 } }
@@ -26,8 +27,10 @@ export const MEDIA_LICENSES = [
 /**
  * Media (TZ §10.7). Fayllar S3-mos saqlashda: lokal — MinIO, production — Cloudflare R2
  * (`@payloadcms/storage-s3`, `clientUploads: true` — `payload.config.ts` ga qarang).
+ *
+ * `alt` va `caption` — kirill versiyasi lotindan avtomatik (`withCyrlSync`, TZ §3.6).
  */
-export const Media: CollectionConfig = {
+const MediaBase: CollectionConfig = {
   slug: 'media',
   labels: {
     singular: 'Media',
@@ -99,3 +102,5 @@ export const Media: CollectionConfig = {
     })),
   },
 }
+
+export const Media = withCyrlSync(MediaBase, { fields: ['alt', 'caption'] })
