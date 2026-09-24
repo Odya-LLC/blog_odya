@@ -8,7 +8,6 @@ import { TELEGRAM_TIMEOUT_MS } from '@/lib/telegram'
 import { type AlertRunResult, runAlertChecks } from './alerts'
 import {
   BATCH_START_LIMIT_MS,
-  JOBS_CONCURRENCY,
   MAX_BATCH_LIMIT,
   MAX_DEADLINE_SEC,
   RESPONSE_BUDGET_MS,
@@ -27,8 +26,8 @@ import { getJobsSettings } from './settings'
 /**
  * Job'larni vaqt chegarasi bilan ishga tushirish (TZ §3.5, §3.7.2).
  *
- * `payload.jobs.run({ limit })` batch'lari ketma-ket chaqiriladi (batch ichida job'lar parallel,
- * lekin ≤ `JOBS_CONCURRENCY` — DB pool'i): navbat bo'shaguncha yoki ichki deadline'gacha.
+ * `payload.jobs.run({ limit })` batch'lari ketma-ket chaqiriladi (batch ichida `limit` ta job
+ * parallel — `scraping-settings.jobsBatchLimit`): navbat bo'shaguncha yoki ichki deadline'gacha.
  * Deadline `startedAt` dan (so'rov boshidan) hisoblanadi — pre-step'lar sarflagan vaqt ham
  * byudjetga kiradi. Deadline'dan keyin yangi batch boshlanmaydi, boshlangan task'lar esa
  * `taskDeadlineAt` (= deadline + grace) ichida tugaydi.
@@ -37,7 +36,7 @@ import { getJobsSettings } from './settings'
 type JobsRun = Pick<Payload['jobs'], 'run'>
 
 export interface RunWithDeadlineOptions {
-  /** Bitta `payload.jobs.run` chaqiruvidagi maksimal job'lar soni (≤ `concurrency`). */
+  /** Bitta `payload.jobs.run` chaqiruvidagi maksimal (parallel) job'lar soni. */
   limit: number
   /** Yangi batch boshlanmaydigan vaqt (`startedAt` dan, ms). */
   deadlineMs: number
@@ -45,8 +44,6 @@ export interface RunWithDeadlineOptions {
   startedAt?: number
   /** Deadline'dan keyin boshlangan task'lar tugashi uchun qo'shimcha vaqt (ms). */
   graceMs?: number
-  /** Parallel job'lar chegarasi (default `JOBS_CONCURRENCY`). */
-  concurrency?: number
   queues?: readonly string[]
   now?: () => number
 }
@@ -66,7 +63,6 @@ export async function runJobsWithDeadline(
   const queues = options.queues ?? activeRunQueues()
   const deadlineAt = (options.startedAt ?? now()) + options.deadlineMs
   const taskDeadlineAt = deadlineAt + (options.graceMs ?? TASK_GRACE_MS)
-  const limit = Math.max(1, Math.min(options.limit, options.concurrency ?? JOBS_CONCURRENCY))
   const result: RunWithDeadlineResult = {
     batches: 0,
     succeeded: 0,
@@ -81,7 +77,9 @@ export async function runJobsWithDeadline(
         result.deadlineReached = true
         return result
       }
-      const run = await runWithDeadline({ taskDeadlineAt }, () => jobs.run({ queue, limit }))
+      const run = await runWithDeadline({ taskDeadlineAt }, () =>
+        jobs.run({ queue, limit: options.limit }),
+      )
       const statuses = Object.values(run.jobStatus ?? {})
       if (!statuses.length) continue
       result.batches++
@@ -131,7 +129,7 @@ export interface JobsRunResponse {
   deadlineReached: boolean
   /** Vaqt yetmagani uchun bu chaqiruvda bajarilmagan qadamlar. */
   skipped: SkippedStep[]
-  /** Bitta batch'dagi (parallel) job'lar soni: `min(limit, JOBS_CONCURRENCY)`. */
+  /** Bitta batch'dagi (parallel) job'lar soni: `jobsBatchLimit` yoki `?limit=` (≤ 50). */
   limit: number
   /** Amaldagi ichki deadline (so'rov boshidan, s): `min(jobsDeadlineSec, 35)`. */
   deadlineSec: number
@@ -186,11 +184,10 @@ async function runJobsRequest(
   try {
     const settings = await getJobsSettings(payload)
     const limitParam = Number(new URL(request.url).searchParams.get('limit'))
-    const requestedLimit =
+    const limit =
       Number.isInteger(limitParam) && limitParam > 0
         ? Math.min(limitParam, MAX_BATCH_LIMIT)
         : settings.batchLimit
-    const limit = Math.min(requestedLimit, JOBS_CONCURRENCY)
     const deadlineMs =
       deps.overrides?.deadlineMs ??
       Math.min(Math.min(settings.deadlineSec, MAX_DEADLINE_SEC) * 1000, BATCH_START_LIMIT_MS)

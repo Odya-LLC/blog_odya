@@ -12,7 +12,7 @@ Supabase pg_cron (*/10) ──pg_net──▶ POST https://blog.odya.uz/api/jobs
                                           ├─ muddati kelgan manbalar uchun feed.poll navbatga (pollIntervalMin)
                                           ├─ maintenance.cleanup — kuniga 1 marta (Toshkent kuni, idempotent)
                                           │    (bu ikkisi deadline allaqachon o'tgan bo'lsa — keyingi tick'ga, `skipped`)
-                                          ├─ payload.jobs.run({ limit ≤ 2 }) batch'lari — yangi batch ≤ 35 s gacha
+                                          ├─ payload.jobs.run({ limit }) batch'lari — yangi batch ≤ 35 s gacha
                                           │    navbatlar: default (feed.poll, maintenance.cleanup) →
                                           │    scrape (scrapeItem: item.fetch → item.extract → item.dedupe → item.classify)
                                           │    boshlangan task'lar ≤ 45 s gacha tugaydi (scrapeItem vaqt yetmasa — `resume`)
@@ -25,9 +25,8 @@ Supabase pg_cron (*/10) ──pg_net──▶ POST https://blog.odya.uz/api/jobs
 - Javob (JSON): `enqueued`, `cleanupEnqueued`, `alerts: { active, sent, logged, failed }`, `batches`, `done: { succeeded, failed }`, `remaining`, `deadlineReached`, `skipped` (vaqt yetmay o'tkazib yuborilgan qadamlar: `feedPolls`, `cleanup`, `alerts`), `limit`, `deadlineSec` (amaldagi), `durationMs`.
 - `401` — token noto'g'ri/yo'q; `503` — serverda `JOBS_SECRET` sozlanmagan (endpoint yopiq).
 - `?limit=N` (1–50) — batch hajmini vaqtincha o'zgartirish; default — admin → Scraping sozlamalari → `jobsBatchLimit`.
-  **Amalda ≤ 2** (`JOBS_CONCURRENCY`): Payload batch'dagi job'larni parallel bajaradi, DB pool esa 3 ulanish
-  (bittasi doimiy band) — ko'proq parallel job ulanish kutib `timeout exceeded when trying to connect` beradi.
-  `1` — to'liq ketma-ket.
+  Payload batch'dagi job'larni **parallel** bajaradi (default 10), DB pool esa 3 ulanish. Function region DB bilan bir
+  xil bo'lsa (`bom1` ↔ `ap-south-1`) 10 yetarli; pool xatolari chiqsa — pastdagi "Muammolar" jadvali. `1` — to'liq ketma-ket.
 - **Vaqt byudjeti** (`apps/web/src/jobs/constants.ts`, so'rov boshidan): yangi batch ≤ `min(jobsDeadlineSec, 35)` s
   (`jobsDeadlineSec` default 40 → amalda 35); boshlangan task'lar + 10 s grace (≤ 45 s); `countRemainingJobs` +
   ogohlantirishlar ≤ 50 s; qolgan ~10 s — handler'gacha bo'lgan sovuq start va javob uchun zaxira, `maxDuration = 60`.
@@ -89,11 +88,12 @@ Oraliqda (1–2 qadam orasida) chaqiruvlar `401` oladi — keyingi tick'da tikla
 | `net._http_response.status_code = 401` | Vault'dagi sir Vercel'dagidan farq qiladi — rotation bo'limi |
 | `503` | Vercel Production'da `JOBS_SECRET` yo'q |
 | `status_code` bo'sh, `error_msg` = timeout | Endpoint 65 s da javob bermadi — Vercel Logs'da function timeout'ni tekshiring (keyingi qator) |
-| Vercel Logs: `504`, `FUNCTION_INVOCATION_TIMEOUT` / `Task timed out after 60 seconds` | 1) **Region**: log qatoridagi function region Supabase regioniga mos emas (`iad1` ↔ `ap-south-1`) — har so'rov ~200 ms, sovuq start + pre-step'larning o'zi o'nlab soniya. `apps/web/vercel.json` → `regions: ["bom1"]`, redeploy (yuqoridagi 2-qadam). 2) **Pool**: logda `timeout exceeded when trying to connect` / `cannot begin transaction` — parallel job'lar 3 ulanishli pool'ni to'sgan; batch ≤ 2 (`JOBS_CONCURRENCY`), `RUNTIME_POOL_MAX` ni oshirmang (Supavisor limiti). 3) Byudjet so'rov boshidan hisoblanadi (≤ 35 + 10 + 5 s) — agar baribir 60 s oshsa, javobdagi `durationMs` va logdagi bosqich vaqtlarini solishtiring; `jobsDeadlineSec` ni kamaytirish mumkin |
+| Vercel Logs: `504`, `FUNCTION_INVOCATION_TIMEOUT` / `Task timed out after 60 seconds` | 1) **Region**: log qatoridagi function region Supabase regioniga mos emas (`iad1` ↔ `ap-south-1`) — har so'rov ~200 ms, sovuq start + pre-step'larning o'zi o'nlab soniya. `apps/web/vercel.json` → `regions: ["bom1"]`, redeploy (yuqoridagi 2-qadam). 2) **Pool**: logda `timeout exceeded when trying to connect` / `cannot begin transaction` — parallel job'lar 3 ulanishli pool'ni to'sgan (keyingi qator). 3) Byudjet so'rov boshidan hisoblanadi (≤ 35 + 10 + 5 s) — agar baribir 60 s oshsa, javobdagi `durationMs` va logdagi bosqich vaqtlarini solishtiring; `jobsDeadlineSec` ni kamaytirish mumkin |
+| Logda `timeout exceeded when trying to connect` / `cannot begin transaction` (DB pool), job'lar `failed` | Bitta batch'dagi parallel job'lar 3 ulanishli pool'ga sig'magan. Admin → Scraping sozlamalari → `jobsBatchLimit` ni kamaytiring (masalan 10 → 5, kerak bo'lsa 2–3) — keyingi tick'dan amal qiladi, deploy shart emas; vaqtincha sinash uchun `?limit=N`. `RUNTIME_POOL_MAX` ni oshirmang (Supavisor limiti). Avval region mosligini tekshiring (yuqoridagi qator, 1-band) |
 | Log: `DeprecationWarning: Calling client.query() when the client is already executing a query` | Bitta tranzaksiya ulanishida parallel so'rovlar — Payload'ning bulk `payload.update/delete` (`where` bilan) hujjatlarni `Promise.all` bilan yangilaydi. Jobs kodida bunday chaqiruv yo'q (`releaseStaleJobs` — bitta SQL `UPDATE`); yangi kod bulk update/delete'ni tranzaksiya ichida ishlatmasin |
 | Javobda `skipped: ["feedPolls", "cleanup"]`, `batches: 0` | Pre-step'lar (sovuq start, Payload init) ichki deadline'ni (35 s) yeb qo'ygan — navbatga qo'yish keyingi tick'da. Doimiy bo'lsa — region/DB kechikishini tekshiring |
 | `scrapeItem` job'i `input.resume` bilan | Normal: oldingi chaqiruvda vaqt yetmay qolgan, keyingi chaqiruvda qolgan bosqichlardan davom etadi (retry emas) |
-| `deadlineReached: true`, `remaining` o'sib bormoqda | Navbat to'planmoqda — region/pool muammosini tekshiring (yuqorida); zaxira workflow'ni vaqtincha yoqing. `jobsBatchLimit` ni oshirish yordam bermaydi (parallel ≤ 2) |
+| `deadlineReached: true`, `remaining` o'sib bormoqda | Navbat to'planmoqda — `jobsBatchLimit` ni oshiring (pool xatolari chiqmasa, yuqoridagi qator) yoki zaxira workflow'ni vaqtincha yoqing; region mosligini ham tekshiring |
 | Manba `stats.consecutiveFailures` o'smoqda | Feed xatosi (`feeds[].lastError`, `lastStatus`) — admin → Manbalar; 403/Cloudflare bo'lsa manbani o'chirib turing |
 | Hech narsa navbatga qo'yilmaydi (`enqueued: 0`) | Scraping sozlamalari → "Yig'ish yoqilgan" o'chiq, yoki feed'lar `pollIntervalMin` dan erta |
 

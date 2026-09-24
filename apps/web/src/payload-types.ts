@@ -1604,7 +1604,7 @@ export interface ScrapingSetting {
   isEnabled?: boolean | null;
   minScore?: number | null;
   /**
-   * Bitta batch’dagi parallel job’lar; DB pool tufayli amalda ≤ 2
+   * Bitta batch’dagi parallel job’lar. Logda “timeout exceeded when trying to connect” (DB pool) chiqsa — shu qiymatni kamaytiring (deploy shart emas)
    */
   jobsBatchLimit?: number | null;
   /**

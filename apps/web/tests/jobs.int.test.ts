@@ -295,7 +295,8 @@ describe('jobs endpoint + feed.poll', () => {
       batches: 0,
       deadlineReached: true,
       deadlineSec: 35,
-      limit: 2,
+      // Batch hajmi — admin sozlamasidan (`jobsBatchLimit`), qattiq chegara yo'q.
+      limit: 10,
     })
     expect(body.skipped).toEqual(['feedPolls', 'cleanup'])
     // 36 s "o'tgan", javob 50 s byudjet ichida; feed'lar so'ralmagan.
@@ -303,6 +304,22 @@ describe('jobs endpoint + feed.poll', () => {
     expect(body.durationMs).toBeLessThan(50_000)
     expect(fixtures.requests.length).toBe(requestsBefore)
     expect(Date.now() - realStart).toBeLessThan(10_000)
+
+    // `?limit=` sozlamani vaqtincha almashtiradi, lekin `MAX_BATCH_LIMIT` (50) dan oshmaydi.
+    for (const [param, expected] of [
+      ['7', 7],
+      ['999', 50],
+    ] as const) {
+      first = true
+      const res = await handleJobsRunRequest(
+        new Request(`http://localhost:3000/api/jobs/run?limit=${param}`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${SECRET}` },
+        }),
+        { getPayload: async () => payload, secret: SECRET, now },
+      )
+      expect(((await res.json()) as JobsRunResponse).limit).toBe(expected)
+    }
   })
 
   it('releaseStaleJobs: bitta UPDATE — faqat 5 daqiqadan ortiq processing’da qolganlar', async () => {

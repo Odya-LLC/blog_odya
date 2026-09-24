@@ -89,19 +89,6 @@ export const STALE_JOB_MS = 5 * 60_000
 export const DEFAULT_BATCH_LIMIT = 10
 export const MAX_BATCH_LIMIT = 50
 
-/**
- * Bir vaqtda (parallel) bajariladigan job'lar soni — DB pool'idan oshmasligi kerak.
- * Payload bitta `jobs.run` batch'idagi job'larni parallel bajaradi va har job task log'ini
- * o'z tranzaksiyasida yozadi (`updateJob` → `beginTransaction`); `writeScrapeResult` va
- * `item.dedupe` ham tranzaksiya ushlab turadi. Runtime pool — 3 ulanish, bittasini
- * `@payloadcms/db-postgres` doimiy band qiladi (`RUNTIME_POOL_MAX`): 2 ta ishchi ulanish.
- * OBLOG-33: batch'da 10 ta `scrapeItem` parallel ishlab, ulanish kutish 10 s dan oshgan
- * (`timeout exceeded when trying to connect`). Shuning uchun har `jobs.run` batch'i —
- * `min(jobsBatchLimit, JOBS_CONCURRENCY)` job: har job bir vaqtda ≤ 1 ulanish ishlatadi,
- * deadline esa har ≤ 2 job'dan keyin tekshiriladi.
- */
-export const JOBS_CONCURRENCY = 2
-
 // --- M2-03: dedupe, klassifikatsiya, tozalash, ogohlantirishlar ---
 
 /**

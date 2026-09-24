@@ -47,7 +47,8 @@ export const ScrapingSettings: GlobalConfig = {
           max: 50,
           admin: {
             width: '33%',
-            description: 'Bitta batch’dagi parallel job’lar; DB pool tufayli amalda ≤ 2',
+            description:
+              'Bitta batch’dagi parallel job’lar. Logda “timeout exceeded when trying to connect” (DB pool) chiqsa — shu qiymatni kamaytiring (deploy shart emas)',
           },
         },
         {

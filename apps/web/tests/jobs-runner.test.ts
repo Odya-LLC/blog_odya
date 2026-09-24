@@ -1,13 +1,7 @@
 import type { Payload } from 'payload'
 import { describe, expect, it, vi } from 'vitest'
 
-import { RUNTIME_POOL_MAX } from '@/config/database'
-import {
-  BATCH_START_LIMIT_MS,
-  JOBS_CONCURRENCY,
-  RESPONSE_BUDGET_MS,
-  TASK_GRACE_MS,
-} from '@/jobs/constants'
+import { BATCH_START_LIMIT_MS, RESPONSE_BUDGET_MS, TASK_GRACE_MS } from '@/jobs/constants'
 import { boundedTimeout, getRunDeadline, runWithDeadline } from '@/jobs/context'
 import { handleJobsRunRequest, isAuthorized, runJobsWithDeadline } from '@/jobs/runner'
 import { outOfRunTime } from '@/jobs/workflows/scrapeItem'
@@ -74,17 +68,16 @@ function fakeClock(start = 1_000_000) {
 }
 
 describe('runJobsWithDeadline', () => {
-  it('navbatlar ketma-ket: default, keyin scrape; batch — ≤ JOBS_CONCURRENCY (DB pool)', async () => {
+  it('navbatlar ketma-ket: default, keyin scrape; batch — `limit` (jobsBatchLimit) o‘zgarishsiz', async () => {
     const run = vi.fn(async () => ({ jobStatus: {}, remainingJobsFromQueried: 0 }))
     await runJobsWithDeadline(asJobs(run), {
       queues: ['default', 'scrape'],
       limit: 10,
       deadlineMs: 40_000,
     })
-    expect(JOBS_CONCURRENCY).toBeLessThan(RUNTIME_POOL_MAX)
     expect(run.mock.calls).toEqual([
-      [{ queue: 'default', limit: JOBS_CONCURRENCY }],
-      [{ queue: 'scrape', limit: JOBS_CONCURRENCY }],
+      [{ queue: 'default', limit: 10 }],
+      [{ queue: 'scrape', limit: 10 }],
     ])
 
     // `jobsBatchLimit` = 1 — to'liq ketma-ket.
@@ -93,7 +86,7 @@ describe('runJobsWithDeadline', () => {
     expect(run.mock.calls).toEqual([[{ queue: 'scrape', limit: 1 }]])
   })
 
-  it('10 ta scrape job — 2 tadan batch’larda, deadline har batch oralig‘ida tekshiriladi', async () => {
+  it('jobsBatchLimit = 2: 10 ta scrape job — 2 tadan batch’larda, deadline har batch oralig‘ida tekshiriladi', async () => {
     const clock = fakeClock()
     let queued = 10
     const running: number[] = []
@@ -109,12 +102,12 @@ describe('runJobsWithDeadline', () => {
     })
     const result = await runJobsWithDeadline(asJobs(run as never), {
       queues: ['scrape'],
-      limit: 10,
+      limit: 2,
       deadlineMs: 35_000,
       now: clock.now,
     })
     // 0, 8, 16, 24, 32 s da boshlangan 5 batch — 40 s da tugaydi; 10 ta birdan emas.
-    expect(Math.max(...running)).toBeLessThanOrEqual(JOBS_CONCURRENCY)
+    expect(running).toEqual([2, 2, 2, 2, 2])
     expect(result.succeeded).toBe(10)
     expect(clock.now() - 1_000_000).toBeLessThanOrEqual(35_000 + 8_000)
   })
@@ -134,7 +127,7 @@ describe('runJobsWithDeadline', () => {
     })
     expect(result).toEqual({ batches: 2, succeeded: 1, failed: 1, deadlineReached: false })
     expect(run).toHaveBeenCalledTimes(3)
-    expect(run).toHaveBeenCalledWith({ queue: 'default', limit: 2 })
+    expect(run).toHaveBeenCalledWith({ queue: 'default', limit: 5 })
   })
 
   it('deadline so‘rov boshidan (startedAt): pre-step’lar 30 s yegan bo‘lsa — faqat 1 batch', async () => {
