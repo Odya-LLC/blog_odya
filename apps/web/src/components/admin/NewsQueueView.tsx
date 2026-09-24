@@ -197,7 +197,9 @@ async function NewsQueue({
             'Score hali hisoblanmagan — navbat eng yangi yangiliklar bo‘yicha saralangan. '}
           {!hasClusters &&
             'Klasterlar (dublikat guruhlari) hali aniqlanmagan — har element alohida. '}
-          <span className="editorial__muted">(item.dedupe / item.classify — M2-03)</span>
+          <span className="editorial__muted">
+            (item.dedupe / item.classify — matn ajratilgandan keyin hisoblanadi)
+          </span>
         </p>
       )}
 
