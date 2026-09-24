@@ -1,7 +1,7 @@
 import type { Locale } from '@blog-odya/shared'
 import { InboxIcon } from 'lucide-react'
 import type { Metadata } from 'next'
-import { notFound, permanentRedirect } from 'next/navigation'
+import { notFound } from 'next/navigation'
 
 import { AdSlot } from '@/components/blog/AdSlot'
 import { EmptyState } from '@/components/blog/EmptyState'
@@ -11,8 +11,9 @@ import { PostCard } from '@/components/blog/PostCard'
 import { Container } from '@/components/blog/SiteShell'
 import { getSiteStrings } from '@/i18n/site'
 
-import { findRedirect, getCategoryPage } from '../data'
-import { categoryPath, localizePath } from '../paths'
+import { getCategoryPage } from '../data'
+import { categoryPath } from '../paths'
+import { redirectIfMoved } from '../redirects'
 import { JsonLd } from '../seo/JsonLd'
 import { categorySeo } from '../seo/pages'
 import { SitePage } from './SitePage'
@@ -23,9 +24,8 @@ async function loadOrRedirect({ locale, slug, page }: CategoryViewProps) {
   const data = await getCategoryPage(locale, slug, page)
   if (data) return data
   if (page === 1) {
-    // Kategoriya slug'i o'zgargan bo'lsa (plugin-redirects) — yangi URL'ga.
-    const redirect = await findRedirect(`/${slug}`)
-    if (redirect) permanentRedirect(localizePath(locale, redirect.to))
+    // Kategoriya yoki statik sahifa slug'i o'zgargan bo'lsa (plugin-redirects) — yangi URL'ga.
+    await redirectIfMoved(locale, `/${slug}`)
   }
   notFound()
 }

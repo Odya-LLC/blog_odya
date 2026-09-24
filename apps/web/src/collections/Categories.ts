@@ -2,6 +2,7 @@ import type { CollectionConfig } from 'payload'
 
 import { anyone, isAdmin, isAdminOrEditor } from '@/access'
 import { slugField } from '@/fields/slug'
+import { categoryRedirectHooks } from '@/hooks/contentRedirects'
 import { revalidateCategoryAfterChange, revalidateCategoryAfterDelete } from '@/site/revalidate'
 
 /**
@@ -27,7 +28,8 @@ export const Categories: CollectionConfig = {
   },
   defaultSort: 'order',
   hooks: {
-    afterChange: [revalidateCategoryAfterChange],
+    // Slug o'zgarsa — 301 redirect (`hooks/contentRedirects.ts`, TZ §8.1).
+    afterChange: [...categoryRedirectHooks.afterChange, revalidateCategoryAfterChange],
     afterDelete: [revalidateCategoryAfterDelete],
   },
   fields: [
@@ -54,7 +56,7 @@ export const Categories: CollectionConfig = {
         },
       ],
     },
-    slugField('name', { uniqueAcross: 'pages' }),
+    slugField('name', { checkReserved: true, uniqueAcross: 'pages' }),
     {
       name: 'color',
       type: 'text',

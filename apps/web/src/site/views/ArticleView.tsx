@@ -1,6 +1,6 @@
 import type { Locale } from '@blog-odya/shared'
 import type { Metadata } from 'next'
-import { notFound, permanentRedirect, redirect } from 'next/navigation'
+import { notFound, permanentRedirect } from 'next/navigation'
 
 import { ArticleBody } from '@/components/blog/ArticleBody'
 import { ArticleHeader } from '@/components/blog/ArticleHeader'
@@ -13,7 +13,7 @@ import { TelegramCTA } from '@/components/blog/TelegramCTA'
 import { RichText } from '@/components/richtext/RichText'
 import type { Author, Media, Tag } from '@/payload-types'
 
-import { findRedirect, getArticle, getSiteChrome } from '../data'
+import { getArticle, getSiteChrome } from '../data'
 import {
   populated,
   postDate,
@@ -25,7 +25,8 @@ import {
   toSourceRefs,
   toTagRef,
 } from '../mappers'
-import { localizePath, postPath } from '../paths'
+import { postPath } from '../paths'
+import { redirectIfMoved } from '../redirects'
 import { absoluteUrl } from '../seo/config'
 import { JsonLd } from '../seo/JsonLd'
 import { articleSeo } from '../seo/pages'
@@ -42,13 +43,8 @@ async function loadOrRedirect({ locale, categorySlug, slug }: ArticleViewProps) 
     }
     return data
   }
-  // Slug o'zgargan: plugin-redirects yozuvi (OBLOG-29 avtomatik yozadi; hozircha — qo'lda).
-  const target = await findRedirect(`/${categorySlug}/${slug}`)
-  if (target) {
-    const to = localizePath(locale, target.to)
-    if (target.permanent) permanentRedirect(to)
-    redirect(to)
-  }
+  // Slug o'zgargan: plugin-redirects yozuvi (publish'da avtomatik — `hooks/contentRedirects.ts`).
+  await redirectIfMoved(locale, `/${categorySlug}/${slug}`)
   notFound()
 }
 

@@ -9,6 +9,7 @@ import type { Access, Block, CollectionConfig, FieldAccess, Where } from 'payloa
 
 import { isAdmin, isAdminOrEditor, isAdminOrEditorUser } from '@/access'
 import { slugField } from '@/fields/slug'
+import { postRedirectHooks } from '@/hooks/contentRedirects'
 import { revalidatePostAfterChange, revalidatePostAfterDelete } from '@/site/revalidate'
 
 import { deriveFields, enforceWorkflow, syncScheduledPublish } from './hooks'
@@ -82,9 +83,14 @@ export const Posts: CollectionConfig = {
     maxPerDoc: 10,
   },
   hooks: {
-    beforeChange: [enforceWorkflow, deriveFields],
-    // Sayt keshi (ISR): publish/unpublish/arxivlash → revalidateTag (M1-05).
-    afterChange: [syncScheduledPublish, revalidatePostAfterChange],
+    beforeChange: [enforceWorkflow, deriveFields, ...postRedirectHooks.beforeChange],
+    // Sayt keshi (ISR): publish/unpublish/arxivlash → revalidateTag (M1-05). Slug/kategoriya
+    // o'zgarsa (publish'da) — 301 redirect (`hooks/contentRedirects.ts`, TZ §8.1).
+    afterChange: [
+      syncScheduledPublish,
+      ...postRedirectHooks.afterChange,
+      revalidatePostAfterChange,
+    ],
     afterDelete: [revalidatePostAfterDelete],
   },
   fields: [
@@ -275,7 +281,7 @@ export const Posts: CollectionConfig = {
         components: { Field: '@/components/admin/SourcePanel#SourcePanel' },
       },
     },
-    slugField('title'),
+    slugField('title', { checkReserved: false }),
     {
       name: 'workflowStatus',
       type: 'select',

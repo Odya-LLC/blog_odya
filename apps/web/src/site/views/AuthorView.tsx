@@ -7,6 +7,7 @@ import { getSiteStrings } from '@/i18n/site'
 
 import { type AuthorPageData, getAuthorPage } from '../data'
 import { authorPath } from '../paths'
+import { redirectIfMoved } from '../redirects'
 import { JsonLd } from '../seo/JsonLd'
 import { authorSeo, type AuthorSeoInput } from '../seo/pages'
 import { ListingBody } from './ListingView'
@@ -50,7 +51,11 @@ export async function AuthorView(props: AuthorViewProps) {
   const { locale, slug, page } = props
   const t = getSiteStrings(locale)
   const data = await getAuthorPage(locale, slug, page)
-  if (!data) notFound()
+  if (!data) {
+    // Muallif slug'i o'zgargan bo'lsa (plugin-redirects) — yangi URL'ga.
+    if (page === 1) await redirectIfMoved(locale, `/author/${slug}`)
+    notFound()
+  }
   const { author } = data
   const { jsonLd } = authorSeo(locale, seoInput(author), page)
 

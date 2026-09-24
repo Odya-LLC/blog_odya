@@ -182,6 +182,8 @@ describe('seed: idempotent', () => {
     expect(latn.docs[0]?.name).toBe("Sun'iy intellekt")
     expect(cyrl.docs[0]?.name).toBe('Сунъий интеллект')
     expect(latn.docs[0]?.color).toMatch(/^#[0-9A-Fa-f]{6}$/)
+    // Kirill nomlari qo'lda tasdiqlangan (TZ §10.4) — qulflangan, lotin o'zgarsa qayta yozilmaydi.
+    expect(cyrl.docs[0]?.cyrlLocked).toMatchObject({ name: true, description: true, meta: true })
   })
 
   it('demo postlar chop etilgan va ommaga ko‘rinadi', async () => {

@@ -2,6 +2,7 @@ import type { Block, CollectionConfig } from 'payload'
 
 import { isAdmin, isAdminOrEditor, publishedOrAdminEditor } from '@/access'
 import { slugField } from '@/fields/slug'
+import { pageRedirectHooks } from '@/hooks/contentRedirects'
 import { revalidatePagesAfterChange, revalidatePagesAfterDelete } from '@/site/revalidate'
 
 /** Matn bloki (Lexical). Huquqiy sahifalar seed'da shu blokka yuklanadi. */
@@ -69,8 +70,9 @@ export const Pages: CollectionConfig = {
     maxPerDoc: 10,
   },
   hooks: {
-    // Sitemap (M1-06): sahifalar ro'yxati keshi.
-    afterChange: [revalidatePagesAfterChange],
+    beforeChange: [...pageRedirectHooks.beforeChange],
+    // Slug o'zgarsa (publish'da) — 301 redirect; sitemap (M1-06): sahifalar ro'yxati keshi.
+    afterChange: [...pageRedirectHooks.afterChange, revalidatePagesAfterChange],
     afterDelete: [revalidatePagesAfterDelete],
   },
   fields: [
@@ -98,6 +100,6 @@ export const Pages: CollectionConfig = {
         },
       ],
     },
-    slugField('title', { uniqueAcross: 'categories' }),
+    slugField('title', { checkReserved: true, uniqueAcross: 'categories' }),
   ],
 }

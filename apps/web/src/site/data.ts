@@ -606,8 +606,8 @@ async function findRelated(locale: Locale, post: Post, category: Category): Prom
 }
 
 // ---------------------------------------------------------------------------
-// Yo'naltirishlar (plugin-redirects): eski slug → yangi URL (slug'ni o'zgartirganda 301 —
-// avtomatik yozuvlar OBLOG-29 da; admin'dan qo'lda qo'shilganlari hozir ham ishlaydi).
+// Yo'naltirishlar (plugin-redirects): eski slug → yangi URL (slug o'zgarganda avtomatik —
+// `hooks/contentRedirects.ts`; admin'dan qo'lda ham). Sahifalarda — `site/redirects.ts`.
 // ---------------------------------------------------------------------------
 
 export type RedirectTarget = { to: string; permanent: boolean }
@@ -651,6 +651,8 @@ export function redirectTargetPath(redirect: Pick<Redirect, 'to'>): string | nul
       return `/${doc.slug}`
     case 'tags':
       return `/tag/${doc.slug}`
+    case 'authors':
+      return `/author/${doc.slug}`
     default:
       return null
   }

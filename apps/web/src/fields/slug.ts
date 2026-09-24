@@ -14,6 +14,12 @@ type UniqueAcross = 'categories' | 'pages'
 
 export interface SlugFieldOptions {
   /**
+   * Ildiz darajasidagi marshrut nomlari (`ROUTE_RESERVED_SLUGS` — `tag`, `author`, `search`, …)
+   * band: kategoriya va statik sahifa uchun `true` (`uniqueAcross` berilsa — avtomatik). Aks
+   * holda faqat `RESERVED_SLUGS` (`kr`, `admin`, `api`) — post, teg, muallif (TZ §8.1).
+   */
+  checkReserved?: boolean
+  /**
    * Ildiz darajasidagi URL (`/{slug}`: kategoriya, statik sahifa): marshrut nomlari band
    * (`ROUTE_RESERVED_SLUGS` — `tag`, `author`, `search`, `bot`, …) va shu kolleksiyadagi
    * slug'lar bilan to'qnashuv ham xato (kategoriya ↔ sahifa, TZ §8.1).
@@ -96,6 +102,7 @@ export function createSlugBeforeValidateHook(options: SlugHookOptions = {}): Fie
  */
 export function slugField(source: string, options: SlugFieldOptions = {}): TextField {
   const { uniqueAcross } = options
+  const checkReserved = options.checkReserved ?? Boolean(uniqueAcross)
   return {
     name: 'slug',
     type: 'text',
@@ -104,9 +111,8 @@ export function slugField(source: string, options: SlugFieldOptions = {}): TextF
     index: true,
     required: true,
     validate: async (value: string | null | undefined, { req }) => {
-      if (!uniqueAcross) return validateSlug(value)
-      const format = validateRouteSlug(value)
-      if (format !== true || !value || !req?.payload) return format
+      const format = checkReserved ? validateRouteSlug(value) : validateSlug(value)
+      if (format !== true || !value || !req?.payload || !uniqueAcross) return format
       const { totalDocs } = await req.payload.count({
         collection: uniqueAcross as CollectionSlug,
         where: { slug: { equals: value } },
@@ -116,7 +122,9 @@ export function slugField(source: string, options: SlugFieldOptions = {}): TextF
       return totalDocs > 0 ? slugCollisionMessage(value, uniqueAcross) : true
     },
     hooks: {
-      beforeValidate: [createSlugBeforeValidateHook({ sourceField: source, uniqueAcross })],
+      beforeValidate: [
+        createSlugBeforeValidateHook({ sourceField: source, checkReserved, uniqueAcross }),
+      ],
     },
     admin: {
       position: 'sidebar',

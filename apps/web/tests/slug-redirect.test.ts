@@ -1,17 +1,19 @@
 /**
  * Slug o'zgarganda 301 redirect (TZ §8.1) — mantiq mock Payload bilan. Kontent kolleksiyalariga
- * ulash va end-to-end 301 tekshiruvi — OBLOG-29.
+ * ulangan hook'lar haqiqiy DB bilan — `slug-redirect.int.test.ts`.
  */
-import type { PayloadRequest } from 'payload'
+import type { Field, PayloadRequest } from 'payload'
 import { describe, expect, it } from 'vitest'
 
-import { createSlugBeforeValidateHook } from '@/fields/slug'
+import { createSlugBeforeValidateHook, slugField } from '@/fields/slug'
 import {
   createSlugRedirectHook,
   planSlugRedirects,
   SLUG_REDIRECT_SKIP_CONTEXT,
+  slugRedirectHooks,
   withValueAtPath,
 } from '@/hooks/slugRedirect'
+import { resolveRedirect, resolveRedirectForPathname } from '@/site/redirects'
 
 type Row = { id: number; from: string; to: { type: string; url: string }; type: string }
 
@@ -242,5 +244,148 @@ describe('slug maydoni hook’i', () => {
     expect(await hook({ value: 'mening-slugim', data: {}, collection, req } as never)).toBe(
       'mening-slugim',
     )
+  })
+})
+
+describe('slugRedirectHooks (drafts: posts, pages)', () => {
+  const { beforeChange, afterChange } = slugRedirectHooks<Doc>({ buildPath, drafts: true })
+  const collection = { slug: 'posts' } as never
+
+  /** `findByID({ draft: false })` — asosiy jadvaldagi (oxirgi chop etilgan) hujjat. */
+  function withMain(main: Doc | null) {
+    const mock = mockPayload()
+    const lookups: unknown[] = []
+    ;(mock.req.payload as unknown as { findByID: (a: unknown) => unknown }).findByID = async (
+      args,
+    ) => {
+      lookups.push(args)
+      return main
+    }
+    return { ...mock, lookups }
+  }
+
+  async function save(req: PayloadRequest, data: Partial<Doc>, originalDoc: Doc, doc: Doc) {
+    // Payload hook'larga `req.context` ni beradi.
+    const context = req.context
+    for (const hook of beforeChange) {
+      await hook({ collection, context, data, operation: 'update', originalDoc, req })
+    }
+    for (const hook of afterChange) {
+      await hook({
+        collection,
+        context,
+        data,
+        doc,
+        operation: 'update',
+        previousDoc: originalDoc,
+        req,
+      })
+    }
+  }
+
+  it('publish: eski yo‘l — oxirgi chop etilgan versiya (qoralamadagi slug emas)', async () => {
+    const { rows, req, lookups } = withMain({ id: 1, slug: 'eski', _status: 'published' })
+    // Autosave qoralamasida slug allaqachon `oraliq` bo'lgan; publish — `yangi`.
+    await save(
+      req,
+      { slug: 'yangi', _status: 'published' },
+      { id: 1, slug: 'oraliq', _status: 'draft' },
+      { id: 1, slug: 'yangi', _status: 'published' },
+    )
+    expect(lookups).toEqual([expect.objectContaining({ id: 1, draft: false })])
+    expect(rows.map((r) => [r.from, r.to.url])).toEqual([['/news/eski', '/news/yangi']])
+  })
+
+  it('qoralama saqlash (autosave) — asosiy hujjat o‘qilmaydi, redirect yo‘q', async () => {
+    const { rows, req, lookups } = withMain({ id: 1, slug: 'eski', _status: 'published' })
+    await save(
+      req,
+      { slug: 'yangi', _status: 'draft' },
+      { id: 1, slug: 'eski', _status: 'published' },
+      { id: 1, slug: 'yangi', _status: 'draft' },
+    )
+    expect(lookups).toEqual([])
+    expect(rows).toEqual([])
+  })
+
+  it('hech qachon chop etilmagan hujjat — redirect yo‘q', async () => {
+    const { rows, req } = withMain({ id: 1, slug: 'eski', _status: 'draft' })
+    await save(
+      req,
+      { _status: 'published' },
+      { id: 1, slug: 'eski', _status: 'draft' },
+      { id: 1, slug: 'yangi', _status: 'published' },
+    )
+    expect(rows).toEqual([])
+  })
+
+  it('drafts yo‘q — oddiy afterChange (previousDoc)', async () => {
+    const plain = slugRedirectHooks<Doc>({ buildPath })
+    expect(plain.beforeChange).toEqual([])
+    const { rows, req } = mockPayload()
+    await runHook(plain.afterChange[0]!, req, { id: 1, slug: 'a' }, { id: 1, slug: 'b' })
+    expect(rows.map((r) => r.from)).toEqual(['/news/a'])
+  })
+})
+
+describe('slugField: checkReserved', () => {
+  type Validate = (value: string, options: { req?: unknown }) => Promise<true | string>
+  const validate = (field: ReturnType<typeof slugField>) => field.validate as unknown as Validate
+
+  it('kategoriya/sahifa (checkReserved: true) — marshrut nomlari band', async () => {
+    const field = slugField('name', { checkReserved: true })
+    expect(await validate(field)('tag', {})).toMatch(/band/)
+    expect(await validate(field)('kr', {})).toMatch(/band/)
+    expect(await validate(field)('kibersport', {})).toBe(true)
+  })
+
+  it('post/teg/muallif — faqat kr/admin/api band', async () => {
+    const field = slugField('title', { checkReserved: false })
+    expect(await validate(field)('tag', {})).toBe(true)
+    expect(await validate(field)('kr', {})).toMatch(/band/)
+  })
+
+  it('kontent kolleksiyalari: categories/pages — true, posts/tags/authors — false', async () => {
+    const { Categories } = await import('@/collections/Categories')
+    const { Pages } = await import('@/collections/Pages')
+    const { Tags } = await import('@/collections/Tags')
+    const { Authors } = await import('@/collections/Authors')
+    const { Posts } = await import('@/collections/Posts')
+    const slugOf = (fields: Field[]) =>
+      fields.find((f) => 'name' in f && f.name === 'slug') as ReturnType<typeof slugField>
+    for (const config of [Categories, Pages]) {
+      expect(await validate(slugOf(config.fields))('search', {})).toMatch(/band/)
+    }
+    for (const config of [Tags, Authors, Posts]) {
+      expect(await validate(slugOf(config.fields))('search', {})).toBe(true)
+    }
+  })
+})
+
+describe('resolveRedirect: lotin va /kr', () => {
+  const lookup = async (from: string) =>
+    from === '/tag/eski' ? { to: '/tag/yangi', permanent: true } : null
+
+  it('lotin yo‘li → lotin manzil; /kr yo‘li → /kr manzil (bitta yozuv)', async () => {
+    expect(await resolveRedirectForPathname('/tag/eski', lookup)).toEqual({
+      to: '/tag/yangi',
+      permanent: true,
+    })
+    expect(await resolveRedirectForPathname('/kr/tag/eski', lookup)).toEqual({
+      to: '/kr/tag/yangi',
+      permanent: true,
+    })
+    expect(await resolveRedirect('uz-Cyrl', '/tag/eski', lookup)).toMatchObject({
+      to: '/kr/tag/yangi',
+    })
+    expect(await resolveRedirectForPathname('/kr/tag/yoq', lookup)).toBeNull()
+  })
+
+  it('tashqi URL prefikssiz qoladi', async () => {
+    const external = async () => ({ to: 'https://example.com/x', permanent: false })
+    expect(await resolveRedirectForPathname('/kr/a', external)).toEqual({
+      to: 'https://example.com/x',
+      permanent: false,
+    })
   })
 })
