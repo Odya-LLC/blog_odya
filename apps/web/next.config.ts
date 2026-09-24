@@ -4,6 +4,9 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 
 import { parseEnv, resolveEnvMode } from './src/env.schema'
+import { isIndexingAllowed } from './src/site/seo/config'
+import { FEED_REWRITES } from './src/site/seo/rewrites'
+import { NOINDEX_HEADER } from './src/site/seo/robots'
 
 const __filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(__filename)
@@ -30,6 +33,22 @@ const nextConfig: NextConfig = {
     return webpackConfig
   },
   outputFileTracingRoot: monorepoRoot,
+  // `next/og` shriftlari `fs` bilan o'qiladi — OG route funksiyalariga qo'shiladi (M1-06).
+  outputFileTracingIncludes: {
+    '/og/**': ['./assets/og-fonts/*.ttf'],
+  },
+  // RSS: `/rss.xml`, `/kr/rss.xml`, `/{category}/rss.xml` → `/feeds/…` (src/site/seo/rewrites.ts).
+  rewrites: async () => [...FEED_REWRITES],
+  // Preview / `SEO_NOINDEX=1`: barcha javoblarga `X-Robots-Tag: noindex` (TZ §8.3, M1-06).
+  headers: async () =>
+    isIndexingAllowed(process.env)
+      ? []
+      : [
+          {
+            source: '/:path*',
+            headers: [{ key: NOINDEX_HEADER.key, value: NOINDEX_HEADER.value }],
+          },
+        ],
   turbopack: {
     root: monorepoRoot,
   },

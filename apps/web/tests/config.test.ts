@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { getDatabaseMode, getDatabasePoolConfig, RUNTIME_POOL_MAX } from '@/config/database'
+import { getPayloadSecret } from '@/config/secret'
 import { getS3StorageOptions } from '@/config/storage'
 import { parseEnv } from '@/env'
 
@@ -56,6 +57,34 @@ describe('DB ulanishi: runtime — pooler, migratsiya — direct', () => {
       S3_ENDPOINT: 'https://acc.r2.cloudflarestorage.com',
     })
     expect(getDatabasePoolConfig(env, 'migrate').connectionString).toBe(POOLER)
+  })
+})
+
+describe('prod migratsiya: GitHub Actions migrate-prod (OBLOG-34)', () => {
+  // GitHub runner: VERCEL/VERCEL_ENV yo'q.
+  const githubRunner = { PAYLOAD_MIGRATING: 'true', CI: 'true', GITHUB_ACTIONS: 'true' }
+
+  it('GitHub runner’da migratsiya ruxsat etiladi', () => {
+    expect(getDatabaseMode(githubRunner)).toBe('migrate')
+  })
+
+  it('PAYLOAD_SECRET/S3 siz: env o‘tadi, S3 plagini o‘chiq, migratsiya DIRECT ga ulanadi', () => {
+    const env = parseEnv({ ...githubRunner, DATABASE_URL: DIRECT, DATABASE_URL_DIRECT: DIRECT })
+    expect(getS3StorageOptions(env).enabled).toBe(false)
+    expect(getDatabasePoolConfig(env, 'migrate').connectionString).toBe(DIRECT)
+  })
+
+  it('migratsiyada PAYLOAD_SECRET bo‘lmasa — tasodifiy vaqtinchalik qiymat', () => {
+    const a = getPayloadSecret({ PAYLOAD_SECRET: undefined }, 'migrate')
+    const b = getPayloadSecret({ PAYLOAD_SECRET: undefined }, 'migrate')
+    expect(a).toMatch(/^[0-9a-f]{64}$/)
+    expect(a).not.toBe(b)
+  })
+
+  it('berilgan PAYLOAD_SECRET ishlatiladi; runtime’da placeholder yo‘q', () => {
+    expect(getPayloadSecret({ PAYLOAD_SECRET: 'x'.repeat(32) }, 'migrate')).toBe('x'.repeat(32))
+    expect(getPayloadSecret({ PAYLOAD_SECRET: 'y'.repeat(32) }, 'runtime')).toBe('y'.repeat(32))
+    expect(getPayloadSecret({ PAYLOAD_SECRET: undefined }, 'runtime')).toBe('')
   })
 })
 

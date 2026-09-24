@@ -21,6 +21,7 @@ import { Sources } from './collections/Sources'
 import { Tags } from './collections/Tags'
 import { Users } from './collections/Users'
 import { getDatabaseMode, getDatabasePoolConfig } from './config/database'
+import { getPayloadSecret } from './config/secret'
 import { getS3StorageOptions } from './config/storage'
 import { env } from './env'
 import { Footer } from './globals/Footer'
@@ -52,6 +53,9 @@ const i18n = {
   translations: { [ADMIN_LANGUAGE]: uzPluginTranslations },
 } as unknown as NonNullable<Config['i18n']>
 
+// `pnpm migrate*` (PAYLOAD_MIGRATING=true) — direct/session ulanish; PAYLOAD_SECRET va S3_* ixtiyoriy.
+const databaseMode = getDatabaseMode()
+
 export default buildConfig({
   admin: {
     user: Users.slug,
@@ -73,7 +77,7 @@ export default buildConfig({
   editor: lexicalEditor(),
   // Fon vazifalar (TZ §3.5): feed.poll, scrapeItem; scheduler — JOBS_MODE (src/jobs/index.ts).
   jobs: buildJobsConfig(env.JOBS_MODE),
-  secret: env.PAYLOAD_SECRET ?? '',
+  secret: getPayloadSecret(env, databaseMode),
   serverURL: env.NEXT_PUBLIC_SITE_URL,
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),
@@ -87,7 +91,7 @@ export default buildConfig({
   },
   db: postgresAdapter({
     // Runtime — pooler (DATABASE_URL), migratsiyalar — direct (DATABASE_URL_DIRECT).
-    pool: getDatabasePoolConfig(env, getDatabaseMode()),
+    pool: getDatabasePoolConfig(env, databaseMode),
     // Sxema faqat migratsiyalar orqali o'zgaradi (dev'da ham `push` o'chiq),
     // shunda lokal, CI va production bir xil yo'ldan yuradi.
     push: false,
@@ -147,6 +151,7 @@ export default buildConfig({
       ],
     }),
     // Lokal: MinIO, production: Cloudflare R2 — farq faqat env'da (TZ §3.1, §3.7).
+    // S3_BUCKET berilmasa (masalan, prod migratsiya workflow'ida) plagin o'chiq.
     s3Storage(getS3StorageOptions(env)),
   ],
 })

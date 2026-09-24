@@ -123,6 +123,15 @@ for (const script of SCRIPTS) {
       )
       await expect(page.getByText('OdyaBlogBot/1.0 (+https://blog.odya.uz/bot)')).toBeVisible()
       await expect(page.locator('a[href^="mailto:"]')).toBeVisible()
+      // SEO (OBLOG-13 yo'li): canonical — o'ziga, hreflang juftligi va x-default → lotin.
+      const head = page.locator('head')
+      await expect(head.locator('link[rel="canonical"]')).toHaveAttribute(
+        'href',
+        new RegExp(`^https?://[^/]+${script.prefix}/bot$`),
+      )
+      await expect(head.locator('link[hreflang="uz-Latn"]')).toHaveAttribute('href', /[^r]\/bot$/)
+      await expect(head.locator('link[hreflang="uz-Cyrl"]')).toHaveAttribute('href', /\/kr\/bot$/)
+      await expect(head.locator('link[hreflang="x-default"]')).toHaveAttribute('href', /[^r]\/bot$/)
     })
 
     test('404 joriy yozuvda', async ({ page }) => {

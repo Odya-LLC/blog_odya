@@ -3,26 +3,27 @@ import type { Metadata } from 'next'
 
 import { Container } from '@/components/blog/SiteShell'
 import { BOT_CONTACT_EMAIL, BOT_ROBOTS_EXAMPLE, BOT_USER_AGENT, getBotStrings } from '@/i18n/bot'
-import { getSiteStrings } from '@/i18n/site'
 import { withLocalePrefix } from '@/lib/preferences'
 
+import { buildPageMetadata, generatedOgImage } from '../seo/metadata'
 import { SitePage } from './SitePage'
 
 export const BOT_PATH = '/bot'
 
+/**
+ * OBLOG-13 yo'li bilan (`buildPageMetadata`): `<title>`, description, canonical (o'ziga),
+ * hreflang (`uz-Latn`, `uz-Cyrl`, `x-default`), OpenGraph/Twitter (sayt OG rasmi), preview'da
+ * `noindex`. Sitemap'ga kiritilmaydi — bu sayt kontenti emas, faqat User-Agent havolasi uchun.
+ */
 export function botMetadata(locale: Locale): Metadata {
   const t = getBotStrings(locale)
-  return {
-    title: `${t.title} — ${getSiteStrings(locale).siteName}`,
+  return buildPageMetadata({
+    locale,
+    path: withLocalePrefix(locale, BOT_PATH),
+    title: t.title,
     description: t.metaDescription,
-    alternates: {
-      canonical: withLocalePrefix(locale, BOT_PATH),
-      languages: {
-        'uz-Latn': withLocalePrefix('uz-Latn', BOT_PATH),
-        'uz-Cyrl': withLocalePrefix('uz-Cyrl', BOT_PATH),
-      },
-    },
-  }
+    image: generatedOgImage(locale, { kind: 'site' }, t.title),
+  })
 }
 
 /**

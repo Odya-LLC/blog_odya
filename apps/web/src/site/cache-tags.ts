@@ -7,7 +7,8 @@
  * - `post:{slug}`  — bitta maqola;
  * - `category:{slug}` — kategoriya sahifasi (nomi, tavsifi);
  * - `nav`          — header/footer: kategoriyalar menyusi, globals;
- * - `redirects`    — plugin-redirects yozuvlari (eski slug → yangi URL).
+ * - `redirects`    — plugin-redirects yozuvlari (eski slug → yangi URL);
+ * - `pages`        — statik sahifalar ro'yxati (sitemap, M1-06).
  *
  * Yon ta'sirsiz modul (testlanadi).
  */
@@ -16,6 +17,7 @@ export const CACHE_TAGS = {
   home: 'home',
   nav: 'nav',
   redirects: 'redirects',
+  pages: 'pages',
 } as const
 
 export function postTag(slug: string): string {

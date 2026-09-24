@@ -60,7 +60,7 @@ const HOME_LATEST = 10
  *   karkas (menyu) so'rashi mumkin — build DB'ga ulanmaydi;
  * - DB sozlanmagan muhit (sirlarsiz Vercel Preview) — xato o'rniga bo'sh holat.
  */
-function hasDatabase(): boolean {
+export function hasDatabase(): boolean {
   if (process.env.NEXT_PHASE === PHASE_PRODUCTION_BUILD) return false
   return Boolean(env.DATABASE_URL)
 }
@@ -69,7 +69,7 @@ function hasDatabase(): boolean {
  * `unstable_cache` o'rami: kalit deploy versiyasi bilan, teglar bilan. DB'siz holatdagi (build,
  * sirlarsiz muhit) bo'sh natija keshlanmaydi — aks holda u runtime'da ham qaytarilardi.
  */
-function cached<T>(load: () => Promise<T>, keyParts: string[], tags: string[]): Promise<T> {
+export function cached<T>(load: () => Promise<T>, keyParts: string[], tags: string[]): Promise<T> {
   if (!hasDatabase()) return load()
   return unstable_cache(load, [CACHE_VERSION, ...keyParts], {
     tags,
@@ -77,7 +77,7 @@ function cached<T>(load: () => Promise<T>, keyParts: string[], tags: string[]): 
   })()
 }
 
-const payloadClient = cache(async () => getPayload({ config }))
+export const payloadClient = cache(async () => getPayload({ config }))
 
 /** Kartochka uchun kerakli maydonlar (`content` — faqat o'qish vaqti yo'q bo'lsa kerak). */
 const POST_CARD_SELECT = {
@@ -230,6 +230,9 @@ export type CategoryPageData = {
     description: string | null
     metaTitle: string | null
     metaDescription: string | null
+    /** `meta.noindex` (plugin-seo) — sahifa `noindex`, sitemap'ga kirmaydi (M1-06). */
+    noindex: boolean
+    updatedAt: string
   }
   posts: PostSummary[]
   page: number
@@ -266,6 +269,8 @@ export async function loadCategoryPage(
       description: category.description ?? null,
       metaTitle: category.meta?.title ?? null,
       metaDescription: category.meta?.description ?? null,
+      noindex: Boolean(category.meta?.noindex),
+      updatedAt: category.updatedAt,
     },
     posts: toPostSummaries(list.docs, locale),
     page,
