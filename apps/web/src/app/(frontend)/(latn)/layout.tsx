@@ -1,19 +1,14 @@
 import type { Metadata, Viewport } from 'next'
 import type { ReactNode } from 'react'
 
-import { env } from '@/env'
-import { getSiteStrings } from '@/i18n/site'
+import { rootLayoutMetadata } from '@/site/seo/pages'
 
 import { RootDocument } from '../_components/RootDocument'
 
 const LOCALE = 'uz-Latn'
-const t = getSiteStrings(LOCALE)
 
-export const metadata: Metadata = {
-  metadataBase: new URL(env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'),
-  title: `${t.siteName} — ${t.tagline}`,
-  description: t.tagline,
-}
+/** Standart metadata + preview'da `noindex` (TZ §8.3, M1-06). Sahifalar o'zinikini qo'shadi. */
+export const metadata: Metadata = rootLayoutMetadata(LOCALE)
 
 export const viewport: Viewport = {
   themeColor: [

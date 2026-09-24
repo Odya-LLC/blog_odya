@@ -69,6 +69,17 @@ export const revalidatePostListsAfterChange: CollectionAfterChangeHook = ({ doc,
   return doc
 }
 
+/** Statik sahifalar (`pages`): sitemap va sahifa ro'yxatlari (M1-06). */
+export const revalidatePagesAfterChange: CollectionAfterChangeHook = ({ doc, req }) => {
+  revalidateTags([CACHE_TAGS.pages], req)
+  return doc
+}
+
+export const revalidatePagesAfterDelete: CollectionAfterDeleteHook = ({ doc, req }) => {
+  revalidateTags([CACHE_TAGS.pages], req)
+  return doc
+}
+
 /** Header/footer/site-settings — barcha sahifalar karkasi. */
 export const revalidateNavAfterChange: GlobalAfterChangeHook = ({ doc, req }) => {
   revalidateTags([CACHE_TAGS.nav], req)

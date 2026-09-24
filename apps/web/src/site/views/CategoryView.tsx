@@ -13,6 +13,8 @@ import { getSiteStrings } from '@/i18n/site'
 
 import { findRedirect, getCategoryPage } from '../data'
 import { categoryPath, localizePath } from '../paths'
+import { JsonLd } from '../seo/JsonLd'
+import { categorySeo } from '../seo/pages'
 import { SitePage } from './SitePage'
 
 type CategoryViewProps = { locale: Locale; slug: string; page: number }
@@ -28,15 +30,11 @@ async function loadOrRedirect({ locale, slug, page }: CategoryViewProps) {
   notFound()
 }
 
+/** SEO (TZ §8.2): sahifalashda ham canonical — o'ziga (`/{category}/page/{n}`). */
 export async function categoryMetadata(props: CategoryViewProps): Promise<Metadata> {
   const data = await getCategoryPage(props.locale, props.slug, props.page)
   if (!data) return {}
-  const t = getSiteStrings(props.locale)
-  const base = data.category.metaTitle || `${data.category.name} — ${t.siteName}`
-  return {
-    title: props.page > 1 ? `${base} (${t.page(props.page)})` : base,
-    description: data.category.metaDescription || data.category.description || undefined,
-  }
+  return categorySeo(props.locale, data.category, props.page).metadata
 }
 
 /**
@@ -48,6 +46,7 @@ export async function CategoryView(props: CategoryViewProps) {
   const t = getSiteStrings(locale)
   const data = await loadOrRedirect(props)
   const { category } = data
+  const { jsonLd } = categorySeo(locale, category, page)
 
   return (
     <SitePage
@@ -55,6 +54,7 @@ export async function CategoryView(props: CategoryViewProps) {
       pathname={categoryPath(locale, slug, page)}
       activeCategorySlug={category.slug}
     >
+      <JsonLd data={jsonLd} />
       <Container className="grid gap-10 py-6 lg:grid-cols-12 lg:py-10">
         <div className="flex flex-col gap-8 lg:col-span-8">
           <header className="flex flex-col gap-3 border-b border-border pb-6">
