@@ -2,8 +2,9 @@ import { createHash, timingSafeEqual } from 'node:crypto'
 
 import type { Payload } from 'payload'
 
-import { MAX_BATCH_LIMIT, MAX_DEADLINE_SEC, RUN_QUEUES, TASK_GRACE_MS } from './constants'
+import { MAX_BATCH_LIMIT, MAX_DEADLINE_SEC, TASK_GRACE_MS } from './constants'
 import { runWithDeadline } from './context'
+import { activeRunQueues } from './scrapeDeps'
 import { countRemainingJobs, enqueueDueFeedPolls, releaseStaleJobs } from './scheduler'
 import { getJobsSettings } from './settings'
 
@@ -40,7 +41,7 @@ export async function runJobsWithDeadline(
   options: RunWithDeadlineOptions,
 ): Promise<RunWithDeadlineResult> {
   const now = options.now ?? Date.now
-  const queues = options.queues ?? RUN_QUEUES
+  const queues = options.queues ?? activeRunQueues()
   const deadlineAt = now() + options.deadlineMs
   const taskDeadlineAt = deadlineAt + (options.graceMs ?? TASK_GRACE_MS)
   const result: RunWithDeadlineResult = {
@@ -140,12 +141,14 @@ export async function handleJobsRunRequest(
 
     const releasedStale = await releaseStaleJobs(payload)
     const { enqueued, disabled } = await enqueueDueFeedPolls(payload, { settings })
+    const queues = activeRunQueues()
     const run = await runJobsWithDeadline(payload.jobs, {
+      queues,
       limit,
       deadlineMs: deps.overrides?.deadlineMs ?? deadlineSec * 1000,
       graceMs: deps.overrides?.graceMs,
     })
-    const remaining = await countRemainingJobs(payload, RUN_QUEUES)
+    const remaining = await countRemainingJobs(payload, queues)
 
     const body: JobsRunResponse = {
       ok: true,

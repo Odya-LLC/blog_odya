@@ -114,6 +114,17 @@ for (const script of SCRIPTS) {
       for (const url of media) expect(url).toMatch(/\.webp($|\?)/)
     })
 
+    test('/bot — OdyaBlogBot haqida (User-Agent havolasi)', async ({ page }) => {
+      const response = await page.goto(`${script.prefix}/bot`)
+      expect(response?.status()).toBe(200)
+      await expect(page.locator('html')).toHaveAttribute('lang', script.locale)
+      await expect(page.getByRole('heading', { level: 1 })).toHaveText(
+        script.locale === 'uz-Latn' ? 'OdyaBlogBot haqida' : 'OdyaBlogBot ҳақида',
+      )
+      await expect(page.getByText('OdyaBlogBot/1.0 (+https://blog.odya.uz/bot)')).toBeVisible()
+      await expect(page.locator('a[href^="mailto:"]')).toBeVisible()
+    })
+
     test('404 joriy yozuvda', async ({ page }) => {
       const response = await page.goto(`${script.prefix}/bunday-sahifa-yoq`)
       expect(response?.status()).toBe(404)

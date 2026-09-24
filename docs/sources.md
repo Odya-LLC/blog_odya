@@ -89,7 +89,7 @@ Jami faol manbalar kuniga ~200–300 material beradi (feedlar orasidagi dublikat
 - **robots.txt:** `User-agent: *` — **`Crawl-delay: 10`**; `/search/`, profil/kompaniya obunachilari sahifalari va **`/*?*utm_`** yopiq.
 - ⚠️ **Muhim:** RSS'dagi havolalarda `?utm_source=habrahabr&utm_medium=rss&utm_campaign=...` bor — bu URL'lar robots.txt bo'yicha **yopiq**. `item.fetch` sahifani yuklashdan oldin `utm_*` parametrlarini olib tashlashi **shart** (bu `urlHash` normallashtirish qoidasiga ham mos).
 - **Foydalanuvchi kelishuvi** (`account.habr.com/info/agreement`): kontentni ruxsatsiz nusxalash va tijoriy foydalanish taqiqlangan; avtomatik yig'ish (parsing) alohida taqiqlanmagan. Bizning model (faktlar + o'z matnimiz + atributsiya, to'liq matn faqat ichki arxivda) bilan mos.
-- **Server HTML:** ha. Selektorlar: `content` — `.article-formatted-body`, `title` — `h1.tm-title`, `author` — `.tm-user-info__username`, `publishedAt` — `.tm-article-datetime-published time[datetime]`.
+- **Server HTML:** ha. Selektorlar: `content` — `.article-formatted-body`, `title` — `h1.tm-title`, `author` — `.tm-user-info__username`, `publishedAt` — `.tm-article-datetime-published time[datetime]`, `remove` — `.tm-article-reading-time`, `.tm-data-icons` (o'qish vaqti va ko'rishlar soni Readability natijasiga tushmasligi uchun, M2-02).
 - **Xulosa:** `rss_plus_page`, `rateLimitSec = 10` (Crawl-delay bilan mos). Umumiy feed va hub feedlarida bir xil maqola uchraydi — `urlHash` dedupe qiladi, mapping uchun **aniqroq (hub) feed ustun** (7-bo'lim).
 
 ### 3.4. iXBT.com — `rss_only`

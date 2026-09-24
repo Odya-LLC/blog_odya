@@ -4,7 +4,8 @@ import { isAdmin, isAdminOrEditor } from '@/access'
 
 /**
  * `scraped-items` holatlari (TZ §10.2). `pending` — RSS'dan topilgan, sahifa hali yuklanmagan /
- * matn ajratilmagan (`scrapeItem` workflow navbatda, M2-02); `scraped` — to'liq matn tayyor.
+ * matn ajratilmagan (`scrapeItem` workflow navbatda); `scraped` — to'liq matn tayyor
+ * (`item.extract`); `error` — 3 retry'dan keyin ham yig'ib bo'lmadi (sabab — `error` maydonida).
  */
 export const SCRAPED_ITEM_STATUSES = [
   'pending',
@@ -140,6 +141,11 @@ export const ScrapedItems: CollectionConfig = {
       name: 'extractedText',
       type: 'textarea',
       label: 'To‘liq matn (Markdown)',
+    },
+    {
+      name: 'ogImage',
+      type: 'text',
+      label: 'og:image (faqat havola)',
     },
     {
       name: 'imageUrls',

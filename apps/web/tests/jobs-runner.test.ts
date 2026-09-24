@@ -66,6 +66,19 @@ function fakeClock(start = 1_000_000) {
 }
 
 describe('runJobsWithDeadline', () => {
+  it('navbatlar ketma-ket: default, keyin scrape', async () => {
+    const run = vi.fn(async () => ({ jobStatus: {}, remainingJobsFromQueried: 0 }))
+    await runJobsWithDeadline(asJobs(run), {
+      queues: ['default', 'scrape'],
+      limit: 5,
+      deadlineMs: 40_000,
+    })
+    expect(run.mock.calls).toEqual([
+      [{ queue: 'default', limit: 5 }],
+      [{ queue: 'scrape', limit: 5 }],
+    ])
+  })
+
   it('navbat bo‘shaganda to‘xtaydi', async () => {
     const clock = fakeClock()
     const batches = [{ a: { status: 'success' } }, { b: { status: 'error' } }, {}]
@@ -74,6 +87,7 @@ describe('runJobsWithDeadline', () => {
       remainingJobsFromQueried: 0,
     }))
     const result = await runJobsWithDeadline(asJobs(run), {
+      queues: ['default'],
       limit: 5,
       deadlineMs: 40_000,
       now: clock.now,
@@ -90,6 +104,7 @@ describe('runJobsWithDeadline', () => {
       return { jobStatus: { x: { status: 'success' as const } }, remainingJobsFromQueried: 1 }
     })
     const result = await runJobsWithDeadline(asJobs(run), {
+      queues: ['default'],
       limit: 10,
       deadlineMs: 40_000,
       now: clock.now,
@@ -108,6 +123,7 @@ describe('runJobsWithDeadline', () => {
       return { jobStatus: {}, remainingJobsFromQueried: 0 }
     })
     await runJobsWithDeadline(asJobs(run), {
+      queues: ['default'],
       limit: 1,
       deadlineMs: 40_000,
       graceMs: 10_000,

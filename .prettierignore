@@ -12,3 +12,5 @@ docs
 .mcp.json
 .quiel.json
 CLAUDE.md
+# Saqlangan manba sahifalari (scraping fixture'lari) — o'zgarishsiz qolishi kerak
+**/__fixtures__
