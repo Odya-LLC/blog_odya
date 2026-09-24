@@ -1,7 +1,10 @@
 import type { Payload, Where } from 'payload'
 
-import { DUE_SLACK_MS, FEED_POLL_TASK, STALE_JOB_MS } from './constants'
+import { localDate } from '@/editorial/queue'
+
+import { DUE_SLACK_MS, FEED_POLL_TASK, MAINTENANCE_CLEANUP_TASK, STALE_JOB_MS } from './constants'
 import { getJobsSettings, type JobsSettings } from './settings'
+import { claimDailyCleanup } from './stats'
 
 /**
  * Scheduler (TZ §3.5): har chaqiruvda (pg_cron → `/api/jobs/run`, yoki `autorun` tick'i)
@@ -79,6 +82,26 @@ export async function enqueueDueFeedPolls(
     enqueued++
   }
   return { enqueued, disabled: false }
+}
+
+/**
+ * `maintenance.cleanup` ni kuniga bir marta navbatga qo'yadi (Toshkent kuni bo'yicha — kunning
+ * birinchi scheduler chaqiruvida). pg_cron har 10 daqiqada chaqirsa ham idempotent:
+ * - tugallanmagan cleanup job'i bo'lsa — yangisi qo'yilmaydi;
+ * - `stats.cleanup.enqueuedDate` atomar "band qilinadi" (`claimDailyCleanup`): parallel
+ *   chaqiruvlardan faqat bittasi navbatga qo'yadi; 3 retry'dan keyin ham xato bo'lsa — ertaga.
+ * `scraping-settings.isEnabled` ga bog'liq emas (tozalash va hajm o'lchovi kvota uchun kerak).
+ */
+export async function enqueueDailyCleanup(payload: Payload, now = Date.now()): Promise<boolean> {
+  const { totalDocs } = await payload.count({
+    collection: 'payload-jobs',
+    where: { and: [{ taskSlug: { equals: MAINTENANCE_CLEANUP_TASK } }, ...unfinished] },
+  })
+  if (totalDocs > 0) return false
+  const date = localDate(new Date(now))
+  if (!(await claimDailyCleanup(payload, date))) return false
+  await payload.jobs.queue({ task: MAINTENANCE_CLEANUP_TASK, input: { date } })
+  return true
 }
 
 /**

@@ -156,16 +156,16 @@ Seed testi har bir kategoriya kamida bitta faol feed orqali to'ldirilishini teks
 
 ## 5. Klassifikatsiya: feed mapping + kalit so'z qoidalari
 
-`item.classify` (TZ §3.5, LLM'siz) uchun tavsiya etilgan algoritm (M2-03 da amalga oshiriladi):
+`item.classify` (TZ §3.5, LLM'siz) algoritmi (M2-03 da amalga oshirilgan — `apps/web/src/scraping/classify.ts`):
 
-1. Material bir nechta feedda uchrasa, **`feeds` massividagi birinchi (aniqroq) feed** mapping'i olinadi — seed'da aniq bo'lim feedlari umumiy feeddan oldin turadi.
-2. Feed mapping'i → shu kategoriyaga **+10** ball.
-3. `keywordRules` sarlavha + excerpt + manba teglari (`sourceTags`) bo'yicha tekshiriladi (kichik harf); har bir mos qoida → `boost` ball (har qoida bir marta).
+1. Material bir nechta feedda uchrasa, **`feeds` massividagi birinchi (aniqroq) feed** mapping'i olinadi — seed'da aniq bo'lim feedlari umumiy feeddan oldin turadi (`feed.poll` feedlarni shu tartibda o'qiydi, element birinchi topilgan feed bilan yaratiladi — `fetchMeta.feedUrl`).
+2. Feed mapping'i → shu kategoriyaga **`mappingWeight`** ball: bo'lim feedi — **10** (default), keng bo'lim (The Verge "Tech") — **5**, umumiy feedlar ("All", "Новости", iXBT umumiy) — **1** (faqat zaxira; kategoriyani kalit so'zlar hal qiladi).
+3. `keywordRules` sarlavha + excerpt + manba teglari (`sourceTags`) bo'yicha tekshiriladi (kichik harf); har bir mos qoida → `boost` ball (har qoida bir marta). Bitta kategoriya kalit so'zlardan jami **≤ 10** ball oladi — bir mavzuning ko'p sinonimlari (`ai`, `ml`, `llm`, `ии`) bo'lim feedini bosib keta olmaydi.
 4. Eng ko'p ball olgan kategoriya — `suggestedCategory`. Teng bo'lsa — feed mapping'i.
 
-**Kalit so'z formati:** kichik harf; butun so'z/ibora mosligi; so'z oxiridagi `*` — prefiks (o'zak) mosligi, rus tili morfologiyasi uchun (`нейросет*` → нейросеть, нейросети, нейросетями). Iboralarda har bir so'z alohida `*` olishi mumkin (`искусственн* интеллект*`).
+**Kalit so'z formati:** kichik harf; butun so'z/ibora mosligi; so'z oxiridagi `*` — prefiks (o'zak) mosligi, rus tili morfologiyasi uchun (`нейросет*` → нейросеть, нейросети, нейросетями). Iboralarda har bir so'z alohida `*` olishi mumkin (`искусственн* интеллект*`). Chiziqcha — so'z ajratuvchi: `zero-day` = `zero day`, `ИИ-компания` → `ии` + `компания`.
 
-**Qoidalar to'plami** — tilga qarab ikkita (EN va RU), har bir kategoriya uchun **8 tadan** (texnologiyalar — 7), jami 71 ta qoida har bir manbada. Boost: aniq kategoriyalar (AI, kiberxavfsizlik, kibersport) — 5; gadjetlar, dasturlash, o'yinlar, startaplar, ilm-fan — 4; umumiy `texnologiyalar` — 2 (keng so'zlar: google, microsoft, meta...).
+**Qoidalar to'plami** — tilga qarab ikkita (EN va RU). M0-04 dagi 71 ta qoida (har kategoriya uchun 8 ta, texnologiyalar — 7) M2-03 da haqiqiy ma'lumot bo'yicha to'ldirildi (EN — 123, RU — 124 ta; masalan `ai`, `gpt*`, `claude`, `smart glasses`, `пк`, `интернет*`, `энерги*`); mavjud bazalarga migratsiya `20260924_111003_m2_03_dedupe_classify_cleanup` qo'shadi (admin tahrirlari saqlanadi). Boost: aniq kategoriyalar (AI, kiberxavfsizlik, kibersport) — 5; gadjetlar, dasturlash, o'yinlar, startaplar, ilm-fan — 4; umumiy `texnologiyalar` — 2 (keng so'zlar: google, microsoft, meta...).
 
 | Kategoriya | EN (namuna) | RU (namuna) |
 |---|---|---|
@@ -179,7 +179,9 @@ Seed testi har bir kategoriya kamida bitta faol feed orqali to'ldirilishini teks
 | `startaplar` | startup\*, funding, series a, ipo, valuation | стартап\*, инвестиц\*, раунд\* финансировани\*, венчурн\* |
 | `ilm-fan` | nasa, spacex, rocket\*, electric vehicle\*, astronom\* | космос\*, роскосмос\*, ракет\*, учен\*, электромобил\* |
 
-To'liq ro'yxat — `sources.json` → `keywordRules`. Qoidalar admin panelda (`sources`) kodsiz tahrirlanadi; M2-03 dan keyin haqiqiy ma'lumotlarda aniqlik o'lchanib, sozlanadi.
+To'liq ro'yxat — `sources.json` → `keywordRules`. Qoidalar admin panelda (`sources`) kodsiz tahrirlanadi.
+
+**Aniqlik (2026-09-24, 60 ta jonli RSS yozuvi, qo'lda belgilangan — `apps/web/tests/__fixtures__/classify/samples.json`):** sozlash to'plami 24/30 (80%), sozlashdan keyin olingan nazorat to'plami **24/30 (80%)**; faqat feed mapping bilan — 19/30 va 24/30. Asosiy xatolar: AI mavzusidagi boshqa kategoriya yangiliklari (AI kompaniyasining investitsiyasi, AI kiberxavfsizlikda, AI dasturchi vositalari) — `suniy-intellekt` ga og'adi. Qoidalar o'zgartirilsa, `pnpm --filter @blog-odya/web test classify-accuracy` natijasini tekshiring.
 
 ## 6. Seed fayllar va sxema
 

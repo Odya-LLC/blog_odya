@@ -5,6 +5,7 @@ import * as migration_20260924_081104_m2_01_scraping from './20260924_081104_m2_
 import * as migration_20260924_095304_m2_02_item_fetch_extract from './20260924_095304_m2_02_item_fetch_extract';
 import * as migration_20260924_103928_m2_04_editorial_queue from './20260924_103928_m2_04_editorial_queue';
 import * as migration_20260924_105254_m2_05_api_keys_audit from './20260924_105254_m2_05_api_keys_audit';
+import * as migration_20260924_113155_m2_03_dedupe_classify_cleanup from './20260924_113155_m2_03_dedupe_classify_cleanup';
 
 export const migrations = [
   {
@@ -40,6 +41,11 @@ export const migrations = [
   {
     up: migration_20260924_105254_m2_05_api_keys_audit.up,
     down: migration_20260924_105254_m2_05_api_keys_audit.down,
-    name: '20260924_105254_m2_05_api_keys_audit'
+    name: '20260924_105254_m2_05_api_keys_audit',
+  },
+  {
+    up: migration_20260924_113155_m2_03_dedupe_classify_cleanup.up,
+    down: migration_20260924_113155_m2_03_dedupe_classify_cleanup.down,
+    name: '20260924_113155_m2_03_dedupe_classify_cleanup'
   },
 ];

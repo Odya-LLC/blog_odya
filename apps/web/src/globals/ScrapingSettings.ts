@@ -5,7 +5,13 @@ import { isAdmin, isAdminOrEditor } from '@/access'
 /**
  * Scraping sozlamalari (TZ §3.5, §10.15): score chegarasi va jobs/cron limitlari.
  * `isEnabled`, `jobs*`, `maxNewItemsPerPoll`, `maxItemAgeHours`, `defaultPollIntervalMin` —
- * `feed.poll` va `/api/jobs/run` (M2-01, `src/jobs/settings.ts`); `minScore`, retention — M2-03.
+ * `feed.poll` va `/api/jobs/run` (M2-01, `src/jobs/settings.ts`); `extractedTextRetentionDays` —
+ * `maintenance.cleanup` (M2-03).
+ *
+ * `stats` — faqat job'lar yozadi (`src/jobs/stats.ts`, atomar JSONB merge): DB va R2 hajmi,
+ * oxirgi tozalash natijasi, ogohlantirishlar holati (takrorlanmasligi uchun). Admin/REST orqali
+ * o'zgartirilmaydi (maydon darajasidagi `update: false`) — sozlamalarni saqlash statistikani
+ * eski qiymat bilan bosib ketmaydi.
  */
 export const ScrapingSettings: GlobalConfig = {
   slug: 'scraping-settings',
@@ -89,9 +95,24 @@ export const ScrapingSettings: GlobalConfig = {
           label: 'Matnni saqlash muddati (kun)',
           defaultValue: 30,
           min: 1,
-          admin: { width: '33%' },
+          admin: {
+            width: '33%',
+            description:
+              'Qoralamaga aylanmagan elementlarning to‘liq matni shundan keyin o‘chiriladi',
+          },
         },
       ],
+    },
+    {
+      name: 'stats',
+      type: 'json',
+      label: 'Statistika (job’lar yozadi)',
+      access: { update: () => false },
+      admin: {
+        readOnly: true,
+        description:
+          'maintenance.cleanup (kuniga 1 marta): DB va R2 hajmi, tozalash natijasi; ogohlantirishlar holati',
+      },
     },
   ],
 }
