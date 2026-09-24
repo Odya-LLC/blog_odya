@@ -2,6 +2,7 @@ import { createHash, timingSafeEqual } from 'node:crypto'
 
 import type { Payload } from 'payload'
 
+import { runWithAuditChannel } from '@/audit/channel'
 import { TELEGRAM_TIMEOUT_MS } from '@/lib/telegram'
 
 import { type AlertRunResult, runAlertChecks } from './alerts'
@@ -148,6 +149,16 @@ export async function handleJobsRunRequest(
   }
 
   const payload = await deps.getPayload()
+  // Ichidagi barcha yozuvlar (Payload'ning `schedulePublish` task'i ham) audit'da `channel: job`.
+  return runWithAuditChannel('job', () => runJobsRequest(request, payload, deps, startedAt))
+}
+
+async function runJobsRequest(
+  request: Request,
+  payload: Payload,
+  deps: HandleJobsRunDeps,
+  startedAt: number,
+): Promise<Response> {
   try {
     const settings = await getJobsSettings(payload)
     const limitParam = Number(new URL(request.url).searchParams.get('limit'))
