@@ -14,6 +14,7 @@ import {
   putHtml,
 } from '@/scraping/archive'
 import { USER_AGENT } from '@/scraping/feed'
+import { planScrapeWrite } from '@/scraping/itemState'
 import { decodeHtml, fetchPage, PageFetchError } from '@/scraping/page'
 import {
   evaluateRobots,
@@ -215,5 +216,30 @@ describe('scrapeItem: navbatlar va retry', () => {
     expect(isFinalTaskError(taskError(3))).toBe(true)
     // Workflow darajasidagi xato (task'dan tashqarida) — retry yo'q.
     expect(isFinalTaskError(new Error('x'))).toBe(true)
+  })
+})
+
+describe('planScrapeWrite: muharrir holati saqlanadi', () => {
+  const result = { status: 'scraped' as const, error: null, extractedText: 'Matn', wordCount: 1 }
+
+  it('pending / error — job hammasini yozadi', () => {
+    expect(planScrapeWrite('pending', result)).toEqual({ kind: 'full', data: result })
+    expect(planScrapeWrite('error', result)).toEqual({ kind: 'full', data: result })
+  })
+
+  it('drafted — faqat matn/metadata, status va error yozilmaydi', () => {
+    expect(planScrapeWrite('drafted', result)).toEqual({
+      kind: 'content',
+      data: { extractedText: 'Matn', wordCount: 1 },
+    })
+    expect(planScrapeWrite('drafted', { status: 'error', error: 'HTTP 404' })).toEqual({
+      kind: 'skip',
+    })
+  })
+
+  it('rejected / duplicate / scraped / yo‘q element — hech narsa yozilmaydi', () => {
+    for (const status of ['rejected', 'duplicate', 'scraped', undefined]) {
+      expect(planScrapeWrite(status, result)).toEqual({ kind: 'skip' })
+    }
   })
 })

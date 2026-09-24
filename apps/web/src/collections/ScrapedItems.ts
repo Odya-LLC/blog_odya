@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
 
 import { isAdmin, isAdminOrEditor } from '@/access'
+import { scrapedItemEndpoints } from '@/editorial/endpoints'
 
 /**
  * `scraped-items` holatlari (TZ §10.2). `pending` — RSS'dan topilgan, sahifa hali yuklanmagan /
@@ -54,6 +55,8 @@ export const ScrapedItems: CollectionConfig = {
     group: 'Scraping',
   },
   defaultSort: '-createdAt',
+  // Tahririyat navbati (M2-04): "Qoralamaga olish" va "Rad etish" — `src/editorial/`.
+  endpoints: scrapedItemEndpoints,
   fields: [
     {
       name: 'title',
@@ -249,6 +252,28 @@ export const ScrapedItems: CollectionConfig = {
       relationTo: 'posts',
       label: 'Post',
       admin: { position: 'sidebar' },
+    },
+    {
+      name: 'rejectReason',
+      type: 'textarea',
+      label: 'Rad etish sababi',
+      admin: {
+        position: 'sidebar',
+        condition: (data) => data?.status === 'rejected',
+      },
+    },
+    {
+      name: 'handledBy',
+      type: 'relationship',
+      relationTo: 'users',
+      label: 'Kim ko‘rib chiqdi',
+      admin: { position: 'sidebar', readOnly: true },
+    },
+    {
+      name: 'handledAt',
+      type: 'date',
+      label: 'Ko‘rib chiqilgan vaqt',
+      admin: { position: 'sidebar', readOnly: true, date: { pickerAppearance: 'dayAndTime' } },
     },
   ],
 }

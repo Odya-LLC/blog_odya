@@ -3,6 +3,7 @@ import type { Payload, TaskConfig } from 'payload'
 import type { ScrapedItem, Source } from '@/payload-types'
 import { archiveKey, putHtml } from '@/scraping/archive'
 import { fetchPage, PAGE_FETCH_TIMEOUT_MS, PageFetchError } from '@/scraping/page'
+import { isScrapeEnrichable, type ScrapeWriteResult, writeScrapeResult } from '@/scraping/itemState'
 import {
   evaluateRobots,
   fetchRobots,
@@ -74,14 +75,16 @@ export function rssHtml(contentHtml: string | null | undefined, item: ScrapedIte
   return item.excerpt ? `<p>${escapeHtml(item.excerpt)}</p>` : ''
 }
 
-/** Element holatini `error` ga o'tkazadi (retry qilinmaydigan yoki oxirgi xato). */
-export async function markItemError(payload: Payload, id: Id, message: string): Promise<void> {
-  await payload.update({
-    collection: 'scraped-items',
-    id,
-    depth: 0,
-    data: { status: 'error', error: message.slice(0, 2000) },
-  })
+/**
+ * Element holatini `error` ga o'tkazadi (retry qilinmaydigan yoki oxirgi xato). Muharrir
+ * allaqachon hal qilgan element (`drafted`, `rejected`) o'zgarmaydi — `writeScrapeResult`.
+ */
+export async function markItemError(
+  payload: Payload,
+  id: Id,
+  message: string,
+): Promise<ScrapeWriteResult> {
+  return writeScrapeResult(payload, id, { status: 'error', error: message.slice(0, 2000) })
 }
 
 async function loadItem(
@@ -95,8 +98,9 @@ async function loadItem(
     disableErrors: true,
   })
   if (!item) return { skip: 'not-found' }
-  // Faqat navbatdagi elementlar (qo'lda qayta ishga tushirish uchun `error` ham).
-  if (item.status !== 'pending' && item.status !== 'error') return { skip: 'not-pending' }
+  // Navbatdagi elementlar (qo'lda qayta ishga tushirish uchun `error` ham) va muharrir matn
+  // ajratilmasdan oldin qoralamaga olgan `drafted` — unga faqat manba matni yoziladi.
+  if (!isScrapeEnrichable(item.status)) return { skip: 'not-pending' }
   const sourceId = relationId(item.source)
   const source = sourceId
     ? await payload.findByID({ collection: 'sources', id: sourceId, depth: 0, disableErrors: true })

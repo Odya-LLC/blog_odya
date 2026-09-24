@@ -64,6 +64,23 @@ export default buildConfig({
     importMap: {
       baseDir: path.resolve(dirname),
     },
+    // Tahririyat (M2-04, TZ §6.1): navbat va review view'lari, dashboard vidjeti.
+    components: {
+      beforeNavLinks: ['@/components/admin/EditorialNavLinks#EditorialNavLinks'],
+      beforeDashboard: ['@/components/admin/EditorialStats#EditorialStats'],
+      views: {
+        newsQueue: {
+          Component: '@/components/admin/NewsQueueView#NewsQueueView',
+          path: '/news-queue',
+          meta: { title: 'Yangiliklar navbati' },
+        },
+        reviewQueue: {
+          Component: '@/components/admin/ReviewQueueView#ReviewQueueView',
+          path: '/review',
+          meta: { title: 'Tekshiruv navbati' },
+        },
+      },
+    },
   },
   i18n,
   // Sayt yozuvlari (TZ §3.6): lotin — asosiy, kirill — hosila; tarjima bo'lmasa lotinga qaytadi.

@@ -385,6 +385,9 @@ export interface ScrapedItem {
   wordCount?: number | null;
   suggestedCategory?: (number | null) | Category;
   post?: (number | null) | Post;
+  rejectReason?: string | null;
+  handledBy?: (number | null) | User;
+  handledAt?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1299,6 +1302,9 @@ export interface ScrapedItemsSelect<T extends boolean = true> {
   wordCount?: T;
   suggestedCategory?: T;
   post?: T;
+  rejectReason?: T;
+  handledBy?: T;
+  handledAt?: T;
   updatedAt?: T;
   createdAt?: T;
 }
