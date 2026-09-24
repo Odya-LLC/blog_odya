@@ -33,7 +33,13 @@ Supabase pg_cron (*/10) ──pg_net──▶ POST https://blog.odya.uz/api/jobs
    curl -sS -o /dev/null -w '%{http_code}\n' -X POST -H "Authorization: Bearer wrong" https://blog.odya.uz/api/jobs/run
    # → 401
    ```
-   Manbalar bazada bo'lishi kerak: `pnpm seed` (production'da — lokal mashinadan `DATABASE_URL_DIRECT` bilan, yoki admin'dan qo'lda).
+   Manbalar bazada bo'lishi kerak — prod seed GitHub Actions orqali (demo kontentsiz, idempotent):
+   ```bash
+   gh workflow run seed-prod --ref main            # SEED_DEMO=false (default)
+   gh run watch "$(gh run list --workflow seed-prod --limit 1 --json databaseId -q '.[0].databaseId')"
+   ```
+   Run'ning Summary'sida: `Manbalar: +7, mavjud 0` (qayta ishga tushirilsa — `+0, mavjud 7`), `Demo kontent o'tkazib yuborildi`.
+   Batafsil (sirlar, huquqiy sahifa o'rinbosarlari) — README → "Prod seed".
 4. **Supabase** → SQL Editor:
    1. `infra/supabase/cron.sql` boshidagi **1-qadam** — Vault'ga URL va sirni qo'shing (qiymatlarni faqat SQL Editor'da yozing, repo'ga emas).
    2. `infra/supabase/cron.sql` ni to'liq ishga tushiring (Database → Extensions'da `pg_cron` va `pg_net` avtomatik yoqiladi).
