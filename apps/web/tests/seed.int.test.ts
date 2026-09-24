@@ -2,9 +2,9 @@ import { LEGAL_PAGES } from '@blog-odya/guidelines'
 import categoriesJson from '@blog-odya/shared/seed/categories.json' with { type: 'json' }
 import sourcesJson from '@blog-odya/shared/seed/sources.json' with { type: 'json' }
 import type { CollectionSlug, Payload } from 'payload'
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
-import { seed } from '@/seed'
+import { parseSeedDemo, seed } from '@/seed'
 import { SEED_AUTHOR, SEED_POSTS, SEED_TAGS } from '@/seed/data'
 
 import { initTestPayload } from './helpers/payload'
@@ -23,15 +23,86 @@ async function countBySlug(collection: CollectionSlug, slugs: readonly string[])
   return totalDocs
 }
 
+beforeAll(async () => {
+  payload = await initTestPayload()
+})
+
+afterAll(async () => {
+  await payload?.db?.destroy?.()
+})
+
+describe('parseSeedDemo (SEED_DEMO env)', () => {
+  it('berilmagan/true/1 — demo yoqiq, false/0 — o‘chiq', () => {
+    expect(parseSeedDemo(undefined)).toBe(true)
+    expect(parseSeedDemo('')).toBe(true)
+    expect(parseSeedDemo('true')).toBe(true)
+    expect(parseSeedDemo('1')).toBe(true)
+    expect(parseSeedDemo('false')).toBe(false)
+    expect(parseSeedDemo(' FALSE ')).toBe(false)
+    expect(parseSeedDemo('0')).toBe(false)
+  })
+
+  it('noma’lum qiymat — xato (imlo xatosi prod’ga demo yuklamasin)', () => {
+    expect(() => parseSeedDemo('no')).toThrow(/SEED_DEMO/)
+  })
+})
+
+// Toza DB'da (CI) birinchi bo'lib ishlaydi — demo'siz seed kategoriya/manba/sahifalarni o'zi yaratadi.
+describe('seed: demo o‘chiq (prod, SEED_DEMO=false)', () => {
+  it('teg/post/media yaratmaydi, qolganini yaratadi va idempotent', async () => {
+    const counts = async () => ({
+      posts: (await payload.count({ collection: 'posts' })).totalDocs,
+      tags: (await payload.count({ collection: 'tags' })).totalDocs,
+      media: (await payload.count({ collection: 'media' })).totalDocs,
+    })
+    const before = await counts()
+    const createSpy = vi.spyOn(payload, 'create')
+    const messages: string[] = []
+    try {
+      const first = await seed(payload, { demo: false, log: (m) => messages.push(m) })
+      const second = await seed(payload, { demo: false })
+
+      const created = createSpy.mock.calls.map(([args]) => args.collection)
+      for (const collection of ['posts', 'tags', 'media'] as const) {
+        expect(created, collection).not.toContain(collection)
+      }
+      for (const summary of [first, second]) {
+        expect(summary.demo).toBe(false)
+        expect(summary.posts).toEqual({ created: 0, existing: 0 })
+        expect(summary.tags).toEqual({ created: 0, existing: 0 })
+        expect(summary.media).toEqual({ created: 0, existing: 0, failed: 0 })
+      }
+      expect(messages.some((m) => m.includes("Demo kontent o'tkazib yuborildi"))).toBe(true)
+      expect(await counts()).toEqual(before)
+
+      // Ikkinchi ishga tushirish hech narsa yaratmaydi.
+      for (const key of ['categories', 'pages', 'authors', 'sources'] as const) {
+        expect(second[key].created, key).toBe(0)
+      }
+      expect(second.globals).toEqual({ siteSettings: false, header: false, footer: false })
+    } finally {
+      createSpy.mockRestore()
+    }
+
+    const categorySlugs = (categoriesJson as { slug: string }[]).map((c) => c.slug)
+    expect(await countBySlug('categories', categorySlugs)).toBe(9)
+    expect(
+      await countBySlug(
+        'pages',
+        LEGAL_PAGES.map((p) => p.slug),
+      ),
+    ).toBe(6)
+    expect(await countBySlug('authors', [SEED_AUTHOR.slug])).toBe(1)
+    const sourceSlugs = (sourcesJson as { slug: string }[]).map((s) => s.slug)
+    expect(await countBySlug('sources', sourceSlugs)).toBe(7)
+    const header = await payload.findGlobal({ slug: 'header', depth: 0 })
+    expect(header.navItems?.length).toBeGreaterThan(0)
+    const footer = await payload.findGlobal({ slug: 'footer', depth: 0 })
+    expect(footer.columns).toHaveLength(2)
+  })
+})
+
 describe('seed: idempotent', () => {
-  beforeAll(async () => {
-    payload = await initTestPayload()
-  })
-
-  afterAll(async () => {
-    await payload?.db?.destroy?.()
-  })
-
   it('ikki marta ishga tushirilganda dublikat yaratmaydi', async () => {
     const first = await seed(payload)
     const second = await seed(payload)
