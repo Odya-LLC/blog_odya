@@ -11,8 +11,6 @@ import { SourceBox } from '@/components/blog/SourceBox'
 import { TagList } from '@/components/blog/TagList'
 import { TelegramCTA } from '@/components/blog/TelegramCTA'
 import { RichText } from '@/components/richtext/RichText'
-import { env } from '@/env'
-import { getSiteStrings } from '@/i18n/site'
 import type { Author, Media, Tag } from '@/payload-types'
 
 import { findRedirect, getArticle, getSiteChrome } from '../data'
@@ -28,6 +26,9 @@ import {
   toTagRef,
 } from '../mappers'
 import { localizePath, postPath } from '../paths'
+import { absoluteUrl } from '../seo/config'
+import { JsonLd } from '../seo/JsonLd'
+import { articleSeo } from '../seo/pages'
 import { SitePage } from './SitePage'
 
 type ArticleViewProps = { locale: Locale; categorySlug: string; slug: string }
@@ -51,19 +52,12 @@ async function loadOrRedirect({ locale, categorySlug, slug }: ArticleViewProps) 
   notFound()
 }
 
+/** SEO (TZ §8.2): title, description, canonical, hreflang, OG (`article:*`), Twitter Card. */
 export async function articleMetadata(props: ArticleViewProps): Promise<Metadata> {
   const data = await getArticle(props.locale, props.slug)
+  // Kategoriya URL'i noto'g'ri bo'lsa sahifa 301 qiladi — metadata ham kanonik URL bilan.
   if (!data) return {}
-  const t = getSiteStrings(props.locale)
-  const { post } = data
-  return {
-    title: post.meta?.title || `${post.title} — ${t.siteName}`,
-    description: post.meta?.description || post.excerpt || undefined,
-  }
-}
-
-function siteUrl(path: string): string {
-  return new URL(path, env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000').toString()
+  return articleSeo(props.locale, data).metadata
 }
 
 /**
@@ -86,9 +80,11 @@ export async function ArticleView(props: ArticleViewProps) {
     return doc ? [toTagRef(doc, locale)] : []
   })
   const telegramHref = chrome.telegram[locale]
+  const { jsonLd } = articleSeo(locale, data)
 
   return (
     <SitePage locale={locale} pathname={path} activeCategorySlug={category.slug}>
+      <JsonLd data={jsonLd} />
       <Container className="flex flex-col gap-10 py-6 lg:py-10">
         <article className="flex flex-col gap-8" data-testid="article">
           <ArticleHeader
@@ -117,7 +113,7 @@ export async function ArticleView(props: ArticleViewProps) {
             <TagList locale={locale} tags={tags} />
             <ShareButtons
               locale={locale}
-              url={siteUrl(path)}
+              url={absoluteUrl(path)}
               title={post.title}
               className="border-t border-border pt-6"
             />

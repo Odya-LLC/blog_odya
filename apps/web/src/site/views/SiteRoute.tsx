@@ -6,7 +6,7 @@ import { categoryPath } from '../paths'
 import { resolveSiteRoute } from '../route'
 import { ArticleView, articleMetadata } from './ArticleView'
 import { CategoryView, categoryMetadata } from './CategoryView'
-import { HomeView } from './HomeView'
+import { HomeView, homeMetadata } from './HomeView'
 
 type Segments = string[] | undefined
 
@@ -35,8 +35,10 @@ export async function siteRouteMetadata(locale: Locale, path: Segments): Promise
       return categoryMetadata({ locale, slug: route.category, page: route.page })
     case 'article':
       return articleMetadata({ locale, categorySlug: route.category, slug: route.slug })
+    case 'home':
+      return homeMetadata(locale)
     default:
-      // Bosh sahifa — layout metadata'si.
+      // Redirect / 404 — layout (va not-found) metadata'si.
       return {}
   }
 }
