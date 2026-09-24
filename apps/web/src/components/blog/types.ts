@@ -29,6 +29,8 @@ export type CategoryRef = {
 export type NavCategory = CategoryRef & {
   /** `false` — "Yana" menyusida (masalan, Ilm-fan). */
   isInMenu: boolean
+  /** Yangi oynada ochish (`header` global havolasi). */
+  newTab?: boolean
 }
 
 export type TagRef = {
@@ -67,6 +69,14 @@ export type PostSummary = {
 export type LinkItem = {
   label: string
   href: string
+  /** Yangi oynada (`target="_blank"`) — menyu havolasida `newTab`. */
+  newTab?: boolean
+}
+
+/** Footer ustuni (`footer` global'i, TZ §10.15): sarlavha + havolalar. */
+export type FooterColumn = {
+  title: string | null
+  links: LinkItem[]
 }
 
 /** Har bir yozuv uchun Telegram kanal havolasi (TZ §7.1: ikkita kanal). */

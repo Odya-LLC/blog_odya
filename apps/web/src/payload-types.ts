@@ -493,7 +493,7 @@ export interface Category {
     noindex?: boolean | null;
   };
   /**
-   * Lotin, ikkala yozuvda bir xil. Bo'sh qoldirilsa sarlavhadan yasaladi.
+   * Lotin, ikkala yozuvda bir xil; URL: /{slug}. Kategoriya va sahifa slug'lari takrorlanmasligi, band marshrutlar (kr, tag, author, search, bot, page…) bo‘lmasligi kerak.
    */
   slug: string;
   /**
@@ -626,7 +626,7 @@ export interface Page {
     noindex?: boolean | null;
   };
   /**
-   * Lotin, ikkala yozuvda bir xil. Bo'sh qoldirilsa sarlavhadan yasaladi.
+   * Lotin, ikkala yozuvda bir xil; URL: /{slug}. Kategoriya va sahifa slug'lari takrorlanmasligi, band marshrutlar (kr, tag, author, search, bot, page…) bo‘lmasligi kerak.
    */
   slug: string;
   updatedAt: string;

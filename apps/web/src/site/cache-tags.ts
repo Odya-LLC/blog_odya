@@ -28,6 +28,21 @@ export function categoryTag(slug: string): string {
   return `category:${slug}`
 }
 
+/** Teg sahifasi (`/tag/{slug}`) — nomi, tavsifi (M1-07). */
+export function tagTag(slug: string): string {
+  return `tag:${slug}`
+}
+
+/** Muallif sahifasi (`/author/{slug}`) — profil (M1-07). */
+export function authorTag(slug: string): string {
+  return `author:${slug}`
+}
+
+/** Statik sahifa (`/{slug}`, `pages`) (M1-07). */
+export function pageTag(slug: string): string {
+  return `page:${slug}`
+}
+
 type PostLike =
   | {
       slug?: string | null
@@ -52,6 +67,41 @@ export function postRevalidationTags(doc: PostLike, previousDoc?: PostLike): str
 }
 
 type SlugLike = { slug?: string | null } | null | undefined
+
+function withSlugTags(
+  base: string[],
+  make: (slug: string) => string,
+  doc: SlugLike,
+  previousDoc?: SlugLike,
+): string[] {
+  const tags = new Set<string>(base)
+  if (doc?.slug) tags.add(make(doc.slug))
+  if (previousDoc?.slug) tags.add(make(previousDoc.slug))
+  return [...tags]
+}
+
+/** Teg o'zgardi: teg sahifasi va maqolalardagi teg nomlari (`posts`). */
+export function tagRevalidationTags(doc: SlugLike, previousDoc?: SlugLike): string[] {
+  return withSlugTags([CACHE_TAGS.posts], tagTag, doc, previousDoc)
+}
+
+/** Muallif o'zgardi: profil sahifasi va maqolalardagi muallif bloki (`posts`). */
+export function authorRevalidationTags(doc: SlugLike, previousDoc?: SlugLike): string[] {
+  return withSlugTags([CACHE_TAGS.posts], authorTag, doc, previousDoc)
+}
+
+type PageLike = SlugLike & { _status?: 'draft' | 'published' | null }
+
+/**
+ * Statik sahifa o'zgardi: sahifaning o'zi, sahifalar ro'yxati (sitemap) va karkas (`nav`: footer
+ * havolalari slug'dan yasaladi). Hech qachon chop etilmagan qoralama keshga tegmaydi.
+ */
+export function pageRevalidationTags(doc: PageLike, previousDoc?: PageLike): string[] {
+  const isPublic = doc?._status !== 'draft'
+  const wasPublic = Boolean(previousDoc) && previousDoc?._status !== 'draft'
+  if (!isPublic && !wasPublic) return []
+  return withSlugTags([CACHE_TAGS.pages, CACHE_TAGS.nav], pageTag, doc, previousDoc)
+}
 
 /** Kategoriya o'zgardi: menyu, kategoriya sahifasi va kartochkalardagi nom. */
 export function categoryRevalidationTags(doc: SlugLike, previousDoc?: SlugLike): string[] {

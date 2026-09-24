@@ -26,17 +26,33 @@ export function postPath(locale: Locale, categorySlug: string, slug: string): st
   return withLocalePrefix(locale, `/${categorySlug}/${slug}`)
 }
 
-export function tagPath(locale: Locale, slug: string): string {
-  return withLocalePrefix(locale, `/tag/${slug}`)
+function paged(base: string, page: number): string {
+  return page > 1 ? `${base}/${PAGE_SEGMENT}/${page}` : base
 }
 
-export function authorPath(locale: Locale, slug: string): string {
-  return withLocalePrefix(locale, `/author/${slug}`)
+/** `/tag/{slug}` yoki `/tag/{slug}/page/{n}` (n ≥ 2). */
+export function tagPath(locale: Locale, slug: string, page = 1): string {
+  return withLocalePrefix(locale, paged(`/tag/${slug}`, page))
 }
 
-/** Statik sahifa (`pages`): `/{slug}` — M1-07 da route qo'shiladi. */
+/** `/author/{slug}` yoki `/author/{slug}/page/{n}` (n ≥ 2). */
+export function authorPath(locale: Locale, slug: string, page = 1): string {
+  return withLocalePrefix(locale, paged(`/author/${slug}`, page))
+}
+
+/** Statik sahifa (`pages`): `/{slug}`. */
 export function pagePath(locale: Locale, slug: string): string {
   return withLocalePrefix(locale, `/${slug}`)
+}
+
+/** Qidiruv: `/search?q=…&page=n` (`/kr/search`). So'rovsiz — faqat forma. */
+export function searchPath(locale: Locale, query?: string, page = 1): string {
+  const params = new URLSearchParams()
+  const q = query?.trim()
+  if (q) params.set('q', q)
+  if (q && page > 1) params.set('page', String(page))
+  const search = params.toString()
+  return withLocalePrefix(locale, `/search${search ? `?${search}` : ''}`)
 }
 
 /** Lotin (prefiksiz) ichki yo'l → joriy yozuvdagi yo'l; tashqi URL o'zgarishsiz. */

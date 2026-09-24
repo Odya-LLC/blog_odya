@@ -2,7 +2,7 @@ import type { CollectionConfig } from 'payload'
 
 import { anyone, isAdmin, isAdminOrEditor } from '@/access'
 import { slugField } from '@/fields/slug'
-import { revalidatePostListsAfterChange } from '@/site/revalidate'
+import { revalidateTagAfterChange, revalidateTagAfterDelete } from '@/site/revalidate'
 
 /**
  * Teglar (TZ §10.5): o'yin/platforma/kompaniya nomlari (CS2, ChatGPT, iPhone ...).
@@ -21,7 +21,8 @@ export const Tags: CollectionConfig = {
     delete: isAdmin,
   },
   hooks: {
-    afterChange: [revalidatePostListsAfterChange],
+    afterChange: [revalidateTagAfterChange],
+    afterDelete: [revalidateTagAfterDelete],
   },
   admin: {
     useAsTitle: 'name',

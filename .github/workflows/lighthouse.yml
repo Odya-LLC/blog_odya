@@ -1,0 +1,175 @@
+# Lighthouse CI (TZ §8.4, §9.7, §11.7; M1-07): mobil Performance ≥ 90, SEO = 100,
+# Accessibility ≥ 90, birinchi yuklash JS ≤ 150 KB gzip — bosh sahifa, maqola, kategoriya.
+# Sozlamalar va chegaralar: apps/web/lighthouserc.cjs.
+#
+# Ikki job:
+# 1. `pr` (pull_request) — MAJBURIY tekshiruv. Preview bilan bir xil kod production build qilinadi
+#    (`next build` + `next start`), Postgres + MinIO'da seed demo kontenti bilan. Sabab: Vercel
+#    Preview'da DB/R2 sirlari yo'q (egasi qarori, TZ §9.7) — preview'da maqola/kategoriya 404
+#    bo'ladi, Lighthouse ularni o'lchay olmaydi.
+# 2. `preview` (deployment_status, Vercel Preview muvaffaqiyatli) — preview URL'ga (real Vercel
+#    infratuzilmasi: brotli, CDN). Standart: faqat bosh sahifa (`vars.LHCI_PREVIEW_PATHS` bilan
+#    kengaytiriladi, masalan preview'ga DB ulansa: `/,/kibersport,/kibersport/<slug>`).
+#    Preview ataylab `noindex` — `is-crawlable` va `canonical` auditlari o'tkazib yuboriladi.
+#    Vercel Deployment Protection yoqilgan bo'lsa: repo secret `VERCEL_AUTOMATION_BYPASS_SECRET`
+#    (Vercel → Project → Settings → Deployment Protection → Protection Bypass for Automation).
+name: Lighthouse CI
+
+on:
+  pull_request:
+  deployment_status:
+
+concurrency:
+  group: lighthouse-${{ github.event_name }}-${{ github.event.pull_request.number || github.event.deployment.id }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  LHCI_VERSION: 0.15.1
+
+jobs:
+  pr:
+    name: Lighthouse (production build)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: blog_odya
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d blog_odya"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    # Faqat CI uchun test qiymatlari — haqiqiy sirlar emas. Media — MinIO ommaviy bucket'idan
+    # (production'dagi R2 + media domeni kabi, Payload orqali emas).
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/blog_odya
+      DATABASE_URL_DIRECT: postgresql://postgres:postgres@localhost:5432/blog_odya
+      PAYLOAD_SECRET: ci-only-not-a-secret-0123456789abcdef
+      S3_ENDPOINT: http://localhost:9000
+      S3_BUCKET: media
+      S3_ACCESS_KEY_ID: minioadmin
+      S3_SECRET_ACCESS_KEY: minioadmin
+      S3_REGION: us-east-1
+      S3_FORCE_PATH_STYLE: 'true'
+      MEDIA_PUBLIC_URL: http://localhost:9000/media
+      # Canonical/hreflang shu manzilga qaraydi — Lighthouse `canonical` auditi uchun bir xil origin.
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      JOBS_MODE: endpoint
+      NEXT_TELEMETRY_DISABLED: '1'
+      TURBO_TELEMETRY_DISABLED: '1'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Start MinIO
+        run: |
+          docker run -d --name minio -p 9000:9000 \
+            -e MINIO_ROOT_USER=minioadmin -e MINIO_ROOT_PASSWORD=minioadmin \
+            quay.io/minio/minio:RELEASE.2025-04-22T22-12-26Z server /data
+          for i in $(seq 1 30); do
+            curl -fsS http://localhost:9000/minio/health/live && break
+            sleep 1
+          done
+          # media bucket — ommaviy o'qish (MEDIA_PUBLIC_URL orqali rasmlar).
+          docker run --rm --network host --entrypoint sh \
+            quay.io/minio/mc:RELEASE.2025-04-16T18-13-26Z \
+            -c 'mc alias set local http://localhost:9000 minioadmin minioadmin && mc mb --ignore-existing local/media && mc anonymous set download local/media'
+
+      - name: Migrate
+        run: pnpm migrate
+
+      - name: Seed (demo postlar)
+        run: pnpm seed
+
+      - name: Build
+        run: pnpm build
+
+      - name: Lighthouse CI (mobil, 3 o'lchov, median)
+        working-directory: apps/web
+        env:
+          LHCI_BASE_URL: http://localhost:3000
+          LHCI_START_SERVER: '1'
+        run: pnpm dlx @lhci/cli@${{ env.LHCI_VERSION }} autorun --config=./lighthouserc.cjs
+
+      - name: Upload Lighthouse reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-pr-${{ github.event.pull_request.number }}
+          path: apps/web/.lighthouseci/
+          retention-days: 14
+
+  preview:
+    name: Lighthouse (Vercel Preview)
+    if: >-
+      github.event_name == 'deployment_status' &&
+      github.event.deployment_status.state == 'success' &&
+      contains(github.event.deployment_status.environment, 'Preview')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    env:
+      LHCI_BASE_URL: ${{ github.event.deployment_status.environment_url || github.event.deployment_status.target_url }}
+      LHCI_PATHS: ${{ vars.LHCI_PREVIEW_PATHS || '/' }}
+      LHCI_PREVIEW: '1'
+      VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.deployment.sha }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      # Vercel "success" holatidan keyin ham birinchi so'rovlar sovuq bo'lishi mumkin —
+      # preview javob berguncha kutamiz (va keshni isitamiz).
+      - name: Wait for preview
+        run: |
+          header=()
+          if [ -n "$VERCEL_AUTOMATION_BYPASS_SECRET" ]; then
+            header=(-H "x-vercel-protection-bypass: $VERCEL_AUTOMATION_BYPASS_SECRET")
+          fi
+          for i in $(seq 1 30); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' "${header[@]}" "$LHCI_BASE_URL/")
+            echo "HTTP $code"
+            [ "$code" = "200" ] && exit 0
+            sleep 10
+          done
+          echo "::error::Preview javob bermadi ($LHCI_BASE_URL). Deployment Protection yoqilgan bo'lsa, VERCEL_AUTOMATION_BYPASS_SECRET secret'ini qo'shing."
+          exit 1
+
+      - name: Lighthouse CI (mobil, 3 o'lchov, median)
+        working-directory: apps/web
+        run: npx --yes @lhci/cli@${{ env.LHCI_VERSION }} autorun --config=./lighthouserc.cjs
+
+      - name: Upload Lighthouse reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-preview-${{ github.event.deployment.id }}
+          path: apps/web/.lighthouseci/
+          retention-days: 14

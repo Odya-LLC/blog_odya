@@ -54,7 +54,9 @@ export function CoverImage({
           alt={image.alt}
           fill
           sizes={sizes}
-          priority={priority}
+          // Next.js 16: `priority` eskirgan — LCP rasmi uchun `loading="eager"` + `fetchPriority="high"`
+          // (hujjat tavsiyasi; `preload` bir nechta LCP nomzodida ortiqcha yuklaydi).
+          {...(priority ? { loading: 'eager' as const, fetchPriority: 'high' as const } : {})}
           placeholder={image.blurDataURL ? 'blur' : 'empty'}
           blurDataURL={image.blurDataURL}
           className="object-cover"

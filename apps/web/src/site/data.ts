@@ -17,18 +17,22 @@ import { cache } from 'react'
 
 import type {
   CategoryRef,
+  FooterColumn,
+  ImageRef,
   LinkItem,
   NavCategory,
   PostSummary,
   TelegramLinks,
 } from '@/components/blog/types'
 import { env, PHASE_PRODUCTION_BUILD } from '@/env'
-import type { Category, Post, Redirect } from '@/payload-types'
+import type { Author, Category, Page, Post, Redirect, Tag } from '@/payload-types'
 
-import { CACHE_TAGS, categoryTag, postTag } from './cache-tags'
+import { authorTag, CACHE_TAGS, categoryTag, pageTag, postTag, tagTag } from './cache-tags'
 import {
   populated,
   toCategoryRef,
+  toFooterColumns,
+  toImageRef,
   toLegalLinks,
   toNavCategories,
   toPostSummaries,
@@ -126,14 +130,20 @@ async function findPosts(
 // ---------------------------------------------------------------------------
 
 export type SiteChrome = {
+  /** Header menyusi (`header` global: asosiy + "Yana"; bo'sh bo'lsa — kategoriyalar). */
   categories: NavCategory[]
   legalLinks: LinkItem[]
+  /** Footer ustunlari (`footer` global); bo'sh — footer standart ustunlarni chizadi. */
+  footerColumns: FooterColumn[]
+  copyright: string | null
   telegram: TelegramLinks
 }
 
 const EMPTY_CHROME = (): SiteChrome => ({
   categories: [],
   legalLinks: [],
+  footerColumns: [],
+  copyright: null,
   telegram: toTelegramLinks(null, env),
 })
 
@@ -157,6 +167,8 @@ export async function loadSiteChrome(locale: Locale): Promise<SiteChrome> {
   return {
     categories: toNavCategories(header, categories.docs, locale),
     legalLinks: toLegalLinks(footer, locale),
+    footerColumns: toFooterColumns(footer, locale),
+    copyright: footer.copyright?.trim() || null,
     telegram: toTelegramLinks(settings, env),
   }
 }
@@ -369,6 +381,177 @@ async function findRelated(locale: Locale, post: Post, category: Category): Prom
     locale,
   )
 }
+
+// ---------------------------------------------------------------------------
+// Teg va muallif sahifalari (M1-07): profil + postlar ro'yxati, sahifalash `/…/page/{n}`
+// ---------------------------------------------------------------------------
+
+/** Teg/muallif sahifasidagi postlar soni. */
+export const LISTING_PAGE_SIZE = 12
+
+type Listing<T> = {
+  posts: PostSummary[]
+  page: number
+  totalPages: number
+  /** Jami postlar (teg: < 3 — `noindex`, TZ §8.1). */
+  totalDocs: number
+} & T
+
+type SeoFields = {
+  metaTitle: string | null
+  metaDescription: string | null
+  /** `meta.noindex` (plugin-seo). */
+  noindex: boolean
+  updatedAt: string
+}
+
+export type TagPageData = Listing<{
+  tag: { slug: string; name: string; description: string | null } & SeoFields
+}>
+
+async function findListingPosts(locale: Locale, where: Where, page: number) {
+  const list = await findPosts(locale, where, LISTING_PAGE_SIZE, page)
+  // `page` > oxirgi sahifa — 404 (1-sahifa bo'sh bo'lsa ham ko'rsatiladi: bo'sh holat).
+  if (page > 1 && page > list.totalPages) return null
+  return {
+    posts: toPostSummaries(list.docs, locale),
+    page,
+    totalPages: Math.max(1, list.totalPages),
+    totalDocs: list.totalDocs,
+  }
+}
+
+export async function loadTagPage(
+  locale: Locale,
+  slug: string,
+  page: number,
+): Promise<TagPageData | null> {
+  if (!hasDatabase()) return null
+  const payload = await payloadClient()
+  const { docs } = await payload.find({
+    collection: 'tags',
+    locale,
+    where: { slug: { equals: slug } },
+    limit: 1,
+    depth: 0,
+    overrideAccess: false,
+  })
+  const tag = docs[0] as Tag | undefined
+  if (!tag) return null
+  const listing = await findListingPosts(locale, { tags: { in: [tag.id] } }, page)
+  if (!listing) return null
+  return {
+    ...listing,
+    tag: {
+      slug: tag.slug,
+      name: tag.name,
+      description: tag.description ?? null,
+      metaTitle: tag.meta?.title ?? null,
+      metaDescription: tag.meta?.description ?? null,
+      noindex: Boolean(tag.meta?.noindex),
+      updatedAt: tag.updatedAt,
+    },
+  }
+}
+
+export const getTagPage = (
+  locale: Locale,
+  slug: string,
+  page: number,
+): Promise<TagPageData | null> =>
+  cached(
+    () => loadTagPage(locale, slug, page),
+    ['tag', locale, slug, String(page)],
+    [tagTag(slug), CACHE_TAGS.posts, CACHE_TAGS.nav],
+  )
+
+export type AuthorProfile = {
+  slug: string
+  name: string
+  position: string | null
+  bio: string | null
+  avatar: ImageRef | null
+  /** Avatar asl URL'i (JSON-LD `Person.image`). */
+  avatarUrl: string | null
+  socials: Array<{ platform: string; url: string }>
+  updatedAt: string
+}
+
+export type AuthorPageData = Listing<{ author: AuthorProfile }>
+
+export async function loadAuthorPage(
+  locale: Locale,
+  slug: string,
+  page: number,
+): Promise<AuthorPageData | null> {
+  if (!hasDatabase()) return null
+  const payload = await payloadClient()
+  const { docs } = await payload.find({
+    collection: 'authors',
+    locale,
+    where: { slug: { equals: slug } },
+    limit: 1,
+    depth: 1,
+    overrideAccess: false,
+  })
+  const author = docs[0] as Author | undefined
+  if (!author) return null
+  const listing = await findListingPosts(locale, { authors: { in: [author.id] } }, page)
+  if (!listing) return null
+  const avatar = populated<{ url?: string | null }>(author.avatar)
+  return {
+    ...listing,
+    author: {
+      slug: author.slug,
+      name: author.name,
+      position: author.position ?? null,
+      bio: author.bio ?? null,
+      avatar: toImageRef(author.avatar),
+      avatarUrl: avatar?.url ?? null,
+      socials: (author.socials ?? []).flatMap((social) =>
+        /^https?:\/\//i.test(social.url) ? [{ platform: social.platform, url: social.url }] : [],
+      ),
+      updatedAt: author.updatedAt,
+    },
+  }
+}
+
+export const getAuthorPage = (
+  locale: Locale,
+  slug: string,
+  page: number,
+): Promise<AuthorPageData | null> =>
+  cached(
+    () => loadAuthorPage(locale, slug, page),
+    ['author', locale, slug, String(page)],
+    [authorTag(slug), CACHE_TAGS.posts, CACHE_TAGS.nav],
+  )
+
+// ---------------------------------------------------------------------------
+// Statik sahifalar (`pages`, M1-07): `/{slug}` — faqat chop etilganlari
+// ---------------------------------------------------------------------------
+
+export async function loadStaticPage(locale: Locale, slug: string): Promise<Page | null> {
+  if (!hasDatabase()) return null
+  const payload = await payloadClient()
+  const { docs } = await payload.find({
+    collection: 'pages',
+    locale,
+    where: { slug: { equals: slug } },
+    limit: 1,
+    // 2: matndagi rasmlar (upload tugunlari) va ichki havolalar.
+    depth: 2,
+    overrideAccess: false,
+  })
+  return (docs[0] as Page | undefined) ?? null
+}
+
+export const getStaticPage = (locale: Locale, slug: string): Promise<Page | null> =>
+  cached(
+    () => loadStaticPage(locale, slug),
+    ['page', locale, slug],
+    [pageTag(slug), CACHE_TAGS.pages, CACHE_TAGS.nav],
+  )
 
 // ---------------------------------------------------------------------------
 // Yo'naltirishlar (plugin-redirects): eski slug → yangi URL (slug'ni o'zgartirganda 301 —

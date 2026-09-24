@@ -13,6 +13,8 @@ type PaginationProps = {
   totalPages: number
   /** Kategoriya yo'li, masalan `/kibersport` yoki `/kr/kibersport`. 1-sahifa — shu yo'l, n — `…/page/n` (TZ §8.1). */
   basePath: string
+  /** Boshqa URL sxemasi (masalan, qidiruv: `?page=n`). Berilmasa — `pageHref(basePath, n)`. */
+  hrefFor?: (page: number) => string
   className?: string
 }
 
@@ -46,9 +48,11 @@ export function Pagination({
   currentPage,
   totalPages,
   basePath,
+  hrefFor,
   className,
 }: PaginationProps) {
   const t = getSiteStrings(locale)
+  const href = (page: number) => (hrefFor ? hrefFor(page) : pageHref(basePath, page))
   if (totalPages <= 1) return null
   const hasPrevious = currentPage > 1
   const hasNext = currentPage < totalPages
@@ -60,7 +64,7 @@ export function Pagination({
         <li>
           {hasPrevious ? (
             <Link
-              href={pageHref(basePath, currentPage - 1)}
+              href={href(currentPage - 1)}
               rel="prev"
               className={cn(buttonVariants({ variant: 'outline' }), 'max-sm:px-3')}
             >
@@ -92,7 +96,7 @@ export function Pagination({
                   {page}
                 </span>
               ) : (
-                <Link href={pageHref(basePath, page)} aria-label={t.page(page)} className={item}>
+                <Link href={href(page)} aria-label={t.page(page)} className={item}>
                   {page}
                 </Link>
               )}
@@ -102,7 +106,7 @@ export function Pagination({
         <li>
           {hasNext ? (
             <Link
-              href={pageHref(basePath, currentPage + 1)}
+              href={href(currentPage + 1)}
               rel="next"
               className={cn(buttonVariants({ variant: 'outline' }), 'max-sm:px-3')}
             >

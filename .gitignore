@@ -21,6 +21,9 @@ test-results/
 playwright-report/
 blob-report/
 
+# Lighthouse CI hisobotlari
+.lighthouseci/
+
 # env — sirlar faqat lokal/Vercel/GitHub secrets'da
 .env
 .env.*

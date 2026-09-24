@@ -54,7 +54,7 @@ export const Categories: CollectionConfig = {
         },
       ],
     },
-    slugField('name'),
+    slugField('name', { topLevel: true }),
     {
       name: 'color',
       type: 'text',

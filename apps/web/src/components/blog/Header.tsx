@@ -87,6 +87,7 @@ export function Header({
                   <li key={category.slug}>
                     <Link
                       href={category.href}
+                      {...newTabProps(category.newTab)}
                       aria-current={category.slug === activeCategorySlug ? 'page' : undefined}
                       className="flex h-11 items-center border-b border-border text-base font-semibold text-fg hover:text-accent aria-[current=page]:text-accent"
                     >
@@ -118,6 +119,7 @@ export function Header({
                 <li key={category.slug} className="shrink-0">
                   <Link
                     href={category.href}
+                    {...newTabProps(category.newTab)}
                     aria-current={active ? 'page' : undefined}
                     className={cn(
                       'inline-flex h-9 items-center rounded-full px-3 text-sm font-semibold whitespace-nowrap transition-colors',
@@ -145,4 +147,9 @@ export function Header({
       </nav>
     </header>
   )
+}
+
+/** Menyu havolasi `newTab` (header/footer global'i) — yangi oynada, `noopener`. */
+export function newTabProps(newTab: boolean | undefined) {
+  return newTab ? { target: '_blank', rel: 'noopener noreferrer' } : {}
 }

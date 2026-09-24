@@ -16,7 +16,14 @@ import type {
   PayloadRequest,
 } from 'payload'
 
-import { CACHE_TAGS, categoryRevalidationTags, postRevalidationTags } from './cache-tags'
+import {
+  authorRevalidationTags,
+  CACHE_TAGS,
+  categoryRevalidationTags,
+  pageRevalidationTags,
+  postRevalidationTags,
+  tagRevalidationTags,
+} from './cache-tags'
 
 type Revalidator = (tag: string) => void
 
@@ -63,20 +70,44 @@ export const revalidateCategoryAfterDelete: CollectionAfterDeleteHook = ({ doc, 
   return doc
 }
 
-/** Teg/muallif nomi maqola sahifasida ko'rinadi. */
-export const revalidatePostListsAfterChange: CollectionAfterChangeHook = ({ doc, req }) => {
-  revalidateTags([CACHE_TAGS.posts], req)
+/** Teg nomi maqola sahifasida ko'rinadi + teg sahifasi `/tag/{slug}` (M1-07). */
+export const revalidateTagAfterChange: CollectionAfterChangeHook = ({ doc, previousDoc, req }) => {
+  revalidateTags(tagRevalidationTags(doc, previousDoc), req)
   return doc
 }
 
-/** Statik sahifalar (`pages`): sitemap va sahifa ro'yxatlari (M1-06). */
-export const revalidatePagesAfterChange: CollectionAfterChangeHook = ({ doc, req }) => {
-  revalidateTags([CACHE_TAGS.pages], req)
+export const revalidateTagAfterDelete: CollectionAfterDeleteHook = ({ doc, req }) => {
+  revalidateTags(tagRevalidationTags(doc), req)
+  return doc
+}
+
+/** Muallif maqola sahifasida ko'rinadi + profil sahifasi `/author/{slug}` (M1-07). */
+export const revalidateAuthorAfterChange: CollectionAfterChangeHook = ({
+  doc,
+  previousDoc,
+  req,
+}) => {
+  revalidateTags(authorRevalidationTags(doc, previousDoc), req)
+  return doc
+}
+
+export const revalidateAuthorAfterDelete: CollectionAfterDeleteHook = ({ doc, req }) => {
+  revalidateTags(authorRevalidationTags(doc), req)
+  return doc
+}
+
+/** Statik sahifalar (`pages`): sahifaning o'zi `/{slug}`, sitemap (M1-06) va footer havolalari. */
+export const revalidatePagesAfterChange: CollectionAfterChangeHook = ({
+  doc,
+  previousDoc,
+  req,
+}) => {
+  revalidateTags(pageRevalidationTags(doc, previousDoc), req)
   return doc
 }
 
 export const revalidatePagesAfterDelete: CollectionAfterDeleteHook = ({ doc, req }) => {
-  revalidateTags([CACHE_TAGS.pages], req)
+  revalidateTags(pageRevalidationTags({ ...doc, _status: 'published' }), req)
   return doc
 }
 

@@ -4,8 +4,10 @@
   "private": true,
   "description": "Umumiy kod: slugify-uz, translit (lotin-kirill adapteri), umumiy tiplar, Zod sxemalari va seed ma'lumotlari (manbalar, kategoriyalar)",
   "type": "module",
+  "sideEffects": false,
   "exports": {
     ".": "./src/index.ts",
+    "./locales": "./src/locales.ts",
     "./seed/sources.json": "./seed/sources.json",
     "./seed/categories.json": "./seed/categories.json"
   },

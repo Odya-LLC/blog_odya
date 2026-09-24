@@ -3,9 +3,8 @@
 import { MoonIcon, SunIcon } from 'lucide-react'
 import { useEffect } from 'react'
 
-import { buttonVariants } from '@/components/ui/button'
 import { THEME_COOKIE, writePreferenceCookie, type Theme } from '@/lib/preferences'
-import { cn } from '@/lib/utils'
+import { cx, ICON_BUTTON_CLASS } from './client-classes'
 
 type ThemeToggleProps = {
   label: string
@@ -49,7 +48,7 @@ export function ThemeToggle({ label, className }: ThemeToggleProps) {
       onClick={toggle}
       aria-label={label}
       title={label}
-      className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }), 'rounded-full', className)}
+      className={cx(ICON_BUTTON_CLASS, className)}
     >
       <MoonIcon className="dark:hidden" aria-hidden />
       <SunIcon className="hidden dark:block" aria-hidden />

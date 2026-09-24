@@ -3,8 +3,6 @@
 import { CheckIcon, LinkIcon } from 'lucide-react'
 import { useState } from 'react'
 
-import { cn } from '@/lib/utils'
-
 type CopyLinkButtonProps = {
   url: string
   label: string
@@ -33,7 +31,7 @@ export function CopyLinkButton({ url, label, copiedLabel, className }: CopyLinkB
       onClick={copy}
       aria-label={copied ? copiedLabel : label}
       title={label}
-      className={cn(className)}
+      className={className}
     >
       {copied ? <CheckIcon aria-hidden /> : <LinkIcon aria-hidden />}
       <span aria-live="polite" className="sr-only">
