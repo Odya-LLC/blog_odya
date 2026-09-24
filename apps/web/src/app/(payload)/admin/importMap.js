@@ -32,7 +32,12 @@ import { MetaTitleComponent as MetaTitleComponent_a8a977ebc872c5d5ea7ee689724c08
 import { MetaDescriptionComponent as MetaDescriptionComponent_a8a977ebc872c5d5ea7ee689724c0860 } from '@payloadcms/plugin-seo/client'
 import { MetaImageComponent as MetaImageComponent_a8a977ebc872c5d5ea7ee689724c0860 } from '@payloadcms/plugin-seo/client'
 import { PreviewComponent as PreviewComponent_a8a977ebc872c5d5ea7ee689724c0860 } from '@payloadcms/plugin-seo/client'
+import { SourcePanel as SourcePanel_e697dd7c357ed0647e57c7670abed832 } from '@/components/admin/SourcePanel'
+import { EditorialStats as EditorialStats_0f051e64f942452e9fce2678e0c4d5ce } from '@/components/admin/EditorialStats'
+import { EditorialNavLinks as EditorialNavLinks_60680023464659b414314bf8361bc3a3 } from '@/components/admin/EditorialNavLinks'
 import { S3ClientUploadHandler as S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24 } from '@payloadcms/storage-s3/client'
+import { NewsQueueView as NewsQueueView_321187b4b6b66dcf06d4c974a72323c6 } from '@/components/admin/NewsQueueView'
+import { ReviewQueueView as ReviewQueueView_216d44a675099e9e8a84b2e9dbbde6f4 } from '@/components/admin/ReviewQueueView'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 
 /** @type import('payload').ImportMap */
@@ -71,6 +76,11 @@ export const importMap = {
   "@payloadcms/plugin-seo/client#MetaDescriptionComponent": MetaDescriptionComponent_a8a977ebc872c5d5ea7ee689724c0860,
   "@payloadcms/plugin-seo/client#MetaImageComponent": MetaImageComponent_a8a977ebc872c5d5ea7ee689724c0860,
   "@payloadcms/plugin-seo/client#PreviewComponent": PreviewComponent_a8a977ebc872c5d5ea7ee689724c0860,
+  "@/components/admin/SourcePanel#SourcePanel": SourcePanel_e697dd7c357ed0647e57c7670abed832,
+  "@/components/admin/EditorialStats#EditorialStats": EditorialStats_0f051e64f942452e9fce2678e0c4d5ce,
+  "@/components/admin/EditorialNavLinks#EditorialNavLinks": EditorialNavLinks_60680023464659b414314bf8361bc3a3,
   "@payloadcms/storage-s3/client#S3ClientUploadHandler": S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24,
+  "@/components/admin/NewsQueueView#NewsQueueView": NewsQueueView_321187b4b6b66dcf06d4c974a72323c6,
+  "@/components/admin/ReviewQueueView#ReviewQueueView": ReviewQueueView_216d44a675099e9e8a84b2e9dbbde6f4,
   "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1
 }

@@ -54,6 +54,11 @@ export const envSchema = z.object({
   S3_REGION: nonEmpty.default('auto'),
   /** MinIO va R2 uchun `true`. */
   S3_FORCE_PATH_STYLE: booleanString.default(false),
+  /**
+   * Scraping arxivi (raw/clean HTML, gzip) uchun **yopiq** bucket (TZ §3.5; R2: `blog-odya-raw`,
+   * lifecycle 30 kun). Bo'lmasa `scrapeItem` navbati ishga tushirilmaydi — job'lar kutib turadi.
+   */
+  S3_RAW_BUCKET: nonEmpty.optional(),
   /** Media fayllarning ommaviy URL'i (masalan, https://media.odya.uz). Bo'lmasa — Payload orqali beriladi. */
   MEDIA_PUBLIC_URL: z.url().optional(),
 

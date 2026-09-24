@@ -1,10 +1,12 @@
 import type { CollectionConfig } from 'payload'
 
 import { isAdmin, isAdminOrEditor } from '@/access'
+import { scrapedItemEndpoints } from '@/editorial/endpoints'
 
 /**
  * `scraped-items` holatlari (TZ §10.2). `pending` — RSS'dan topilgan, sahifa hali yuklanmagan /
- * matn ajratilmagan (`scrapeItem` workflow navbatda, M2-02); `scraped` — to'liq matn tayyor.
+ * matn ajratilmagan (`scrapeItem` workflow navbatda); `scraped` — to'liq matn tayyor
+ * (`item.extract`); `error` — 3 retry'dan keyin ham yig'ib bo'lmadi (sabab — `error` maydonida).
  */
 export const SCRAPED_ITEM_STATUSES = [
   'pending',
@@ -53,6 +55,8 @@ export const ScrapedItems: CollectionConfig = {
     group: 'Scraping',
   },
   defaultSort: '-createdAt',
+  // Tahririyat navbati (M2-04): "Qoralamaga olish" va "Rad etish" — `src/editorial/`.
+  endpoints: scrapedItemEndpoints,
   fields: [
     {
       name: 'title',
@@ -140,6 +144,11 @@ export const ScrapedItems: CollectionConfig = {
       name: 'extractedText',
       type: 'textarea',
       label: 'To‘liq matn (Markdown)',
+    },
+    {
+      name: 'ogImage',
+      type: 'text',
+      label: 'og:image (faqat havola)',
     },
     {
       name: 'imageUrls',
@@ -243,6 +252,28 @@ export const ScrapedItems: CollectionConfig = {
       relationTo: 'posts',
       label: 'Post',
       admin: { position: 'sidebar' },
+    },
+    {
+      name: 'rejectReason',
+      type: 'textarea',
+      label: 'Rad etish sababi',
+      admin: {
+        position: 'sidebar',
+        condition: (data) => data?.status === 'rejected',
+      },
+    },
+    {
+      name: 'handledBy',
+      type: 'relationship',
+      relationTo: 'users',
+      label: 'Kim ko‘rib chiqdi',
+      admin: { position: 'sidebar', readOnly: true },
+    },
+    {
+      name: 'handledAt',
+      type: 'date',
+      label: 'Ko‘rib chiqilgan vaqt',
+      admin: { position: 'sidebar', readOnly: true, date: { pickerAppearance: 'dayAndTime' } },
     },
   ],
 }

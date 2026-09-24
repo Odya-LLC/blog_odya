@@ -129,6 +129,8 @@ export interface Config {
   jobs: {
     tasks: {
       'feed.poll': TaskFeedPoll;
+      'item.fetch': TaskItemFetch;
+      'item.extract': TaskItemExtract;
       schedulePublish: TaskSchedulePublish;
       inline: {
         input: unknown;
@@ -358,6 +360,7 @@ export interface ScrapedItem {
   language?: ('en' | 'ru') | null;
   excerpt?: string | null;
   extractedText?: string | null;
+  ogImage?: string | null;
   imageUrls?:
     | {
         url: string;
@@ -384,6 +387,9 @@ export interface ScrapedItem {
   wordCount?: number | null;
   suggestedCategory?: (number | null) | Category;
   post?: (number | null) | Post;
+  rejectReason?: string | null;
+  handledBy?: (number | null) | User;
+  handledAt?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -446,6 +452,18 @@ export interface Source {
    * Domen bo‘yicha rate limit (rateLimitSec) uchun
    */
   lastRequestAt?: string | null;
+  /**
+   * item.fetch: origin → qoidalar, 24 soat keshlanadi (src/scraping/robots.ts)
+   */
+  robotsCache?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
   /**
    * Oxirgi muvaffaqiyat/xato, ketma-ket xatolar soni
    */
@@ -796,7 +814,7 @@ export interface PayloadJob {
     | {
         executedAt: string;
         completedAt: string;
-        taskSlug: 'inline' | 'feed.poll' | 'schedulePublish';
+        taskSlug: 'inline' | 'feed.poll' | 'item.fetch' | 'item.extract' | 'schedulePublish';
         taskID: string;
         input?:
           | {
@@ -830,7 +848,7 @@ export interface PayloadJob {
       }[]
     | null;
   workflowSlug?: 'scrapeItem' | null;
-  taskSlug?: ('inline' | 'feed.poll' | 'schedulePublish') | null;
+  taskSlug?: ('inline' | 'feed.poll' | 'item.fetch' | 'item.extract' | 'schedulePublish') | null;
   queue?: string | null;
   waitUntil?: string | null;
   processing?: boolean | null;
@@ -1285,6 +1303,7 @@ export interface SourcesSelect<T extends boolean = true> {
   isActive?: T;
   robotsCheckedAt?: T;
   lastRequestAt?: T;
+  robotsCache?: T;
   stats?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -1305,6 +1324,7 @@ export interface ScrapedItemsSelect<T extends boolean = true> {
   language?: T;
   excerpt?: T;
   extractedText?: T;
+  ogImage?: T;
   imageUrls?:
     | T
     | {
@@ -1323,6 +1343,9 @@ export interface ScrapedItemsSelect<T extends boolean = true> {
   wordCount?: T;
   suggestedCategory?: T;
   post?: T;
+  rejectReason?: T;
+  handledBy?: T;
+  handledAt?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -1716,6 +1739,53 @@ export interface TaskFeedPoll {
     duplicates?: number | null;
     skippedOld?: number | null;
     deferredFeeds?: number | null;
+  };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskItemFetch".
+ */
+export interface TaskItemFetch {
+  input: {
+    scrapedItemId: number;
+  };
+  output: {
+    status: string;
+    mode?: string | null;
+    rawHtmlKey?: string | null;
+    retryAt?: string | null;
+    reason?: string | null;
+    httpStatus?: number | null;
+    finalUrl?: string | null;
+    bytes?: number | null;
+    charset?: string | null;
+    robots?: string | null;
+  };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskItemExtract".
+ */
+export interface TaskItemExtract {
+  input: {
+    scrapedItemId: number;
+    rawHtmlKey: string;
+    mode: 'page' | 'rss';
+    fetchMeta?:
+      | {
+          [k: string]: unknown;
+        }
+      | unknown[]
+      | string
+      | number
+      | boolean
+      | null;
+  };
+  output: {
+    status: string;
+    method?: string | null;
+    wordCount?: number | null;
+    cleanHtmlKey?: string | null;
   };
 }
 /**

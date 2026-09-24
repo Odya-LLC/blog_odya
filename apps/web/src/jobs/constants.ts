@@ -11,20 +11,33 @@
  */
 
 export const FEED_POLL_TASK = 'feed.poll'
+export const ITEM_FETCH_TASK = 'item.fetch'
+export const ITEM_EXTRACT_TASK = 'item.extract'
 export const SCRAPE_ITEM_WORKFLOW = 'scrapeItem'
 
 /** `feed.poll` navbati — endpoint shu navbatni ishlatadi. */
 export const DEFAULT_QUEUE = 'default'
 
 /**
- * `scrapeItem` workflow navbati. `item.fetch` / `item.extract` M2-02 (OBLOG-16) da yoziladi;
- * shu vaqtgacha bu navbat **ishga tushirilmaydi** (`RUN_QUEUES` da yo'q) — job'lar o'z input'i
- * (RSS matni) bilan navbatda kutadi va M2-02 yoqilganda qayta ishlanadi (hech narsa yo'qolmaydi).
+ * `scrapeItem` workflow navbati (`item.fetch` → `item.extract`, M2-02). Arxiv bucket'i
+ * (`S3_RAW_BUCKET`) sozlanmagan bo'lsa bu navbat **ishga tushirilmaydi** (`activeRunQueues`) —
+ * job'lar o'z input'i (RSS matni) bilan kutib turadi, hech narsa yo'qolmaydi.
  */
 export const SCRAPE_QUEUE = 'scrape'
 
 /** `/api/jobs/run` (va `autorun`) ishga tushiradigan navbatlar, tartib bo'yicha. */
-export const RUN_QUEUES: readonly string[] = [DEFAULT_QUEUE]
+export const RUN_QUEUES: readonly string[] = [DEFAULT_QUEUE, SCRAPE_QUEUE]
+
+/** `item.fetch` / `item.extract`: 3 retry, eksponensial backoff (30 s, 60 s, 120 s). */
+export const SCRAPE_TASK_RETRIES = {
+  attempts: 3,
+  backoff: { type: 'exponential' as const, delay: 30_000 },
+}
+
+/** `item.extract` (R2 o'qish/yozish + parse) uchun `item.fetch` qoldiradigan vaqt. */
+export const EXTRACT_RESERVE_MS = 5_000
+/** Sahifa so'rovi uchun kamida shuncha vaqt qolmasa — slot band qilinmaydi (job keyinga qoladi). */
+export const MIN_PAGE_FETCH_WINDOW_MS = 5_000
 
 export const DEFAULT_DEADLINE_SEC = 40
 export const MAX_DEADLINE_SEC = 45

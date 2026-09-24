@@ -3,9 +3,12 @@ import type { JobsConfig } from 'payload'
 import { isAdminUser } from '@/access'
 import type { Env } from '@/env'
 
-import { DEFAULT_BATCH_LIMIT, DEFAULT_QUEUE } from './constants'
+import { DEFAULT_BATCH_LIMIT } from './constants'
+import { activeRunQueues } from './scrapeDeps'
 import { enqueueDueFeedPolls, releaseStaleJobs } from './scheduler'
 import { feedPollTask } from './tasks/feedPoll'
+import { itemExtractTask } from './tasks/itemExtract'
+import { itemFetchTask } from './tasks/itemFetch'
 import { scrapeItemWorkflow } from './workflows/scrapeItem'
 
 /**
@@ -17,13 +20,15 @@ import { scrapeItemWorkflow } from './workflows/scrapeItem'
  *   (`.github/workflows/jobs-fallback.yml`). Serverless'da `autoRun` ishlatilmaydi.
  * - `autorun` (Contabo worker, doimiy jarayon): Payload har daqiqada o'zi ishga tushiradi;
  *   har tick oldidan muddati kelgan `feed.poll` lar navbatga qo'yiladi.
+ *
+ * Task'lar: `feed.poll` (M2-01), `item.fetch` + `item.extract` (`scrapeItem` workflow, M2-02).
  */
 export function buildJobsConfig(mode: Env['JOBS_MODE'] = 'endpoint'): JobsConfig {
   const adminOnly = ({ req }: { req: { user?: unknown } }) =>
     isAdminUser(req.user as Parameters<typeof isAdminUser>[0])
 
   return {
-    tasks: [feedPollTask],
+    tasks: [feedPollTask, itemFetchTask, itemExtractTask],
     workflows: [scrapeItemWorkflow],
     // Supabase Free 500 MB: muvaffaqiyatli job'lar saqlanmaydi (natija — manba `stats` da).
     deleteJobOnComplete: true,
@@ -31,7 +36,12 @@ export function buildJobsConfig(mode: Env['JOBS_MODE'] = 'endpoint'): JobsConfig
     access: { run: adminOnly, queue: adminOnly, cancel: adminOnly },
     ...(mode === 'autorun'
       ? {
-          autoRun: [{ cron: '* * * * *', queue: DEFAULT_QUEUE, limit: DEFAULT_BATCH_LIMIT }],
+          // `default` + `scrape` (ikkinchisi — faqat arxiv, S3_RAW_BUCKET sozlangan bo'lsa).
+          autoRun: activeRunQueues().map((queue) => ({
+            cron: '* * * * *',
+            queue,
+            limit: DEFAULT_BATCH_LIMIT,
+          })),
           shouldAutoRun: async (payload) => {
             await releaseStaleJobs(payload)
             await enqueueDueFeedPolls(payload)
