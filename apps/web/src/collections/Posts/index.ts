@@ -9,6 +9,7 @@ import type { Access, Block, CollectionConfig, FieldAccess, Where } from 'payloa
 
 import { isAdmin, isAdminOrEditor, isAdminOrEditorUser } from '@/access'
 import { slugField } from '@/fields/slug'
+import { revalidatePostAfterChange, revalidatePostAfterDelete } from '@/site/revalidate'
 
 import { deriveFields, enforceWorkflow, syncScheduledPublish } from './hooks'
 import { POST_WORKFLOW_STATUSES, WORKFLOW_STATUS_LABELS } from './workflow'
@@ -80,7 +81,9 @@ export const Posts: CollectionConfig = {
   },
   hooks: {
     beforeChange: [enforceWorkflow, deriveFields],
-    afterChange: [syncScheduledPublish],
+    // Sayt keshi (ISR): publish/unpublish/arxivlash → revalidateTag (M1-05).
+    afterChange: [syncScheduledPublish, revalidatePostAfterChange],
+    afterDelete: [revalidatePostAfterDelete],
   },
   fields: [
     {

@@ -2,17 +2,23 @@ import { fillPlaceholders, LEGAL_PLACEHOLDERS, loadLegalPages } from '@blog-odya
 import categoriesJson from '@blog-odya/shared/seed/categories.json' with { type: 'json' }
 import { categoriesSeedSchema, type Locale } from '@blog-odya/shared'
 import { convertMarkdownToLexical, editorConfigFactory } from '@payloadcms/richtext-lexical'
+import { readFile } from 'node:fs/promises'
 import type { CollectionSlug, Payload } from 'payload'
+import sharp from 'sharp'
 
 import {
   loadCategoryColors,
   SEED_AUTHOR,
+  SEED_COVERS,
   SEED_POSTS,
   SEED_TAGS,
   SITE_DESCRIPTION,
   SITE_NAME,
   SITE_TAGLINE,
+  type SeedCover,
+  seedCoverUrl,
 } from './data'
+import { DEMO_RICH_MARKDOWN, demoRichNodes } from './rich'
 
 const LATN: Locale = 'uz-Latn'
 const CYRL: Locale = 'uz-Cyrl'
@@ -25,6 +31,8 @@ export interface SeedSummary {
   authors: Count
   tags: Count
   posts: Count
+  /** Demo muqovalar (media); S3 mavjud bo'lmasa — `failed`. */
+  media: Count & { failed: number }
   globals: { siteSettings: boolean; header: boolean; footer: boolean }
   /** Seed'da to'ldirilmagan huquqiy sahifa o'rinbosarlari (`{{...}}`). */
   unfilledPlaceholders: string[]
@@ -38,6 +46,12 @@ export interface SeedOptions {
 
 type Id = number | string
 
+/** Relationship qiymati: `updateGlobal` natijasida obyekt (populyatsiya) yoki id. */
+function relId(value: unknown): Id | undefined {
+  if (value !== null && typeof value === 'object') return (value as { id?: Id }).id
+  return (value ?? undefined) as Id | undefined
+}
+
 async function findIdBySlug(payload: Payload, collection: CollectionSlug, slug: string) {
   const { docs } = await payload.find({
     collection,
@@ -49,6 +63,51 @@ async function findIdBySlug(payload: Payload, collection: CollectionSlug, slug: 
     draft: true,
   })
   return (docs[0]?.id as Id | undefined) ?? null
+}
+
+/**
+ * Demo muqova: SVG → 1920×1080 PNG → `media` (Payload WebP variantlarni tayyorlaydi).
+ * Fayl nomi bo'yicha idempotent. S3 ishlamasa — post muqovasiz yaratiladi (ogohlantirish bilan).
+ */
+async function seedCover(
+  payload: Payload,
+  cover: SeedCover,
+  summary: SeedSummary,
+  log: (message: string) => void,
+): Promise<Id | null> {
+  const filename = `namuna-muqova-${cover}.png`
+  try {
+    const { docs } = await payload.find({
+      collection: 'media',
+      where: { filename: { equals: filename } },
+      limit: 1,
+      depth: 0,
+    })
+    if (docs[0]) {
+      summary.media.existing++
+      return docs[0].id
+    }
+    const svg = await readFile(seedCoverUrl(cover))
+    const data = await sharp(svg, { density: 144 }).resize(1920, 1080).png().toBuffer()
+    const created = await payload.create({
+      collection: 'media',
+      locale: LATN,
+      data: { alt: SEED_COVERS[cover][LATN], credit: 'Blog Odya', license: 'own' },
+      file: { data, mimetype: 'image/png', name: filename, size: data.length },
+    })
+    await payload.update({
+      collection: 'media',
+      id: created.id,
+      locale: CYRL,
+      data: { alt: SEED_COVERS[cover][CYRL] },
+    })
+    summary.media.created++
+    return created.id
+  } catch (error) {
+    summary.media.failed++
+    log(`Diqqat: demo muqova yuklanmadi (${cover}): ${(error as Error).message}`)
+    return null
+  }
 }
 
 /** `@username` → `https://t.me/username`. */
@@ -83,6 +142,7 @@ export async function seed(payload: Payload, options: SeedOptions = {}): Promise
     authors: { created: 0, existing: 0 },
     tags: { created: 0, existing: 0 },
     posts: { created: 0, existing: 0 },
+    media: { created: 0, existing: 0, failed: 0 },
     globals: { siteSettings: false, header: false, footer: false },
     unfilledPlaceholders: [],
   }
@@ -240,6 +300,11 @@ export async function seed(payload: Payload, options: SeedOptions = {}): Promise
     }
     const category = categoryIds.get(post.category)
     if (category === undefined) throw new Error(`Seed: kategoriya topilmadi: ${post.category}`)
+    const coverImage = post.cover ? await seedCover(payload, post.cover, summary, log) : null
+    const content = markdownToLexical(
+      post.richBlocks ? `${post.markdown}\n\n${DEMO_RICH_MARKDOWN}` : post.markdown,
+    ) as { root: { children: unknown[] } }
+    if (post.richBlocks) content.root.children.push(...demoRichNodes())
     const created = await payload.create({
       collection: 'posts',
       locale: LATN,
@@ -247,7 +312,8 @@ export async function seed(payload: Payload, options: SeedOptions = {}): Promise
         title: post.title[LATN],
         slug: post.slug,
         excerpt: post.excerpt[LATN],
-        content: markdownToLexical(post.markdown) as never,
+        content: content as never,
+        coverImage: coverImage as number | null,
         category: category as number,
         tags: post.tags
           .map((slug) => tagIds.get(slug))
@@ -272,6 +338,10 @@ export async function seed(payload: Payload, options: SeedOptions = {}): Promise
     summary.posts.created++
   }
   log(`Postlar: +${summary.posts.created}, mavjud ${summary.posts.existing}`)
+  log(
+    `Demo muqovalar: +${summary.media.created}, mavjud ${summary.media.existing}` +
+      (summary.media.failed ? `, xato ${summary.media.failed}` : ''),
+  )
 
   // --- Globals ---
   // Har bir yozuv alohida tekshiriladi (fallback'siz): bittasi to'ldirilgan bo'lsa ham ikkinchisi to'ladi.
@@ -317,7 +387,7 @@ export async function seed(payload: Payload, options: SeedOptions = {}): Promise
     const cyrl = (rows: typeof saved.navItems) =>
       (rows ?? []).map((row) => ({
         ...row,
-        label: byCategory.get(row.category as number)?.name[CYRL] ?? row.label,
+        label: byCategory.get(relId(row.category))?.name[CYRL] ?? row.label,
       }))
     await payload.updateGlobal({
       slug: 'header',
@@ -368,7 +438,7 @@ export async function seed(payload: Payload, options: SeedOptions = {}): Promise
             // Huquqiy sahifalar kirill nomi — M1-03 transliteratsiyasigacha lotin (fallback).
             label:
               link.type === 'category'
-                ? (byCategory.get(link.category as number)?.name[CYRL] ?? link.label)
+                ? (byCategory.get(relId(link.category))?.name[CYRL] ?? link.label)
                 : link.label,
           })),
         })),

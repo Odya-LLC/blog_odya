@@ -2,6 +2,7 @@ import type { CollectionConfig } from 'payload'
 
 import { anyone, isAdmin, isAdminOrEditor } from '@/access'
 import { slugField } from '@/fields/slug'
+import { revalidatePostListsAfterChange } from '@/site/revalidate'
 
 export const SOCIAL_PLATFORMS = [
   { label: 'Telegram', value: 'telegram' },
@@ -26,6 +27,9 @@ export const Authors: CollectionConfig = {
     create: isAdminOrEditor,
     update: isAdminOrEditor,
     delete: isAdmin,
+  },
+  hooks: {
+    afterChange: [revalidatePostListsAfterChange],
   },
   admin: {
     useAsTitle: 'name',

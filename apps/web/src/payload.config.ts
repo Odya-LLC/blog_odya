@@ -27,6 +27,7 @@ import { ScrapingSettings } from './globals/ScrapingSettings'
 import { SiteSettings } from './globals/SiteSettings'
 import { TelegramSettings } from './globals/TelegramSettings'
 import { uzPluginTranslations } from './i18n/plugins'
+import { revalidateRedirectsAfterChange } from './site/revalidate'
 import { ADMIN_LANGUAGE, uz } from './i18n/uz'
 
 const filename = fileURLToPath(import.meta.url)
@@ -106,6 +107,9 @@ export default buildConfig({
           create: isAdminOrEditor,
           update: isAdminOrEditor,
           delete: isAdmin,
+        },
+        hooks: {
+          afterChange: [revalidateRedirectsAfterChange],
         },
       },
     }),

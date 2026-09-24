@@ -1,4 +1,4 @@
-# CI: lint → typecheck → test (Postgres + MinIO) → build (TZ §9.7).
+# CI: lint → typecheck → test (Postgres + MinIO) → seed → build → Playwright smoke (TZ §9.7).
 # Yopiq repo'da bepul daqiqalarni tejash uchun faqat PR va main'ga push'da ishlaydi.
 name: CI
 
@@ -73,6 +73,10 @@ jobs:
             curl -fsS http://localhost:9000/minio/health/live && break
             sleep 1
           done
+          # media bucket (seed demo muqovalari va testlar uchun).
+          docker run --rm --network host --entrypoint sh \
+            quay.io/minio/mc:RELEASE.2025-04-16T18-13-26Z \
+            -c 'mc alias set local http://localhost:9000 minioadmin minioadmin && mc mb --ignore-existing local/media'
 
       - name: Format check
         run: pnpm format:check
@@ -89,5 +93,23 @@ jobs:
       - name: Test
         run: pnpm test
 
+      # Demo postlar build'dan oldin: bosh sahifa build vaqtida prerender qilinadi (ISR).
+      - name: Seed
+        run: pnpm seed
+
       - name: Build
         run: pnpm build
+
+      - name: Install Playwright (chromium)
+        run: pnpm --filter @blog-odya/web exec playwright install --with-deps chromium
+
+      - name: E2E smoke (Playwright)
+        run: pnpm test:e2e
+
+      - name: Upload Playwright traces
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-test-results
+          path: apps/web/test-results/
+          retention-days: 7

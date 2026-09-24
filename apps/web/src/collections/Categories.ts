@@ -2,6 +2,7 @@ import type { CollectionConfig } from 'payload'
 
 import { anyone, isAdmin, isAdminOrEditor } from '@/access'
 import { slugField } from '@/fields/slug'
+import { revalidateCategoryAfterChange, revalidateCategoryAfterDelete } from '@/site/revalidate'
 
 /**
  * Kategoriyalar (TZ §10.4). Ierarxiya — `@payloadcms/plugin-nested-docs` (`parent`, `breadcrumbs`
@@ -25,6 +26,10 @@ export const Categories: CollectionConfig = {
     defaultColumns: ['name', 'slug', 'order', 'isInMenu', 'updatedAt'],
   },
   defaultSort: 'order',
+  hooks: {
+    afterChange: [revalidateCategoryAfterChange],
+    afterDelete: [revalidateCategoryAfterDelete],
+  },
   fields: [
     {
       type: 'tabs',

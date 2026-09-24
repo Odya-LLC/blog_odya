@@ -16,6 +16,11 @@ dist/
 next-env.d.ts
 coverage/
 
+# Playwright
+test-results/
+playwright-report/
+blob-report/
+
 # env — sirlar faqat lokal/Vercel/GitHub secrets'da
 .env
 .env.*

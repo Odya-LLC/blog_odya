@@ -11,6 +11,7 @@
     "lint": "eslint .",
     "typecheck": "next typegen && tsc --noEmit",
     "test": "cross-env NODE_OPTIONS=--no-deprecation vitest run",
+    "test:e2e": "playwright test",
     "payload": "cross-env NODE_OPTIONS=--no-deprecation payload",
     "migrate": "cross-env NODE_OPTIONS=--no-deprecation PAYLOAD_MIGRATING=true payload migrate",
     "migrate:create": "cross-env NODE_OPTIONS=--no-deprecation PAYLOAD_MIGRATING=true payload migrate:create",
@@ -48,6 +49,7 @@
   },
   "devDependencies": {
     "@aws-sdk/client-s3": "3.1138.0",
+    "@playwright/test": "1.63.0",
     "@tailwindcss/postcss": "4.3.3",
     "@tailwindcss/typography": "0.5.20",
     "@types/node": "24.13.6",
