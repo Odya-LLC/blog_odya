@@ -59,7 +59,7 @@ export const envSchema = z.object({
   // --- Fon vazifalar (Payload Jobs) ---
   /** `endpoint` — pg_cron `/api/jobs/run` ni chaqiradi (Vercel); `autorun` — doimiy worker (Contabo). */
   JOBS_MODE: z.enum(['endpoint', 'autorun']).default('endpoint'),
-  /** `/api/jobs/run` uchun Bearer token (32+ belgi). Endpoint M2-01 da qo'shiladi; bo'lmasa endpoint yopiq. */
+  /** `/api/jobs/run` uchun Bearer token (32+ belgi). Bo'lmasa endpoint yopiq (503). docs/runbooks/jobs-scheduler.md */
   JOBS_SECRET: z.string().min(32, 'kamida 32 belgi bo‘lishi kerak').optional(),
 
   // --- Telegram (ixtiyoriy: bo'lmasa avtopost va ogohlantirishlar o'chiq, faqat log) ---

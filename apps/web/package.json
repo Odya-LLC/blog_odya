@@ -42,6 +42,7 @@
     "payload": "3.90.2",
     "react": "19.2.6",
     "react-dom": "19.2.6",
+    "rss-parser": "3.13.0",
     "sharp": "0.35.4",
     "tailwind-merge": "3.7.0",
     "zod": "4.6.5"
