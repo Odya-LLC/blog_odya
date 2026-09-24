@@ -12,7 +12,7 @@
     "typecheck": "next typegen && tsc --noEmit",
     "test": "cross-env NODE_OPTIONS=--no-deprecation vitest run",
     "test:e2e": "playwright test",
-    "lhci": "cross-env LHCI_START_SERVER=1 pnpm dlx @lhci/cli@0.15.1 autorun --config=./lighthouserc.cjs",
+    "lhci": "cross-env LHCI_START_SERVER=1 LHCI_BASE_URL=http://localhost:3100 pnpm dlx @lhci/cli@0.15.1 autorun --config=./lighthouserc.cjs",
     "payload": "cross-env NODE_OPTIONS=--no-deprecation payload",
     "migrate": "cross-env NODE_OPTIONS=--no-deprecation PAYLOAD_MIGRATING=true payload migrate",
     "migrate:create": "cross-env NODE_OPTIONS=--no-deprecation PAYLOAD_MIGRATING=true payload migrate:create",

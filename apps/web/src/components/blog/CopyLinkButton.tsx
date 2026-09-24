@@ -1,6 +1,8 @@
 'use client'
 
 import { CheckIcon, LinkIcon } from 'lucide-react'
+// clsx (tailwind-merge'siz): client bundle'da twMerge bo'lmasin — JS byudjeti (TZ §8.4).
+import { clsx as cn } from 'clsx'
 import { useState } from 'react'
 
 type CopyLinkButtonProps = {
@@ -31,7 +33,7 @@ export function CopyLinkButton({ url, label, copiedLabel, className }: CopyLinkB
       onClick={copy}
       aria-label={copied ? copiedLabel : label}
       title={label}
-      className={className}
+      className={cn(className)}
     >
       {copied ? <CheckIcon aria-hidden /> : <LinkIcon aria-hidden />}
       <span aria-live="polite" className="sr-only">

@@ -1,8 +1,9 @@
 import type { Locale } from '@blog-odya/shared'
 import type { Metadata } from 'next'
 
-import { Container } from '@/components/blog/SiteShell'
 import { RichText } from '@/components/richtext/RichText'
+import { Container } from '@/components/blog/SiteShell'
+import { getSiteStrings } from '@/i18n/site'
 import type { Page } from '@/payload-types'
 
 import { pagePath } from '../paths'
@@ -10,40 +11,17 @@ import { JsonLd } from '../seo/JsonLd'
 import { staticPageSeo } from '../seo/pages'
 import { SitePage } from './SitePage'
 
-type Block = NonNullable<Page['layout']>[number]
-
 export function staticPageMetadata(locale: Locale, page: Page): Metadata {
   return staticPageSeo(locale, page).metadata
 }
 
-function PageBlock({ block, locale }: { block: Block; locale: Locale }) {
-  switch (block.blockType) {
-    case 'content':
-      return <RichText data={block.richText} locale={locale} />
-    case 'faq':
-      return (
-        <section>
-          {block.title ? <h2>{block.title}</h2> : null}
-          <dl>
-            {(block.items ?? []).map((item) => (
-              <div key={item.id ?? item.question}>
-                <dt className="font-semibold text-fg">{item.question}</dt>
-                <dd className="ml-0">{item.answer}</dd>
-              </div>
-            ))}
-          </dl>
-        </section>
-      )
-    default:
-      return null
-  }
-}
-
 /**
- * Statik sahifa `/{slug}` (TZ §7 "Sahifalar", §10.13): "Biz haqimizda", "Tahririyat siyosati",
- * aloqa va h.k. — sarlavha + bloklar (matn, savol-javob → `FAQPage` JSON-LD).
+ * Statik sahifa (`pages`, TZ §10.13): `/{slug}` va `/kr/{slug}` — "Biz haqimizda", "Tahririyat
+ * siyosati", aloqa… Bloklar: matn (Lexical) va savol-javob (`FAQPage` JSON-LD). Kirill bloklari
+ * bo'sh bo'lsa — lotin (Payload `fallback`).
  */
 export function StaticPageView({ locale, page }: { locale: Locale; page: Page }) {
+  const t = getSiteStrings(locale)
   const { jsonLd } = staticPageSeo(locale, page)
   return (
     <SitePage locale={locale} pathname={pagePath(locale, page.slug)} activeCategorySlug={page.slug}>
@@ -54,9 +32,25 @@ export function StaticPageView({ locale, page }: { locale: Locale; page: Page })
           data-testid="static-page"
         >
           <h1>{page.title}</h1>
-          {(page.layout ?? []).map((block, index) => (
-            <PageBlock key={block.id ?? index} block={block} locale={locale} />
-          ))}
+          {(page.layout ?? []).map((block, index) => {
+            const key = block.id ?? `${block.blockType}-${index}`
+            if (block.blockType === 'content') {
+              return <RichText key={key} data={block.richText} locale={locale} />
+            }
+            const items = block.items ?? []
+            if (items.length === 0) return null
+            return (
+              <section key={key}>
+                <h2>{block.title || t.faq}</h2>
+                {items.map((item) => (
+                  <details key={item.id ?? item.question}>
+                    <summary className="cursor-pointer font-semibold">{item.question}</summary>
+                    <p>{item.answer}</p>
+                  </details>
+                ))}
+              </section>
+            )
+          })}
         </article>
       </Container>
     </SitePage>

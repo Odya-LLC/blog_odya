@@ -8,6 +8,7 @@
  * Yozuv: URL'da (`/…` lotin, `/kr/…` kirill); cookie faqat tanlovni eslab qoladi —
  * `Accept-Language` bo'yicha avtomatik redirect yo'q (TZ §3.6).
  */
+// Faqat `locales` (barrel emas): client bundle'ga zod sxemalari tushmasligi uchun (JS byudjeti, TZ §8.4).
 import { LOCALE_PATH_PREFIX, type Locale } from '@blog-odya/shared/locales'
 
 export const THEME_COOKIE = 'theme'

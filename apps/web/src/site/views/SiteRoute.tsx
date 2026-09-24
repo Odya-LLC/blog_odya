@@ -2,8 +2,6 @@ import type { Locale } from '@blog-odya/shared'
 import type { Metadata } from 'next'
 import { notFound, permanentRedirect } from 'next/navigation'
 
-import type { Page } from '@/payload-types'
-
 import { getCategoryPage, getStaticPage } from '../data'
 import { authorPath, categoryPath, tagPath } from '../paths'
 import { resolveSiteRoute } from '../route'
@@ -18,10 +16,10 @@ import { TagView, tagMetadata } from './TagView'
 type Segments = string[] | undefined
 
 /**
- * `/{slug}` — kategoriya yoki statik sahifa (bitta nomlar fazosi, to'qnashuv validatsiyada
- * taqiqlangan). Kategoriya bo'lmasa va shu slug'li chop etilgan sahifa bo'lsa — sahifa.
+ * `/{slug}`: avval kategoriya, topilmasa — statik sahifa (`pages`). Slug'lar to'qnashmaydi
+ * (`slugField({ uniqueAcross })`); ikkalasi ham bo'lmasa — `CategoryView` (redirect yoki 404).
  */
-async function staticPageFor(locale: Locale, slug: string): Promise<Page | null> {
+async function staticPageFor(locale: Locale, slug: string) {
   if (await getCategoryPage(locale, slug, 1)) return null
   return getStaticPage(locale, slug)
 }

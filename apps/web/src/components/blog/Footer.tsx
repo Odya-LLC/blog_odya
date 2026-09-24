@@ -4,8 +4,8 @@ import { getSiteStrings } from '@/i18n/site'
 import { withLocalePrefix } from '@/lib/preferences'
 import { cn } from '@/lib/utils'
 
-import { newTabProps } from './Header'
 import { TelegramIcon } from './icons'
+import { newTabProps } from './link-props'
 import type { FooterColumn, LinkItem, Locale, NavCategory, TelegramLinks } from './types'
 import { Wordmark } from './Wordmark'
 
@@ -14,43 +14,35 @@ type FooterProps = {
   categories: NavCategory[]
   /** Huquqiy/ma'lumot sahifalari: "Biz haqimizda", "Tahririyat siyosati", aloqa… (TZ §8.3 E-E-A-T). */
   legalLinks: LinkItem[]
-  /**
-   * `footer` global'idagi ustunlar (TZ §10.15). Berilsa — kategoriyalar/huquqiy ustunlar o'rniga
-   * shular chiziladi; bo'sh bo'lsa — standart ikki ustun (`categories` + `legalLinks`).
-   */
-  columns?: FooterColumn[]
-  /** `footer.copyright` (masalan, "© Odya LLC") — yil qo'shiladi. */
-  copyright?: string | null
   /** Ikkala Telegram kanal (TZ §12.3). */
   telegram: TelegramLinks
+  /**
+   * `footer` global ustunlari (admin'da boshqariladi). Berilsa — "Kategoriyalar" va "Ma'lumot"
+   * ustunlari o'rniga shular chiziladi (`categories`/`legalLinks` — zaxira).
+   */
+  columns?: FooterColumn[]
+  /** `footer.copyright` (masalan, "© Odya LLC"); yil oldiga qo'shiladi. */
+  copyright?: string | null
   year?: number
   className?: string
 }
 
 const linkClass = 'text-sm text-muted transition-colors hover:text-fg'
 
-/** Ko'p havolali ustun (kategoriyalar) mobilda ikki ustunda. */
-const MANY_LINKS = 6
-
-/** "© Odya LLC" → "© 2026 Odya LLC". */
-export function copyrightLine(copyright: string | null | undefined, year: number): string {
-  const text = copyright?.trim() || '© Odya LLC'
-  return /^©/.test(text) ? text.replace(/^©\s*/, `© ${year} `) : `© ${year} ${text}`
-}
-
-/** Footer (TZ §12.3): menyu ustunlari (`footer` global'i), ikkala Telegram kanal, "© Odya LLC". */
+/** Footer (TZ §12.3): kategoriyalar, huquqiy sahifalar, ikkala Telegram kanal, "© Odya LLC". */
 export function Footer({
   locale,
   categories,
   legalLinks,
+  telegram,
   columns,
   copyright,
-  telegram,
   year = new Date().getFullYear(),
   className,
 }: FooterProps) {
   const t = getSiteStrings(locale)
-  const menuColumns: FooterColumn[] =
+  const holder = (copyright ?? '').replace(/^©\s*/, '').trim() || 'Odya LLC'
+  const linkColumns: FooterColumn[] =
     columns && columns.length > 0
       ? columns
       : [
@@ -74,28 +66,26 @@ export function Footer({
           <p className="max-w-xs text-sm text-muted">{t.footerAbout}</p>
         </div>
 
-        {menuColumns.map((column, index) => {
-          const headingId = `footer-column-${index}`
-          const many = column.links.length > MANY_LINKS
+        {linkColumns.map((column, index) => {
+          const headingId = `footer-col-${index}`
+          // 1-ustun (odatda kategoriyalar) kengroq: mobilda 2 ustunli ro'yxat.
+          const wide = index === 0
           return (
             <nav
               key={headingId}
-              aria-labelledby={column.title ? headingId : undefined}
-              aria-label={column.title ? undefined : t.footerLegal}
-              className={cn('flex flex-col gap-3', index === 0 ? 'lg:col-span-3' : 'lg:col-span-2')}
+              aria-labelledby={headingId}
+              className={cn('flex flex-col gap-3', wide ? 'lg:col-span-3' : 'lg:col-span-2')}
             >
-              {column.title ? (
-                <h2 id={headingId} className="text-sm font-bold text-fg">
-                  {column.title}
-                </h2>
-              ) : null}
+              <h2 id={headingId} className="text-sm font-bold text-fg">
+                {column.title}
+              </h2>
               <ul
                 className={cn(
-                  many ? 'grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-1' : 'flex flex-col gap-2',
+                  wide ? 'grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-1' : 'flex flex-col gap-2',
                 )}
               >
                 {column.links.map((link) => (
-                  <li key={`${link.href}-${link.label}`}>
+                  <li key={link.href}>
                     <Link href={link.href} className={linkClass} {...newTabProps(link.newTab)}>
                       {link.label}
                     </Link>
@@ -138,7 +128,7 @@ export function Footer({
       </div>
       <div className="border-t border-border">
         <p className="mx-auto max-w-7xl px-4 py-5 text-xs text-subtle lg:px-6">
-          {copyrightLine(copyright, year)}. {t.rights}
+          © {year} {holder}. {t.rights}
         </p>
       </div>
     </footer>

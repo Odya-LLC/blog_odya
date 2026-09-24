@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils'
 import { HeaderMobileMenu } from './HeaderMobileMenu'
 import { HeaderMoreMenu } from './HeaderMoreMenu'
 import { TelegramIcon } from './icons'
+import { newTabProps } from './link-props'
 import { ScriptSwitcher } from './ScriptSwitcher'
 import { SearchForm } from './SearchForm'
 import { ThemeToggle } from './ThemeToggle'
@@ -140,6 +141,7 @@ export function Header({
             items={moreCategories.map((category) => ({
               label: category.name,
               href: category.href,
+              newTab: category.newTab,
               active: category.slug === activeCategorySlug,
             }))}
           />
@@ -147,9 +149,4 @@ export function Header({
       </nav>
     </header>
   )
-}
-
-/** Menyu havolasi `newTab` (header/footer global'i) — yangi oynada, `noopener`. */
-export function newTabProps(newTab: boolean | undefined) {
-  return newTab ? { target: '_blank', rel: 'noopener noreferrer' } : {}
 }

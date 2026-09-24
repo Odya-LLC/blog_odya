@@ -274,24 +274,43 @@ export function homeSeo(locale: Locale, input: HomeSeoInput = {}, options: Optio
 }
 
 // ---------------------------------------------------------------------------
-// Teg (M1-07): < 3 post yoki `meta.noindex` — `noindex` (TZ §8.1)
+// Root layout (lotin / kirill): standart qiymatlar va preview'da `noindex`
 // ---------------------------------------------------------------------------
 
-export type TagSeoInput = {
-  slug: string
-  name: string
-  description: string | null
-  metaTitle: string | null
-  metaDescription: string | null
-  noindex?: boolean
-  /** Tegdagi chop etilgan postlar soni. */
-  postCount: number
+/**
+ * Root layout metadata'si: `metadataBase`, standart title/description, `og:locale`, va
+ * indekslash yopiq muhitda (Vercel preview, `SEO_NOINDEX=1`) — `noindex, nofollow` barcha
+ * sahifalarda (404 va hali metadata bermaydigan sahifalar ham).
+ */
+export function rootLayoutMetadata(locale: Locale, options: Options = {}): Metadata {
+  const origin = options.origin ?? siteOrigin()
+  const t = getSiteStrings(locale)
+  const metadata: Metadata = {
+    metadataBase: new URL(origin),
+    title: `${t.siteName} — ${t.tagline}`,
+    description: t.tagline,
+    applicationName: BRAND_NAME[locale],
+    // Brend belgisi (`/favicon.ico` 404 bo'lmasin — Lighthouse "errors-in-console").
+    icons: { icon: ORGANIZATION.logoPath, apple: ORGANIZATION.logoPath },
+    openGraph: { siteName: BRAND_NAME[locale], locale: OG_LOCALE, type: 'website' },
+    twitter: { card: 'summary_large_image' },
+  }
+  const indexingAllowed = options.indexingAllowed ?? isIndexingAllowed()
+  if (!indexingAllowed) metadata.robots = { index: false, follow: false }
+  return metadata
 }
+
+// ---------------------------------------------------------------------------
+// Teg (TZ §8.1: < 3 post — `noindex`)
+// ---------------------------------------------------------------------------
+
+export type TagSeoInput = CategorySeoInput
 
 export function tagSeo(
   locale: Locale,
   tag: TagSeoInput,
   page: number,
+  postCount: number,
   options: Options = {},
 ): PageSeo {
   const origin = options.origin ?? siteOrigin()
@@ -303,8 +322,8 @@ export function tagSeo(
     path,
     title: page > 1 ? `${base} (${t.page(page)})` : base,
     description: tag.metaDescription || tag.description || t.tagDescription(tag.name),
-    image: generatedOgImage(locale, { kind: 'site' }, tag.name, undefined, origin),
-    noindex: Boolean(tag.noindex) || !isTagIndexable(tag.postCount),
+    image: generatedOgImage(locale, { kind: 'site' }, `#${tag.name}`, undefined, origin),
+    noindex: Boolean(tag.noindex) || !isTagIndexable(postCount),
     origin,
     indexingAllowed: options.indexingAllowed,
   })
@@ -312,7 +331,7 @@ export function tagSeo(
     breadcrumbJsonLd(
       [
         { name: t.home, path: homePath(locale) },
-        { name: tag.name, path: tagPath(locale, tag.slug) },
+        { name: `#${tag.name}`, path: tagPath(locale, tag.slug) },
         ...(page > 1 ? [{ name: t.page(page), path }] : []),
       ],
       origin,
@@ -322,16 +341,17 @@ export function tagSeo(
 }
 
 // ---------------------------------------------------------------------------
-// Muallif (M1-07): `Person` JSON-LD (E-E-A-T, TZ §8.3)
+// Muallif (E-E-A-T, TZ §8.3): `Person` JSON-LD
 // ---------------------------------------------------------------------------
 
 export type AuthorSeoInput = {
   slug: string
   name: string
-  position: string | null
-  bio: string | null
-  avatarUrl: string | null
-  socials: Array<{ url: string }>
+  position?: string | null
+  bio?: string | null
+  /** Avatar URL (nisbiy yoki to'liq). */
+  image?: string | null
+  sameAs?: string[]
 }
 
 export function authorSeo(
@@ -343,11 +363,11 @@ export function authorSeo(
   const origin = options.origin ?? siteOrigin()
   const t = getSiteStrings(locale)
   const path = authorPath(locale, author.slug, page)
-  const profilePath = authorPath(locale, author.slug)
+  const base = author.position ? `${author.name}, ${author.position}` : author.name
   const metadata = buildPageMetadata({
     locale,
     path,
-    title: page > 1 ? `${author.name} (${t.page(page)})` : author.name,
+    title: page > 1 ? `${base} (${t.page(page)})` : base,
     description: author.bio || t.authorDescription(author.name),
     image: generatedOgImage(locale, { kind: 'site' }, author.name, undefined, origin),
     origin,
@@ -357,18 +377,18 @@ export function authorSeo(
     personJsonLd(
       {
         name: author.name,
-        path: profilePath,
-        jobTitle: author.position,
-        description: author.bio,
-        image: author.avatarUrl ? absoluteUrl(author.avatarUrl, origin) : null,
-        sameAs: author.socials.map((social) => social.url),
+        path: authorPath(locale, author.slug),
+        jobTitle: author.position ?? null,
+        description: author.bio ?? null,
+        image: author.image ?? null,
+        sameAs: author.sameAs,
       },
       origin,
     ),
     breadcrumbJsonLd(
       [
         { name: t.home, path: homePath(locale) },
-        { name: author.name, path: profilePath },
+        { name: author.name, path: authorPath(locale, author.slug) },
         ...(page > 1 ? [{ name: t.page(page), path }] : []),
       ],
       origin,
@@ -378,10 +398,10 @@ export function authorSeo(
 }
 
 // ---------------------------------------------------------------------------
-// Statik sahifa (M1-07): `meta.*` (plugin-seo), FAQ bloklari → `FAQPage`
+// Statik sahifa (`pages`): meta (plugin-seo), FAQ bloklari → `FAQPage`
 // ---------------------------------------------------------------------------
 
-/** Sahifa FAQ bloklaridagi savol-javoblar (JSON-LD `FAQPage`). */
+/** Sahifadagi barcha FAQ bloklari savollari. */
 export function pageFaqItems(page: Pick<Page, 'layout'>): FaqItem[] {
   return (page.layout ?? []).flatMap((block) =>
     block.blockType === 'faq'
@@ -390,28 +410,27 @@ export function pageFaqItems(page: Pick<Page, 'layout'>): FaqItem[] {
   )
 }
 
-/** Meta description bo'lmasa — birinchi matn blokidan. */
-export function pagePlainText(page: Pick<Page, 'layout'>): string {
+/** Sahifa matni (birinchi `content` bloki) — meta description zaxirasi. */
+export function pageTextExcerpt(page: Pick<Page, 'layout'>): string | null {
   const block = (page.layout ?? []).find((item) => item.blockType === 'content')
-  return block?.blockType === 'content' ? lexicalToPlainText(block.richText) : ''
+  const text = block?.blockType === 'content' ? lexicalToPlainText(block.richText) : ''
+  return text.trim() || null
 }
 
-export function staticPageSeo(
-  locale: Locale,
-  page: Pick<Page, 'slug' | 'title' | 'layout' | 'meta' | 'updatedAt'>,
-  options: Options = {},
-): PageSeo {
+export function staticPageSeo(locale: Locale, page: Page, options: Options = {}): PageSeo {
   const origin = options.origin ?? siteOrigin()
   const t = getSiteStrings(locale)
   const path = pagePath(locale, page.slug)
+  const image =
+    mediaOgImage(populated<Media>(page.meta?.image), origin) ??
+    generatedOgImage(locale, { kind: 'site' }, page.title, undefined, origin)
   const metadata = buildPageMetadata({
     locale,
     path,
     title: page.meta?.title || page.title,
-    description: page.meta?.description || pagePlainText(page) || null,
-    image:
-      mediaOgImage(populated<Media>(page.meta?.image), origin) ??
-      generatedOgImage(locale, { kind: 'site' }, page.title, undefined, origin),
+    // `meta.description` bo'lmasa — birinchi matn blokining boshi (`metaDescription` ~160 belgiga qisqartiradi).
+    description: page.meta?.description || pageTextExcerpt(page),
+    image,
     noindex: page.meta?.noindex,
     origin,
     indexingAllowed: options.indexingAllowed,
@@ -430,51 +449,23 @@ export function staticPageSeo(
 }
 
 // ---------------------------------------------------------------------------
-// Qidiruv (M1-07): har doim `noindex` (TZ §8.1), canonical — so'rovsiz `/search`
+// Qidiruv (TZ §8.1, §8.3): har doim `noindex` (robots.txt'da ham yopiq)
 // ---------------------------------------------------------------------------
 
-export function searchMetadata(locale: Locale, query: string, options: Options = {}): Metadata {
+export function searchMetadata(
+  locale: Locale,
+  query: string | null,
+  options: Options = {},
+): Metadata {
   const t = getSiteStrings(locale)
-  const origin = options.origin ?? siteOrigin()
   return buildPageMetadata({
     locale,
     path: searchPath(locale),
-    title: query ? t.searchResultsFor(query) : t.searchTitle,
+    title: query ? t.searchResultsTitle(query) : t.searchTitle,
     description: t.searchPrompt,
-    image: generatedOgImage(locale, { kind: 'site' }, t.searchTitle, undefined, origin),
+    image: generatedOgImage(locale, { kind: 'site' }, t.searchTitle, undefined, options.origin),
     noindex: true,
-    origin,
+    origin: options.origin,
     indexingAllowed: options.indexingAllowed,
   })
-}
-
-// ---------------------------------------------------------------------------
-// Root layout (lotin / kirill): standart qiymatlar va preview'da `noindex`
-// ---------------------------------------------------------------------------
-
-/**
- * Root layout metadata'si: `metadataBase`, standart title/description, `og:locale`, va
- * indekslash yopiq muhitda (Vercel preview, `SEO_NOINDEX=1`) — `noindex, nofollow` barcha
- * sahifalarda (404 va hali metadata bermaydigan sahifalar ham).
- */
-export function rootLayoutMetadata(locale: Locale, options: Options = {}): Metadata {
-  const origin = options.origin ?? siteOrigin()
-  const t = getSiteStrings(locale)
-  const metadata: Metadata = {
-    metadataBase: new URL(origin),
-    title: `${t.siteName} — ${t.tagline}`,
-    description: t.tagline,
-    applicationName: BRAND_NAME[locale],
-    // Brend belgisi (`public/brand`): `<link rel="icon">` bo'lmasa brauzer `/favicon.ico` so'rab
-    // 404 oladi (konsol xatosi — Lighthouse Best Practices, M1-07).
-    icons: {
-      icon: [{ url: ORGANIZATION.logoPath, type: 'image/png', sizes: '512x512' }],
-      apple: [{ url: ORGANIZATION.logoPath, sizes: '512x512' }],
-    },
-    openGraph: { siteName: BRAND_NAME[locale], locale: OG_LOCALE, type: 'website' },
-    twitter: { card: 'summary_large_image' },
-  }
-  const indexingAllowed = options.indexingAllowed ?? isIndexingAllowed()
-  if (!indexingAllowed) metadata.robots = { index: false, follow: false }
-  return metadata
 }

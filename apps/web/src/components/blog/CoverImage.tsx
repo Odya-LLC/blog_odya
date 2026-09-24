@@ -1,4 +1,4 @@
-import Image from 'next/image'
+import { StaticImage as Image } from './StaticImage'
 
 import { cn } from '@/lib/utils'
 
@@ -54,9 +54,7 @@ export function CoverImage({
           alt={image.alt}
           fill
           sizes={sizes}
-          // Next.js 16: `priority` eskirgan — LCP rasmi uchun `loading="eager"` + `fetchPriority="high"`
-          // (hujjat tavsiyasi; `preload` bir nechta LCP nomzodida ortiqcha yuklaydi).
-          {...(priority ? { loading: 'eager' as const, fetchPriority: 'high' as const } : {})}
+          priority={priority}
           placeholder={image.blurDataURL ? 'blur' : 'empty'}
           blurDataURL={image.blurDataURL}
           className="object-cover"

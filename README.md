@@ -93,7 +93,7 @@ To'xtatish: `Ctrl+C`, keyin `docker compose -f infra/docker-compose.dev.yml down
 | `pnpm migrate:create <nom>`         | Sxema o'zgarganda yangi migratsiya yaratish (faylni commit qiling)        |
 | `pnpm seed`                         | Migratsiyalar + boshlang'ich ma'lumotlar (takror ishga tushirish xavfsiz) |
 | `pnpm test:e2e`                     | Playwright smoke (avval `pnpm seed` va `pnpm build`; `next start` o'zi)   |
-| `pnpm --filter @blog-odya/web lhci` | Lighthouse CI lokal (avval `pnpm seed` va `pnpm build`; port 3000)        |
+| `pnpm --filter @blog-odya/web lhci` | Lighthouse CI lokal (avval `pnpm seed` va `pnpm build`; port 3100)        |
 
 ### Muhim eslatmalar
 
@@ -107,7 +107,9 @@ To'xtatish: `Ctrl+C`, keyin `docker compose -f infra/docker-compose.dev.yml down
 - **Ommaviy sayt** (M1-05): lotin — `/`, `/{category}`, `/{category}/page/{n}`, `/{category}/{slug}`; kirill — xuddi shu `/kr` bilan (`<html lang>` mos); marshrutlar — `(latn)/[[...path]]` va `kr/[[...path]]` (`src/site/route.ts`), `next build` DB'ga ulanmaydi, sahifalar birinchi so'rovda chiziladi. Ma'lumot — Payload Local API (`src/site/data.ts`), ISR: `unstable_cache` teglari (`src/site/cache-tags.ts`), publish/unpublish/arxivlashda Payload hook'lari `revalidateTag` chaqiradi (`src/site/revalidate.ts`). DB'ni tashqaridan o'zgartirsangiz (`pnpm seed`, SQL) — kesh yangilanmaydi: lokal'da `rm -rf apps/web/.next` va qayta build. Rasmlar: `next/image` custom loader (`src/lib/image-loader.ts`) — media variantlari (WebP) to'g'ridan-to'g'ri `MEDIA_PUBLIC_URL` dan, `/_next/image` ishlatilmaydi.
 - **Post workflow** (TZ §4.1): `draft → in_progress → review → scheduled/published → archived`, `rejected`. Qoidalar `apps/web/src/collections/Posts/workflow.ts` da, tekshiruv — `beforeChange` hook'da. Chop etish faqat `review`/`scheduled` dan admin'dagi **Publish** (API: `_status: 'published'`) orqali; holat avtomatik `published` bo'ladi. `in_progress` ga o'tganda post 2 soatga band qilinadi (boshqa editor o'zgartira olmaydi, admin — mumkin). Arxivlash — faqat admin. `scheduled` holatida `scheduledAt` vaqtiga `schedulePublish` job navbatga qo'yiladi (job'larni ishga tushirish — M2-01).
 
-- **Qo'shimcha sahifalar** (M1-07): `/tag/{slug}`, `/author/{slug}` (`…/page/{n}` sahifalash), statik sahifalar `/{slug}` (`pages`; kategoriya bilan bitta nomlar fazosi — slug to'qnashuvi va band slug'lar `kr`, `tag`, `author`, `search`, `bot`, `page`… validatsiyada rad etiladi, `src/lib/slug.ts`), `/search?q=` (`noindex`), 404 — hammasi `/kr` bilan. Header/footer menyulari — `header`/`footer` globals'dan. **Qidiruv:** Postgres FTS + `pg_trgm` (`src/site/search.ts`, migratsiya `20260924_113406_m1_07_search`): `posts_locales.search_vector`/`search_text` generated ustunlar, lotin va kirill bitta normallashtirilgan ko'rinishda (`oblog_search_normalize` ↔ `src/site/search-normalize.ts`) — kirill so'rov lotin maqolani topadi, `oʻ`/`o'`/`o‘` bir xil.
+- **Qo'shimcha sahifalar** (M1-07): `/tag/{slug}`, `/author/{slug}` (`…/page/{n}` sahifalash), statik sahifalar `/{slug}` (`pages`), `/search?q=` (`noindex`), 404 — hammasi `/kr` bilan. Kategoriya va statik sahifa bitta `/{slug}` nomlar fazosida: bir-birining slug'ini va band marshrut nomlarini (`kr`, `tag`, `author`, `search`, `bot`, `page`, `og`, `feeds`… — `ROUTE_RESERVED_SLUGS`, `src/lib/slug.ts`; `app/` dagi har bir ildiz papka testda tekshiriladi) validatsiya rad etadi. Header/footer menyulari — `header`/`footer` globals'dan (kategoriya, sahifa, URL; `newTab`).
+- **Qidiruv** (TZ §7, §8.1): Postgres FTS + `pg_trgm`, migratsiya `20260924_123153_m1_07_search` (qo'lda yozilgan SQL): `posts_locales.search_vector` (sarlavha A, lid B, Lexical matn C) va `search_title` (trigram, xato yozilgan so'zlar) — STORED generated ustunlar, GIN indekslar. Lotin va kirill bitta qidiruv kalitiga keltiriladi (`odya_search_normalize()` ↔ `src/site/search/normalize.ts`, test ikkisini solishtiradi): kirill so'rov lotin maqolani topadi va aksincha, `oʻ`/`o'`/`o‘`/`o’` bir xil. So'rov — parametrlar bilan, `tsquery` faqat `[a-z0-9]` so'zlardan; natijalar keshlanmaydi.
+- **Lighthouse CI** (TZ §8.4): `apps/web/lighthouserc.cjs` — mobil Performance ≥ 90, SEO = 100, Accessibility ≥ 90, birinchi yuklash JS ≤ 150 KB gzip (bosh sahifa, maqola, kategoriya; 3 o'lchov, mediana). Bloklovchi o'lchov — `ci.yml` ("Lighthouse CI" qadami, shu build'ning `next start` + demo seed); Vercel Preview URL'iga qarshi — `.github/workflows/lighthouse-preview.yml` (`deployment_status`; preview ataylab `noindex`, shuning uchun faqat `is-crawlable` auditi o'tkaziladi). Preview "Vercel Authentication" bilan yopiq bo'lsa — repo secret **`VERCEL_AUTOMATION_BYPASS_SECRET`** (Vercel → Settings → Deployment Protection → Protection Bypass for Automation). Windows'da `lhci autorun` Chrome vaqtinchalik papkasini o'chira olmay yiqilishi mumkin — `lighthouserc.cjs` izohiga qarang.
 
 ### API kalitlar va audit log (M2-05)
 
@@ -120,14 +122,6 @@ To'xtatish: `Ctrl+C`, keyin `docker compose -f infra/docker-compose.dev.yml down
   - `diff`: faqat o'zgargan yuqori darajadagi maydonlar `{ maydon: { from, to } }`; 1000 belgidan katta qiymatlar (Lexical matn) — `{ _omitted, chars }`; parol/kalit/token maydonlari yozilmaydi. O'zgarishsiz saqlash va admin autosave (10 s) yozilmaydi (to'liq matn tarixi — versiyalar).
   - `sources` va `scraped-items` dagi job (foydalanuvchisiz) yozuvlari audit qilinmaydi — feed/pipeline texnik holati DB hajmini to'ldirmasligi uchun (Supabase Free 500 MB).
   - Saqlash muddati (1 yil) tozalovi hali yo'q; kelajakdagi job `context: { auditRetention: true }` bilan o'chiradi.
-
-## Lighthouse CI
-
-[`.github/workflows/lighthouse.yml`](.github/workflows/lighthouse.yml), chegaralar — `apps/web/lighthouserc.cjs`: mobil Performance ≥ 90, SEO = 100, Accessibility ≥ 90, JS ≤ 150 KB gzip (bosh sahifa, maqola, kategoriya; 3 o'lchov, median).
-
-- **PR'da (majburiy):** production build (`next build` + `next start`) seed demo kontenti bilan (Postgres + MinIO). Preview'da DB yo'q (maqola/kategoriya 404), shuning uchun asosiy tekshiruv shu yerda.
-- **Vercel Preview'da (`deployment_status`):** preview URL'ga, standart — faqat bosh sahifa (`Settings → Variables → LHCI_PREVIEW_PATHS`, masalan `/,/kibersport`). Preview ataylab `noindex` — `is-crawlable`/`canonical` auditlari o'tkazib yuboriladi. **Deployment Protection** yoqilgan bo'lsa, repo secret **`VERCEL_AUTOMATION_BYPASS_SECRET`** qo'shing (Vercel → Project → Settings → Deployment Protection → Protection Bypass for Automation).
-- Hisobotlar — Actions artefakti (`lighthouse-pr-<n>`). Required status check sifatida `Lighthouse (production build)` ni qo'shish tavsiya etiladi (Settings → Branches).
 
 ## Prod migratsiya
 

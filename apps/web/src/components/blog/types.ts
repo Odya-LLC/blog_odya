@@ -29,7 +29,7 @@ export type CategoryRef = {
 export type NavCategory = CategoryRef & {
   /** `false` — "Yana" menyusida (masalan, Ilm-fan). */
   isInMenu: boolean
-  /** Yangi oynada ochish (`header` global havolasi). */
+  /** Yangi oynada (`target="_blank"`) — menyu havolasida `newTab`. */
   newTab?: boolean
 }
 
@@ -73,9 +73,9 @@ export type LinkItem = {
   newTab?: boolean
 }
 
-/** Footer ustuni (`footer` global'i, TZ §10.15): sarlavha + havolalar. */
+/** Footer ustuni (`footer` global — sarlavha + havolalar). */
 export type FooterColumn = {
-  title: string | null
+  title: string
   links: LinkItem[]
 }
 

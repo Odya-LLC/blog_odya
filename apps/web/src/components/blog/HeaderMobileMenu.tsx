@@ -1,9 +1,11 @@
 'use client'
 
 import { MenuIcon, XIcon } from 'lucide-react'
-import { type MouseEvent, type ReactNode, useId, useRef } from 'react'
+// clsx (tailwind-merge'siz): client bundle'da twMerge bo'lmasin — JS byudjeti (TZ §8.4).
+import { clsx as cn } from 'clsx'
+import { type ReactNode, useId, useRef } from 'react'
 
-import { cx, ICON_BUTTON_CLASS } from './client-classes'
+import { buttonVariants } from '@/components/ui/button-variants'
 
 type HeaderMobileMenuProps = {
   openLabel: string
@@ -15,9 +17,9 @@ type HeaderMobileMenuProps = {
 }
 
 /**
- * Mobil menyu (burger → o'ng panel) — brauzerning `<dialog>` elementi (`showModal`): fokus
- * modal ichida, orqa fon `inert`, Esc bilan yopiladi, fokus tugmaga qaytadi. Kutubxonasiz —
- * birinchi yuklash JS byudjeti (TZ §8.4: ≤ 150 KB gzip) uchun Radix Dialog o'rniga (M1-07).
+ * Mobil menyu (burger → o'ng panel) — brauzerning `<dialog>` elementi (`showModal()`): sahifaning
+ * qolgan qismi `inert`, Esc yopadi, fokus panel ichida va yopilganda tugmaga qaytadi. Radix Dialog
+ * o'rniga (M1-07: birinchi yuklash JS ≤ 150 KB gzip, TZ §8.4).
  */
 export function HeaderMobileMenu({
   openLabel,
@@ -30,12 +32,6 @@ export function HeaderMobileMenu({
   const titleId = useId()
   const close = () => dialogRef.current?.close()
 
-  const onDialogClick = (event: MouseEvent<HTMLDialogElement>) => {
-    // Orqa fon (dialog elementining o'zi) yoki havola bosilganda — yopiladi (client navigatsiya).
-    const target = event.target as HTMLElement
-    if (target === event.currentTarget || target.closest('a')) close()
-  }
-
   return (
     <>
       <button
@@ -43,32 +39,38 @@ export function HeaderMobileMenu({
         aria-label={openLabel}
         aria-haspopup="dialog"
         onClick={() => dialogRef.current?.showModal()}
-        className={cx(ICON_BUTTON_CLASS, className)}
+        className={cn(
+          buttonVariants({ variant: 'ghost', size: 'icon' }),
+          'rounded-full!',
+          className,
+        )}
       >
         <MenuIcon aria-hidden />
       </button>
       <dialog
         ref={dialogRef}
         aria-labelledby={titleId}
-        onClick={onDialogClick}
-        className="fixed inset-y-0 right-0 left-auto m-0 h-dvh max-h-dvh w-[88%] max-w-sm overflow-y-auto border-l border-border bg-bg p-0 text-fg shadow-xl backdrop:bg-black/50"
+        onClick={(event) => {
+          // Fonga (backdrop) bosish yoki havola tanlash — panel yopiladi.
+          const target = event.target as HTMLElement
+          if (target === event.currentTarget || target.closest('a')) close()
+        }}
+        className="m-0 ml-auto h-dvh max-h-dvh w-[88%] max-w-sm border-0 border-l border-border bg-bg p-0 text-fg shadow-xl backdrop:bg-black/50"
       >
-        <div className="flex min-h-full flex-col gap-4 p-5">
+        <div className="relative flex min-h-full flex-col gap-4 p-5">
           <h2 id={titleId} className="pr-10 font-display text-lg font-bold text-fg">
             {title}
           </h2>
           {children}
+          <button
+            type="button"
+            aria-label={closeLabel}
+            onClick={close}
+            className="absolute top-3 right-3 inline-flex size-10 items-center justify-center rounded-md text-muted hover:bg-surface-muted hover:text-fg"
+          >
+            <XIcon className="size-5" aria-hidden />
+          </button>
         </div>
-        <button
-          type="button"
-          // Ochilganda fokus — yopish tugmasiga (mobil klaviatura qidiruv maydonida ochilmasin).
-          autoFocus
-          onClick={close}
-          aria-label={closeLabel}
-          className="absolute top-3 right-3 inline-flex size-10 items-center justify-center rounded-md text-muted hover:bg-surface-muted hover:text-fg"
-        >
-          <XIcon className="size-5" aria-hidden />
-        </button>
       </dialog>
     </>
   )

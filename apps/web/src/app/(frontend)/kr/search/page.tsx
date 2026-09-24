@@ -1,20 +1,14 @@
 import type { Metadata } from 'next'
 
-import {
-  parseSearchParams,
-  type SearchPageProps,
-  searchPageMetadata,
-  SearchView,
-} from '@/site/views/SearchView'
+import { type SearchParams, searchPageMetadata, SearchView } from '@/site/views/SearchView'
 
-/** So'rov bo'yicha (`searchParams`) — har doim dinamik; natijalar ma'lumot keshida (`posts` tegi). */
-export const dynamic = 'force-dynamic'
+type Props = { searchParams: Promise<SearchParams> }
 
-export async function generateMetadata(props: SearchPageProps): Promise<Metadata> {
-  return searchPageMetadata('uz-Cyrl', props)
+/** `/kr/search?q=` — kirill; lotin varianti bilan bir xil (`(latn)/search/page.tsx`). */
+export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
+  return searchPageMetadata('uz-Cyrl', await searchParams)
 }
 
-export default async function SearchPage({ searchParams }: SearchPageProps) {
-  const params = parseSearchParams(await searchParams)
-  return <SearchView locale="uz-Cyrl" {...params} />
+export default async function SearchPage({ searchParams }: Props) {
+  return <SearchView locale="uz-Cyrl" params={await searchParams} />
 }

@@ -1,102 +1,73 @@
 import type { Locale } from '@blog-odya/shared'
-import { ArrowLeftIcon } from 'lucide-react'
 import type { Metadata } from 'next'
-import Link from 'next/link'
+import { notFound } from 'next/navigation'
 
-import { EmptyState } from '@/components/blog/EmptyState'
 import { SearchForm } from '@/components/blog/SearchForm'
-import { Container } from '@/components/blog/SiteShell'
-import { buttonVariants } from '@/components/ui/button'
 import { getSiteStrings } from '@/i18n/site'
-import { cn } from '@/lib/utils'
 
-import { homePath, parsePageParam, searchPath } from '../paths'
+import { loadSearchResults, type SearchResults } from '../data'
+import { parsePageParam, searchPath } from '../paths'
+import { parseSearchQuery } from '../search/normalize'
 import { searchMetadata } from '../seo/pages'
-import { getSearchResults, SEARCH_MAX_PAGE } from '../search'
-import { cleanSearchQuery, isSearchableQuery } from '../search-normalize'
-import { PostListing } from './PostListing'
+import { ListingBody } from './ListingView'
 import { SitePage } from './SitePage'
 
-/** `app/.../search/page.tsx` `searchParams` (Next.js: Promise). */
-export type SearchPageProps = {
-  searchParams: Promise<{ q?: string | string[]; page?: string | string[] }>
+export type SearchParams = Record<string, string | string[] | undefined>
+
+function first(value: string | string[] | undefined): string {
+  return (Array.isArray(value) ? value[0] : value) ?? ''
 }
 
-export type SearchParams = { query: string; page: number }
-
-/** `?q=…&page=n` → toza so'rov va sahifa (noto'g'ri `page` — 1, maksimum — `SEARCH_MAX_PAGE`). */
-export function parseSearchParams(params: {
-  q?: string | string[]
-  page?: string | string[]
-}): SearchParams {
-  const rawPage = Array.isArray(params.page) ? params.page[0] : params.page
-  const page = rawPage ? (parsePageParam(rawPage) ?? 1) : 1
-  return { query: cleanSearchQuery(params.q), page: Math.min(page, SEARCH_MAX_PAGE) }
+/** `?page=` — faqat butun son ≥ 2; noto'g'ri qiymat — 1-sahifa. */
+function pageFrom(params: SearchParams): number {
+  return parsePageParam(first(params.page)) ?? 1
 }
 
-export async function searchPageMetadata(
-  locale: Locale,
-  { searchParams }: SearchPageProps,
-): Promise<Metadata> {
-  const { query } = parseSearchParams(await searchParams)
-  return searchMetadata(locale, query)
+/** Qidiruv sahifasi har doim `noindex` (TZ §8.1; `robots.txt` da ham yopiq). */
+export function searchPageMetadata(locale: Locale, params: SearchParams): Metadata {
+  const query = parseSearchQuery(first(params.q))
+  return searchMetadata(locale, query?.display ?? null)
 }
 
 /**
- * Qidiruv `/search?q=` (`/kr/search?q=`) — TZ §8.1: `noindex`, robots.txt'da yopiq. Postgres FTS +
- * `pg_trgm`, so'rov lotin yoki kirillda (`src/site/search.ts`). JS'siz ishlaydi (GET forma).
+ * `/search?q=` va `/kr/search?q=` — Postgres FTS (lotin + kirill, `oʻ`/`o'` variantlari,
+ * `search/normalize.ts`). Bo'sh/qisqa so'rov — faqat forma; natija yo'q — bo'sh holat.
  */
-export async function SearchView({ locale, query, page }: { locale: Locale } & SearchParams) {
+export async function SearchView({ locale, params }: { locale: Locale; params: SearchParams }) {
   const t = getSiteStrings(locale)
-  const searchable = isSearchableQuery(query)
-  const results = searchable ? await getSearchResults(locale, query, page) : null
+  const raw = first(params.q).trim()
+  const query = parseSearchQuery(raw)
+  const page = query ? pageFrom(params) : 1
+  const results: SearchResults | null = query ? await loadSearchResults(locale, query, page) : null
+  if (results && page > results.totalPages) notFound()
+  const display = query?.display ?? raw
 
   return (
-    <SitePage locale={locale} pathname={searchPath(locale, query, page)}>
-      <Container className="flex max-w-3xl flex-col gap-8 py-8 lg:py-12">
-        <header className="flex flex-col gap-4">
-          <h1 className="font-display text-3xl font-extrabold text-fg">
-            {query ? t.searchResultsFor(query) : t.searchTitle}
-          </h1>
-          <SearchForm locale={locale} defaultValue={query} />
-          {results && results.totalDocs > 0 ? (
-            <p className="text-sm text-subtle" role="status">
-              {t.searchCount(results.totalDocs)}
-            </p>
-          ) : null}
-        </header>
-        {!query ? (
-          <p className="text-muted">{t.searchPrompt}</p>
-        ) : !results ? (
-          <p className="text-muted" role="status">
-            {t.searchTooShort}
-          </p>
-        ) : results.totalDocs === 0 ? (
-          <EmptyState
-            title={t.emptyTitle}
-            description={t.emptySearch(query)}
-            action={
-              <Link
-                href={homePath(locale)}
-                className={cn(buttonVariants({ variant: 'outline' }), 'rounded-full')}
-              >
-                <ArrowLeftIcon aria-hidden />
-                {t.backHome}
-              </Link>
-            }
-          />
-        ) : (
-          <PostListing
-            locale={locale}
-            posts={results.posts}
-            page={page}
-            totalPages={results.totalPages}
-            hrefFor={(n) => searchPath(locale, query, n)}
-            emptyText={t.emptySearch(query)}
-            testId="search-results"
-          />
-        )}
-      </Container>
+    <SitePage locale={locale} pathname={searchPath(locale, query?.display, page)}>
+      <ListingBody
+        locale={locale}
+        testId="search-results"
+        header={
+          <header className="flex flex-col gap-4 border-b border-border pb-6">
+            <h1 className="font-display text-3xl font-extrabold text-fg sm:text-4xl">
+              {query ? t.searchResultsTitle(query.display) : t.searchTitle}
+            </h1>
+            <SearchForm locale={locale} defaultValue={display} className="w-full max-w-xl" />
+            {results ? (
+              <p className="text-sm text-muted" role="status">
+                {t.searchResultsCount(results.total)}
+              </p>
+            ) : (
+              <p className="text-sm text-muted">{raw ? t.searchTooShort : t.searchPrompt}</p>
+            )}
+          </header>
+        }
+        posts={results?.posts ?? []}
+        emptyText={query ? t.emptySearch(query.display) : null}
+        page={page}
+        totalPages={results?.totalPages ?? 1}
+        hrefForPage={(n) => searchPath(locale, query?.display, n)}
+      />
     </SitePage>
   )
 }

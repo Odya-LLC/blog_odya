@@ -10,15 +10,13 @@ type SitePageProps = {
   locale: Locale
   /** Joriy sahifa yo'li (joriy yozuv prefiksi bilan) — almashtirgich boshqa yozuvdagi URL'ni shundan oladi. */
   pathname: string
-  /** Faol menyu bandi: kategoriya (yoki menyudagi statik sahifa) slug'i. */
   activeCategorySlug?: string
   children: ReactNode
 }
 
 /**
- * Sahifa karkasi (header, footer) Payload ma'lumotlari bilan: `header` global'idagi menyu
- * (bo'sh bo'lsa — kategoriyalar), `footer` global'idagi ustunlar va mualliflik qatori, joriy
- * yozuvdagi Telegram kanal va "Lotin / Кирилл" almashtirgichi.
+ * Sahifa karkasi (header, footer) Payload ma'lumotlari bilan: kategoriyalar menyusi,
+ * huquqiy sahifalar, joriy yozuvdagi Telegram kanal va "Lotin / Кирилл" almashtirgichi.
  */
 export async function SitePage({ locale, pathname, activeCategorySlug, children }: SitePageProps) {
   const chrome = await getSiteChrome(locale)

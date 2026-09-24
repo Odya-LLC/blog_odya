@@ -5,9 +5,9 @@ import {
   LinkJSXConverter,
   RichText as PayloadRichText,
 } from '@payloadcms/richtext-lexical/react'
-import Image from 'next/image'
 import type { ReactNode } from 'react'
 
+import { StaticImage as Image } from '@/components/blog/StaticImage'
 import { encodeMediaSrc } from '@/lib/media-image'
 import type { Media } from '@/payload-types'
 import { categoryPath, pagePath, postPath, tagPath } from '@/site/paths'
@@ -128,7 +128,7 @@ function buildConverters(locale: Locale): JSXConvertersFunction {
         },
         embed: ({ node }) => {
           const { url, caption } = node.fields as { url?: string; caption?: string | null }
-          return url ? <Embed url={url} caption={caption} /> : null
+          return url ? <Embed url={url} caption={caption} locale={locale} /> : null
         },
       },
     }) as JSXConverters

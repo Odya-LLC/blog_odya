@@ -2,9 +2,10 @@
 
 import type { Locale } from '@blog-odya/shared/locales'
 import Link from 'next/link'
+// clsx (tailwind-merge'siz): client bundle'da twMerge bo'lmasin — JS byudjeti (TZ §8.4).
+import { clsx as cn } from 'clsx'
 
 import { SCRIPT_COOKIE, writePreferenceCookie } from '@/lib/preferences'
-import { cx } from './client-classes'
 
 type ScriptSwitcherProps = {
   locale: Locale
@@ -27,7 +28,7 @@ export function ScriptSwitcher({ locale, hrefs, label, className }: ScriptSwitch
   return (
     <nav
       aria-label={label}
-      className={cx('inline-flex rounded-full border border-border bg-surface p-0.5', className)}
+      className={cn('inline-flex rounded-full border border-border bg-surface p-0.5', className)}
     >
       {OPTIONS.map((option) => {
         const active = option.locale === locale
@@ -39,7 +40,7 @@ export function ScriptSwitcher({ locale, hrefs, label, className }: ScriptSwitch
             hrefLang={option.locale}
             aria-current={active ? 'true' : undefined}
             onClick={() => writePreferenceCookie(SCRIPT_COOKIE, option.locale)}
-            className={cx(
+            className={cn(
               'inline-flex h-8 items-center rounded-full px-2.5 text-xs font-semibold transition-colors sm:px-3',
               active ? 'bg-fg text-bg' : 'text-muted hover:text-fg',
             )}

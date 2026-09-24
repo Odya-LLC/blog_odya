@@ -1,20 +1,17 @@
 import type { Metadata } from 'next'
 
-import {
-  parseSearchParams,
-  type SearchPageProps,
-  searchPageMetadata,
-  SearchView,
-} from '@/site/views/SearchView'
+import { type SearchParams, searchPageMetadata, SearchView } from '@/site/views/SearchView'
 
-/** So'rov bo'yicha (`searchParams`) — har doim dinamik; natijalar ma'lumot keshida (`posts` tegi). */
-export const dynamic = 'force-dynamic'
+type Props = { searchParams: Promise<SearchParams> }
 
-export async function generateMetadata(props: SearchPageProps): Promise<Metadata> {
-  return searchPageMetadata('uz-Latn', props)
+/**
+ * `/search?q=` — alohida papka (catch-all'dan ustun): `searchParams` o'qiydi, shuning uchun
+ * dinamik (har so'rovda); catch-all sahifalari ISR'da qoladi. `noindex` (TZ §8.1).
+ */
+export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
+  return searchPageMetadata('uz-Latn', await searchParams)
 }
 
-export default async function SearchPage({ searchParams }: SearchPageProps) {
-  const params = parseSearchParams(await searchParams)
-  return <SearchView locale="uz-Latn" {...params} />
+export default async function SearchPage({ searchParams }: Props) {
+  return <SearchView locale="uz-Latn" params={await searchParams} />
 }

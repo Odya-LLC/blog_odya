@@ -13,8 +13,8 @@ type PaginationProps = {
   totalPages: number
   /** Kategoriya yo'li, masalan `/kibersport` yoki `/kr/kibersport`. 1-sahifa — shu yo'l, n — `…/page/n` (TZ §8.1). */
   basePath: string
-  /** Boshqa URL sxemasi (masalan, qidiruv: `?page=n`). Berilmasa — `pageHref(basePath, n)`. */
-  hrefFor?: (page: number) => string
+  /** Boshqa URL sxemasi (masalan, qidiruv: `?q=…&page=n`) — berilsa `basePath` o'rniga. */
+  hrefForPage?: (page: number) => string
   className?: string
 }
 
@@ -48,12 +48,12 @@ export function Pagination({
   currentPage,
   totalPages,
   basePath,
-  hrefFor,
+  hrefForPage,
   className,
 }: PaginationProps) {
   const t = getSiteStrings(locale)
-  const href = (page: number) => (hrefFor ? hrefFor(page) : pageHref(basePath, page))
   if (totalPages <= 1) return null
+  const href = (page: number) => (hrefForPage ? hrefForPage(page) : pageHref(basePath, page))
   const hasPrevious = currentPage > 1
   const hasNext = currentPage < totalPages
   const item = cn(buttonVariants({ variant: 'ghost', size: 'icon' }), 'font-semibold tabular-nums')

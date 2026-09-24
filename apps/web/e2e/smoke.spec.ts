@@ -93,9 +93,12 @@ for (const script of SCRIPTS) {
       await expect(article.locator('table th').first()).toBeVisible()
       await expect(article.locator('pre code')).toContainText('curl')
       await expect(article.locator('blockquote')).toBeVisible()
-      await expect(
-        article.locator('iframe[src^="https://www.youtube-nocookie.com/embed/"]'),
-      ).toHaveCount(1)
+      // YouTube facade (M1-07, TZ §8.4): pleyer iframe'i faqat bosilganda yuklanadi.
+      const youtube = article.locator('[data-embed="youtube"]')
+      const player = article.locator('iframe[src^="https://www.youtube-nocookie.com/embed/"]')
+      await expect(player).toHaveCount(0)
+      await youtube.getByRole('link').click()
+      await expect(player).toHaveCount(1)
       await expect(article.getByRole('complementary')).toContainText(featured.source.name)
       // AI shaffoflik izohi (rewrittenBy: ai_agent → aiDisclosure).
       await expect(article.getByRole('complementary')).toContainText(

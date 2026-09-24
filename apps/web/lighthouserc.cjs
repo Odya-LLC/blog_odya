@@ -1,56 +1,73 @@
 /**
- * Lighthouse CI (TZ §8.4, §11.7; M1-07): mobil Performance ≥ 90, SEO = 100, Accessibility ≥ 90,
- * birinchi yuklash JS ≤ 150 KB (gzip, uzatilgan hajm).
+ * Lighthouse CI (TZ §8.4, §11 p.7; M1-07): mobil Performance ≥ 90, SEO = 100,
+ * Accessibility ≥ 90, birinchi yuklash JS ≤ 150 KB gzip — bosh sahifa, maqola, kategoriya.
  *
- * Sahifalar: bosh sahifa, maqola, kategoriya (seed demo postlari — `pnpm seed`).
- * Lighthouse standart sozlamasi — mobil (Moto G Power emulyatsiyasi, simulyatsiya qilingan sekin 4G).
+ * Ishga tushirish (repo ildizidan):
+ *   LHCI_BASE_URL=http://localhost:3100 npx @lhci/cli@0.15.1 autorun --config=apps/web/lighthouserc.cjs
  *
  * Muhit o'zgaruvchilari:
- * - `LHCI_BASE_URL`        — tekshiriladigan sayt (standart: `http://localhost:3000`);
- * - `LHCI_PATHS`           — vergul bilan yo'llar (standart: bosh sahifa, maqola, kategoriya);
- * - `LHCI_START_SERVER=1`  — `next start` ni LHCI o'zi ishga tushiradi (CI, lokal build);
- * - `LHCI_PREVIEW=1`       — Vercel Preview: preview ataylab `noindex` (robots.txt `Disallow: /`,
- *                            `X-Robots-Tag`) va canonical production domeniga qaraydi — shuning uchun
- *                            `is-crawlable` va `canonical` auditlari o'tkazib yuboriladi
- *                            (production'da ular SEO toifasida qoladi);
- * - `VERCEL_AUTOMATION_BYPASS_SECRET` — Vercel Deployment Protection bypass (preview yopiq bo'lsa).
+ * - `LHCI_BASE_URL`  — sayt manzili (standart: `http://localhost:3100`, `next start -p 3100`);
+ * - `LHCI_PATHS`     — vergul bilan yo'llar (standart: demo seed — bosh sahifa, maqola, kategoriya);
+ * - `LHCI_PREVIEW=1` — Vercel Preview: `is-crawlable` auditi o'tkazib yuboriladi (pastga qarang);
+ * - `VERCEL_AUTOMATION_BYPASS_SECRET` — Preview "Vercel Authentication" bilan yopiq bo'lsa,
+ *   `x-vercel-protection-bypass` sarlavhasi (Vercel → Settings → Deployment Protection →
+ *   Protection Bypass for Automation);
+ * - `LHCI_RUNS` — har bir URL necha marta o'lchanadi (standart 3; natija — mediana);
+ * - `LHCI_START_SERVER=1` — `next start -p 3100` ni LHCI o'zi ishga tushiradi (CI).
  *
- * Ishga tushirish: `pnpm --filter @blog-odya/web lhci` (build + seed dan keyin) —
- * `.github/workflows/lighthouse.yml` ham shuni chaqiradi.
+ * Windows'da `lhci autorun` Chrome vaqtinchalik papkasini o'chira olmay (EPERM) yiqilishi mumkin:
+ * Chrome'ni `--remote-debugging-port=9333` bilan o'zingiz ishga tushirib, `lhci collect
+ * --settings.port=9333` va keyin `lhci assert` qiling (yoki `patrickhulce/lhci-client` Docker).
  */
+const base = (process.env.LHCI_BASE_URL || 'http://localhost:3100').replace(/\/+$/, '')
+
+/** Demo seed (`src/seed/data.ts`, `pnpm seed`): bosh sahifa, maqola (muqova + boy bloklar), kategoriya. */
 const DEFAULT_PATHS = [
   '/',
-  '/kibersport/namuna-kibersport-turniri-haqidagi-maqola-tuzilmasi',
+  '/suniy-intellekt/namuna-suniy-intellekt-yangiliklari-qanday-tayyorlanadi',
   '/kibersport',
 ]
 
-const baseUrl = (process.env.LHCI_BASE_URL || 'http://localhost:3000').replace(/\/+$/, '')
 const paths = (process.env.LHCI_PATHS || DEFAULT_PATHS.join(','))
   .split(',')
   .map((path) => path.trim())
   .filter(Boolean)
-const preview = process.env.LHCI_PREVIEW === '1'
-const bypass = process.env.VERCEL_AUTOMATION_BYPASS_SECRET
-const startServer = process.env.LHCI_START_SERVER === '1'
-const port = new URL(baseUrl).port || '3000'
 
-/** TZ §8.4: birinchi yuklash JS < 150 KB gzip. */
+/**
+ * Preview (`VERCEL_ENV=preview`) ataylab `noindex` (OBLOG-13: `X-Robots-Tag`, `<meta robots>`,
+ * `robots.txt: Disallow: /`) — bu to'g'ri xatti-harakat, uni o'chirmaymiz (preview Google'ga
+ * tushmasligi kerak). Shuning uchun faqat preview'da `is-crawlable` auditi o'tkazib yuboriladi:
+ * o'tkazilgan audit SEO bahosiga kirmaydi, qolgan barcha SEO auditlari (title, description,
+ * canonical, hreflang, link matni, `lang`, http status …) = 100 bo'lishi shart. Indekslanish
+ * esa mahalliy/CI o'lchovida (`next start`, preview emas) va unit testlarda tekshiriladi.
+ */
+const isPreview = process.env.LHCI_PREVIEW === '1'
+const bypass = process.env.VERCEL_AUTOMATION_BYPASS_SECRET
+
+/** Birinchi yuklash JS byudjeti (gzip, uzatilgan hajm): 150 KB (TZ §8.4). */
 const JS_BUDGET_BYTES = 150 * 1024
+
+/** CI: `next start` ni LHCI o'zi ishga tushiradi (`LHCI_START_SERVER=1`, cwd — `apps/web`). */
+const startServer =
+  process.env.LHCI_START_SERVER === '1'
+    ? {
+        startServerCommand: 'pnpm exec next start -p 3100',
+        startServerReadyPattern: 'Ready in',
+        startServerReadyTimeout: 120000,
+      }
+    : {}
 
 module.exports = {
   ci: {
     collect: {
-      url: paths.map((path) => `${baseUrl}${path}`),
+      ...startServer,
+      url: paths.map((path) => `${base}${path}`),
       numberOfRuns: Number(process.env.LHCI_RUNS || 3),
-      ...(startServer
-        ? {
-            startServerCommand: `pnpm exec next start -p ${port}`,
-            startServerReadyPattern: 'Ready',
-            startServerReadyTimeout: 60_000,
-          }
-        : {}),
       settings: {
-        chromeFlags: '--no-sandbox --disable-dev-shm-usage',
+        // Standart Lighthouse — mobil (Moto G Power emulyatsiyasi, simulyatsiya qilingan 4G).
+        formFactor: 'mobile',
+        chromeFlags: '--headless=new --no-sandbox --disable-dev-shm-usage',
+        skipAudits: isPreview ? ['is-crawlable'] : [],
         ...(bypass
           ? {
               extraHeaders: JSON.stringify({
@@ -59,11 +76,10 @@ module.exports = {
               }),
             }
           : {}),
-        ...(preview ? { skipAudits: ['is-crawlable', 'canonical'] } : {}),
       },
     },
     assert: {
-      // Har bir URL uchun 3 o'lchovning medianasi (tasodifiy tebranishlarga chidamli).
+      // Har bir URL uchun mediana natija (3 ta o'lchovdan) — tasodifiy "eng yaxshi" emas.
       aggregationMethod: 'median-run',
       assertions: {
         'categories:performance': ['error', { minScore: 0.9 }],
@@ -73,9 +89,9 @@ module.exports = {
       },
     },
     upload: {
-      // Hisobotlar — GitHub Actions artefakti (yopiq repo: ommaviy saqlashga yuklanmaydi).
+      // Hisobotlar — GitHub Actions artefakti sifatida (ommaviy saqlashga yuklanmaydi).
       target: 'filesystem',
-      outputDir: './.lighthouseci/reports',
+      outputDir: '.lighthouseci/reports',
     },
   },
 }
