@@ -254,6 +254,15 @@ export const Posts: CollectionConfig = {
         },
       ],
     },
+    // Asl manba (read-only) — `sources[].scrapedItem` bo'yicha, sidebar tepasida (M2-04).
+    {
+      name: 'sourcePanel',
+      type: 'ui',
+      admin: {
+        position: 'sidebar',
+        components: { Field: '@/components/admin/SourcePanel#SourcePanel' },
+      },
+    },
     slugField('title'),
     {
       name: 'workflowStatus',
