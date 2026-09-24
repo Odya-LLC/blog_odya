@@ -15,6 +15,8 @@ describe('sayt marshrutlari ([[...path]], TZ §8.1)', () => {
     ],
     // `/{category}/page` — `page` slug'li maqola sifatida qidiriladi (topilmasa — 404)
     [['kibersport', 'page'], { kind: 'article', category: 'kibersport', slug: 'page' }],
+    // OdyaBlogBot sahifasi (User-Agent'dagi havola).
+    [['bot'], { kind: 'bot' }],
   ] as const)('%j', (segments, expected) => {
     expect(resolveSiteRoute(segments as string[] | undefined)).toEqual(expected)
   })

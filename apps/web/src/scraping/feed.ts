@@ -1,13 +1,15 @@
 import Parser from 'rss-parser'
 
+import { USER_AGENT } from './userAgent'
+
 /**
  * RSS/Atom feed'ni yuklash va parse qilish (`feed.poll`, TZ §3.5).
  * `ETag` / `Last-Modified` bilan shartli so'rov: o'zgarmagan feed `304` qaytaradi — trafik va
  * parse vaqti tejaladi.
  */
 
-/** O'z User-Agent'imiz (TZ §2.3, docs/sources.md). */
-export const USER_AGENT = 'OdyaBlogBot/1.0 (+https://blog.odya.uz/bot)'
+/** O'z User-Agent'imiz (TZ §2.3) — `./userAgent` (sayt sahifalari rss-parser'siz import qiladi). */
+export { USER_AGENT }
 
 /** Feed javobining maksimal hajmi — undan kattasi xato (xotira va vaqtni himoya qilish). */
 export const MAX_FEED_BYTES = 5 * 1024 * 1024

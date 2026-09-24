@@ -10,7 +10,11 @@ Supabase pg_cron (*/10) ──pg_net──▶ POST https://blog.odya.uz/api/jobs
                                           ├─ processing'da qolib ketgan job'larni bo'shatish (> 5 daqiqa)
                                           ├─ muddati kelgan manbalar uchun feed.poll navbatga (pollIntervalMin)
                                           └─ payload.jobs.run({ limit }) batch'lari — ichki deadline ≈ 40 s gacha
+                                               navbatlar: default (feed.poll) → scrape (scrapeItem: item.fetch → item.extract)
 ```
+
+- `scrape` navbati (M2-02) faqat `S3_RAW_BUCKET` sozlangan bo'lsa ishga tushadi (raw/clean HTML gzip arxivi —
+  DB'ga HTML yozilmaydi). Sozlanmagan bo'lsa `scrapeItem` job'lari kutib turadi, elementlar `Navbatda` holatida qoladi.
 
 - Javob (JSON): `enqueued`, `batches`, `done: { succeeded, failed }`, `remaining`, `deadlineReached`, `durationMs`.
 - `401` — token noto'g'ri/yo'q; `503` — serverda `JOBS_SECRET` sozlanmagan (endpoint yopiq).
@@ -21,7 +25,7 @@ Supabase pg_cron (*/10) ──pg_net──▶ POST https://blog.odya.uz/api/jobs
 ## Birinchi sozlash (egasi, production)
 
 1. **Sir yaratish:** `openssl rand -hex 32`.
-2. **Vercel** → Project → Settings → Environment Variables → **Production**: `JOBS_SECRET=<sir>` (`JOBS_MODE` — `endpoint` yoki bo'sh). Preview scope'ga qo'ymang. Redeploy.
+2. **Vercel** → Project → Settings → Environment Variables → **Production**: `JOBS_SECRET=<sir>` (`JOBS_MODE` — `endpoint` yoki bo'sh), `S3_RAW_BUCKET=blog-odya-raw` (yopiq R2 bucket, ommaviy domensiz; Lifecycle rule — 30 kundan keyin o'chirish; R2 tokeni shu bucket'ga yozish/o'qish huquqi bilan). Preview scope'ga qo'ymang. Redeploy.
 3. **Tekshiruv (qo'lda):**
    ```bash
    curl -sS -X POST -H "Authorization: Bearer <sir>" https://blog.odya.uz/api/jobs/run

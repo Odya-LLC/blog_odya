@@ -5,6 +5,7 @@
  * - `[category]`                → kategoriya, 1-sahifa
  * - `[category, 'page', n]`     → kategoriya, n-sahifa (`1` → kanonik URL'ga redirect)
  * - `[category, slug]`          → maqola
+ * - `['bot']`                   → OdyaBlogBot haqida (User-Agent havolasi, M2-02)
  *
  * Nega catch-all: `next build` DB'ga ulanmaydi (OBLOG-31) — `/` va `/kr` ham boshqa sahifalar kabi
  * birinchi so'rovda chiziladi va ISR'da keshlanadi (`generateStaticParams` → `[]`).
@@ -18,6 +19,7 @@ export type SiteRoute =
   | { kind: 'category'; category: string; page: number }
   | { kind: 'category-first-page'; category: string }
   | { kind: 'article'; category: string; slug: string }
+  | { kind: 'bot' }
   | { kind: 'not-found' }
 
 /** Slug segmenti: kichik lotin harflari, raqamlar, `-` (bot so'rovlari DB'ga yetib bormaydi). */
@@ -28,6 +30,8 @@ export function resolveSiteRoute(segments: readonly string[] | undefined): SiteR
   if (parts.length === 0) return { kind: 'home' }
   const [category, second, third] = parts
   if (!category || !SEGMENT.test(category) || parts.length > 3) return { kind: 'not-found' }
+  // Statik sahifalar kategoriya slug'idan ustun (bunday kategoriya yaratilmasligi kerak).
+  if (parts.length === 1 && category === 'bot') return { kind: 'bot' }
   if (parts.length === 1) return { kind: 'category', category, page: 1 }
   if (parts.length === 2) {
     return second && SEGMENT.test(second)
