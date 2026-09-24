@@ -77,6 +77,7 @@ export interface Config {
     sources: Source;
     'scraped-items': ScrapedItem;
     redirects: Redirect;
+    'audit-logs': AuditLog;
     'payload-kv': PayloadKv;
     'payload-jobs': PayloadJob;
     'payload-locked-documents': PayloadLockedDocument;
@@ -95,6 +96,7 @@ export interface Config {
     sources: SourcesSelect<false> | SourcesSelect<true>;
     'scraped-items': ScrapedItemsSelect<false> | ScrapedItemsSelect<true>;
     redirects: RedirectsSelect<false> | RedirectsSelect<true>;
+    'audit-logs': AuditLogsSelect<false> | AuditLogsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -508,6 +510,7 @@ export interface User {
   name: string;
   role: 'admin' | 'editor';
   author?: (number | null) | Author;
+  lastLoginAt?: string | null;
   updatedAt: string;
   createdAt: string;
   enableAPIKey?: boolean | null;
@@ -693,6 +696,39 @@ export interface Redirect {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "audit-logs".
+ */
+export interface AuditLog {
+  id: number;
+  action: 'create' | 'update' | 'publish' | 'delete';
+  collection?: string | null;
+  global?: string | null;
+  docId?: string | null;
+  title?: string | null;
+  locale?: string | null;
+  /**
+   * Faqat o'zgargan maydonlar: { maydon: { from, to } }. Katta qiymatlar (masalan, matn) — { _omitted, chars }.
+   */
+  diff?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  actorType: 'user' | 'system';
+  user?: (number | null) | User;
+  channel: 'admin' | 'rest' | 'graphql' | 'mcp' | 'job';
+  tool?: string | null;
+  ip?: string | null;
+  userAgent?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -847,6 +883,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'redirects';
         value: number | Redirect;
+      } | null)
+    | ({
+        relationTo: 'audit-logs';
+        value: number | AuditLog;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -1181,6 +1221,7 @@ export interface UsersSelect<T extends boolean = true> {
   name?: T;
   role?: T;
   author?: T;
+  lastLoginAt?: T;
   updatedAt?: T;
   createdAt?: T;
   enableAPIKey?: T;
@@ -1299,6 +1340,27 @@ export interface RedirectsSelect<T extends boolean = true> {
         url?: T;
       };
   type?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "audit-logs_select".
+ */
+export interface AuditLogsSelect<T extends boolean = true> {
+  action?: T;
+  collection?: T;
+  global?: T;
+  docId?: T;
+  title?: T;
+  locale?: T;
+  diff?: T;
+  actorType?: T;
+  user?: T;
+  channel?: T;
+  tool?: T;
+  ip?: T;
+  userAgent?: T;
   updatedAt?: T;
   createdAt?: T;
 }
