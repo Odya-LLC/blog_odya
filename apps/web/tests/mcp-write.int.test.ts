@@ -396,7 +396,8 @@ describe('MCP yozish toollari (/api/mcp)', () => {
       new Set(['create_draft', 'claim_draft', 'save_rewrite', 'set_seo', 'submit_for_review']),
     )
     expect(audit.docs.every((entry) => entry.user === users.editor.id)).toBe(true)
-    expect(audit.docs.some((entry) => entry.locale === 'uz-Cyrl')).toBe(true)
+    // Agent faqat lotin yozadi: kirill o'sha saqlashda `posts` hook'i bilan (alohida uz-Cyrl yozuvi yo'q).
+    expect(audit.docs.some((entry) => entry.locale === 'uz-Cyrl')).toBe(false)
 
     // Review'dagi postni endi MCP orqali o'zgartirib bo'lmaydi.
     const client2 = await connect(editorKey)

@@ -1,4 +1,4 @@
-import { glossarySeed, loadGuideline, type GlossaryItem } from '@blog-odya/guidelines'
+import { loadGuideline, type GlossaryItem } from '@blog-odya/guidelines'
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
 import type { CollectionSlug, Where } from 'payload'
@@ -9,6 +9,11 @@ import type { Category, Post, ScrapedItem, Source, Tag, User } from '@/payload-t
 import { postPath } from '@/site/paths'
 import { parseSearchQuery } from '@/site/search/normalize'
 import { searchPostIds } from '@/site/search/query'
+import {
+  getGlossary as getGlossarySnapshot,
+  seedGlossary,
+  type GlossarySnapshot,
+} from '@/translit/transliterator'
 
 import { localApiArgs, type McpContext } from './context'
 import { jsonResult, McpToolError, safeTool, textResult } from './result'
@@ -154,13 +159,21 @@ export function filterGlossary(
   )
 }
 
-export function getGlossary(input: Input<typeof getGlossaryInput>): CallToolResult {
-  const items = filterGlossary(glossarySeed.items, input)
+/**
+ * `get_glossary`: glossariy — seed (`packages/guidelines`) ustiga admin'dagi `glossary` kolleksiyasi
+ * (DB ustun; `src/translit/transliterator.ts`, 60 s kesh). Default — faqat seed (DB'siz testlar).
+ */
+export function getGlossary(
+  input: Input<typeof getGlossaryInput>,
+  glossary: GlossarySnapshot = seedGlossary(),
+): CallToolResult {
+  const items = filterGlossary(glossary.items, input)
   const start = (input.page - 1) * input.limit
   const totalPages = Math.max(1, Math.ceil(items.length / input.limit))
   return jsonResult({
-    version: glossarySeed.version,
-    updatedAt: glossarySeed.updatedAt,
+    version: glossary.version,
+    updatedAt: glossary.updatedAt,
+    source: glossary.source,
     rules:
       'doNotTranslate — atama asl yozilishida qoladi; doNotTransliterate — kirill versiyasida ham lotin yozuvida qoladi',
     items: items.slice(start, start + input.limit),
@@ -745,7 +758,9 @@ export function registerReadTools(server: McpServer, ctx: McpContext): void {
       inputSchema: getGlossaryInput,
       annotations: READ_ONLY,
     },
-    safeTool('get_glossary', async (input) => getGlossary(input)),
+    safeTool('get_glossary', async (input) =>
+      getGlossary(input, await getGlossarySnapshot(ctx.payload)),
+    ),
   )
 
   server.registerTool(

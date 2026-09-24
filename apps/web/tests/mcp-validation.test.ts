@@ -1,7 +1,8 @@
+import { getDefaultTransliterator } from '@blog-odya/shared'
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
 
-import { lockedFields, planCyrillic } from '@/mcp/cyrillic'
+import { cyrillicReport, lockedFields, previewMissingCyrillic } from '@/mcp/cyrillic'
 import { markdownToLexical } from '@/mcp/markdown'
 import { createDraftInput, saveRewriteInput, setSeoInput } from '@/mcp/schemas'
 import {
@@ -263,49 +264,37 @@ describe('manba bilan n-gram o‘xshashlik', () => {
   })
 })
 
-describe('kirill rejasi (uz-Cyrl)', () => {
-  it('lotindan kirill: matn, Lexical, meta, FAQ; kod va URL o‘zgarmaydi', () => {
+describe('kirill (uz-Cyrl): preview va hisobot', () => {
+  // Kirillni saqlash — `posts` hook'i (cyrlSyncPlugin): tests/cyrl-sync*.test.ts.
+  it('preview: lotindan kirill — matn va Lexical; kod va URL o‘zgarmaydi', () => {
     const content = markdownToLexical(
       'Oʻzbekiston [sayti](https://gov.uz) va `npm install` buyrugʻi.\n\n```sh\necho salom\n```',
     ).state
-    const { data, skipped } = planCyrillic(
-      {
-        title: 'Yangi smartfon',
-        excerpt: 'Qisqacha maʼlumot',
-        content,
-        meta: { title: 'Sarlavha', description: 'Tavsif', focusKeyword: 'smartfon narxi' },
-        faq: [{ question: 'Qachon?', answer: 'Ertaga.' }],
-        coverAlt: 'Qora telefon',
-      },
-      new Set(),
+    const data = previewMissingCyrillic(
+      { title: 'Yangi smartfon', excerpt: 'Qisqacha maʼlumot', content },
+      getDefaultTransliterator(),
     )
-    expect(skipped).toEqual([])
     expect(data.title).toBe('Янги смартфон')
     expect(data.excerpt).toBe('Қисқача маълумот')
-    expect(data.meta).toEqual({
-      title: 'Сарлавҳа',
-      description: 'Тавсиф',
-      focusKeyword: 'смартфон нархи',
-    })
-    expect(data.faq).toEqual([{ question: 'Қачон?', answer: 'Эртага.' }])
-    expect(data.coverAlt).toBe('Қора телефон')
     const json = JSON.stringify(data.content)
     expect(json).toContain('Ўзбекистон')
     expect(json).toContain('https://gov.uz')
     expect(json).toContain('npm install')
     expect(json).toContain('echo salom')
+    expect(
+      previewMissingCyrillic({ title: undefined, excerpt: null }, getDefaultTransliterator()),
+    ).toEqual({})
   })
 
-  it('qulflangan maydonlar (cyrlLocked) — o‘tkazib yuboriladi', () => {
+  it('qulflangan maydonlar (cyrlLocked) — hisobotda skipped', () => {
     const locked = lockedFields({ cyrlLocked: { title: true, meta: true, excerpt: false } })
     expect([...locked].sort()).toEqual(['meta', 'title'])
-    const { data, skipped } = planCyrillic(
-      { title: 'Sarlavha', excerpt: 'Lid', meta: { title: 'SEO' } },
-      locked,
-    )
-    expect(Object.keys(data)).toEqual(['excerpt'])
-    expect(skipped).toEqual(['title', 'meta'])
+    expect(cyrillicReport(['title', 'excerpt', 'meta'], locked)).toEqual({
+      updated: ['excerpt'],
+      skipped: ['title', 'meta'],
+    })
     expect(lockedFields({ cyrlLocked: null }).size).toBe(0)
+    expect(lockedFields({ cyrlLocked: '{"faq":true}' })).toEqual(new Set(['faq']))
   })
 })
 

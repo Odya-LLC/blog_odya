@@ -20,6 +20,7 @@ import {
   seedCoverUrl,
 } from './data'
 import { DEMO_RICH_MARKDOWN, demoRichNodes } from './rich'
+import { seedTranslitDictionaries, type TranslitSeedResult } from './translit'
 
 const LATN: Locale = 'uz-Latn'
 const CYRL: Locale = 'uz-Cyrl'
@@ -38,6 +39,8 @@ export interface SeedSummary {
   media: Count & { failed: number }
   sources: Count
   globals: { siteSettings: boolean; header: boolean; footer: boolean }
+  /** Transliteratsiya istisnolari va glossariy (M1-03) — kontentdan oldin (kirill sinxronlash). */
+  translit?: TranslitSeedResult
   /** Seed'da to'ldirilmagan huquqiy sahifa o'rinbosarlari (`{{...}}`). */
   unfilledPlaceholders: string[]
 }
@@ -176,6 +179,13 @@ export async function seed(payload: Payload, options: SeedOptions = {}): Promise
   const editorConfig = await editorConfigFactory.default({ config: payload.config })
   const markdownToLexical = (markdown: string) =>
     convertMarkdownToLexical({ editorConfig, markdown }) as unknown as Record<string, unknown>
+
+  // --- Lug'atlar (M1-03): kontentning kirill versiyasi shu istisnolar bilan yaratiladi ---
+  summary.translit = await seedTranslitDictionaries(payload)
+  log(
+    `Lug'atlar: istisnolar +${summary.translit.translitExceptions.created}, ` +
+      `glossariy +${summary.translit.glossary.created}`,
+  )
 
   // --- Kategoriyalar (M0-04) ---
   const categories = categoriesSeedSchema.parse(categoriesJson)

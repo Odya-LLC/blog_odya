@@ -14,12 +14,14 @@ import { anyone, isAdmin, isAdminOrEditor } from './access'
 import { auditLogPlugin } from './audit/plugin'
 import { Authors } from './collections/Authors'
 import { Categories } from './collections/Categories'
+import { Glossary } from './collections/Glossary'
 import { Media } from './collections/Media'
 import { Pages } from './collections/Pages'
 import { Posts } from './collections/Posts'
 import { ScrapedItems } from './collections/ScrapedItems'
 import { Sources } from './collections/Sources'
 import { Tags } from './collections/Tags'
+import { TranslitExceptions } from './collections/TranslitExceptions'
 import { Users } from './collections/Users'
 import { getDatabaseMode, getDatabasePoolConfig } from './config/database'
 import { getPayloadSecret } from './config/secret'
@@ -34,6 +36,8 @@ import { uzPluginTranslations } from './i18n/plugins'
 import { buildJobsConfig } from './jobs'
 import { ADMIN_LANGUAGE, uz } from './i18n/uz'
 import { revalidateRedirectsAfterChange } from './site/revalidate'
+import { cyrlSyncPlugin } from './translit/cyrlSync'
+import { CYRL_SYNC } from './translit/sync-config'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -90,7 +94,19 @@ export default buildConfig({
     defaultLocale: DEFAULT_LOCALE,
     fallback: true,
   },
-  collections: [Posts, Pages, Categories, Tags, Authors, Media, Users, Sources, ScrapedItems],
+  collections: [
+    Posts,
+    Pages,
+    Categories,
+    Tags,
+    Authors,
+    Media,
+    Users,
+    Sources,
+    ScrapedItems,
+    Glossary,
+    TranslitExceptions,
+  ],
   globals: [SiteSettings, Header, Footer, TelegramSettings, ScrapingSettings],
   editor: lexicalEditor(),
   // Fon vazifalar (TZ §3.5): feed.poll, scrapeItem; scheduler — JOBS_MODE (src/jobs/index.ts).
@@ -168,6 +184,8 @@ export default buildConfig({
         },
       ],
     }),
+    // Lotin → kirill avtomatik sinxronlash (TZ §3.6): plugin-seo'dan keyin (`meta.*` ham).
+    cyrlSyncPlugin(CYRL_SYNC),
     // Lokal: MinIO, production: Cloudflare R2 — farq faqat env'da (TZ §3.1, §3.7).
     // S3_BUCKET berilmasa (masalan, prod migratsiya workflow'ida) plagin o'chiq.
     s3Storage(getS3StorageOptions(env)),
@@ -177,6 +195,9 @@ export default buildConfig({
       collections: {
         sources: { skipSystemWrites: true },
         'scraped-items': { skipSystemWrites: true },
+        // Seed (`seed:translit`) yozuvlari — foydalanuvchisiz; admin tahrirlari audit qilinadi.
+        glossary: { skipSystemWrites: true },
+        'translit-exceptions': { skipSystemWrites: true },
       },
     }),
   ],

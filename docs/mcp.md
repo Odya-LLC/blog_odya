@@ -138,7 +138,9 @@ Slug agentdan olinmaydi: `save_rewrite` sarlavhadan `slugify-uz` bilan yaratadi,
 
 **Markdown:** abzaslar, `##`/`###`, `**qalin**`, `*kursiv*`, `~~chizilgan~~`, `` `kod` ``, ro'yxatlar (ichma-ich ham), havolalar (`[matn](https://…)`, ichki — `/kategoriya/slug`), `> iqtibos`, ```` ``` ```` kod bloklari (til bilan), GFM jadvallar, `---`. Xom HTML va skriptlar olib tashlanadi, havolalarda faqat `https://`, `http://`, `mailto:` va nisbiy `/yo'l` ruxsat etiladi (XSS himoyasi).
 
-**Kirill:** agent faqat lotin yozadi. Har `save_rewrite`/`set_seo` da kirill (uz-Cyrl) versiyasi — sarlavha, lid, matn, SEO, FAQ, alt — avtomatik yaratiladi (kod va URL'lar o'zgarmaydi, glossariydagi brendlar lotinda qoladi). Muharrir qo'lda tuzatgan (qulflangan) maydonlar qayta yozilmaydi — post "kirill eskirgan" deb belgilanadi va javobda ogohlantirish chiqadi.
+**Kirill:** agent faqat lotin yozadi. Har `save_rewrite`/`set_seo` da kirill (uz-Cyrl) versiyasi — sarlavha, lid, matn, SEO, FAQ, alt — avtomatik yaratiladi (kod va URL'lar o'zgarmaydi, glossariydagi brendlar lotinda qoladi). Buni MCP emas, `posts`/`tags` kolleksiyasining umumiy hook'i (`cyrlSyncPlugin`, admin'dagi tahrirlar bilan bir xil) o'sha saqlashda bajaradi; lug'atlar — admin'dagi "Transliteratsiya istisnolari" va "Glossariy" (seed ustidan). Muharrir qo'lda tuzatgan (qulflangan) maydonlar qayta yozilmaydi — lotin o'zgarsa post "kirill eskirgan" deb belgilanadi va javobda ogohlantirish chiqadi.
+
+**Glossariy:** `get_glossary` va `odya://glossary` — `packages/guidelines/glossary.seed.json` ustiga admin'dagi `glossary` kolleksiyasi (DB yozuvi ustun, kesh 60 s; javobda `source: "seed+db"`).
 
 ## 4. Ish jarayoni
 

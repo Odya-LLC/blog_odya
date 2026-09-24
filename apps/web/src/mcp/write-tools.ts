@@ -9,9 +9,10 @@ import { takeScrapedItems } from '@/editorial/actions'
 import { validateSlug } from '@/lib/slug'
 import type { Post, ScrapedItem, Tag } from '@/payload-types'
 import { inTransaction } from '@/scraping/itemState'
+import { getTransliterator } from '@/translit/transliterator'
 
 import type { McpContext } from './context'
-import { lockedFields, planCyrillic, type LatinFields } from './cyrillic'
+import { cyrillicReport, lockedFields, previewMissingCyrillic } from './cyrillic'
 import {
   lexicalToMarkdown,
   markdownToLexical,
@@ -52,7 +53,8 @@ import {
  * - `save_rewrite`/`set_seo`: `rewrittenBy = ai_agent`, `aiDisclosure = true`; lock 2 soatga
  *   yangilanadi; qoralama (`draft`) bo'lsa — avtomatik `in_progress` ga olinadi (claim).
  * - Validatsiya xatolari saqlanmaydi va `{ ok, errors[], warnings[], seoScore }` bilan qaytadi.
- * - Kirill (uz-Cyrl) versiyasi har saqlashda lotindan yaratiladi (`cyrillic.ts`).
+ * - Faqat lotin (uz-Latn) yoziladi: kirill (uz-Cyrl) o'sha saqlashda `posts`/`tags` hook'i
+ *   (`cyrlSyncPlugin`, `src/translit/cyrlSync.ts`) bilan yaratiladi — qulflar va `cyrlStale` ham.
  */
 
 type Input<Shape extends z.ZodRawShape> = z.output<z.ZodObject<Shape>>
@@ -231,36 +233,6 @@ async function sourceText(ctx: McpContext, req: PayloadRequest, post: Post): Pro
 
 function result(data: ValidationResult & Record<string, unknown>): CallToolResult {
   return { ...jsonResult(data), ...(data.ok ? {} : { isError: true }) }
-}
-
-/** Kirill versiyasini yozadi (qulflangan maydonlar — o'tkazib yuboriladi, `cyrlStale`). */
-async function writeCyrillic(
-  ctx: McpContext,
-  req: PayloadRequest,
-  post: Post,
-  latin: LatinFields,
-): Promise<{ updated: string[]; skipped: string[] }> {
-  const plan = planCyrillic(latin, lockedFields(post))
-  const keys = Object.keys(plan.data)
-  if (keys.length) {
-    await ctx.payload.update({
-      collection: 'posts',
-      id: post.id,
-      data: plan.data as Partial<Post>,
-      depth: 0,
-      ...op(ctx, req, CYRL),
-    })
-  }
-  if (plan.skipped.length && !post.cyrlStale) {
-    await ctx.payload.update({
-      collection: 'posts',
-      id: post.id,
-      data: { cyrlStale: true },
-      depth: 0,
-      ...op(ctx, req),
-    })
-  }
-  return { updated: keys, skipped: plan.skipped }
 }
 
 function cyrillicWarning(skipped: string[]): Issue[] {
@@ -510,14 +482,7 @@ async function createTag(ctx: McpContext, req: PayloadRequest, name: string): Pr
     depth: 0,
     ...op(ctx, req),
   })
-  const { data } = planCyrillic({ title: name }, new Set())
-  await ctx.payload.update({
-    collection: 'tags',
-    id: tag.id,
-    data: { name: data.title as string },
-    depth: 0,
-    ...op(ctx, req, CYRL),
-  })
+  // Kirill nomi — `tags` hook'i (cyrlSyncPlugin) o'sha saqlashda yozadi.
   return tag
 }
 
@@ -602,6 +567,7 @@ export async function saveRewrite(
     })
   }
 
+  const locked = lockedFields(post)
   const saved = await inTransaction(req, async () => {
     const tagIds: number[] = []
     const createdTags: Tag[] = []
@@ -631,11 +597,7 @@ export async function saveRewrite(
       depth: 0,
       ...op(ctx, req),
     })
-    const cyrillic = await writeCyrillic(ctx, req, updated, {
-      title,
-      excerpt,
-      content: converted.state,
-    })
+    const cyrillic = cyrillicReport(['title', 'excerpt', 'content'], locked)
     return { updated, createdTags, tagIds, cyrillic }
   }).catch(rethrow)
 
@@ -734,11 +696,14 @@ export async function setSeo(
       depth: 0,
       ...op(ctx, req),
     })
-    const cyrillic = await writeCyrillic(ctx, req, updated, {
-      meta,
-      ...(seo.faq ? { faq: seo.faq } : {}),
-      ...(seo.coverAlt !== undefined ? { coverAlt: seo.coverAlt } : {}),
-    })
+    const cyrillic = cyrillicReport(
+      [
+        'meta',
+        ...(seo.faq ? (['faq'] as const) : []),
+        ...(seo.coverAlt !== undefined ? (['coverAlt'] as const) : []),
+      ],
+      lockedFields(post),
+    )
     return { updated, cyrillic }
   }).catch(rethrow)
 
@@ -767,14 +732,14 @@ export async function previewCyrillic(
   const latin = await loadPost(ctx, req, input.postId)
   const stored = await loadPost(ctx, req, input.postId, CYRL)
   // Saqlanmagan maydonlar — lotindan hozir yaratiladi (saqlanmaydi).
-  const generated = planCyrillic(
+  const generated = previewMissingCyrillic(
     {
       title: stored.title ? undefined : latin.title,
-      excerpt: stored.excerpt || !latin.excerpt ? undefined : latin.excerpt,
-      content: stored.content || !latin.content ? undefined : latin.content,
+      excerpt: stored.excerpt ? undefined : latin.excerpt,
+      content: stored.content ? undefined : latin.content,
     },
-    new Set(),
-  ).data
+    await getTransliterator(ctx.payload),
+  )
   const title = (generated.title as string | undefined) ?? stored.title ?? ''
   const excerpt = (generated.excerpt as string | undefined) ?? stored.excerpt ?? ''
   const content = generated.content ?? stored.content

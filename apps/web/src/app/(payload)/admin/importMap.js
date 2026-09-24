@@ -33,6 +33,7 @@ import { MetaDescriptionComponent as MetaDescriptionComponent_a8a977ebc872c5d5ea
 import { MetaImageComponent as MetaImageComponent_a8a977ebc872c5d5ea7ee689724c0860 } from '@payloadcms/plugin-seo/client'
 import { PreviewComponent as PreviewComponent_a8a977ebc872c5d5ea7ee689724c0860 } from '@payloadcms/plugin-seo/client'
 import { SourcePanel as SourcePanel_e697dd7c357ed0647e57c7670abed832 } from '@/components/admin/SourcePanel'
+import { CyrlSyncPanel as CyrlSyncPanel_4eef73d2e5280a89a41a17db41eee449 } from '../../../components/cyrl/CyrlSyncPanel'
 import { EditorialStats as EditorialStats_0f051e64f942452e9fce2678e0c4d5ce } from '@/components/admin/EditorialStats'
 import { EditorialNavLinks as EditorialNavLinks_60680023464659b414314bf8361bc3a3 } from '@/components/admin/EditorialNavLinks'
 import { S3ClientUploadHandler as S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24 } from '@payloadcms/storage-s3/client'
@@ -77,6 +78,7 @@ export const importMap = {
   "@payloadcms/plugin-seo/client#MetaImageComponent": MetaImageComponent_a8a977ebc872c5d5ea7ee689724c0860,
   "@payloadcms/plugin-seo/client#PreviewComponent": PreviewComponent_a8a977ebc872c5d5ea7ee689724c0860,
   "@/components/admin/SourcePanel#SourcePanel": SourcePanel_e697dd7c357ed0647e57c7670abed832,
+  "/components/cyrl/CyrlSyncPanel#CyrlSyncPanel": CyrlSyncPanel_4eef73d2e5280a89a41a17db41eee449,
   "@/components/admin/EditorialStats#EditorialStats": EditorialStats_0f051e64f942452e9fce2678e0c4d5ce,
   "@/components/admin/EditorialNavLinks#EditorialNavLinks": EditorialNavLinks_60680023464659b414314bf8361bc3a3,
   "@payloadcms/storage-s3/client#S3ClientUploadHandler": S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24,

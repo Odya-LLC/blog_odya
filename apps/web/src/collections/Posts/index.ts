@@ -48,7 +48,9 @@ export const SCRIPTS = [
  * Postlar (TZ §10.3): drafts + autosave (10 s) + versiyalar (maxPerDoc 10), scheduled publish,
  * workflow (TZ §4.1) — `hooks.ts`, o'tishlar — `workflow.ts`. SEO `meta` (L) — `plugin-seo`.
  *
- * Kirill avtomatik generatsiyasi (`cyrlLocked` / `cyrlStale` mantig'i) — M1-03;
+ * Kirill avtomatik generatsiyasi (TZ §3.6): `cyrlSyncPlugin` (`payload.config.ts`, plugin-seo'dan
+ * keyin — `meta.*` ham) — `title`, `excerpt`, `content`, `faq`, `coverAlt`, `meta.*` lotin
+ * saqlanganda uz-Cyrl o'sha saqlashda yoziladi; `cyrlLocked` / `cyrlStale` — `src/translit/cyrlSync.ts`.
  * `sources[].scrapedItem` — rel → scraped-items (M2-01).
  */
 export const Posts: CollectionConfig = {
@@ -257,7 +259,7 @@ export const Posts: CollectionConfig = {
               admin: {
                 readOnly: true,
                 description:
-                  '{ title, excerpt, content, meta } — M1-03 transliteratsiyasi boshqaradi',
+                  '{ title, excerpt, content, meta, faq, coverAlt } — kirill qoʻlda tuzatilganda avtomatik qulflanadi; "Kirillni qayta generatsiya qilish" qulfni oladi',
               },
             },
           ],
@@ -391,8 +393,8 @@ export const Posts: CollectionConfig = {
       defaultValue: false,
       admin: {
         position: 'sidebar',
-        readOnly: true,
-        description: 'Lotin o‘zgargan, kirill qulflangan (M1-03)',
+        description:
+          'Lotin o‘zgargan, lekin qulflangan kirill maydonlari yangilanmadi. Tekshirib, belgini oling yoki kirillni qayta generatsiya qiling.',
       },
     },
     {

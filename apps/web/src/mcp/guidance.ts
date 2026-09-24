@@ -1,7 +1,9 @@
-import { GUIDELINE_DOCS, glossarySeed, loadGuideline } from '@blog-odya/guidelines'
+import { GUIDELINE_DOCS, loadGuideline } from '@blog-odya/guidelines'
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import type { GetPromptResult, PromptMessage } from '@modelcontextprotocol/sdk/types.js'
 import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js'
+
+import { getGlossary, seedGlossary, type GlossarySnapshot } from '@/translit/transliterator'
 
 import type { McpContext } from './context'
 import { describeError } from './result'
@@ -13,7 +15,7 @@ import { UNTRUSTED_NOTICE } from './untrusted'
  * Ko'rsatmalar MCP prompt va resource sifatida (TZ §5.2, §6.3) — `packages/guidelines` dan.
  *
  * Resources: `odya://guidelines/{style,copyright,seo,output-schema}` (Markdown),
- * `odya://glossary` (JSON). Prompts: `rewrite_article(scrapedItemId)`, `daily_batch(count, minScore)`.
+ * `odya://glossary` (JSON — seed + admin'dagi `glossary` kolleksiyasi, DB ustun). Prompts: `rewrite_article(scrapedItemId)`, `daily_batch(count, minScore)`.
  */
 
 export const GLOSSARY_URI = 'odya://glossary'
@@ -34,8 +36,8 @@ function guidelineResourceMessage(id: (typeof GUIDELINE_DOCS)[number]['id']): Pr
 }
 
 /** Glossariyning ixcham ko'rinishi (prompt uchun; to'liq JSON — `odya://glossary`). */
-export function compactGlossary(): string {
-  const lines = glossarySeed.items.map((item) => {
+export function compactGlossary(glossary: GlossarySnapshot = seedGlossary()): string {
+  const lines = glossary.items.map((item) => {
     const flags = [
       item.doNotTranslate ? 'tarjima qilinmaydi' : null,
       item.doNotTransliterate ? 'kirillda ham lotin' : null,
@@ -43,7 +45,7 @@ export function compactGlossary(): string {
     const target = item.doNotTranslate ? '' : ` → ${item.translation}`
     return `- ${item.term} (${item.language})${target}${flags.length ? ` [${flags.join(', ')}]` : ''}`
   })
-  return `Glossariy (v${glossarySeed.version}; to'liq — ${GLOSSARY_URI} yoki get_glossary):\n${lines.join('\n')}`
+  return `Glossariy (v${glossary.version}; to'liq — ${GLOSSARY_URI} yoki get_glossary):\n${lines.join('\n')}`
 }
 
 const WORKFLOW_STEPS = [
@@ -78,7 +80,10 @@ export async function rewriteArticlePrompt(
       },
     },
     ...GUIDELINE_DOCS.map((doc) => guidelineResourceMessage(doc.id)),
-    { role: 'user', content: { type: 'text', text: compactGlossary() } },
+    {
+      role: 'user',
+      content: { type: 'text', text: compactGlossary(await getGlossary(ctx.payload)) },
+    },
     {
       role: 'user',
       content: {
@@ -164,7 +169,7 @@ export function registerGuidance(server: McpServer, ctx: McpContext): void {
         {
           uri: uri.href,
           mimeType: 'application/json',
-          text: JSON.stringify(glossarySeed, null, 2),
+          text: JSON.stringify(await getGlossary(ctx.payload), null, 2),
         },
       ],
     }),
