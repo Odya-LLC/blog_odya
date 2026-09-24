@@ -76,11 +76,13 @@ Lokal (MinIO) va preview (R2) o'rtasidagi farq **faqat shu qiymatlarda** — kod
 | O'zgaruvchi           | Qiymat                                                                       |
 | --------------------- | ---------------------------------------------------------------------------- |
 | `DATABASE_URL`        | Supavisor **transaction** pooler, port `6543` (runtime, `pool.max = 3`)       |
-| `DATABASE_URL_DIRECT` | Direct (`db.<ref>.supabase.co:5432`) yoki session pooler (port `5432`) — migratsiyalar |
+| `DATABASE_URL_DIRECT` | Supavisor **session** pooler, port `5432`, user `postgres.<ref>` — migratsiyalar |
 
 Payload/Drizzle nomli prepared statement ishlatmaydi, shuning uchun transaction pooler bilan
 qo'shimcha sozlash (`prepare: false` va h.k.) shart emas. Migratsiyalar (`pnpm migrate`)
-`PAYLOAD_MIGRATING=true` bilan direct ulanishdan o'tadi (`apps/web/src/config/database.ts`).
+`PAYLOAD_MIGRATING=true` bilan `DATABASE_URL_DIRECT` dan o'tadi (`apps/web/src/config/database.ts`).
+Direct host (`db.<ref>.supabase.co`) faqat IPv6 — GitHub runner/Vercel'da `ENOTFOUND`, shuning
+uchun session pooler. Prod migratsiya: README → "Prod migratsiya" (`migrate-prod` workflow).
 
 ## Tekshirish (OBLOG-3 dan keyin, M1-01 qabul mezonlari)
 

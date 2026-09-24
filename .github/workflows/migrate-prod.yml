@@ -1,0 +1,86 @@
+# Prod migratsiyalari (TZ §632): `payload migrate` → Supabase prod bazasi, main'ga merge'da.
+# Vercel deploy'i ham main push'ida boshlanadi; migratsiya ~1 daqiqa, build esa uzoqroq —
+# shuning uchun yangi kod odatda yangi sxemaga tushadi. Qo'lda: `gh workflow run migrate-prod`.
+# Batafsil: README → "Prod migratsiya".
+name: migrate-prod
+
+on:
+  push:
+    branches: [main]
+    # Sxema faqat migratsiya fayllari orqali o'zgaradi; qolganlari — migratsiya yo'liga ta'sir
+    # qiladigan konfiguratsiya (workflow'ning o'zi ham — birinchi merge'da darhol ishlaydi).
+    paths:
+      - apps/web/src/migrations/**
+      - apps/web/src/payload.config.ts
+      - apps/web/src/env.schema.ts
+      - apps/web/src/config/**
+      - apps/web/package.json
+      - pnpm-lock.yaml
+      - .github/workflows/migrate-prod.yml
+  workflow_dispatch:
+
+# Bir vaqtda faqat bitta migratsiya; ishlayotganini bekor qilmaymiz (DDL yarim yo'lda qolmasin).
+concurrency:
+  group: migrate-prod
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  migrate:
+    name: payload migrate (prod)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # GitHub Environment: ixtiyoriy approval (Settings → Environments → Production).
+    environment: Production
+
+    # Faqat DB kerak: migratsiya rejimida (PAYLOAD_MIGRATING=true) PAYLOAD_SECRET va S3_* ixtiyoriy
+    # (apps/web/src/env.schema.ts). DATABASE_URL_DIRECT_PROD — Supavisor SESSION pooler (5432):
+    # postgresql://postgres.<ref>:<parol>@aws-0-<region>.pooler.supabase.com:5432/postgres
+    # Direct host (db.<ref>.supabase.co) faqat IPv6 — GitHub runner'da ENOTFOUND.
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL_DIRECT_PROD }}
+      DATABASE_URL_DIRECT: ${{ secrets.DATABASE_URL_DIRECT_PROD }}
+      NEXT_TELEMETRY_DISABLED: '1'
+      TURBO_TELEMETRY_DISABLED: '1'
+
+    steps:
+      - name: Check DATABASE_URL_DIRECT_PROD
+        run: |
+          if [ -z "$DATABASE_URL_DIRECT" ]; then
+            echo "::error::DATABASE_URL_DIRECT_PROD secret berilmagan (Settings → Secrets → Actions)."
+            exit 1
+          fi
+          host="$(printf '%s' "$DATABASE_URL_DIRECT" | sed -E 's#^[a-z]+://[^@]*@([^:/?]+).*#\1#')"
+          case "$host" in
+            db.*.supabase.co)
+              echo "::error::DATABASE_URL_DIRECT_PROD direct host'ga ($host) ishora qiladi — u faqat IPv6, GitHub runner'da ENOTFOUND. Session pooler (aws-0-<region>.pooler.supabase.com:5432, user postgres.<ref>) ishlating."
+              exit 1
+              ;;
+          esac
+          case "$DATABASE_URL_DIRECT" in
+            *:6543/*)
+              echo "::warning::Port 6543 — transaction pooler. Migratsiyalar uchun session pooler (5432) tavsiya etiladi."
+              ;;
+          esac
+
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      # `pnpm migrate` → PAYLOAD_MIGRATING=true payload migrate (apps/web/package.json).
+      # VERCEL/VERCEL_ENV yo'q — assertMigrationAllowed ruxsat beradi.
+      - name: Migrate
+        run: pnpm migrate
+
+      - name: Migration status
+        run: pnpm --filter @blog-odya/web migrate:status
