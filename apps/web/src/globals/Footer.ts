@@ -2,6 +2,7 @@ import type { GlobalConfig } from 'payload'
 
 import { anyone, isAdminOrEditor } from '@/access'
 import { linkFields } from '@/fields/link'
+import { revalidateNavAfterChange } from '@/site/revalidate'
 
 /**
  * Footer (TZ §10.15, §12.3) **(L)**: havola ustunlari (kategoriyalar, huquqiy sahifalar),
@@ -10,6 +11,9 @@ import { linkFields } from '@/fields/link'
 export const Footer: GlobalConfig = {
   slug: 'footer',
   label: 'Footer',
+  hooks: {
+    afterChange: [revalidateNavAfterChange],
+  },
   access: {
     read: anyone,
     update: isAdminOrEditor,

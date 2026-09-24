@@ -191,4 +191,9 @@
     display: block;
     overflow-x: auto;
   }
+
+  /* Lexical jadval katakchalaridagi paragraflar (M1-05 renderer) — qo'shimcha oraliqsiz. */
+  & :where(td, th) > :where(p):not(:where([class~='not-prose'] *)) {
+    margin-block: 0;
+  }
 }

@@ -52,6 +52,32 @@ export interface SeedPost {
   source: { name: string; url: string }
   rewrittenBy: 'human' | 'ai_agent'
   isFeatured?: boolean
+  /** Muqova: `public/styleguide/cover-<name>.svg` → PNG → media (WebP variantlar). */
+  cover?: SeedCover
+  /** Matn oxiriga qo'shiladigan namunaviy bloklar (renderer'ni ko'rsatish uchun). */
+  richBlocks?: boolean
+}
+
+export const SEED_COVERS = {
+  ai: {
+    'uz-Latn': 'Sunʼiy intellekt mavzusidagi abstrakt tasvir (namuna)',
+    'uz-Cyrl': 'Сунъий интеллект мавзусидаги абстракт тасвир (намуна)',
+  },
+  esports: {
+    'uz-Latn': 'Kibersport mavzusidagi abstrakt tasvir (namuna)',
+    'uz-Cyrl': 'Киберспорт мавзусидаги абстракт тасвир (намуна)',
+  },
+  gadget: {
+    'uz-Latn': 'Smartfon mavzusidagi abstrakt tasvir (namuna)',
+    'uz-Cyrl': 'Смартфон мавзусидаги абстракт тасвир (намуна)',
+  },
+} as const satisfies Record<string, Localized>
+
+export type SeedCover = keyof typeof SEED_COVERS
+
+/** Muqova SVG fayli (M1-04 styleguide namunalari). */
+export function seedCoverUrl(cover: SeedCover): URL {
+  return new URL(`../../public/styleguide/cover-${cover}.svg`, import.meta.url)
 }
 
 /** Demo postlar — aniq "Namuna" deb belgilangan, haqiqiy yangilik emas. */
@@ -84,6 +110,8 @@ export const SEED_POSTS: SeedPost[] = [
     source: { name: 'The Verge', url: 'https://www.theverge.com/ai-artificial-intelligence' },
     rewrittenBy: 'ai_agent',
     isFeatured: true,
+    cover: 'ai',
+    richBlocks: true,
   },
   {
     slug: 'namuna-kibersport-turniri-haqidagi-maqola-tuzilmasi',
@@ -110,6 +138,7 @@ export const SEED_POSTS: SeedPost[] = [
     ].join('\n'),
     source: { name: 'HLTV', url: 'https://www.hltv.org/' },
     rewrittenBy: 'human',
+    cover: 'esports',
   },
   {
     slug: 'namuna-smartfon-sharhi-uchun-andoza',
@@ -135,6 +164,7 @@ export const SEED_POSTS: SeedPost[] = [
     ].join('\n'),
     source: { name: 'iXBT', url: 'https://www.ixbt.com/' },
     rewrittenBy: 'human',
+    cover: 'gadget',
   },
 ]
 

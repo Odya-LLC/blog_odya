@@ -1,6 +1,7 @@
 import type { GlobalConfig } from 'payload'
 
 import { anyone, isAdmin } from '@/access'
+import { revalidateNavAfterChange } from '@/site/revalidate'
 
 export const SITE_SOCIALS = [
   { label: 'Telegram (lotin)', value: 'telegram_latn' },
@@ -19,6 +20,9 @@ export const SITE_SOCIALS = [
 export const SiteSettings: GlobalConfig = {
   slug: 'site-settings',
   label: 'Sayt sozlamalari',
+  hooks: {
+    afterChange: [revalidateNavAfterChange],
+  },
   access: {
     read: anyone,
     update: isAdmin,

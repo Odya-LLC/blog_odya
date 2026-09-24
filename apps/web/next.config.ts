@@ -12,11 +12,13 @@ const monorepoRoot = path.resolve(dirname, '../..')
 const nextConfig: NextConfig = {
   transpilePackages: ['@blog-odya/shared', '@blog-odya/guidelines'],
   images: {
-    localPatterns: [
-      {
-        pathname: '/api/media/file/**',
-      },
-    ],
+    // Vercel Image Optimization (`/_next/image`) ishlatilmaydi (TZ §3.7.2, §8.4): loader tayyor
+    // WebP variantlarni (thumb 320 / card 640 / hero 1280 / full 1920) media domenidan tanlaydi.
+    loader: 'custom',
+    loaderFile: './src/lib/image-loader.ts',
+    // srcset kengliklari — media variantlariga mos (ortiqcha takroriy nomzodlarsiz).
+    deviceSizes: [640, 1280, 1920],
+    imageSizes: [320],
   },
   webpack: (webpackConfig) => {
     webpackConfig.resolve.extensionAlias = {

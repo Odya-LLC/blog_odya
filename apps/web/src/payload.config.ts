@@ -31,6 +31,7 @@ import { TelegramSettings } from './globals/TelegramSettings'
 import { uzPluginTranslations } from './i18n/plugins'
 import { buildJobsConfig } from './jobs'
 import { ADMIN_LANGUAGE, uz } from './i18n/uz'
+import { revalidateRedirectsAfterChange } from './site/revalidate'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -111,6 +112,9 @@ export default buildConfig({
           create: isAdminOrEditor,
           update: isAdminOrEditor,
           delete: isAdmin,
+        },
+        hooks: {
+          afterChange: [revalidateRedirectsAfterChange],
         },
       },
     }),

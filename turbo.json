@@ -25,7 +25,9 @@
     "ENABLE_STYLEGUIDE",
     "VERCEL",
     "VERCEL_ENV",
-    "VERCEL_URL"
+    "VERCEL_URL",
+    "VERCEL_DEPLOYMENT_ID",
+    "VERCEL_GIT_COMMIT_SHA"
   ],
   "tasks": {
     "build": {

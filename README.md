@@ -27,13 +27,16 @@ apps/web/             Next.js (App Router) + Payload CMS 3: sayt, /admin, REST/G
   src/collections/    Kolleksiyalar: posts (workflow — Posts/workflow.ts), pages, categories, tags, authors, media, users
   src/globals/        site-settings, header, footer, telegram-settings, scraping-settings
   src/seed/           `pnpm seed` — kategoriyalar, huquqiy sahifalar, muallif, demo postlar, sozlamalar
+  src/app/(frontend)/ Ommaviy sayt: `(latn)/` — lotin (ildiz), `kr/` — kirill; ko'rinishlar — `src/site/views/`
+  src/site/           Sayt ma'lumotlari (Local API + ISR teglari), URL sxemasi, Payload → UI mapper'lar
+  e2e/                Playwright smoke testlari (`pnpm test:e2e`)
   src/i18n/uz.ts      Admin panel o'zbekcha tarjimasi
   src/migrations/     Payload migratsiyalari (commit qilinadi)
   .env.example        Env namunasi (izohlar bilan)
 packages/shared/      Umumiy kod: locale'lar, keyinchalik slugify-uz, translit
 packages/guidelines/  Tahririyat ko'rsatmalari (MCP prompt/resource)
 infra/docker-compose.dev.yml   Lokal Postgres 16 + MinIO
-.github/workflows/ci.yml       CI: lint → typecheck → test → build
+.github/workflows/ci.yml       CI: lint → typecheck → test → seed → build → e2e
 ```
 
 ## Lokal ishga tushirish
@@ -89,6 +92,7 @@ To'xtatish: `Ctrl+C`, keyin `docker compose -f infra/docker-compose.dev.yml down
 | `pnpm migrate`                 | Payload migratsiyalarini qo'llash (`DATABASE_URL_DIRECT` orqali)          |
 | `pnpm migrate:create <nom>`    | Sxema o'zgarganda yangi migratsiya yaratish (faylni commit qiling)        |
 | `pnpm seed`                    | Migratsiyalar + boshlang'ich ma'lumotlar (takror ishga tushirish xavfsiz) |
+| `pnpm test:e2e`                | Playwright smoke (avval `pnpm seed` va `pnpm build`; `next start` o'zi)   |
 
 ### Muhim eslatmalar
 
@@ -99,6 +103,7 @@ To'xtatish: `Ctrl+C`, keyin `docker compose -f infra/docker-compose.dev.yml down
 - **Postgres:** runtime — `DATABASE_URL` (Supabase: transaction pooler, `pool.max = 3`), migratsiyalar — `DATABASE_URL_DIRECT` (direct/session). Sozlama: `apps/web/src/config/database.ts`.
 - **Rollar:** `admin`, `editor` (TZ §4.2); access helper'lar — `apps/web/src/access`. Sayt locale'lari: `uz-Latn` (asosiy), `uz-Cyrl` (`fallback: true`).
 - **Seed:** `pnpm seed` — 9 kategoriya (`packages/shared/seed/categories.json`, ranglar — `design/brand/tokens.json`), 6 huquqiy sahifa (`packages/guidelines/legal/`), muallif, 3 teg, 3 demo post, `site-settings`/`header`/`footer`. Mavjud hujjatlar (slug bo'yicha) o'zgartirilmaydi. Huquqiy sahifalardagi `{{CONTACT_EMAIL}}` kabi o'rinbosarlar `SEED_<KEY>` env'dan olinadi (masalan, `SEED_CONTACT_EMAIL=...`), Telegram havolalari — `TELEGRAM_CHANNEL_LATN/CYRL` dan; berilmaganlari ro'yxati seed logida chiqadi.
+- **Ommaviy sayt** (M1-05): lotin — `/`, `/{category}`, `/{category}/page/{n}`, `/{category}/{slug}`; kirill — xuddi shu `/kr` bilan (`<html lang>` mos); marshrutlar — `(latn)/[[...path]]` va `kr/[[...path]]` (`src/site/route.ts`), `next build` DB'ga ulanmaydi, sahifalar birinchi so'rovda chiziladi. Ma'lumot — Payload Local API (`src/site/data.ts`), ISR: `unstable_cache` teglari (`src/site/cache-tags.ts`), publish/unpublish/arxivlashda Payload hook'lari `revalidateTag` chaqiradi (`src/site/revalidate.ts`). DB'ni tashqaridan o'zgartirsangiz (`pnpm seed`, SQL) — kesh yangilanmaydi: lokal'da `rm -rf apps/web/.next` va qayta build. Rasmlar: `next/image` custom loader (`src/lib/image-loader.ts`) — media variantlari (WebP) to'g'ridan-to'g'ri `MEDIA_PUBLIC_URL` dan, `/_next/image` ishlatilmaydi.
 - **Post workflow** (TZ §4.1): `draft → in_progress → review → scheduled/published → archived`, `rejected`. Qoidalar `apps/web/src/collections/Posts/workflow.ts` da, tekshiruv — `beforeChange` hook'da. Chop etish faqat `review`/`scheduled` dan admin'dagi **Publish** (API: `_status: 'published'`) orqali; holat avtomatik `published` bo'ladi. `in_progress` ga o'tganda post 2 soatga band qilinadi (boshqa editor o'zgartira olmaydi, admin — mumkin). Arxivlash — faqat admin. `scheduled` holatida `scheduledAt` vaqtiga `schedulePublish` job navbatga qo'yiladi (job'larni ishga tushirish — M2-01).
 
 ## Holat
