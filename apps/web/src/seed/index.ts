@@ -221,6 +221,7 @@ export async function seed(payload: Payload, options: SeedOptions = {}): Promise
           url: feed.url,
           feedCategory: feed.feedCategory,
           mapsTo: categoryId(feed.mapsTo),
+          mappingWeight: feed.mappingWeight ?? 10,
           isActive: feed.isActive,
         })),
         language: source.language,

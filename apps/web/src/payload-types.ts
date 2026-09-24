@@ -129,6 +129,9 @@ export interface Config {
       'feed.poll': TaskFeedPoll;
       'item.fetch': TaskItemFetch;
       'item.extract': TaskItemExtract;
+      'item.dedupe': TaskItemDedupe;
+      'item.classify': TaskItemClassify;
+      'maintenance.cleanup': TaskMaintenanceCleanup;
       schedulePublish: TaskSchedulePublish;
       inline: {
         input: unknown;
@@ -408,6 +411,10 @@ export interface Source {
         url: string;
         feedCategory?: string | null;
         mapsTo?: (number | null) | Category;
+        /**
+         * Bo‘lim feedi — 10, keng bo‘lim — 5, umumiy feed — 1 (kalit so‘zlar hal qiladi)
+         */
+        mappingWeight?: number | null;
         isActive?: boolean | null;
         lastPolledAt?: string | null;
         lastStatus?: number | null;
@@ -778,7 +785,15 @@ export interface PayloadJob {
     | {
         executedAt: string;
         completedAt: string;
-        taskSlug: 'inline' | 'feed.poll' | 'item.fetch' | 'item.extract' | 'schedulePublish';
+        taskSlug:
+          | 'inline'
+          | 'feed.poll'
+          | 'item.fetch'
+          | 'item.extract'
+          | 'item.dedupe'
+          | 'item.classify'
+          | 'maintenance.cleanup'
+          | 'schedulePublish';
         taskID: string;
         input?:
           | {
@@ -812,7 +827,18 @@ export interface PayloadJob {
       }[]
     | null;
   workflowSlug?: 'scrapeItem' | null;
-  taskSlug?: ('inline' | 'feed.poll' | 'item.fetch' | 'item.extract' | 'schedulePublish') | null;
+  taskSlug?:
+    | (
+        | 'inline'
+        | 'feed.poll'
+        | 'item.fetch'
+        | 'item.extract'
+        | 'item.dedupe'
+        | 'item.classify'
+        | 'maintenance.cleanup'
+        | 'schedulePublish'
+      )
+    | null;
   queue?: string | null;
   waitUntil?: string | null;
   processing?: boolean | null;
@@ -1235,6 +1261,7 @@ export interface SourcesSelect<T extends boolean = true> {
         url?: T;
         feedCategory?: T;
         mapsTo?: T;
+        mappingWeight?: T;
         isActive?: T;
         lastPolledAt?: T;
         lastStatus?: T;
@@ -1522,7 +1549,22 @@ export interface ScrapingSetting {
    * Feed’dagi bundan eski yozuvlar olinmaydi
    */
   maxItemAgeHours?: number | null;
+  /**
+   * Qoralamaga aylanmagan elementlarning to‘liq matni shundan keyin o‘chiriladi
+   */
   extractedTextRetentionDays?: number | null;
+  /**
+   * maintenance.cleanup (kuniga 1 marta): DB va R2 hajmi, tozalash natijasi; ogohlantirishlar holati
+   */
+  stats?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -1647,6 +1689,7 @@ export interface ScrapingSettingsSelect<T extends boolean = true> {
   defaultPollIntervalMin?: T;
   maxItemAgeHours?: T;
   extractedTextRetentionDays?: T;
+  stats?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;
@@ -1724,6 +1767,53 @@ export interface TaskItemExtract {
     method?: string | null;
     wordCount?: number | null;
     cleanHtmlKey?: string | null;
+  };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskItemDedupe".
+ */
+export interface TaskItemDedupe {
+  input: {
+    scrapedItemId: number;
+  };
+  output: {
+    status: string;
+    contentHash?: string | null;
+    clusterId?: string | null;
+    matchId?: number | null;
+    distance?: number | null;
+  };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskItemClassify".
+ */
+export interface TaskItemClassify {
+  input: {
+    scrapedItemId: number;
+  };
+  output: {
+    status: string;
+    categoryId?: number | null;
+    score?: number | null;
+  };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskMaintenanceCleanup".
+ */
+export interface TaskMaintenanceCleanup {
+  input: {
+    date?: string | null;
+  };
+  output: {
+    clearedText?: number | null;
+    deletedRejected?: number | null;
+    trimmedVersions?: number | null;
+    dbBytes?: number | null;
+    r2Bytes?: number | null;
+    r2Complete?: boolean | null;
   };
 }
 /**

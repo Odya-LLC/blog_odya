@@ -20,6 +20,11 @@ export const feedSchema = z
     feedCategory: z.string().trim().min(1),
     /** Bizning kategoriya slug'i (rel → categories). */
     mapsTo: slugSchema,
+    /**
+     * `item.classify` da mapping bali (default 10 — bo'lim feedi). Umumiy feedlar ("All",
+     * "Новости") — 1: kategoriyani kalit so'zlar hal qiladi, mapping faqat zaxira.
+     */
+    mappingWeight: z.number().int().min(0).max(20).optional(),
     isActive: z.boolean(),
   })
   .strict()

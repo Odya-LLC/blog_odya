@@ -2,10 +2,18 @@ import { createHash, timingSafeEqual } from 'node:crypto'
 
 import type { Payload } from 'payload'
 
+import { TELEGRAM_TIMEOUT_MS } from '@/lib/telegram'
+
+import { type AlertRunResult, runAlertChecks } from './alerts'
 import { MAX_BATCH_LIMIT, MAX_DEADLINE_SEC, TASK_GRACE_MS } from './constants'
 import { runWithDeadline } from './context'
 import { activeRunQueues } from './scrapeDeps'
-import { countRemainingJobs, enqueueDueFeedPolls, releaseStaleJobs } from './scheduler'
+import {
+  countRemainingJobs,
+  enqueueDailyCleanup,
+  enqueueDueFeedPolls,
+  releaseStaleJobs,
+} from './scheduler'
 import { getJobsSettings } from './settings'
 
 /**
@@ -83,9 +91,19 @@ export function isAuthorized(header: string | null, secret: string): boolean {
   return timingSafeEqual(digest(match[1].trim()), digest(secret))
 }
 
+/**
+ * Ogohlantirishlar job'lardan keyin tekshiriladi — faqat chaqiruv boshidan shu vaqtgacha
+ * (Vercel function limiti 60 s). Vaqt qolmasa, keyingi chaqiruvda (10 daqiqadan keyin).
+ */
+export const ALERTS_HARD_LIMIT_MS = 55_000
+
 export interface JobsRunResponse {
   ok: true
   enqueued: number
+  /** Shu chaqiruvda `maintenance.cleanup` navbatga qo'yildimi (kuniga 1 marta). */
+  cleanupEnqueued: boolean
+  /** Ogohlantirishlar: faol shartlar / yuborilgan / faqat log / xato; vaqt yetmasa — null. */
+  alerts: AlertRunResult | null
   scrapingDisabled: boolean
   releasedStale: number
   batches: number
@@ -141,6 +159,7 @@ export async function handleJobsRunRequest(
 
     const releasedStale = await releaseStaleJobs(payload)
     const { enqueued, disabled } = await enqueueDueFeedPolls(payload, { settings })
+    const cleanupEnqueued = await enqueueDailyCleanup(payload)
     const queues = activeRunQueues()
     const run = await runJobsWithDeadline(payload.jobs, {
       queues,
@@ -149,10 +168,17 @@ export async function handleJobsRunRequest(
       graceMs: deps.overrides?.graceMs,
     })
     const remaining = await countRemainingJobs(payload, queues)
+    const timeLeft = ALERTS_HARD_LIMIT_MS - (Date.now() - startedAt)
+    const alerts =
+      timeLeft >= 1_000
+        ? await runAlertChecks(payload, { timeoutMs: Math.min(TELEGRAM_TIMEOUT_MS, timeLeft) })
+        : null
 
     const body: JobsRunResponse = {
       ok: true,
       enqueued,
+      cleanupEnqueued,
+      alerts,
       scrapingDisabled: disabled,
       releasedStale,
       batches: run.batches,
