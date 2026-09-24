@@ -3,8 +3,8 @@ import { defineConfig, devices } from '@playwright/test'
 /**
  * Playwright smoke testlari (M1-05): bosh sahifa → kategoriya → maqola, lotin va kirill.
  *
- * Oldindan: `pnpm migrate && pnpm seed && pnpm build` (demo postlar build'dan OLDIN bo'lishi kerak —
- * bosh sahifa build'da prerender qilinadi). Server: `next start` (production rejim, ISR).
+ * Oldindan: `pnpm seed && pnpm build` (demo postlar). Server: `next start` (production rejim, ISR).
+ * DB tashqaridan o'zgartirilgan bo'lsa (seed qayta), eski ISR keshini tozalang: `rm -rf apps/web/.next`.
  * Tayyor serverga qarshi: `E2E_BASE_URL=https://… pnpm test:e2e`.
  */
 const PORT = Number(process.env.E2E_PORT ?? 3100)

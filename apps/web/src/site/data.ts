@@ -22,7 +22,7 @@ import type {
   PostSummary,
   TelegramLinks,
 } from '@/components/blog/types'
-import { env } from '@/env'
+import { env, PHASE_PRODUCTION_BUILD } from '@/env'
 import type { Category, Post, Redirect } from '@/payload-types'
 
 import { CACHE_TAGS, categoryTag, postTag } from './cache-tags'
@@ -55,11 +55,26 @@ const HOME_BLOCK_POSTS = 5
 const HOME_LATEST = 10
 
 /**
- * DB sozlanmagan muhit (`next build` Vercel Preview'da — sirlarsiz, OBLOG-31): sahifalar bo'sh
- * holatda chiziladi, build yiqilmaydi.
+ * DB'ga murojaat qilinmaydigan holatlar (OBLOG-31):
+ * - `next build` — sahifalar oldindan chizilmaydi, lekin `/_not-found` kabi statik sahifalar
+ *   karkas (menyu) so'rashi mumkin — build DB'ga ulanmaydi;
+ * - DB sozlanmagan muhit (sirlarsiz Vercel Preview) — xato o'rniga bo'sh holat.
  */
 function hasDatabase(): boolean {
+  if (process.env.NEXT_PHASE === PHASE_PRODUCTION_BUILD) return false
   return Boolean(env.DATABASE_URL)
+}
+
+/**
+ * `unstable_cache` o'rami: kalit deploy versiyasi bilan, teglar bilan. DB'siz holatdagi (build,
+ * sirlarsiz muhit) bo'sh natija keshlanmaydi — aks holda u runtime'da ham qaytarilardi.
+ */
+function cached<T>(load: () => Promise<T>, keyParts: string[], tags: string[]): Promise<T> {
+  if (!hasDatabase()) return load()
+  return unstable_cache(load, [CACHE_VERSION, ...keyParts], {
+    tags,
+    revalidate: REVALIDATE_SECONDS,
+  })()
 }
 
 const payloadClient = cache(async () => getPayload({ config }))
@@ -147,10 +162,7 @@ export async function loadSiteChrome(locale: Locale): Promise<SiteChrome> {
 }
 
 export const getSiteChrome = (locale: Locale): Promise<SiteChrome> =>
-  unstable_cache(() => loadSiteChrome(locale), [CACHE_VERSION, 'site-chrome', locale], {
-    tags: [CACHE_TAGS.nav],
-    revalidate: REVALIDATE_SECONDS,
-  })()
+  cached(() => loadSiteChrome(locale), ['site-chrome', locale], [CACHE_TAGS.nav])
 
 // ---------------------------------------------------------------------------
 // Bosh sahifa
@@ -203,10 +215,11 @@ export async function loadHomeData(locale: Locale): Promise<HomeData> {
 }
 
 export const getHomeData = (locale: Locale): Promise<HomeData> =>
-  unstable_cache(() => loadHomeData(locale), [CACHE_VERSION, 'home', locale], {
-    tags: [CACHE_TAGS.home, CACHE_TAGS.posts, CACHE_TAGS.nav],
-    revalidate: REVALIDATE_SECONDS,
-  })()
+  cached(
+    () => loadHomeData(locale),
+    ['home', locale],
+    [CACHE_TAGS.home, CACHE_TAGS.posts, CACHE_TAGS.nav],
+  )
 
 // ---------------------------------------------------------------------------
 // Kategoriya
@@ -266,14 +279,11 @@ export const getCategoryPage = (
   slug: string,
   page: number,
 ): Promise<CategoryPageData | null> =>
-  unstable_cache(
+  cached(
     () => loadCategoryPage(locale, slug, page),
-    [CACHE_VERSION, 'category', locale, slug, String(page)],
-    {
-      tags: [categoryTag(slug), CACHE_TAGS.posts, CACHE_TAGS.nav],
-      revalidate: REVALIDATE_SECONDS,
-    },
-  )()
+    ['category', locale, slug, String(page)],
+    [categoryTag(slug), CACHE_TAGS.posts, CACHE_TAGS.nav],
+  )
 
 // ---------------------------------------------------------------------------
 // Maqola
@@ -304,10 +314,11 @@ export async function loadArticle(locale: Locale, slug: string): Promise<Article
 }
 
 export const getArticle = (locale: Locale, slug: string): Promise<ArticleData | null> =>
-  unstable_cache(() => loadArticle(locale, slug), [CACHE_VERSION, 'article', locale, slug], {
-    tags: [postTag(slug), CACHE_TAGS.posts, CACHE_TAGS.nav],
-    revalidate: REVALIDATE_SECONDS,
-  })()
+  cached(
+    () => loadArticle(locale, slug),
+    ['article', locale, slug],
+    [postTag(slug), CACHE_TAGS.posts, CACHE_TAGS.nav],
+  )
 
 function relationId(value: unknown): number | string | null {
   if (value === null || value === undefined) return null
@@ -379,10 +390,7 @@ export async function loadRedirect(from: string): Promise<RedirectTarget | null>
 }
 
 export const findRedirect = (from: string): Promise<RedirectTarget | null> =>
-  unstable_cache(() => loadRedirect(from), [CACHE_VERSION, 'redirect', from], {
-    tags: [CACHE_TAGS.redirects],
-    revalidate: REVALIDATE_SECONDS,
-  })()
+  cached(() => loadRedirect(from), ['redirect', from], [CACHE_TAGS.redirects])
 
 /** Redirect maqsadi — lotin (prefiksiz) yo'l yoki tashqi URL. */
 export function redirectTargetPath(redirect: Pick<Redirect, 'to'>): string | null {

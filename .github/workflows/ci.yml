@@ -93,7 +93,7 @@ jobs:
       - name: Test
         run: pnpm test
 
-      # Demo postlar build'dan oldin: bosh sahifa build vaqtida prerender qilinadi (ISR).
+      # Demo postlar (e2e uchun). Build DB'ga ulanmaydi — sahifalar birinchi so'rovda chiziladi (ISR).
       - name: Seed
         run: pnpm seed
 
