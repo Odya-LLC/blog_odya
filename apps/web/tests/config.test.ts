@@ -23,6 +23,18 @@ describe('DB ulanishi: runtime — pooler, migratsiya — direct', () => {
     expect(getDatabaseMode({ PAYLOAD_MIGRATING: 'false' })).toBe('runtime')
   })
 
+  it('Vercel Preview’da migratsiya taqiqlangan, Production’da ruxsat', () => {
+    const migrating = { PAYLOAD_MIGRATING: 'true', VERCEL: '1' }
+    expect(() => getDatabaseMode({ ...migrating, VERCEL_ENV: 'preview' })).toThrow(/Production/)
+    expect(() => getDatabaseMode({ ...migrating })).toThrow(/Production/)
+    expect(getDatabaseMode({ ...migrating, VERCEL_ENV: 'production' })).toBe('migrate')
+    expect(getDatabaseMode({ PAYLOAD_MIGRATING: 'true', VERCEL_ENV: 'development' })).toBe(
+      'migrate',
+    )
+    // Preview runtime (migratsiyasiz) — ta'sir qilmaydi.
+    expect(getDatabaseMode({ VERCEL: '1', VERCEL_ENV: 'preview' })).toBe('runtime')
+  })
+
   it('runtime — DATABASE_URL (transaction pooler), pool.max 2–3', () => {
     const env = parseEnv({ ...base, S3_ENDPOINT: 'https://acc.r2.cloudflarestorage.com' })
     const pool = getDatabasePoolConfig(env, 'runtime')
