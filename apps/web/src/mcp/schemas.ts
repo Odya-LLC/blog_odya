@@ -199,3 +199,98 @@ export const dailyBatchArgs = {
   count: numericString('count').optional().describe('Nechta yangilik (standart 10, ko‘pi 30)'),
   minScore: numericString('minScore').optional().describe('Minimal score (standart 60)'),
 }
+
+// ---------------------------------------------------------------------------
+// Yozish toollari (M2-07). Mazmun qoidalari (uzunliklar, kirill, SEO) — `validation.ts` da:
+// ular `errors[]`/`warnings[]` sifatida qaytadi. Bu yerda — faqat tur va xavfsizlik chegaralari.
+// ---------------------------------------------------------------------------
+
+/** Bitta `create_draft` chaqiruvidagi maksimal elementlar soni (bir klasterdagi manbalar). */
+export const MAX_DRAFT_ITEMS = 10
+export const MAX_BODY_CHARS = 60_000
+export const MAX_TAGS_INPUT = 10
+
+const text = (field: string, max: number) =>
+  z
+    .string({
+      error: (issue) =>
+        issue.input === undefined ? `${field}: majburiy maydon` : `${field}: matn bo'lishi kerak`,
+    })
+    .max(max, { error: `${field}: ko'pi bilan ${max} belgi` })
+
+const postId = () => idSchema('postId').describe('Post ID (create_draft / list_drafts natijasidan)')
+
+export const createDraftInput = {
+  scrapedItemIds: z
+    .array(idSchema('scrapedItemIds[]'), {
+      error: "scrapedItemIds: scraped-item ID'lari ro'yxati bo'lishi kerak",
+    })
+    .min(1, { error: 'scrapedItemIds: kamida bitta ID' })
+    .max(MAX_DRAFT_ITEMS, { error: `scrapedItemIds: ko'pi bilan ${MAX_DRAFT_ITEMS} ta` })
+    .describe(
+      "Yig'ilgan element ID'lari (list_scraped). Birinchisi — asosiy manba; qolganlari (odatda " +
+        "shu klasterdan) qo'shimcha atributsiya sifatida qo'shiladi",
+    ),
+  category: idOrSlug('category')
+    .optional()
+    .describe('Kategoriya: ID yoki slug. Berilmasa — elementning taklif qilingan kategoriyasi'),
+}
+
+export const postIdInput = {
+  postId: postId(),
+}
+
+export const saveRewriteInput = {
+  postId: postId(),
+  title: text('title', 300).describe('Sarlavha (lotin, ≤ 70 belgi, focus keyword bilan)'),
+  excerpt: text('excerpt', 1000).describe('Lid: 1–2 gap, 160–300 belgi (lotin)'),
+  body: text('body', MAX_BODY_CHARS).describe(
+    "Matn — Markdown (lotin): 400–900 so'z, ## / ### sarlavhalar, ro'yxatlar, havolalar, " +
+      '> iqtibos, ``` kod, jadvallar. HTML va rasmlar olib tashlanadi; # (H1) ishlatilmaydi',
+  ),
+  category: idOrSlug('category').describe('Kategoriya: ID yoki slug (list_categories)'),
+  tags: z
+    .array(
+      z.union([
+        idSchema('tags[]'),
+        text('tags[]', 100).trim().min(1, { error: "tags[]: bo'sh bo'lmasin" }),
+      ]),
+      {
+        error: "tags: teg nomlari (matn) yoki ID'lari ro'yxati",
+      },
+    )
+    .max(MAX_TAGS_INPUT, { error: `tags: ko'pi bilan ${MAX_TAGS_INPUT} ta` })
+    .default([])
+    .describe("3–7 ta teg: nomi (lotin) yoki ID. Mavjud bo'lmagan nom — yangi teg yaratiladi"),
+}
+
+export const setSeoInput = {
+  postId: postId(),
+  seoTitle: text('seoTitle', 300).describe("SEO sarlavha (≤ 60 belgi, «— Blog Odya» qo'shilmaydi)"),
+  metaDescription: text('metaDescription', 1000).describe('Meta description (140–160 belgi)'),
+  focusKeyword: text('focusKeyword', 200).describe("Asosiy kalit so'z: 1–4 so'zli ibora (lotin)"),
+  faq: z
+    .array(
+      z.object({
+        question: text('faq[].question', 300),
+        answer: text('faq[].answer', 2000),
+      }),
+      { error: "faq: { question, answer } ro'yxati" },
+    )
+    .max(10, { error: "faq: ko'pi bilan 10 ta" })
+    .optional()
+    .describe("FAQ: 0 yoki 2–4 ta savol-javob (berilmasa — o'zgarmaydi, [] — o'chiriladi)"),
+  coverAlt: text('coverAlt', 500)
+    .optional()
+    .describe("Muqova rasmi uchun alt matni taklifi (5–15 so'z)"),
+}
+
+export const submitForReviewInput = {
+  postId: postId(),
+  notesForEditor: text('notesForEditor', 5000)
+    .optional()
+    .describe(
+      "Muharrir uchun izoh: tekshirib bo'lmagan faktlar, manbalar farqi, rasm taklifi, " +
+        'topilmagan ichki havolalar',
+    ),
+}

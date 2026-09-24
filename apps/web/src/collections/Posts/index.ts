@@ -112,6 +112,16 @@ export const Posts: CollectionConfig = {
               relationTo: 'media',
             },
             {
+              name: 'coverAlt',
+              type: 'text',
+              label: 'Muqova alt matni (taklif)',
+              localized: true,
+              admin: {
+                description:
+                  'AI agent taklifi (MCP set_seo): muqova rasmi tanlanganda uning alt matni sifatida ishlating',
+              },
+            },
+            {
               name: 'content',
               type: 'richText',
               label: 'Matn',
