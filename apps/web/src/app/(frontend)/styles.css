@@ -118,24 +118,32 @@
  * `prose-invert` kerak emas.
  */
 @utility prose-odya {
-  --tw-prose-body: var(--color-text);
-  --tw-prose-headings: var(--color-text);
-  --tw-prose-lead: var(--color-text-muted);
-  --tw-prose-links: var(--color-accent);
-  --tw-prose-bold: var(--color-text);
-  --tw-prose-counters: var(--color-text-subtle);
-  --tw-prose-bullets: var(--color-text-subtle);
-  --tw-prose-hr: var(--color-border);
-  --tw-prose-quotes: var(--color-text);
-  --tw-prose-quote-borders: var(--color-accent);
-  --tw-prose-captions: var(--color-text-subtle);
-  --tw-prose-kbd: var(--color-text);
-  --tw-prose-kbd-shadows: color-mix(in srgb, var(--color-text) 10%, transparent);
-  --tw-prose-code: var(--color-text);
-  --tw-prose-pre-code: #e4e4e7;
-  --tw-prose-pre-bg: #18181b;
-  --tw-prose-th-borders: var(--color-border);
-  --tw-prose-td-borders: var(--color-border);
+  /*
+   * `.prose` (typography plugin) qoidasi CSS'da keyinroq chiqadi va o'z kulrang o'zgaruvchilarini
+   * qo'yadi — shuning uchun o'zgaruvchilar `.prose-odya.prose` (yuqoriroq spesifiklik) ostida.
+   * Aks holda dark rejimda matn #364153 / #0b0b0f bo'lib qolardi (kontrast 1.9, M1-07 Lighthouse).
+   */
+  &,
+  &.prose {
+    --tw-prose-body: var(--color-text);
+    --tw-prose-headings: var(--color-text);
+    --tw-prose-lead: var(--color-text-muted);
+    --tw-prose-links: var(--color-accent);
+    --tw-prose-bold: var(--color-text);
+    --tw-prose-counters: var(--color-text-subtle);
+    --tw-prose-bullets: var(--color-text-subtle);
+    --tw-prose-hr: var(--color-border);
+    --tw-prose-quotes: var(--color-text);
+    --tw-prose-quote-borders: var(--color-accent);
+    --tw-prose-captions: var(--color-text-subtle);
+    --tw-prose-kbd: var(--color-text);
+    --tw-prose-kbd-shadows: color-mix(in srgb, var(--color-text) 10%, transparent);
+    --tw-prose-code: var(--color-text);
+    --tw-prose-pre-code: #e4e4e7;
+    --tw-prose-pre-bg: #18181b;
+    --tw-prose-th-borders: var(--color-border);
+    --tw-prose-td-borders: var(--color-border);
+  }
   font-size: 1.125rem;
   line-height: 1.7;
 

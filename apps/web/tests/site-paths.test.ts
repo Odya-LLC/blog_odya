@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   alternatePaths,
+  authorPath,
   categoryPath,
   homePath,
   localeFromPathname,
@@ -9,6 +10,7 @@ import {
   pagePath,
   parsePageParam,
   postPath,
+  searchPath,
   stripLocalePrefix,
   tagPath,
 } from '@/site/paths'
@@ -35,6 +37,24 @@ describe('URL sxemasi (TZ §8.1)', () => {
   it('teg va statik sahifa', () => {
     expect(tagPath('uz-Cyrl', 'cs2')).toBe('/kr/tag/cs2')
     expect(pagePath('uz-Latn', 'aloqa')).toBe('/aloqa')
+  })
+
+  it('teg va muallif sahifalash: /{kind}/{slug}/page/{n}', () => {
+    expect(tagPath('uz-Latn', 'cs2', 1)).toBe('/tag/cs2')
+    expect(tagPath('uz-Cyrl', 'cs2', 2)).toBe('/kr/tag/cs2/page/2')
+    expect(authorPath('uz-Latn', 'tahririyat')).toBe('/author/tahririyat')
+    expect(authorPath('uz-Cyrl', 'tahririyat', 3)).toBe('/kr/author/tahririyat/page/3')
+  })
+
+  it('qidiruv: /search?q=…&page=n (so‘rov kodlanadi)', () => {
+    expect(searchPath('uz-Latn')).toBe('/search')
+    expect(searchPath('uz-Cyrl')).toBe('/kr/search')
+    expect(searchPath('uz-Latn', "o'zbek tili")).toBe('/search?q=o%27zbek+tili')
+    expect(searchPath('uz-Cyrl', 'сунъий', 2)).toBe(
+      `/kr/search?q=${encodeURIComponent('сунъий')}&page=2`,
+    )
+    expect(searchPath('uz-Latn', 'x', 1)).toBe('/search?q=x')
+    expect(searchPath('uz-Latn', '', 3)).toBe('/search')
   })
 
   it('localizePath: ichki yo‘l prefikslanadi, tashqi URL — yo‘q', () => {

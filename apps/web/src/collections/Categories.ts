@@ -54,7 +54,7 @@ export const Categories: CollectionConfig = {
         },
       ],
     },
-    slugField('name'),
+    slugField('name', { uniqueAcross: 'pages' }),
     {
       name: 'color',
       type: 'text',

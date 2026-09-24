@@ -32,6 +32,8 @@ export async function SitePage({ locale, pathname, activeCategorySlug, children 
       footer={{
         categories: chrome.categories,
         legalLinks: chrome.legalLinks,
+        columns: chrome.footerColumns,
+        copyright: chrome.copyright,
         telegram: chrome.telegram,
       }}
     >

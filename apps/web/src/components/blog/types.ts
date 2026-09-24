@@ -69,5 +69,11 @@ export type LinkItem = {
   href: string
 }
 
+/** Footer ustuni (`footer` global — sarlavha + havolalar). */
+export type FooterColumn = {
+  title: string
+  links: LinkItem[]
+}
+
 /** Har bir yozuv uchun Telegram kanal havolasi (TZ §7.1: ikkita kanal). */
 export type TelegramLinks = Record<Locale, string>

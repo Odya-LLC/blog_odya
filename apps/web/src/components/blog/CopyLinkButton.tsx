@@ -1,9 +1,9 @@
 'use client'
 
 import { CheckIcon, LinkIcon } from 'lucide-react'
+// clsx (tailwind-merge'siz): client bundle'da twMerge bo'lmasin — JS byudjeti (TZ §8.4).
+import { clsx as cn } from 'clsx'
 import { useState } from 'react'
-
-import { cn } from '@/lib/utils'
 
 type CopyLinkButtonProps = {
   url: string

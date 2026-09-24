@@ -1,12 +1,22 @@
-import type { TextField } from 'payload'
+import type { CollectionSlug, TextField } from 'payload'
 
-import { toSlug, validateSlug } from '@/lib/slug'
+import { slugCollisionMessage, toSlug, validateRouteSlug, validateSlug } from '@/lib/slug'
+
+type SlugFieldOptions = {
+  /**
+   * Ildiz darajasidagi URL (`/{slug}`: kategoriya, statik sahifa): marshrut nomlari band
+   * (`ROUTE_RESERVED_SLUGS` — `tag`, `author`, `search`, `bot`, …) va shu kolleksiyadagi
+   * slug'lar bilan to'qnashuv ham xato (kategoriya ↔ sahifa, TZ §8.1).
+   */
+  uniqueAcross?: 'categories' | 'pages'
+}
 
 /**
  * `slug` maydoni: lotin, lokalizatsiya qilinmaydi (ikkala yozuvda bir xil — TZ §8.1, §10.4), unique.
  * Bo'sh qoldirilsa lotin `source` maydonidan (masalan, `title`) avtomatik yasaladi.
  */
-export function slugField(source: string): TextField {
+export function slugField(source: string, options: SlugFieldOptions = {}): TextField {
+  const { uniqueAcross } = options
   return {
     name: 'slug',
     type: 'text',
@@ -14,7 +24,18 @@ export function slugField(source: string): TextField {
     unique: true,
     index: true,
     required: true,
-    validate: (value: string | null | undefined) => validateSlug(value),
+    validate: async (value: string | null | undefined, { req }) => {
+      if (!uniqueAcross) return validateSlug(value)
+      const format = validateRouteSlug(value)
+      if (format !== true || !value || !req?.payload) return format
+      const { totalDocs } = await req.payload.count({
+        collection: uniqueAcross as CollectionSlug,
+        where: { slug: { equals: value } },
+        overrideAccess: true,
+        req,
+      })
+      return totalDocs > 0 ? slugCollisionMessage(value, uniqueAcross) : true
+    },
     hooks: {
       beforeValidate: [
         ({ value, data, originalDoc }) => {

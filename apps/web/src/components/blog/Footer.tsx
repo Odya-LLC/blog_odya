@@ -5,7 +5,7 @@ import { withLocalePrefix } from '@/lib/preferences'
 import { cn } from '@/lib/utils'
 
 import { TelegramIcon } from './icons'
-import type { LinkItem, Locale, NavCategory, TelegramLinks } from './types'
+import type { FooterColumn, LinkItem, Locale, NavCategory, TelegramLinks } from './types'
 import { Wordmark } from './Wordmark'
 
 type FooterProps = {
@@ -15,6 +15,13 @@ type FooterProps = {
   legalLinks: LinkItem[]
   /** Ikkala Telegram kanal (TZ §12.3). */
   telegram: TelegramLinks
+  /**
+   * `footer` global ustunlari (admin'da boshqariladi). Berilsa — "Kategoriyalar" va "Ma'lumot"
+   * ustunlari o'rniga shular chiziladi (`categories`/`legalLinks` — zaxira).
+   */
+  columns?: FooterColumn[]
+  /** `footer.copyright` (masalan, "© Odya LLC"); yil oldiga qo'shiladi. */
+  copyright?: string | null
   year?: number
   className?: string
 }
@@ -27,10 +34,23 @@ export function Footer({
   categories,
   legalLinks,
   telegram,
+  columns,
+  copyright,
   year = new Date().getFullYear(),
   className,
 }: FooterProps) {
   const t = getSiteStrings(locale)
+  const holder = (copyright ?? '').replace(/^©\s*/, '').trim() || 'Odya LLC'
+  const linkColumns: FooterColumn[] =
+    columns && columns.length > 0
+      ? columns
+      : [
+          {
+            title: t.categoriesNav,
+            links: categories.map((category) => ({ label: category.name, href: category.href })),
+          },
+          { title: t.footerLegal, links: legalLinks },
+        ]
   return (
     <footer className={cn('border-t border-border bg-surface', className)}>
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-10 sm:grid-cols-2 lg:grid-cols-12 lg:px-6 lg:py-14">
@@ -45,35 +65,35 @@ export function Footer({
           <p className="max-w-xs text-sm text-muted">{t.footerAbout}</p>
         </div>
 
-        <nav aria-labelledby="footer-categories" className="flex flex-col gap-3 lg:col-span-3">
-          <h2 id="footer-categories" className="text-sm font-bold text-fg">
-            {t.categoriesNav}
-          </h2>
-          <ul className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-1">
-            {categories.map((category) => (
-              <li key={category.slug}>
-                <Link href={category.href} className={linkClass}>
-                  {category.name}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
-
-        <nav aria-labelledby="footer-legal" className="flex flex-col gap-3 lg:col-span-2">
-          <h2 id="footer-legal" className="text-sm font-bold text-fg">
-            {t.footerLegal}
-          </h2>
-          <ul className="flex flex-col gap-2">
-            {legalLinks.map((link) => (
-              <li key={link.href}>
-                <Link href={link.href} className={linkClass}>
-                  {link.label}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
+        {linkColumns.map((column, index) => {
+          const headingId = `footer-col-${index}`
+          // 1-ustun (odatda kategoriyalar) kengroq: mobilda 2 ustunli ro'yxat.
+          const wide = index === 0
+          return (
+            <nav
+              key={headingId}
+              aria-labelledby={headingId}
+              className={cn('flex flex-col gap-3', wide ? 'lg:col-span-3' : 'lg:col-span-2')}
+            >
+              <h2 id={headingId} className="text-sm font-bold text-fg">
+                {column.title}
+              </h2>
+              <ul
+                className={cn(
+                  wide ? 'grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-1' : 'flex flex-col gap-2',
+                )}
+              >
+                {column.links.map((link) => (
+                  <li key={link.href}>
+                    <Link href={link.href} className={linkClass}>
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          )
+        })}
 
         <div className="flex flex-col gap-3 lg:col-span-3">
           <h2 className="text-sm font-bold text-fg">{t.footerTelegram}</h2>
@@ -107,7 +127,7 @@ export function Footer({
       </div>
       <div className="border-t border-border">
         <p className="mx-auto max-w-7xl px-4 py-5 text-xs text-subtle lg:px-6">
-          © {year} Odya LLC. {t.rights}
+          © {year} {holder}. {t.rights}
         </p>
       </div>
     </footer>

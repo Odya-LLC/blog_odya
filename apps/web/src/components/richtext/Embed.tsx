@@ -1,14 +1,22 @@
+import type { Locale } from '@blog-odya/shared/locales'
 import { ExternalLinkIcon } from 'lucide-react'
 
 import { parseEmbedUrl } from '@/lib/embed'
 import { cn } from '@/lib/utils'
 
 import { TelegramEmbedLoader, XEmbedLoader } from './EmbedScript'
+import { YouTubeFacade } from './YouTubeFacade'
 
 type EmbedProps = {
   url: string
   caption?: string | null
+  locale?: Locale
   className?: string
+}
+
+const PLAY_LABEL: Record<Locale, string> = {
+  'uz-Latn': 'Videoni koʻrish',
+  'uz-Cyrl': 'Видеони кўриш',
 }
 
 function Caption({ caption }: { caption?: string | null }) {
@@ -31,26 +39,21 @@ function FallbackLink({ url, label }: { url: string; label?: string }) {
 }
 
 /**
- * Lexical `embed` bloki (TZ §10.3): YouTube (youtube-nocookie iframe, lazy), X va Telegram
+ * Lexical `embed` bloki (TZ §10.3): YouTube (facade → bosilganda youtube-nocookie iframe), X va Telegram
  * (havola + ko'ringanda yuklanadigan rasmiy widget). Noma'lum URL — oddiy havola kartochkasi.
  */
-export function Embed({ url, caption, className }: EmbedProps) {
+export function Embed({ url, caption, locale = 'uz-Latn', className }: EmbedProps) {
   const embed = parseEmbedUrl(url)
   switch (embed.kind) {
     case 'youtube': {
-      const params = new URLSearchParams({ rel: '0' })
-      if (embed.start) params.set('start', String(embed.start))
       return (
         <figure className={cn('not-prose my-8', className)} data-embed="youtube">
           <div className="relative aspect-video overflow-hidden rounded-md bg-surface-muted">
-            <iframe
-              src={`https://www.youtube-nocookie.com/embed/${embed.id}?${params}`}
+            <YouTubeFacade
+              id={embed.id}
+              start={embed.start}
               title={caption || 'YouTube'}
-              loading="lazy"
-              allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              referrerPolicy="strict-origin-when-cross-origin"
-              allowFullScreen
-              className="absolute inset-0 size-full border-0"
+              playLabel={PLAY_LABEL[locale]}
             />
           </div>
           {caption ? (

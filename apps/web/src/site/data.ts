@@ -17,24 +17,33 @@ import { cache } from 'react'
 
 import type {
   CategoryRef,
+  FooterColumn,
+  ImageRef,
   LinkItem,
   NavCategory,
   PostSummary,
+  TagRef,
   TelegramLinks,
 } from '@/components/blog/types'
 import { env, PHASE_PRODUCTION_BUILD } from '@/env'
-import type { Category, Post, Redirect } from '@/payload-types'
+import type { Author, Category, Media, Page, Post, Redirect } from '@/payload-types'
 
 import { CACHE_TAGS, categoryTag, postTag } from './cache-tags'
 import {
   populated,
   toCategoryRef,
+  toFooterColumns,
+  toImageRef,
   toLegalLinks,
   toNavCategories,
   toPostSummaries,
+  toTagRef,
   toTelegramLinks,
 } from './mappers'
+import { authorPath } from './paths'
 import { rankRelated, RELATED_LIMIT } from './related'
+import type { SearchQuery } from './search/normalize'
+import { searchPostIds } from './search/query'
 
 /** Sahifalar keshining zaxira muddati (soniya) — teg bo'yicha yangilanmay qolgan holatlar uchun. */
 export const REVALIDATE_SECONDS = 3600
@@ -126,14 +135,20 @@ async function findPosts(
 // ---------------------------------------------------------------------------
 
 export type SiteChrome = {
+  /** Header menyusi (`header` global: kategoriya, sahifa, URL havolalari; bo'sh — kategoriyalar). */
   categories: NavCategory[]
   legalLinks: LinkItem[]
+  /** Footer ustunlari (`footer` global). */
+  footerColumns: FooterColumn[]
+  copyright: string | null
   telegram: TelegramLinks
 }
 
 const EMPTY_CHROME = (): SiteChrome => ({
   categories: [],
   legalLinks: [],
+  footerColumns: [],
+  copyright: null,
   telegram: toTelegramLinks(null, env),
 })
 
@@ -157,12 +172,15 @@ export async function loadSiteChrome(locale: Locale): Promise<SiteChrome> {
   return {
     categories: toNavCategories(header, categories.docs, locale),
     legalLinks: toLegalLinks(footer, locale),
+    footerColumns: toFooterColumns(footer, locale),
+    copyright: footer.copyright ?? null,
     telegram: toTelegramLinks(settings, env),
   }
 }
 
 export const getSiteChrome = (locale: Locale): Promise<SiteChrome> =>
-  cached(() => loadSiteChrome(locale), ['site-chrome', locale], [CACHE_TAGS.nav])
+  // `pages` — menyudagi sahifa slug'i o'zgarsa havola ham yangilanadi.
+  cached(() => loadSiteChrome(locale), ['site-chrome', locale], [CACHE_TAGS.nav, CACHE_TAGS.pages])
 
 // ---------------------------------------------------------------------------
 // Bosh sahifa
@@ -289,6 +307,223 @@ export const getCategoryPage = (
     ['category', locale, slug, String(page)],
     [categoryTag(slug), CACHE_TAGS.posts, CACHE_TAGS.nav],
   )
+
+// ---------------------------------------------------------------------------
+// Teg va muallif sahifalari (TZ §8.1: `/tag/{slug}`, `/author/{slug}`, sahifalash bilan)
+// ---------------------------------------------------------------------------
+
+/** Teg/muallif sahifasidagi postlar soni (kategoriya bilan bir xil). */
+export const LISTING_PAGE_SIZE = CATEGORY_PAGE_SIZE
+
+export type ListingPosts = {
+  posts: PostSummary[]
+  page: number
+  totalPages: number
+  /** Jami postlar (teg `noindex` qoidasi: < 3 — TZ §8.1). */
+  totalDocs: number
+  latest: PostSummary[]
+}
+
+type SeoFields = {
+  description: string | null
+  metaTitle: string | null
+  metaDescription: string | null
+  noindex: boolean
+  updatedAt: string
+}
+
+export type TagPageData = ListingPosts & { tag: TagRef & SeoFields }
+
+/** Ro'yxat + yon panel ("So'nggi yangiliklar"); `page` > oxirgi sahifa — `null` (404). */
+async function loadListingPosts(
+  locale: Locale,
+  where: Where,
+  page: number,
+): Promise<ListingPosts | null> {
+  const [list, latest] = await Promise.all([
+    findPosts(locale, where, LISTING_PAGE_SIZE, page),
+    findPosts(locale, undefined, 6),
+  ])
+  if (page > 1 && page > list.totalPages) return null
+  const posts = toPostSummaries(list.docs, locale)
+  const shown = new Set(posts.map((post) => post.id))
+  return {
+    posts,
+    page,
+    totalPages: Math.max(1, list.totalPages),
+    totalDocs: list.totalDocs,
+    latest: toPostSummaries(latest.docs, locale).filter((post) => !shown.has(post.id)),
+  }
+}
+
+export async function loadTagPage(
+  locale: Locale,
+  slug: string,
+  page: number,
+): Promise<TagPageData | null> {
+  if (!hasDatabase()) return null
+  const payload = await payloadClient()
+  const { docs } = await payload.find({
+    collection: 'tags',
+    locale,
+    where: { slug: { equals: slug } },
+    limit: 1,
+    depth: 0,
+    overrideAccess: false,
+  })
+  const tag = docs[0]
+  if (!tag) return null
+  const listing = await loadListingPosts(locale, { tags: { in: [tag.id] } }, page)
+  if (!listing) return null
+  return {
+    ...listing,
+    tag: {
+      ...toTagRef(tag, locale),
+      description: tag.description ?? null,
+      metaTitle: tag.meta?.title ?? null,
+      metaDescription: tag.meta?.description ?? null,
+      noindex: Boolean(tag.meta?.noindex),
+      updatedAt: tag.updatedAt,
+    },
+  }
+}
+
+export const getTagPage = (locale: Locale, slug: string, page: number) =>
+  cached(
+    () => loadTagPage(locale, slug, page),
+    ['tag', locale, slug, String(page)],
+    [CACHE_TAGS.posts, CACHE_TAGS.nav],
+  )
+
+export type AuthorProfile = {
+  slug: string
+  name: string
+  href: string
+  position: string | null
+  bio: string | null
+  avatar: ImageRef | null
+  /** Rasm to'liq URL uchun (JSON-LD `Person.image`). */
+  avatarUrl: string | null
+  socials: Array<{ platform: string; url: string }>
+  updatedAt: string
+}
+
+export type AuthorPageData = ListingPosts & { author: AuthorProfile }
+
+export async function loadAuthorPage(
+  locale: Locale,
+  slug: string,
+  page: number,
+): Promise<AuthorPageData | null> {
+  if (!hasDatabase()) return null
+  const payload = await payloadClient()
+  const { docs } = await payload.find({
+    collection: 'authors',
+    locale,
+    where: { slug: { equals: slug } },
+    limit: 1,
+    depth: 1,
+    overrideAccess: false,
+  })
+  const author = docs[0] as Author | undefined
+  if (!author) return null
+  const listing = await loadListingPosts(locale, { authors: { in: [author.id] } }, page)
+  if (!listing) return null
+  const avatar = populated<Media>(author.avatar)
+  return {
+    ...listing,
+    author: {
+      slug: author.slug,
+      name: author.name,
+      href: authorPath(locale, author.slug),
+      position: author.position ?? null,
+      bio: author.bio ?? null,
+      avatar: toImageRef(avatar),
+      avatarUrl: avatar?.url ?? null,
+      socials: (author.socials ?? [])
+        .filter((social) => /^https?:\/\//i.test(social.url))
+        .map((social) => ({ platform: social.platform, url: social.url })),
+      updatedAt: author.updatedAt,
+    },
+  }
+}
+
+export const getAuthorPage = (locale: Locale, slug: string, page: number) =>
+  cached(
+    () => loadAuthorPage(locale, slug, page),
+    ['author', locale, slug, String(page)],
+    [CACHE_TAGS.posts, CACHE_TAGS.nav],
+  )
+
+// ---------------------------------------------------------------------------
+// Statik sahifalar (`pages`, TZ §10.13): `/{slug}` — faqat chop etilganlari
+// ---------------------------------------------------------------------------
+
+export async function loadStaticPage(locale: Locale, slug: string): Promise<Page | null> {
+  if (!hasDatabase()) return null
+  const payload = await payloadClient()
+  const { docs } = await payload.find({
+    collection: 'pages',
+    locale,
+    where: { slug: { equals: slug } },
+    limit: 1,
+    // 2: matndagi rasmlar va ichki havolalar (post → kategoriya).
+    depth: 2,
+    overrideAccess: false,
+  })
+  return (docs[0] as Page | undefined) ?? null
+}
+
+export const getStaticPage = (locale: Locale, slug: string): Promise<Page | null> =>
+  cached(() => loadStaticPage(locale, slug), ['page', locale, slug], [CACHE_TAGS.pages])
+
+// ---------------------------------------------------------------------------
+// Qidiruv (`/search?q=`) — Postgres FTS (`search/query.ts`). Keshlanmaydi: so'rovlar cheksiz
+// ko'p va foydalanuvchi kiritadi (Data Cache'ni to'ldirmaslik uchun); sahifa `noindex`.
+// ---------------------------------------------------------------------------
+
+export const SEARCH_PAGE_SIZE = 10
+
+export type SearchResults = {
+  posts: PostSummary[]
+  page: number
+  totalPages: number
+  total: number
+}
+
+export async function loadSearchResults(
+  locale: Locale,
+  query: SearchQuery,
+  page: number,
+): Promise<SearchResults> {
+  const empty: SearchResults = { posts: [], page, totalPages: 1, total: 0 }
+  if (!hasDatabase()) return empty
+  const payload = await payloadClient()
+  const hits = await searchPostIds(payload, query, {
+    limit: SEARCH_PAGE_SIZE,
+    offset: (page - 1) * SEARCH_PAGE_SIZE,
+  })
+  if (hits.ids.length === 0) return { ...empty, total: hits.total }
+  // Kartochkalar — Local API orqali (kirish qoidalari yana qo'llanadi), FTS tartibida.
+  const result = await payload.find({
+    collection: 'posts',
+    locale,
+    where: { id: { in: hits.ids } },
+    limit: hits.ids.length,
+    depth: 1,
+    overrideAccess: false,
+    select: POST_CARD_SELECT,
+    populate: { categories: { name: true, slug: true } },
+  })
+  const byId = new Map((result.docs as Post[]).map((doc) => [doc.id, doc]))
+  const ordered = hits.ids.flatMap((id) => byId.get(id) ?? [])
+  return {
+    posts: toPostSummaries(ordered, locale),
+    page,
+    totalPages: Math.max(1, Math.ceil(hits.total / SEARCH_PAGE_SIZE)),
+    total: hits.total,
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Maqola

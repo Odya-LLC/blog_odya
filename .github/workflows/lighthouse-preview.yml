@@ -1,0 +1,84 @@
+# Lighthouse CI — Vercel Preview URL'iga qarshi (M1-07, TZ §8.4 / §11 p.7).
+#
+# Vercel Git integratsiyasi har bir PR commit'i uchun GitHub Deployment yaratadi; preview tayyor
+# bo'lganda (`deployment_status: success`) shu workflow o'sha commit'da ishlaydi va natija PR
+# "Checks" ro'yxatida ko'rinadi. Asosiy (bloklovchi) o'lchov — `ci.yml` dagi "Lighthouse CI" qadami
+# (shu commit'ning `next start` + demo seed'i); bu esa haqiqiy Vercel muhitini (CDN, siqish,
+# serverless) tekshiradi.
+#
+# Sozlash (HUMAN):
+# - Preview "Vercel Authentication" bilan yopiq bo'lsa: Vercel → Project → Settings → Deployment
+#   Protection → "Protection Bypass for Automation" → sirni yarating va GitHub → Settings →
+#   Secrets → Actions → `VERCEL_AUTOMATION_BYPASS_SECRET` ga qo'ying (sarlavha
+#   `x-vercel-protection-bypass` bilan yuboriladi).
+# - Preview muhitida DB sirlari bo'lmasa (TASKS M0: Preview scope'da DB yo'q), maqola/kategoriya
+#   sahifalari 404 — ular RSS orqali topilmasa, faqat bosh sahifa o'lchanadi.
+#
+# SEO: preview ataylab `noindex` (OBLOG-13) — `LHCI_PREVIEW=1` faqat `is-crawlable` auditini
+# o'tkazib yuboradi, qolgan SEO auditlari 100 bo'lishi shart (batafsil: apps/web/lighthouserc.cjs).
+name: Lighthouse (preview)
+
+on:
+  deployment_status:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lighthouse-preview-${{ github.event.deployment.sha }}
+  cancel-in-progress: true
+
+jobs:
+  lighthouse:
+    name: Lighthouse CI (Vercel Preview, mobil)
+    if: >-
+      github.event.deployment_status.state == 'success' &&
+      contains(github.event.deployment.environment, 'Preview')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      LHCI_BASE_URL: ${{ github.event.deployment_status.environment_url || github.event.deployment_status.target_url }}
+      LHCI_PREVIEW: '1'
+      VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.deployment.sha }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      # Maqola va kategoriya — preview'dagi RSS'ning birinchi maqolasi (demo slug'lar preview'da
+      # bo'lmasligi mumkin). Topilmasa — faqat bosh sahifa.
+      - name: Discover URLs
+        run: |
+          base="${LHCI_BASE_URL%/}"
+          headers=()
+          if [ -n "$VERCEL_AUTOMATION_BYPASS_SECRET" ]; then
+            headers=(-H "x-vercel-protection-bypass: $VERCEL_AUTOMATION_BYPASS_SECRET")
+          fi
+          rss=$(curl -fsSL "${headers[@]}" "$base/rss.xml" || true)
+          link=$(printf '%s' "$rss" | tr -d '\n' | grep -o '<item>.*' | grep -o '<link>[^<]*</link>' | head -1 | sed -E 's#</?link>##g')
+          paths="/"
+          if [ -n "$link" ]; then
+            article="/${link#*://*/}"
+            category="/$(printf '%s' "${article#/}" | cut -d/ -f1)"
+            paths="/,$article,$category"
+          fi
+          echo "LHCI paths: $paths"
+          echo "LHCI_PATHS=$paths" >> "$GITHUB_ENV"
+
+      - name: Lighthouse CI
+        working-directory: apps/web
+        run: npx --yes @lhci/cli@0.15.1 autorun --config=./lighthouserc.cjs
+
+      - name: Upload Lighthouse reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-preview-reports
+          path: apps/web/.lighthouseci/
+          retention-days: 7
+          if-no-files-found: ignore

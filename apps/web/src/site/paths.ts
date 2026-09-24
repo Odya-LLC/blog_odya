@@ -5,7 +5,7 @@
  * Slug ikkala yozuvda bir xil (lotin), shuning uchun boshqa yozuvdagi URL — faqat prefiksni
  * almashtirish. Bu fayl yon ta'sirsiz: server, client va testlarda ishlatiladi.
  */
-import { LOCALE_PATH_PREFIX, LOCALES, type Locale } from '@blog-odya/shared'
+import { LOCALE_PATH_PREFIX, LOCALES, type Locale } from '@blog-odya/shared/locales'
 
 import { withLocalePrefix } from '@/lib/preferences'
 
@@ -26,17 +26,33 @@ export function postPath(locale: Locale, categorySlug: string, slug: string): st
   return withLocalePrefix(locale, `/${categorySlug}/${slug}`)
 }
 
-export function tagPath(locale: Locale, slug: string): string {
-  return withLocalePrefix(locale, `/tag/${slug}`)
+/** `/tag/{slug}` yoki `/tag/{slug}/page/{n}` (n ≥ 2). */
+export function tagPath(locale: Locale, slug: string, page = 1): string {
+  const base = `/tag/${slug}`
+  return withLocalePrefix(locale, page > 1 ? `${base}/${PAGE_SEGMENT}/${page}` : base)
 }
 
-export function authorPath(locale: Locale, slug: string): string {
-  return withLocalePrefix(locale, `/author/${slug}`)
+/** `/author/{slug}` yoki `/author/{slug}/page/{n}` (n ≥ 2). */
+export function authorPath(locale: Locale, slug: string, page = 1): string {
+  const base = `/author/${slug}`
+  return withLocalePrefix(locale, page > 1 ? `${base}/${PAGE_SEGMENT}/${page}` : base)
 }
 
-/** Statik sahifa (`pages`): `/{slug}` — M1-07 da route qo'shiladi. */
+/** Statik sahifa (`pages`): `/{slug}` (kategoriya slug'lari bilan to'qnashmaydi). */
 export function pagePath(locale: Locale, slug: string): string {
   return withLocalePrefix(locale, `/${slug}`)
+}
+
+/** Qidiruv yo'li (so'rovsiz): `/search`, `/kr/search`. */
+export const SEARCH_PATH = '/search'
+
+/** `/search?q=…&page=n` (n ≥ 2). `q` bo'sh bo'lsa — faqat yo'l. */
+export function searchPath(locale: Locale, query?: string | null, page = 1): string {
+  const params = new URLSearchParams()
+  if (query) params.set('q', query)
+  if (query && page > 1) params.set('page', String(page))
+  const search = params.toString()
+  return `${withLocalePrefix(locale, SEARCH_PATH)}${search ? `?${search}` : ''}`
 }
 
 /** Lotin (prefiksiz) ichki yo'l → joriy yozuvdagi yo'l; tashqi URL o'zgarishsiz. */
