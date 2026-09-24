@@ -45,7 +45,10 @@ export const ScrapingSettings: GlobalConfig = {
           defaultValue: 10,
           min: 1,
           max: 50,
-          admin: { width: '33%' },
+          admin: {
+            width: '33%',
+            description: 'Bitta batch’dagi parallel job’lar; DB pool tufayli amalda ≤ 2',
+          },
         },
         {
           name: 'jobsDeadlineSec',
@@ -54,8 +57,12 @@ export const ScrapingSettings: GlobalConfig = {
           defaultValue: 40,
           min: 5,
           // + task'lar uchun 10 s grace — Vercel function limiti (60 s) ichida qolish uchun.
+          // Runner so'rov boshidan hisoblaydi va 35 s bilan cheklaydi (`BATCH_START_LIMIT_MS`).
           max: 45,
-          admin: { width: '33%' },
+          admin: {
+            width: '33%',
+            description: 'So‘rov boshidan; amalda ≤ 35 s (javob 60 s limitga sig‘ishi uchun)',
+          },
         },
         {
           name: 'maxNewItemsPerPoll',

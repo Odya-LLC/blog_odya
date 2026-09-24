@@ -3,7 +3,7 @@ import type { JobsConfig } from 'payload'
 import { isAdminUser } from '@/access'
 import type { Env } from '@/env'
 
-import { DEFAULT_BATCH_LIMIT } from './constants'
+import { JOBS_CONCURRENCY } from './constants'
 import { runAlertChecks } from './alerts'
 import { activeRunQueues } from './scrapeDeps'
 import { enqueueDailyCleanup, enqueueDueFeedPolls, releaseStaleJobs } from './scheduler'
@@ -53,7 +53,8 @@ export function buildJobsConfig(mode: Env['JOBS_MODE'] = 'endpoint'): JobsConfig
           autoRun: activeRunQueues().map((queue) => ({
             cron: '* * * * *',
             queue,
-            limit: DEFAULT_BATCH_LIMIT,
+            // Parallel job'lar DB pool'idan oshmasin (`JOBS_CONCURRENCY`).
+            limit: JOBS_CONCURRENCY,
           })),
           shouldAutoRun: async (payload) => {
             await releaseStaleJobs(payload)

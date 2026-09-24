@@ -1,8 +1,10 @@
+import { type PostgresAdapter, sql } from '@payloadcms/db-postgres'
 import type { Payload } from 'payload'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { FEED_POLL_TASK, SCRAPE_ITEM_WORKFLOW, SCRAPE_QUEUE } from '@/jobs/constants'
 import { handleJobsRunRequest, type JobsRunResponse } from '@/jobs/runner'
+import { releaseStaleJobs } from '@/jobs/scheduler'
 import { scrapeDeps } from '@/jobs/scrapeDeps'
 import { feedPollDeps } from '@/jobs/tasks/feedPoll'
 import type { Source } from '@/payload-types'
@@ -263,5 +265,67 @@ describe('jobs endpoint + feed.poll', () => {
     expect(polled).toHaveLength(1)
     expect(polled[0]!.lastError).toBe('Timeout')
     expect((verge.stats as { consecutiveFailures?: number }).consecutiveFailures).toBeGreaterThan(0)
+  })
+
+  it('byudjet so‘rov boshidan: sovuq start/pre-step’lar deadline’ni yesa — batch va navbatga qo‘yish yo‘q, javob darhol', async () => {
+    await makeAllDue(true)
+    const requestsBefore = fixtures.requests.length
+    // Soat: so'rov boshi — hozir, keyingi o'lchovlar +36 s (Payload init + settings + stale).
+    const realStart = Date.now()
+    let first = true
+    const now = () => {
+      if (first) {
+        first = false
+        return realStart
+      }
+      return Date.now() + 36_000
+    }
+    const response = await handleJobsRunRequest(
+      new Request('http://localhost:3000/api/jobs/run', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${SECRET}` },
+      }),
+      { getPayload: async () => payload, secret: SECRET, now },
+    )
+    expect(response.status).toBe(200)
+    const body = (await response.json()) as JobsRunResponse
+    expect(body).toMatchObject({
+      enqueued: 0,
+      cleanupEnqueued: false,
+      batches: 0,
+      deadlineReached: true,
+      deadlineSec: 35,
+      limit: 2,
+    })
+    expect(body.skipped).toEqual(['feedPolls', 'cleanup'])
+    // 36 s "o'tgan", javob 50 s byudjet ichida; feed'lar so'ralmagan.
+    expect(body.durationMs).toBeGreaterThanOrEqual(36_000)
+    expect(body.durationMs).toBeLessThan(50_000)
+    expect(fixtures.requests.length).toBe(requestsBefore)
+    expect(Date.now() - realStart).toBeLessThan(10_000)
+  })
+
+  it('releaseStaleJobs: bitta UPDATE — faqat 5 daqiqadan ortiq processing’da qolganlar', async () => {
+    const stale = await payload.jobs.queue({ task: FEED_POLL_TASK, input: { sourceId: 999_001 } })
+    const fresh = await payload.jobs.queue({ task: FEED_POLL_TASK, input: { sourceId: 999_002 } })
+    const db = (payload.db as unknown as PostgresAdapter).drizzle
+    await db.execute(sql`
+      UPDATE "payload_jobs" SET "processing" = true,
+        "updated_at" = CASE WHEN "id" = ${stale.id} THEN now() - interval '6 minutes' ELSE now() END
+      WHERE "id" IN (${stale.id}, ${fresh.id})
+    `)
+    try {
+      expect(await releaseStaleJobs(payload)).toBe(1)
+      const byId = async (id: number | string) =>
+        payload.findByID({ collection: 'payload-jobs', id, depth: 0 })
+      expect((await byId(stale.id)).processing).toBe(false)
+      expect((await byId(fresh.id)).processing).toBe(true)
+      expect(await releaseStaleJobs(payload)).toBe(0)
+    } finally {
+      await payload.delete({
+        collection: 'payload-jobs',
+        where: { id: { in: [stale.id, fresh.id] } },
+      })
+    }
   })
 })

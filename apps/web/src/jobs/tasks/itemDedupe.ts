@@ -10,7 +10,9 @@ import {
   DEDUPE_WINDOW_HOURS,
   ITEM_DEDUPE_TASK,
   SCRAPE_TASK_RETRIES,
+  TASK_BUDGET_MS,
 } from '../constants'
+import { boundedTimeout, getRunDeadline } from '../context'
 
 /**
  * `item.dedupe` (TZ §3.5 #4): matndan 64-bit SimHash (`contentHash`) hisoblaydi va oxirgi
@@ -103,6 +105,12 @@ export async function dedupeItem(
       }
 
       const db = await transactionDb(req)
+      if (getRunDeadline() !== undefined) {
+        // `/api/jobs/run` ichida: lock kutish run deadline'idan oshmasin (oshsa — task xatosi,
+        // retry). `SET LOCAL` — faqat shu tranzaksiya uchun.
+        const lockTimeoutMs = Math.floor(boundedTimeout(TASK_BUDGET_MS))
+        await db.execute(sql.raw(`SET LOCAL lock_timeout = ${lockTimeoutMs}`))
+      }
       await db.execute(sql`SELECT pg_advisory_xact_lock(${DEDUPE_LOCK_KEY})`)
       const since = new Date(now - DEDUPE_WINDOW_HOURS * 3_600_000).toISOString()
       const { rows } = (await db.execute(sql`

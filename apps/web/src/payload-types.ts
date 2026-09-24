@@ -1603,7 +1603,13 @@ export interface ScrapingSetting {
   id: number;
   isEnabled?: boolean | null;
   minScore?: number | null;
+  /**
+   * Bitta batch’dagi parallel job’lar; DB pool tufayli amalda ≤ 2
+   */
   jobsBatchLimit?: number | null;
+  /**
+   * So‘rov boshidan; amalda ≤ 35 s (javob 60 s limitga sig‘ishi uchun)
+   */
   jobsDeadlineSec?: number | null;
   maxNewItemsPerPoll?: number | null;
   defaultPollIntervalMin?: number | null;
@@ -1909,6 +1915,18 @@ export interface WorkflowScrapeItem {
      * RSS’dagi matn (rss_only manbalar uchun extract shu matndan)
      */
     contentHtml?: string | null;
+    /**
+     * Oldingi chaqiruvda bajarilgan bosqichlar natijasi (vaqt yetmay qayta navbatga qo‘yilgan)
+     */
+    resume?:
+      | {
+          [k: string]: unknown;
+        }
+      | unknown[]
+      | string
+      | number
+      | boolean
+      | null;
   };
 }
 /**

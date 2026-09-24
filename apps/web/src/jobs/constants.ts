@@ -1,13 +1,23 @@
 /**
  * Payload Jobs (TZ §3.5, §10.14) — slug'lar, navbatlar va vaqt byudjetlari.
  *
- * Vaqt modeli (TZ §3.7.2, Vercel function limiti 60 s):
- * - `/api/jobs/run` yangi batch'ni faqat ichki deadline (`jobsDeadlineSec`, default 40 s, max 45 s)
- *   gacha boshlaydi;
- * - boshlangan task'lar deadline + `TASK_GRACE_MS` (10 s) ichida tugashi shart — `feed.poll`
- *   HTTP timeout'larini shu chegaraga moslaydi;
+ * Vaqt modeli (TZ §3.7.2, Vercel function limiti `maxDuration` = 60 s). Hamma chegaralar
+ * **so'rov boshidan** (`handleJobsRunRequest` → `startedAt`) hisoblanadi: Payload init, sovuq
+ * start'dagi ulanish va pre-step'lar (settings, stale job'lar, feed.poll/cleanup navbati) ham
+ * shu byudjetga kiradi (OBLOG-33: deadline pre-step'lardan keyin hisoblangani uchun chaqiruv
+ * 60 s dan oshib, 504 bo'lgan):
+ *
+ * - yangi batch faqat `startedAt + min(jobsDeadlineSec, BATCH_START_LIMIT_MS)` gacha boshlanadi
+ *   (`jobsDeadlineSec` default 40, amalda ≤ 35 s);
+ * - boshlangan task'lar `+ TASK_GRACE_MS` (10 s) ichida tugashi shart (`getRunDeadline`):
+ *   `feed.poll` HTTP timeout'larini moslaydi, `scrapeItem` har bosqich oldidan qolgan vaqtni
+ *   tekshiradi (yetmasa — `resume` bilan keyingi chaqiruvga);
+ * - keyin `countRemainingJobs` + ogohlantirishlar — faqat `RESPONSE_BUDGET_MS` (50 s) gacha;
  * - bitta task ≤ `TASK_BUDGET_MS` (25 s) — "1 feed yoki 1 maqola" (TZ §3.7.2: har task ≤ 30 s).
- * Natija: bitta chaqiruv ≤ 45 + 10 + DB yozuvlari < 60 s.
+ *
+ * Natija: 35 (oxirgi batch boshlanishi) + 10 (grace) + 5 (Payload job holati, hisob) = 50 s
+ * javobgacha; qolgan ≤ 10 s — handler'gacha bo'lgan sovuq start (modul yuklash) va javobni
+ * yuborish uchun zaxira: < 60 s.
  */
 
 export const FEED_POLL_TASK = 'feed.poll'
@@ -42,10 +52,28 @@ export const EXTRACT_RESERVE_MS = 5_000
 /** Sahifa so'rovi uchun kamida shuncha vaqt qolmasa — slot band qilinmaydi (job keyinga qoladi). */
 export const MIN_PAGE_FETCH_WINDOW_MS = 5_000
 
+/** `scraping-settings.jobsDeadlineSec` default'i va chegarasi (DB default'i ham 40). */
 export const DEFAULT_DEADLINE_SEC = 40
 export const MAX_DEADLINE_SEC = 45
 export const TASK_GRACE_MS = 10_000
 export const TASK_BUDGET_MS = 25_000
+
+/** `/api/jobs/run`: so'rov boshidan javobgacha (60 s gacha ~10 s — sovuq start va javob uchun). */
+export const RESPONSE_BUDGET_MS = 50_000
+/** Oxirgi task'dan keyingi ish (Payload job holati, `countRemainingJobs`) uchun zaxira. */
+export const FINALIZE_RESERVE_MS = 5_000
+/**
+ * Yangi batch boshlashning qat'iy chegarasi (so'rov boshidan): `jobsDeadlineSec` bundan katta
+ * bo'lsa ham shu ishlatiladi — 50 − 10 − 5 = 35 s.
+ */
+export const BATCH_START_LIMIT_MS = RESPONSE_BUDGET_MS - TASK_GRACE_MS - FINALIZE_RESERVE_MS
+
+/**
+ * `scrapeItem` keyingi bosqichni (`item.extract` / `item.dedupe` / `item.classify`) faqat
+ * run deadline'igacha kamida shuncha vaqt qolsa boshlaydi; aks holda workflow bajarilgan
+ * bosqichlar natijasi bilan qayta navbatga qo'yiladi (`resume`, retry sarflanmaydi).
+ */
+export const SCRAPE_STEP_MIN_WINDOW_MS = 5_000
 
 /** Bitta feed so'rovi uchun maksimal timeout. */
 export const FEED_FETCH_TIMEOUT_MS = 10_000
@@ -60,6 +88,19 @@ export const STALE_JOB_MS = 5 * 60_000
 
 export const DEFAULT_BATCH_LIMIT = 10
 export const MAX_BATCH_LIMIT = 50
+
+/**
+ * Bir vaqtda (parallel) bajariladigan job'lar soni — DB pool'idan oshmasligi kerak.
+ * Payload bitta `jobs.run` batch'idagi job'larni parallel bajaradi va har job task log'ini
+ * o'z tranzaksiyasida yozadi (`updateJob` → `beginTransaction`); `writeScrapeResult` va
+ * `item.dedupe` ham tranzaksiya ushlab turadi. Runtime pool — 3 ulanish, bittasini
+ * `@payloadcms/db-postgres` doimiy band qiladi (`RUNTIME_POOL_MAX`): 2 ta ishchi ulanish.
+ * OBLOG-33: batch'da 10 ta `scrapeItem` parallel ishlab, ulanish kutish 10 s dan oshgan
+ * (`timeout exceeded when trying to connect`). Shuning uchun har `jobs.run` batch'i —
+ * `min(jobsBatchLimit, JOBS_CONCURRENCY)` job: har job bir vaqtda ≤ 1 ulanish ishlatadi,
+ * deadline esa har ≤ 2 job'dan keyin tekshiriladi.
+ */
+export const JOBS_CONCURRENCY = 2
 
 // --- M2-03: dedupe, klassifikatsiya, tozalash, ogohlantirishlar ---
 
