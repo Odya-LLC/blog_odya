@@ -1,11 +1,12 @@
 import type { Locale } from '@blog-odya/shared'
 import type { Metadata } from 'next'
-import { notFound, permanentRedirect } from 'next/navigation'
+import { notFound } from 'next/navigation'
 
 import { getSiteStrings } from '@/i18n/site'
 
-import { findRedirect, getTagPage } from '../data'
-import { localizePath, tagPath } from '../paths'
+import { getTagPage } from '../data'
+import { tagPath } from '../paths'
+import { redirectIfMoved } from '../redirects'
 import { JsonLd } from '../seo/JsonLd'
 import { tagSeo } from '../seo/pages'
 import { ListingBody } from './ListingView'
@@ -18,8 +19,7 @@ async function loadOrRedirect({ locale, slug, page }: TagViewProps) {
   if (data) return data
   if (page === 1) {
     // Teg slug'i o'zgargan bo'lsa (plugin-redirects) — yangi URL'ga.
-    const redirect = await findRedirect(`/tag/${slug}`)
-    if (redirect) permanentRedirect(localizePath(locale, redirect.to))
+    await redirectIfMoved(locale, `/tag/${slug}`)
   }
   notFound()
 }

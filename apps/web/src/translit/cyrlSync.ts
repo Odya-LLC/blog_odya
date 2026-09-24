@@ -81,6 +81,8 @@ export interface CyrlSyncFieldSpec {
   kind?: CyrlFieldKind
   /** Admin panelda ko'rsatiladigan nom (default — maydon label'i yoki path). */
   label?: string
+  /** Qulf kalitining admin nomi (`lockKey` bir nechta maydonga umumiy bo'lsa; default — kalit). */
+  lockLabel?: string
   /** Lexical `block`/`inlineBlock` tugunlari uchun (richText). */
   transformBlock?: TransliterateLexicalOptions['transformBlock']
   /**
@@ -131,7 +133,9 @@ function canonical(value: unknown): unknown {
   if (isPlainObject(value)) {
     const out: Record<string, unknown> = {}
     for (const key of Object.keys(value).sort()) {
-      if (VOLATILE_LEXICAL_KEYS.has(key) || value[key] === undefined) continue
+      // `null` va `undefined` teng: forma bo'sh maydonni yubormasligi, DB esa `null` qaytarishi mumkin.
+      if (VOLATILE_LEXICAL_KEYS.has(key) || value[key] === undefined || value[key] === null)
+        continue
       out[key] = canonical(value[key])
     }
     return out
@@ -247,7 +251,10 @@ function lockKeysOf(specs: ReadonlyArray<NormalizedSpec>): Array<{ key: string; 
   const seen = new Map<string, string>()
   for (const spec of specs) {
     if (!seen.has(spec.lockKey)) {
-      seen.set(spec.lockKey, spec.lockKey === spec.path ? (spec.label ?? spec.path) : spec.lockKey)
+      seen.set(
+        spec.lockKey,
+        spec.lockLabel ?? (spec.lockKey === spec.path ? (spec.label ?? spec.path) : spec.lockKey),
+      )
     }
   }
   return [...seen].map(([key, label]) => ({ key, label }))
@@ -492,7 +499,11 @@ export function createRegenerateCyrlEndpoint(
   }
 }
 
-/** Maydonni nuqtali yo'l bo'yicha topadi (row/collapsible/unnamed tab — shaffof). */
+/**
+ * Maydonni nuqtali yo'l bo'yicha topadi (row/collapsible/unnamed tab — shaffof). Lokalizatsiya
+ * qilinmagan `array` ichiga ham kiradi (`navItems.label` — har bir qatordagi lokalizatsiya
+ * qilingan maydon; qatorlar ikkala yozuvda umumiy).
+ */
 function mapFieldAtPath(
   fields: Field[],
   segments: string[],
@@ -507,7 +518,7 @@ function mapFieldAtPath(
         found = true
         return update(field)
       }
-      if (field.type === 'group') {
+      if (field.type === 'group' || (field.type === 'array' && !field.localized)) {
         const result = mapFieldAtPath(field.fields, rest, update)
         found = result.found
         return { ...field, fields: result.fields } as Field
@@ -679,4 +690,82 @@ export const faqCyrlSpec = (path = 'faq', lockKey?: string): CyrlSyncFieldSpec =
       answer: typeof row.answer === 'string' ? transliterator.toCyrillic(row.answer) : null,
     }))
   },
+})
+
+type Row = Record<string, unknown>
+
+/**
+ * Lokalizatsiya qilingan `blocks`/`array` qiymatini (masalan, sahifa `layout`) kirillga o'giradi:
+ *
+ * - `textKeys` dagi satr maydonlari (`title`, `question`, …) va har qanday Lexical qiymati
+ *   (`richText`) o'giriladi; qolgan satrlar (URL, `blockType`, `blockName`, select qiymatlari)
+ *   o'zgarmaydi;
+ * - har bir qator (ichki massivlar ham) kirill uchun o'z `id` siga ega bo'ladi (Postgres'da
+ *   `_locale` bilan bitta jadval): shu o'rindagi mavjud kirill qatorining `id` si (blok turi mos
+ *   bo'lsa) qayta ishlatiladi, bo'lmasa yangisi yaratiladi.
+ */
+export function transliterateStructured(
+  value: unknown,
+  previous: unknown,
+  transliterator: Transliterator,
+  options: {
+    textKeys: readonly string[]
+    transformBlock?: TransliterateLexicalOptions['transformBlock']
+  },
+): unknown {
+  const toCyrillic = transliterator.toCyrillic
+  const transformValue = (key: string, current: unknown, prev: unknown): unknown => {
+    if (typeof current === 'string') {
+      return options.textKeys.includes(key) ? toCyrillic(current) : current
+    }
+    if (isLexicalState(current)) {
+      return transliterateLexical(current, toCyrillic, { transformBlock: options.transformBlock })
+    }
+    if (Array.isArray(current)) return transformRows(current, prev)
+    if (isPlainObject(current)) return transformObject(current, prev, false)
+    return current
+  }
+  const transformObject = (obj: Row, prev: unknown, isRow: boolean): Row => {
+    const previousObj = isPlainObject(prev) ? prev : undefined
+    const out: Row = {}
+    for (const [key, current] of Object.entries(obj)) {
+      if (isRow && key === 'id') continue
+      out[key] = transformValue(key, current, previousObj?.[key])
+    }
+    if (isRow) {
+      const previousId = previousObj?.id
+      out.id = typeof previousId === 'string' && previousId ? previousId : newRowId()
+    }
+    return out
+  }
+  const transformRows = (rows: unknown[], prev: unknown): unknown[] => {
+    const previousRows = Array.isArray(prev) ? prev : []
+    return rows.map((row, index) => {
+      if (!isPlainObject(row)) return row
+      const candidate = previousRows[index]
+      const sameShape =
+        isPlainObject(candidate) && (candidate.blockType ?? null) === (row.blockType ?? null)
+      return transformObject(row, sameShape ? candidate : undefined, true)
+    })
+  }
+  return Array.isArray(value) ? transformRows(value, previous) : value
+}
+
+/**
+ * Lokalizatsiya qilingan `blocks`/`array` maydoni uchun spetsifikatsiya
+ * (`transliterateStructured`): masalan, `pages.layout` — `content` (Lexical) va `faq`
+ * (sarlavha, savol-javoblar) bloklari.
+ */
+export const structuredCyrlSpec = (
+  path: string,
+  options: {
+    textKeys: readonly string[]
+    lockKey?: string
+    transformBlock?: TransliterateLexicalOptions['transformBlock']
+  },
+): CyrlSyncFieldSpec => ({
+  path,
+  ...(options.lockKey ? { lockKey: options.lockKey } : {}),
+  transform: (value, transliterator, { previous }) =>
+    transliterateStructured(value, previous, transliterator, options),
 })

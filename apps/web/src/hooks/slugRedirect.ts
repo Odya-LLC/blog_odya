@@ -1,4 +1,11 @@
-import type { CollectionAfterChangeHook, CollectionSlug, PayloadRequest, Where } from 'payload'
+import type {
+  CollectionAfterChangeHook,
+  CollectionBeforeChangeHook,
+  CollectionSlug,
+  PayloadRequest,
+  RequestContext,
+  Where,
+} from 'payload'
 
 /**
  * Slug (yoki URL yo'li) o'zgarganda avtomatik 301 redirect (TZ §8.1).
@@ -7,7 +14,9 @@ import type { CollectionAfterChangeHook, CollectionSlug, PayloadRequest, Where }
  * `site/data.ts` `findRedirect` orqali o'qiydi. Kolleksiya slug'i va yozuv shakli sozlanadi;
  * default — plugin shakli: `{ from, to: { type: 'custom', url }, type: '301' }`.
  *
- * Kontent kolleksiyalariga (`afterChange`) ulash — OBLOG-29.
+ * Kontent kolleksiyalariga ulash — `slugRedirectHooks` (`src/hooks/contentRedirects.ts`).
+ * Drafts yoqilgan kolleksiyalarda (`posts`, `pages`) eski yo'l — oxirgi **chop etilgan** versiya
+ * (asosiy jadval), redirect faqat publish'da yaratiladi.
  *
  * Default — faqat lotin (prefikssiz) yo'l: sayt `/kr/...` so'rovlarini ham prefikssiz yo'l bo'yicha
  * qidiradi va maqsadni kirill prefiksi bilan qaytaradi (`localizePath`). Boshqa prefikslar kerak
@@ -42,6 +51,18 @@ export interface SlugRedirectHookOptions<TDoc = Record<string, unknown>> {
    * `previousDoc._status !== 'draft'`).
    */
   shouldRedirect?: (args: { doc: TDoc; previousDoc: TDoc }) => boolean
+  /**
+   * Eski hujjatni aniqlash (default — `afterChange` ning `previousDoc`). `null` — redirect yo'q.
+   * Drafts kolleksiyalari uchun — `slugRedirectHooks({ drafts: true })`.
+   */
+  resolvePreviousDoc?: (args: {
+    /** Hook ulangan kolleksiya slug'i. */
+    collection: string
+    doc: TDoc
+    previousDoc: TDoc
+    req: PayloadRequest
+    context: RequestContext
+  }) => Promise<TDoc | null | undefined> | TDoc | null | undefined
 }
 
 export const SLUG_REDIRECT_SKIP_CONTEXT = 'skipSlugRedirect'
@@ -104,11 +125,22 @@ export function createSlugRedirectHook<TDoc = Record<string, unknown>>(
     (({ previousDoc }: { previousDoc: TDoc }) =>
       (previousDoc as { _status?: unknown } | undefined)?._status !== 'draft')
 
-  return async ({ doc, previousDoc, operation, req, context }) => {
+  return async ({ collection: owner, doc, previousDoc, operation, req, context }) => {
     if (operation !== 'update' || !previousDoc || context?.[SLUG_REDIRECT_SKIP_CONTEXT]) return doc
     if (!shouldRedirect({ doc: doc as TDoc, previousDoc: previousDoc as TDoc })) return doc
 
-    const oldPath = await options.buildPath({ doc: previousDoc as TDoc, req })
+    const previous = options.resolvePreviousDoc
+      ? await options.resolvePreviousDoc({
+          collection: owner?.slug ?? '',
+          doc: doc as TDoc,
+          previousDoc: previousDoc as TDoc,
+          req,
+          context,
+        })
+      : (previousDoc as TDoc)
+    if (!previous) return doc
+
+    const oldPath = await options.buildPath({ doc: previous, req })
     const newPath = await options.buildPath({ doc: doc as TDoc, req })
     const pairs = planSlugRedirects(oldPath, newPath, options.prefixes)
     if (pairs.length === 0) return doc
@@ -169,4 +201,79 @@ export function createSlugRedirectHook<TDoc = Record<string, unknown>>(
     }
     return doc
   }
+}
+
+const PUBLISHED_SNAPSHOT_CONTEXT = 'slugRedirectPublished'
+
+type Snapshots = Record<string, Record<string, unknown> | null>
+
+function snapshotsOf(context: RequestContext): Snapshots {
+  const current = context[PUBLISHED_SNAPSHOT_CONTEXT]
+  if (current && typeof current === 'object') return current as Snapshots
+  const created: Snapshots = {}
+  context[PUBLISHED_SNAPSHOT_CONTEXT] = created
+  return created
+}
+
+/**
+ * Kolleksiya uchun tayyor hook'lar (`hooks.beforeChange` / `hooks.afterChange` ga qo'shiladi).
+ *
+ * `drafts: true` (versiyalar + qoralamalar): qoralama saqlash (autosave ham) redirect
+ * yaratmaydi; publish'da eski yo'l oxirgi chop etilgan versiyadan olinadi — `beforeChange`
+ * asosiy jadvaldagi hujjatni (Payload qoralamalarni faqat `versions` jadvaliga yozadi) o'qib
+ * `req.context` ga saqlaydi. Hech qachon chop etilmagan hujjat uchun redirect yo'q.
+ */
+export function slugRedirectHooks<TDoc = Record<string, unknown>>(
+  options: SlugRedirectHookOptions<TDoc> & { drafts?: boolean },
+): { beforeChange: CollectionBeforeChangeHook[]; afterChange: CollectionAfterChangeHook[] } {
+  const { drafts, ...rest } = options
+  if (!drafts) return { beforeChange: [], afterChange: [createSlugRedirectHook(rest)] }
+
+  const keyOf = (collection: string, id: unknown) => `${collection}:${String(id)}`
+
+  const rememberPublished: CollectionBeforeChangeHook = async ({
+    collection,
+    context,
+    data,
+    operation,
+    originalDoc,
+    req,
+  }) => {
+    const id = (originalDoc as { id?: number | string } | undefined)?.id
+    if (operation !== 'update' || id === undefined || context?.[SLUG_REDIRECT_SKIP_CONTEXT]) {
+      return data
+    }
+    // Qoralama saqlash (autosave) — publish emas, o'qish shart emas.
+    if ((data as { _status?: unknown })._status === 'draft') return data
+    const main = await req.payload.findByID({
+      collection: collection.slug as CollectionSlug,
+      id,
+      draft: false,
+      depth: 0,
+      overrideAccess: true,
+      disableErrors: true,
+      req,
+    })
+    const published = (main as { _status?: unknown } | null)?._status === 'published'
+    // `req.context` — hook argumenti emas: ichki Local API chaqiruvi (`findByID({ req })`)
+    // bo'sh `req.context` ni yangi obyekt bilan almashtiradi (`createLocalReq`); afterChange
+    // `req.context` ni oladi. Kalit qo'yilgach, keyingi ichki chaqiruvlar uni nusxalaydi.
+    snapshotsOf(req.context)[keyOf(collection.slug, id)] = published
+      ? (main as unknown as Record<string, unknown>)
+      : null
+    return data
+  }
+
+  const afterChange = createSlugRedirectHook<TDoc>({
+    ...rest,
+    shouldRedirect: ({ doc }) => (doc as { _status?: unknown })._status === 'published',
+    resolvePreviousDoc: ({ collection, doc, context }) => {
+      const key = keyOf(collection, (doc as { id?: number | string }).id)
+      const snapshots = snapshotsOf(context)
+      const snapshot = snapshots[key]
+      delete snapshots[key]
+      return (snapshot ?? null) as TDoc | null
+    },
+  })
+  return { beforeChange: [rememberPublished], afterChange: [afterChange] }
 }

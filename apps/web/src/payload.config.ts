@@ -139,9 +139,10 @@ export default buildConfig({
       generateLabel: (_, doc) => String(doc.name ?? ''),
       generateURL: (docs) => docs.reduce((url, doc) => `${url}/${String(doc.slug ?? '')}`, ''),
     }),
-    // Redirects (TZ §10.10): from, to, type (301/302). Middleware — sayt qismida (M1-03/M1-05).
+    // Redirects (TZ §10.10): from, to, type (301/302). Slug o'zgarganda avtomatik yoziladi
+    // (`hooks/contentRedirects.ts`); sayt ularni `site/redirects.ts` orqali qo'llaydi.
     redirectsPlugin({
-      collections: ['posts', 'pages', 'categories', 'tags'],
+      collections: ['posts', 'pages', 'categories', 'tags', 'authors'],
       redirectTypes: ['301', '302'],
       overrides: {
         labels: { singular: "Yo'naltirish", plural: "Yo'naltirishlar" },

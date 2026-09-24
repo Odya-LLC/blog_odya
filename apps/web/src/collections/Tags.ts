@@ -2,6 +2,7 @@ import type { CollectionConfig } from 'payload'
 
 import { anyone, isAdmin, isAdminOrEditor } from '@/access'
 import { slugField } from '@/fields/slug'
+import { tagRedirectHooks } from '@/hooks/contentRedirects'
 import { revalidatePostListsAfterChange } from '@/site/revalidate'
 
 /**
@@ -21,7 +22,8 @@ export const Tags: CollectionConfig = {
     delete: isAdmin,
   },
   hooks: {
-    afterChange: [revalidatePostListsAfterChange],
+    // Slug o'zgarsa — 301 redirect (`/tag/{slug}`, TZ §8.1).
+    afterChange: [...tagRedirectHooks.afterChange, revalidatePostListsAfterChange],
   },
   admin: {
     useAsTitle: 'name',
@@ -68,6 +70,6 @@ export const Tags: CollectionConfig = {
         },
       ],
     },
-    slugField('name'),
+    slugField('name', { checkReserved: false }),
   ],
 }

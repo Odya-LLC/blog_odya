@@ -8,6 +8,7 @@ import { describe, expect, it } from 'vitest'
 import {
   createCyrlSyncFieldHook,
   cyrlSyncPlugin,
+  type CyrlSyncFieldSpec,
   cyrlValuesEqual,
   faqCyrlSpec,
   parseCyrlLocked,
@@ -373,8 +374,194 @@ describe('OBLOG-37: qulf kaliti, FAQ, plagin', () => {
     )
   })
 
-  it('CYRL_SYNC: posts, tags, media ulangan', () => {
-    expect(Object.keys(CYRL_SYNC.collections ?? {}).sort()).toEqual(['media', 'posts', 'tags'])
+  it('CYRL_SYNC: barcha kontent kolleksiyalari va globals ulangan (OBLOG-29)', () => {
+    expect(Object.keys(CYRL_SYNC.collections ?? {}).sort()).toEqual([
+      'authors',
+      'categories',
+      'media',
+      'pages',
+      'posts',
+      'tags',
+    ])
+    expect(Object.keys(CYRL_SYNC.globals ?? {}).sort()).toEqual([
+      'footer',
+      'header',
+      'site-settings',
+    ])
+  })
+})
+
+// ---------------------------------------------------------------------------
+// OBLOG-29: massiv ichidagi maydonlar, bloklar (layout), embed
+// ---------------------------------------------------------------------------
+
+type SpecItem = string | CyrlSyncFieldSpec
+
+function specAt(items: ReadonlyArray<SpecItem> | undefined, path: string): CyrlSyncFieldSpec {
+  const spec = items?.find(
+    (item): item is CyrlSyncFieldSpec => typeof item !== 'string' && item.path === path,
+  )
+  if (!spec) throw new Error(`spec topilmadi: ${path}`)
+  return spec
+}
+
+describe('OBLOG-29: menyu yorliqlari, layout bloklari, embed', () => {
+  it('lokalizatsiya qilinmagan array ichidagi maydon (navItems.label) — hook ulanadi, qulf kaliti umumiy', () => {
+    const config = withCyrlSyncGlobal(
+      {
+        slug: 'header',
+        fields: [
+          {
+            name: 'navItems',
+            type: 'array',
+            fields: [
+              { name: 'label', type: 'text', localized: true },
+              { type: 'row', fields: [{ name: 'url', type: 'text' }] },
+            ],
+          },
+        ],
+      },
+      { fields: [{ path: 'navItems.label', lockKey: 'navItems', lockLabel: 'Asosiy menyu' }] },
+    )
+    const nav = config.fields[0] as unknown as {
+      fields: Array<{ hooks?: { beforeChange?: unknown[] } }>
+    }
+    expect(nav.fields[0]!.hooks?.beforeChange).toHaveLength(1)
+    const panel = config.fields.find(
+      (f) => 'name' in f && f.name === 'cyrlSyncPanel',
+    ) as unknown as {
+      admin: { components: { Field: { clientProps: { fields: unknown[] } } } }
+    }
+    expect(panel.admin.components.Field.clientProps.fields).toEqual([
+      { path: 'navItems', label: 'Asosiy menyu' },
+    ])
+  })
+
+  it('lokalizatsiya qilingan array ichiga kirilmaydi (butun massiv — bitta maydon)', () => {
+    expect(() =>
+      withCyrlSync(
+        {
+          slug: 'things',
+          fields: [
+            {
+              name: 'faq',
+              type: 'array',
+              localized: true,
+              fields: [{ name: 'question', type: 'text' }],
+            },
+          ],
+        },
+        { fields: ['faq.question'] },
+      ),
+    ).toThrow(/faq\.question/)
+  })
+
+  it('array qatori: kirill shu qatorning siblingDocWithLocales iga yoziladi, qulf — umumiy kalit', async () => {
+    const hook = createCyrlSyncFieldHook({ path: 'navItems.label', lockKey: 'navItems' })
+    const latin = await run(hook, {
+      name: 'label',
+      value: 'Sunʼiy intellekt',
+      req: mockReq('uz-Latn'),
+      stored: { 'uz-Latn': 'Eski', 'uz-Cyrl': 'Эски' },
+    })
+    expect(latin.cyrl).toBe('Сунъий интеллект')
+
+    const cyrl = await run(hook, {
+      name: 'label',
+      value: 'Сунъий интеллект (қўлда)',
+      req: mockReq('uz-Cyrl'),
+      stored: { 'uz-Latn': 'Sunʼiy intellekt', 'uz-Cyrl': 'Сунъий интеллект' },
+    })
+    expect(cyrl.data.cyrlLocked).toEqual({ navItems: true })
+  })
+
+  it('layout: bloklar matni o‘giriladi, har qator (ichki massiv ham) o‘z id siga ega', async () => {
+    const hook = createCyrlSyncFieldHook(specAt(CYRL_SYNC.collections?.pages?.fields, 'layout'))
+    const layout = [
+      { id: 'latn-1', blockType: 'content', blockName: 'Kirish', richText: lexical('Salom dunyo') },
+      {
+        id: 'latn-2',
+        blockType: 'faq',
+        title: 'Koʻp soʻraladigan savollar',
+        items: [
+          { id: 'latn-3', question: 'Nima?', answer: 'Hech narsa.' },
+          { id: 'latn-4', question: 'Qachon?', answer: 'Ertaga.' },
+        ],
+      },
+    ]
+    const { cyrl } = await run(hook, {
+      name: 'layout',
+      value: layout,
+      req: mockReq('uz-Latn'),
+      stored: {
+        'uz-Cyrl': [
+          { id: 'cyrl-1', blockType: 'content', richText: lexical('Эски') },
+          // Blok turi mos emas — id qayta ishlatilmaydi.
+          { id: 'cyrl-2', blockType: 'content', richText: lexical('Эски') },
+        ],
+      },
+    })
+    const rows = cyrl as Array<Record<string, unknown>>
+    expect(rows).toHaveLength(2)
+    expect(rows[0]!.id).toBe('cyrl-1')
+    expect(rows[0]!.blockName).toBe('Kirish')
+    expect(JSON.stringify(rows[0]!.richText)).toContain('Салом дунё')
+    expect(rows[1]!.id).toMatch(/^[0-9a-f]{24}$/)
+    expect(rows[1]!.title).toBe('Кўп сўраладиган саволлар')
+    const items = rows[1]!.items as Array<Record<string, string>>
+    expect(items.map((i) => [i.question, i.answer])).toEqual([
+      ['Нима?', 'Ҳеч нарса.'],
+      ['Қачон?', 'Эртага.'],
+    ])
+    for (const id of [rows[1]!.id, ...items.map((i) => i.id)]) {
+      expect(['latn-2', 'latn-3', 'latn-4']).not.toContain(id)
+    }
+    // Lotin qiymati o'zgarmaydi.
+    expect(layout[1]!.title).toBe('Koʻp soʻraladigan savollar')
+  })
+
+  it('id va null farqlari “o‘zgarish” emas (qulf/eskirish qo‘yilmaydi)', () => {
+    expect(
+      cyrlValuesEqual(
+        [{ id: 'a', blockType: 'faq', blockName: null, title: 'X' }],
+        [{ id: 'b', blockType: 'faq', title: 'X' }],
+      ),
+    ).toBe(true)
+  })
+
+  it('posts.content: embed bloki izohi o‘giriladi, URL va kod o‘zgarmaydi', async () => {
+    const spec = specAt(
+      CYRL_SYNC.collections?.posts?.richTextFields as ReadonlyArray<SpecItem>,
+      'content',
+    )
+    const hook = createCyrlSyncFieldHook({ ...spec, kind: 'richText' })
+    const content = {
+      root: {
+        type: 'root',
+        children: [
+          {
+            type: 'block',
+            version: 2,
+            fields: {
+              id: 'b1',
+              blockType: 'embed',
+              url: 'https://youtube.com/watch?v=abc',
+              caption: 'Taqdimot videosi',
+            },
+          },
+          { type: 'block', version: 2, fields: { id: 'b2', blockType: 'code', code: 'salom()' } },
+          ...lexical('Matn').root.children,
+        ],
+      },
+    }
+    const { cyrl } = await run(hook, { name: 'content', value: content, req: mockReq('uz-Latn') })
+    const children = (cyrl as { root: { children: Array<{ fields: Record<string, string> }> } })
+      .root.children
+    expect(children[0]!.fields).toMatchObject({
+      url: 'https://youtube.com/watch?v=abc',
+      caption: 'Тақдимот видеоси',
+    })
+    expect(children[1]!.fields.code).toBe('salom()')
   })
 })
 

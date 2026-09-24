@@ -9,6 +9,7 @@ import * as migration_20260924_113155_m2_03_dedupe_classify_cleanup from './2026
 import * as migration_20260924_123153_m1_07_search from './20260924_123153_m1_07_search';
 import * as migration_20260924_141221_m2_07_mcp_write from './20260924_141221_m2_07_mcp_write';
 import * as migration_20260924_145141_m1_03c_translit from './20260924_145141_m1_03c_translit';
+import * as migration_20260924_160838_oblog_29_cyrl_redirects from './20260924_160838_oblog_29_cyrl_redirects';
 
 export const migrations = [
   {
@@ -64,6 +65,11 @@ export const migrations = [
   {
     up: migration_20260924_145141_m1_03c_translit.up,
     down: migration_20260924_145141_m1_03c_translit.down,
-    name: '20260924_145141_m1_03c_translit'
+    name: '20260924_145141_m1_03c_translit',
+  },
+  {
+    up: migration_20260924_160838_oblog_29_cyrl_redirects.up,
+    down: migration_20260924_160838_oblog_29_cyrl_redirects.down,
+    name: '20260924_160838_oblog_29_cyrl_redirects'
   },
 ];

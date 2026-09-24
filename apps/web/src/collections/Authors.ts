@@ -2,6 +2,7 @@ import type { CollectionConfig } from 'payload'
 
 import { anyone, isAdmin, isAdminOrEditor } from '@/access'
 import { slugField } from '@/fields/slug'
+import { authorRedirectHooks } from '@/hooks/contentRedirects'
 import { revalidatePostListsAfterChange } from '@/site/revalidate'
 
 export const SOCIAL_PLATFORMS = [
@@ -29,7 +30,8 @@ export const Authors: CollectionConfig = {
     delete: isAdmin,
   },
   hooks: {
-    afterChange: [revalidatePostListsAfterChange],
+    // Slug o'zgarsa — 301 redirect (`/author/{slug}`, TZ §8.1).
+    afterChange: [...authorRedirectHooks.afterChange, revalidatePostListsAfterChange],
   },
   admin: {
     useAsTitle: 'name',
@@ -43,7 +45,7 @@ export const Authors: CollectionConfig = {
       localized: true,
       required: true,
     },
-    slugField('name'),
+    slugField('name', { checkReserved: false }),
     {
       name: 'position',
       type: 'text',

@@ -547,6 +547,22 @@ export interface Category {
         id?: string | null;
       }[]
     | null;
+  /**
+   * Kirill matni qoʻlda tuzatilgan maydonlar: avtomatik qayta yozilmaydi.
+   */
+  cyrlLocked?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * Lotin matni oʻzgardi, lekin qulflangan kirill maydonlari yangilanmadi. Tekshirib, belgini oling yoki kirillni qayta generatsiya qiling.
+   */
+  cyrlStale?: boolean | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -607,6 +623,22 @@ export interface Author {
         id?: string | null;
       }[]
     | null;
+  /**
+   * Kirill matni qoʻlda tuzatilgan maydonlar: avtomatik qayta yozilmaydi.
+   */
+  cyrlLocked?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * Lotin matni oʻzgardi, lekin qulflangan kirill maydonlari yangilanmadi. Tekshirib, belgini oling yoki kirillni qayta generatsiya qiling.
+   */
+  cyrlStale?: boolean | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -682,6 +714,22 @@ export interface Page {
    * Lotin, ikkala yozuvda bir xil. Bo'sh qoldirilsa sarlavhadan yasaladi.
    */
   slug: string;
+  /**
+   * Kirill matni qoʻlda tuzatilgan maydonlar: avtomatik qayta yozilmaydi.
+   */
+  cyrlLocked?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * Lotin matni oʻzgardi, lekin qulflangan kirill maydonlari yangilanmadi. Tekshirib, belgini oling yoki kirillni qayta generatsiya qiling.
+   */
+  cyrlStale?: boolean | null;
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
@@ -783,6 +831,10 @@ export interface Redirect {
       | ({
           relationTo: 'tags';
           value: number | Tag;
+        } | null)
+      | ({
+          relationTo: 'authors';
+          value: number | Author;
         } | null);
     url?: string | null;
   };
@@ -1151,6 +1203,8 @@ export interface PagesSelect<T extends boolean = true> {
         noindex?: T;
       };
   slug?: T;
+  cyrlLocked?: T;
+  cyrlStale?: T;
   updatedAt?: T;
   createdAt?: T;
   _status?: T;
@@ -1209,6 +1263,8 @@ export interface CategoriesSelect<T extends boolean = true> {
         label?: T;
         id?: T;
       };
+  cyrlLocked?: T;
+  cyrlStale?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -1259,6 +1315,8 @@ export interface AuthorsSelect<T extends boolean = true> {
         url?: T;
         id?: T;
       };
+  cyrlLocked?: T;
+  cyrlStale?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -1622,6 +1680,22 @@ export interface SiteSetting {
     googleSiteVerification?: string | null;
     yandexVerification?: string | null;
   };
+  /**
+   * Kirill matni qoʻlda tuzatilgan maydonlar: avtomatik qayta yozilmaydi.
+   */
+  cyrlLocked?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * Lotin matni oʻzgardi, lekin qulflangan kirill maydonlari yangilanmadi. Tekshirib, belgini oling yoki kirillni qayta generatsiya qiling.
+   */
+  cyrlStale?: boolean | null;
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -1653,6 +1727,22 @@ export interface Header {
         id?: string | null;
       }[]
     | null;
+  /**
+   * Kirill matni qoʻlda tuzatilgan maydonlar: avtomatik qayta yozilmaydi.
+   */
+  cyrlLocked?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * Lotin matni oʻzgardi, lekin qulflangan kirill maydonlari yangilanmadi. Tekshirib, belgini oling yoki kirillni qayta generatsiya qiling.
+   */
+  cyrlStale?: boolean | null;
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -1680,6 +1770,22 @@ export interface Footer {
       }[]
     | null;
   copyright?: string | null;
+  /**
+   * Kirill matni qoʻlda tuzatilgan maydonlar: avtomatik qayta yozilmaydi.
+   */
+  cyrlLocked?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * Lotin matni oʻzgardi, lekin qulflangan kirill maydonlari yangilanmadi. Tekshirib, belgini oling yoki kirillni qayta generatsiya qiling.
+   */
+  cyrlStale?: boolean | null;
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -1773,6 +1879,8 @@ export interface SiteSettingsSelect<T extends boolean = true> {
         googleSiteVerification?: T;
         yandexVerification?: T;
       };
+  cyrlLocked?: T;
+  cyrlStale?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;
@@ -1804,6 +1912,8 @@ export interface HeaderSelect<T extends boolean = true> {
         newTab?: T;
         id?: T;
       };
+  cyrlLocked?: T;
+  cyrlStale?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;
@@ -1831,6 +1941,8 @@ export interface FooterSelect<T extends boolean = true> {
         id?: T;
       };
   copyright?: T;
+  cyrlLocked?: T;
+  cyrlStale?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

@@ -19,6 +19,8 @@ import {
   type SeedCover,
   seedCoverUrl,
 } from './data'
+import { CYRL_CONTEXT_DISABLE } from '../translit/cyrlSync'
+
 import { DEMO_RICH_MARKDOWN, demoRichNodes } from './rich'
 import { seedTranslitDictionaries, type TranslitSeedResult } from './translit'
 
@@ -188,6 +190,11 @@ export async function seed(payload: Payload, options: SeedOptions = {}): Promise
   )
 
   // --- Kategoriyalar (M0-04) ---
+  // Kirill nomlari qo'lda tasdiqlangan (TZ §10.4): avtomatik transliteratsiya o'chiq, maydonlar
+  // qulflangan — lotin keyin o'zgarsa kirill qayta yozilmaydi (faqat `cyrlStale`).
+  const manualCyrillic = {
+    context: { [CYRL_CONTEXT_DISABLE]: true },
+  }
   const categories = categoriesSeedSchema.parse(categoriesJson)
   const colors = loadCategoryColors()
   const categoryIds = new Map<string, Id>()
@@ -202,7 +209,9 @@ export async function seed(payload: Payload, options: SeedOptions = {}): Promise
     const created = await payload.create({
       collection: 'categories',
       locale: LATN,
+      ...manualCyrillic,
       data: {
+        cyrlLocked: { name: true, description: true, meta: true },
         name: category.name[LATN],
         slug: category.slug,
         description: category.description[LATN],
@@ -220,6 +229,7 @@ export async function seed(payload: Payload, options: SeedOptions = {}): Promise
       collection: 'categories',
       id: created.id,
       locale: CYRL,
+      ...manualCyrillic,
       data: {
         name: category.name[CYRL],
         description: category.description[CYRL],
@@ -464,13 +474,20 @@ async function seedGlobals(
 
   // --- Globals ---
   // Har bir yozuv alohida tekshiriladi (fallback'siz): bittasi to'ldirilgan bo'lsa ham ikkinchisi to'ladi.
+  // Ikkalasi oldindan o'qiladi: lotin saqlanganda kirill avtomatik to'ladi (M1-03), lekin brend
+  // nomi va shior kirilli qo'lda tayyorlangan — ular ustidan yoziladi (maydonlar qulflanadi).
+  const settingsByLocale = new Map<
+    Locale,
+    { siteName?: string | null; tagline?: string | null; description?: string | null }
+  >()
   for (const locale of [LATN, CYRL]) {
-    const settings = await payload.findGlobal({
-      slug: 'site-settings',
+    settingsByLocale.set(
       locale,
-      fallbackLocale: false,
-      depth: 0,
-    })
+      await payload.findGlobal({ slug: 'site-settings', locale, fallbackLocale: false, depth: 0 }),
+    )
+  }
+  for (const locale of [LATN, CYRL]) {
+    const settings = settingsByLocale.get(locale) ?? {}
     if (settings.siteName) continue
     await payload.updateGlobal({
       slug: 'site-settings',
@@ -544,6 +561,14 @@ async function seedGlobals(
       },
     })
     const byCategory = new Map(categories.map((c) => [categoryIds.get(c.slug), c]))
+    // Lotin saqlanganda kirill yorliqlari avtomatik yaratildi (M1-03); kategoriya nomlari va
+    // ustun sarlavhalari — qo'lda tasdiqlangan kirill, huquqiy sahifalar — transliteratsiya.
+    const auto = await payload.findGlobal({
+      slug: 'footer',
+      locale: CYRL,
+      fallbackLocale: false,
+      depth: 0,
+    })
     await payload.updateGlobal({
       slug: 'footer',
       locale: CYRL,
@@ -552,13 +577,12 @@ async function seedGlobals(
         columns: (saved.columns ?? []).map((column, index) => ({
           ...column,
           title: index === 0 ? 'Категориялар' : 'Блог Одя',
-          links: (column.links ?? []).map((link) => ({
+          links: (column.links ?? []).map((link, linkIndex) => ({
             ...link,
-            // Huquqiy sahifalar kirill nomi — M1-03 transliteratsiyasigacha lotin (fallback).
             label:
               link.type === 'category'
                 ? (byCategory.get(relId(link.category))?.name[CYRL] ?? link.label)
-                : link.label,
+                : (auto.columns?.[index]?.links?.[linkIndex]?.label ?? link.label),
           })),
         })),
       },
