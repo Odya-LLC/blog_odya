@@ -8,11 +8,34 @@ type PoolConfig = PostgresAdapterArgs['pool']
 
 /**
  * Qaysi rejimda ishlayapmiz: `pnpm migrate*` skriptlari `PAYLOAD_MIGRATING=true` o'rnatadi.
+ *
+ * Staging yo'q — faqat bitta (prod) baza. Vercel'da migratsiya faqat Production deploy'da
+ * (`VERCEL_ENV=production`) ruxsat etiladi: Preview deploy prod bazaga migratsiya yurgiza
+ * olmaydi (`assertMigrationAllowed`).
  */
 export function getDatabaseMode(
   source: Record<string, string | undefined> = process.env,
 ): DatabaseMode {
-  return source.PAYLOAD_MIGRATING === 'true' ? 'migrate' : 'runtime'
+  if (source.PAYLOAD_MIGRATING !== 'true') return 'runtime'
+  assertMigrationAllowed(source)
+  return 'migrate'
+}
+
+/**
+ * Vercel Preview deploy'ida (yoki muhiti noma'lum Vercel build'ida) migratsiyani taqiqlaydi.
+ * `VERCEL_ENV=development` (`vercel dev` / `vercel env pull` bilan lokal) ruxsat etiladi.
+ */
+export function assertMigrationAllowed(
+  source: Record<string, string | undefined> = process.env,
+): void {
+  const env = source.VERCEL_ENV
+  const blocked = env === 'preview' || (source.VERCEL === '1' && !env)
+  if (blocked) {
+    throw new Error(
+      `Migratsiya faqat Vercel Production'da ruxsat etiladi (VERCEL_ENV=${source.VERCEL_ENV ?? 'yo‘q'}). ` +
+        "Preview deploy'lar prod bazaga migratsiya yurgizmaydi.",
+    )
+  }
 }
 
 /**

@@ -303,7 +303,7 @@ Har bir bosqich — alohida Payload **task**, `scrapeItem` **workflow** ularni k
 | **Supabase Free** | DB hajmi **500 MB** | Kontent + lokalizatsiya + versiyalar tez o'sadi | DB'da faqat `extractedText`; raw/clean HTML — R2'da; `maxPerDoc: 10` versiya; qoralamaga aylanmagan scraped matn 30 kunda tozalanadi; hajm monitoringi (≥ 70% → ogohlantirish) |
 | Supabase Free | **7 kun faoliyatsizlikdan keyin loyiha pauza qilinadi** | Sayt ishlamay qoladi | Scheduler (har 10 daqiqa) va UptimeRobot `/api/health` (har 5 daqiqa) doimiy faollik beradi. "Faollik" ta'rifi Supabase tomonidan o'zgarishi mumkin — pauza holati UptimeRobot orqali darhol aniqlanadi |
 | Supabase Free | Backup/PITR yuklab olib bo'lmaydi | Ma'lumot yo'qolishi xavfi | O'z kunlik `pg_dump` (9.3) |
-| Supabase Free | 2 ta faol loyiha | Production + staging — limit to'la | `blog-odya-prod` va `blog-odya-staging`; lokal dev — Docker Postgres |
+| Supabase Free | 2 ta faol loyiha | Faqat production ishlatiladi (staging yo'q) | `blog-odya-prod`; lokal dev — Docker Postgres |
 | Supabase Free | Ulanishlar soni cheklangan | Serverless'da ulanish tugashi | Supavisor transaction pooler, `pool.max` = 2–3 |
 | **Cloudflare R2** | 10 GB saqlash, oylik A/B operatsiyalar kvotasi; egress bepul | Rasm va HTML arxivi | Faqat o'z media (WebP variantlar); manba rasmlari yuklanmaydi; raw HTML gzip + 30 kun TTL |
 | **GitHub Actions** | Yopiq repo'da oyiga ~2 000 bepul daqiqa | Tez-tez ishlaydigan workflow'lar kvotani yeydi | CI faqat PR'da; backup kuniga 1 marta; scheduler GitHub Actions'da emas (pg_cron) |
@@ -627,9 +627,9 @@ GA4 + Yandex Metrica (cookie banner bilan) + Google Search Console + Yandex Webm
 | Fon vazifalar | Supabase `pg_cron` + `pg_net` → `/api/jobs/run` → Payload Jobs | Doimiy worker (`JOBS_MODE=autorun`), Playwright |
 | DNS/CDN | Cloudflare (blog — DNS-only, media — proxy) | Cloudflare proxy + WAF (Contabo) |
 
-- Muhitlar: `local` (`docker-compose.dev.yml`: Postgres + MinIO), `preview` (Vercel preview; Supabase Free'da 2 ta loyiha limiti bor → preview **production bilan bir DB'dan foydalanmaydi**: alohida ikkinchi Free loyiha `blog-odya-staging`, `noindex`), `production`.
+- Muhitlar: `local` (`docker-compose.dev.yml`: Postgres + MinIO), `preview` (Vercel preview, `noindex`; **staging yo'q** — egasi qarori: DB/R2 sirlari faqat Vercel Production scope'da, preview build ularsiz o'tadi va prod bazaga ulanmaydi; migratsiya preview'da kod darajasida taqiqlangan), `production`.
 - **CI (GitHub Actions)**: lint, typecheck, unit/integration testlar (Postgres service container), build. Playwright smoke va Lighthouse CI — preview URL'ga (yopiq repo'da bepul daqiqalarni tejash uchun faqat PR'da).
-- Payload migratsiyalari: alohida GitHub Actions workflow (`payload migrate`, direct connection) — `main` ga merge'da, Vercel deploy'dan oldin.
+- Payload migratsiyalari: alohida GitHub Actions workflow (`payload migrate`, direct connection) — `main` ga merge'da, Vercel deploy'dan oldin. Vercel'da migratsiya faqat `VERCEL_ENV=production` da ruxsat etiladi (Preview — taqiqlangan).
 - Git: `gitMode = PR`, `main` himoyalangan.
 
 ---

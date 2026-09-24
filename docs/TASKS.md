@@ -287,15 +287,15 @@ Bepul tariflardagi infratuzilmani tayyorlash va sirlarni Vercel/GitHub'ga kiriti
 #### Qadamlar
 **Supabase (Free)**
 1. supabase.com → New project: `blog-odya-prod`, region **Central EU (Frankfurt)**, kuchli DB paroli (parol menejerida saqlang).
-2. Xuddi shunday ikkinchi loyiha: `blog-odya-staging`.
-3. Har bir loyihada: Project Settings → Database → Connection string:
+2. **Staging yo'q** (egasi qarori, OBLOG-31): faqat bitta prod loyiha. Ikkinchi Supabase loyiha, `-staging` bucketlar va `media-staging.odya.uz` yaratilmaydi.
+3. Project Settings → Database → Connection string:
    - **Transaction pooler** (port 6543) → bu `DATABASE_URL`;
    - **Session pooler** yoki **Direct** (port 5432) → bu `DATABASE_URL_DIRECT`.
-4. Database → Extensions: `pg_cron` va `pg_net` ni yoqing (prod va staging).
+4. Database → Extensions: `pg_cron` va `pg_net` ni yoqing.
 
 **Cloudflare**
-5. R2 → Create bucket: `blog-odya-media`, `blog-odya-raw`, `blog-odya-backups` (staging uchun `-staging` qo'shimchali 3 ta alohida bucket).
-6. `blog-odya-media` → Settings → Custom Domain: `media.odya.uz` (staging: `media-staging.odya.uz`).
+5. R2 → Create bucket: `blog-odya-media`, `blog-odya-raw`, `blog-odya-backups`.
+6. `blog-odya-media` → Settings → Custom Domain: `media.odya.uz`.
 7. `blog-odya-raw` → Lifecycle rule: 30 kundan keyin o'chirish; `blog-odya-backups` → 14 kun.
 8. R2 → Manage API tokens → "Object Read & Write" (faqat shu bucketlar) → `Access Key ID`, `Secret Access Key`, endpoint `https://<account_id>.r2.cloudflarestorage.com`.
 9. DNS (`odya.uz` zonasi): `blog` → CNAME `cname.vercel-dns.com`, **Proxy status: DNS only (kulrang bulut)**.
@@ -304,10 +304,10 @@ Bepul tariflardagi infratuzilmani tayyorlash va sirlarni Vercel/GitHub'ga kiriti
 10. Add New → Project → GitHub `Odya-LLC/blog_odya` ni import qiling; Root Directory: `apps/web`; Framework: Next.js.
 11. Settings → Domains: `blog.odya.uz`.
 12. Settings → Functions: region `fra1` (Frankfurt). Fluid compute yoqilgan bo'lsin.
-13. Settings → Environment Variables — `.env.example` dagi barcha qiymatlar: **Production** — prod qiymatlari, **Preview** — staging qiymatlari. `PAYLOAD_SECRET` va `JOBS_SECRET` uchun 32+ belgili tasodifiy satr (`openssl rand -hex 32`). `S3_REGION=auto`, `S3_FORCE_PATH_STYLE=true`, `MEDIA_PUBLIC_URL=https://media.odya.uz`.
+13. Settings → Environment Variables — `.env.example` dagi barcha qiymatlar **faqat Production** scope'da (prod qiymatlari). `PAYLOAD_SECRET` va `JOBS_SECRET` uchun 32+ belgili tasodifiy satr (`openssl rand -hex 32`). `S3_REGION=auto`, `S3_FORCE_PATH_STYLE=true`, `MEDIA_PUBLIC_URL=https://media.odya.uz`. **Preview** scope'ga DB/R2 sirlarini qo'ymang: preview build ularsiz o'tadi (build DB'ga ulanmaydi), preview'da statik sahifalar va `/styleguide` ishlaydi, `/admin` va `/api` esa env xatosi bilan to'xtaydi — preview prod bazaga tegmaydi. Migratsiya Vercel Preview'da kod darajasida taqiqlangan (`apps/web/src/config/database.ts`).
 
 **GitHub**
-14. Settings → Secrets and variables → Actions: `DATABASE_URL_DIRECT_PROD`, `DATABASE_URL_DIRECT_STAGING`, `R2_ENDPOINT`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `BACKUP_AGE_PUBLIC_KEY` (M3-03 da tushuntiriladi).
+14. Settings → Secrets and variables → Actions: `DATABASE_URL_DIRECT_PROD`, `R2_ENDPOINT`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `BACKUP_AGE_PUBLIC_KEY` (M3-03 da tushuntiriladi).
 15. Settings → Branches: `main` himoyasi (PR majburiy, CI yashil).
 
 **Hisobot**
@@ -319,10 +319,10 @@ Bepul tariflardagi infratuzilmani tayyorlash va sirlarni Vercel/GitHub'ga kiriti
 
 #### Qabul qilish mezonlari
 
-- Vercel preview va production deploy muvaffaqiyatli, `https://blog.odya.uz/admin` ochiladi.
-- Supabase prod/staging ga Vercel'dan ulanish ishlaydi (admin yaratish mumkin).
+- Vercel preview va production deploy (build) muvaffaqiyatli, production'da `https://blog.odya.uz/admin` ochiladi.
+- Supabase prod'ga Vercel Production'dan ulanish ishlaydi (admin yaratish mumkin).
 - `https://media.odya.uz` orqali R2'dagi test fayl ochiladi.
-- `pg_cron` va `pg_net` ikkala loyihada yoqilgan.
+- `pg_cron` va `pg_net` yoqilgan.
 - GitHub secrets va `main` himoyasi sozlangan; hech qanday sir repo'da yo'q.
 
 ### M0-03 (OBLOG-4) — Telegram: 2 ta kanal va bot yaratish (egasi)
@@ -656,7 +656,7 @@ Asosiy hujjat: `docs/TZ.md` (v1.2). Ishni boshlashdan oldin TZ'ning ko'rsatilgan
 
 - Lokal: `curl -X POST -H "Authorization: Bearer …" /api/jobs/run` 5 manbadan yangi `scraped-items` yaratadi; qayta chaqiruvda dublikat yo'q (test).
 - Noto'g'ri secret — 401.
-- `cron.sql` staging Supabase'da ishga tushirilgan va har 10 daqiqada chaqiruvlar Vercel loglarida ko'rinadi (PR'da skrinshot yoki log).
+- `cron.sql` prod Supabase'da ishga tushirilgan va har 10 daqiqada chaqiruvlar Vercel loglarida ko'rinadi (PR'da skrinshot yoki log).
 - Bitta chaqiruv 60 s dan oshmaydi (deadline testi).
 
 ### M2-02 (OBLOG-16) — item.fetch va item.extract: yuklash, robots, Readability, R2 arxiv
@@ -878,8 +878,8 @@ Asosiy hujjat: `docs/TZ.md` (v1.2). Ishni boshlashdan oldin TZ'ning ko'rsatilgan
 
 #### Nima qilish kerak
 - `.github/workflows/backup.yml`: `schedule` kuniga 1 marta (masalan 02:30 UTC) + `workflow_dispatch`; `pg_dump` (Postgres client versiyasi Supabase bilan mos) `DATABASE_URL_DIRECT_PROD` bilan → `gzip` → `age` (ochiq kalit `BACKUP_AGE_PUBLIC_KEY`) → R2 `blog-odya-backups/db/{yyyy-mm-dd}.sql.gz.age` (aws-cli yoki rclone, R2 endpoint). Muvaffaqiyatsizlikda — Telegram alert.
-- `docs/runbooks/restore.md`: `age` yopiq kalitini egasi qanday saqlaydi (offline), backup'ni yuklab olish, shifrni ochish, staging yoki lokal Postgres'ga tiklash, tekshirish.
-- Tiklash sinovi: oxirgi backup staging Supabase'ga (yoki lokal) tiklanadi — natija runbook'da.
+- `docs/runbooks/restore.md`: `age` yopiq kalitini egasi qanday saqlaydi (offline), backup'ni yuklab olish, shifrni ochish, lokal Postgres'ga tiklash (staging yo'q), tekshirish.
+- Tiklash sinovi: oxirgi backup lokal Postgres'ga (Docker) tiklanadi — natija runbook'da.
 
 **Bog'liq:** M0-01, M0-02
 
@@ -933,7 +933,7 @@ Saytni ommaga ochish. Buni **egasi** bajaradi (hisoblar unda). Asos: `docs/launc
 7. Google Search Console va Yandex Webmaster: `blog.odya.uz` ni tasdiqlang (DNS TXT Cloudflare'da), `sitemap.xml` va `news-sitemap.xml` ni yuboring. Google News Publisher Center'da nashrni qo'shing.
 8. Telegram kanallariga M0-06 dagi avatarlarni qo'ying.
 9. `docs/launch-checklist.md` ni oxirigacha bajaring; 30+ post chop etilgandan keyin saytni e'lon qiling.
-10. Staging (Preview) muhiti `noindex` ekanini tekshiring.
+10. Vercel Preview deploy'lari `noindex` ekanini tekshiring.
 
 **Bog'liq:** M3-04
 

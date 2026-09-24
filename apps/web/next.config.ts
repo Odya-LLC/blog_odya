@@ -3,8 +3,7 @@ import type { NextConfig } from 'next'
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-// Env'ni build/dev boshida tekshirish (SKIP_ENV_VALIDATION=1 bilan o'tkazib yuboriladi).
-import './src/env'
+import { parseEnv, resolveEnvMode } from './src/env.schema'
 
 const __filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(__filename)
@@ -34,4 +33,13 @@ const nextConfig: NextConfig = {
   },
 }
 
-export default withPayload(nextConfig, { devBundleServerPackages: false })
+/**
+ * Env'ni faza bo'yicha tekshirish (`src/env.schema.ts`):
+ * - `next build` — DB/sirlar majburiy emas (build ularni ishlatmaydi), faqat format tekshiriladi;
+ * - `next dev` / `next start` — to'liq tekshiruv, majburiy qiymat bo'lmasa ishga tushmaydi.
+ * Vercel runtime'da `next.config` bajarilmaydi — u yerda `src/env.ts` birinchi import'da tekshiradi.
+ */
+export default function config(phase: string) {
+  parseEnv(process.env, resolveEnvMode(process.env, phase))
+  return withPayload(nextConfig, { devBundleServerPackages: false })
+}

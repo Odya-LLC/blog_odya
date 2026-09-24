@@ -93,8 +93,8 @@ To'xtatish: `Ctrl+C`, keyin `docker compose -f infra/docker-compose.dev.yml down
 ### Muhim eslatmalar
 
 - **Sxema faqat migratsiyalar orqali o'zgaradi** — dev'da ham Payload `push` o'chiq. Kolleksiya o'zgargach: `pnpm migrate:create <nom>` → `pnpm migrate`.
-- **Env:** barcha o'zgaruvchilar `apps/web/src/env.ts` da tekshiriladi, noto'g'ri bo'lsa ilova ishga tushmaydi. Sirlar yo'q muhitda build uchun: `SKIP_ENV_VALIDATION=1 pnpm build`.
-- **Sirlar** (`.env`) repo'ga commit qilinmaydi — production qiymatlari Vercel Environment Variables va GitHub secrets'da.
+- **Env:** sxema — `apps/web/src/env.schema.ts`. Runtime'da (`next dev`/`start`, Vercel funksiyalari, migratsiya, testlar) to'liq tekshiriladi, majburiy qiymat bo'lmasa ilova ishga tushmaydi. `next build` paytida DB/sirlar majburiy emas (build ularga ulanmaydi) — `pnpm build` env'siz ham o'tadi; berilgan qiymatlar formati baribir tekshiriladi. Turbo strict env mode: yangi env qo'shsangiz, `turbo.json` → `globalPassThroughEnv` ga ham qo'shing.
+- **Sirlar** (`.env`) repo'ga commit qilinmaydi — production qiymatlari Vercel Environment Variables (**faqat Production** scope) va GitHub secrets'da. Staging yo'q; Vercel Preview'da migratsiya taqiqlangan (`apps/web/src/config/database.ts`).
 - Lokal MinIO va production Cloudflare R2 o'rtasidagi farq faqat `S3_*` va `MEDIA_PUBLIC_URL` qiymatlarida. Admin'dan rasm yuklash `clientUploads` bilan to'g'ridan-to'g'ri bucket'ga boradi — R2 bucket'da CORS kerak: [docs/runbooks/r2-cors.md](docs/runbooks/r2-cors.md).
 - **Postgres:** runtime — `DATABASE_URL` (Supabase: transaction pooler, `pool.max = 3`), migratsiyalar — `DATABASE_URL_DIRECT` (direct/session). Sozlama: `apps/web/src/config/database.ts`.
 - **Rollar:** `admin`, `editor` (TZ §4.2); access helper'lar — `apps/web/src/access`. Sayt locale'lari: `uz-Latn` (asosiy), `uz-Cyrl` (`fallback: true`).

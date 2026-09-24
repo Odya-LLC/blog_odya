@@ -20,7 +20,12 @@
     "TELEGRAM_CHANNEL_LATN",
     "TELEGRAM_CHANNEL_CYRL",
     "TELEGRAM_ALERT_CHAT_ID",
-    "SENTRY_DSN"
+    "SENTRY_DSN",
+    "PAYLOAD_MIGRATING",
+    "ENABLE_STYLEGUIDE",
+    "VERCEL",
+    "VERCEL_ENV",
+    "VERCEL_URL"
   ],
   "tasks": {
     "build": {
