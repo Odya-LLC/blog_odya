@@ -27,7 +27,7 @@ import {
 ```
 
 - Zod sxemalari: `src/schemas.ts` (`glossarySeedSchema`, `translitExceptionsSeedSchema`, `docFrontMatterSchema`).
-- Markdown fayllar ish vaqtida `node:fs` orqali o'qiladi (`GUIDELINES_ROOT`). Vercel'da ular `outputFileTracingIncludes` orqali bundle'ga qo'shilishi kerak (M2-06).
+- Markdown fayllar ish vaqtida `node:fs` orqali o'qiladi (`GUIDELINES_ROOT` — `resolveGuidelinesRoot()`: modul joylashuvi, Next.js bundle'ida esa `process.cwd()` ga nisbatan). Vercel'da ular `apps/web/next.config.ts` → `outputFileTracingIncludes['/api/mcp']` orqali MCP funksiyasiga qo'shiladi (M2-06).
 
 ## Transliteratsiya istisnolari qanday qo'llanadi
 

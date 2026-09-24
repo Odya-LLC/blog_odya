@@ -124,6 +124,13 @@ To'xtatish: `Ctrl+C`, keyin `docker compose -f infra/docker-compose.dev.yml down
   - `sources` va `scraped-items` dagi job (foydalanuvchisiz) yozuvlari audit qilinmaydi — feed/pipeline texnik holati DB hajmini to'ldirmasligi uchun (Supabase Free 500 MB).
   - Saqlash muddati (1 yil) tozalovi hali yo'q; kelajakdagi job `context: { auditRetention: true }` bilan o'chiradi.
 
+### MCP server (M2-06)
+
+- **Manzil:** `/api/mcp` (`app/api/mcp/route.ts`, mantiq — `src/mcp/`): `mcp-handler` + `@modelcontextprotocol/sdk`, Streamable HTTP, stateless (SSE o'chiq). Ulanish: `claude mcp add --transport http odya https://blog.odya.uz/api/mcp --header "Authorization: Bearer <API kalit>"`.
+- **Auth:** `POST` — `Authorization: Bearer <kalit>` majburiy (yo'q/noto'g'ri — **401**, limit — **429**); toollar Local API'ni kalit egasi nomidan (`overrideAccess: false`, `context.channel = 'mcp'`, `mcpTool`) chaqiradi. `GET` (autentifikatsiyasiz) — health **200** (monitoring); `Accept: text/event-stream` bilan va `DELETE` — 405.
+- **O'qish toollari:** `get_guidelines`, `get_glossary`, `list_sources`, `list_scraped`, `get_source`, `list_drafts`, `search_posts`, `list_categories`, `list_tags` (Zod sxemalar, `page`/`limit` sahifalash, o'zbekcha xatolar). `get_source` tashqi matnni `<untrusted_source>` teglari ichida beradi (ichidagi teglar zararsizlantiriladi, TZ §9.2). Yozish toollari — M2-07.
+- **Prompts:** `rewrite_article(scrapedItemId)`, `daily_batch(count, minScore)`; **resources:** `odya://guidelines/{style,copyright,seo,output-schema}`, `odya://glossary` — `packages/guidelines` dan (Vercel'da `.md` fayllar `outputFileTracingIncludes` bilan funksiyaga qo'shiladi).
+
 ## Prod migratsiya
 
 Prod bazaga (Supabase) migratsiyalar GitHub Actions orqali qo'llanadi — [`.github/workflows/migrate-prod.yml`](.github/workflows/migrate-prod.yml). Vercel build'i migratsiya yurgizmaydi, `ci.yml` dagi `Migrate` qadami esa faqat CI test bazasiga ishlaydi.

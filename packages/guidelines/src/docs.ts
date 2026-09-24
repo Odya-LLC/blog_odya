@@ -2,17 +2,46 @@
  * Markdown hujjatlar reestri va yuklovchi (MCP resource/prompt va `pages` seed uchun).
  *
  * Fayllar paket ildizida (`packages/guidelines/*.md`, `legal/*.md`) saqlanadi va
- * ish vaqtida `node:fs` orqali o'qiladi. Vercel'da deploy qilinganda bu fayllar
- * `outputFileTracingIncludes` orqali bundle'ga qo'shilishi kerak (M2-06).
+ * ish vaqtida `node:fs` orqali o'qiladi. Vercel'da ular `apps/web/next.config.ts` dagi
+ * `outputFileTracingIncludes` orqali MCP funksiyasiga qo'shiladi (M2-06).
  */
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { type DocFrontMatter, docFrontMatterSchema } from './schemas'
 
+/** Paket ildizini tanituvchi fayl (ildiz nomzodlarini tekshirish uchun). */
+const ROOT_MARKER = 'style.md'
+
+/**
+ * `packages/guidelines` ildizi nomzodlari (tartib bo'yicha):
+ *
+ * 1. modul joylashuvi (`src/..`) — Node/tsx/Vitest'da manba fayldan ishlaganda;
+ * 2. `process.cwd()` ga nisbatan — Next.js bundle'ida `import.meta.url` `.next/server/...`
+ *    chunk'iga ishora qiladi, fayllar esa monorepo tuzilmasida (`outputFileTracingRoot`) turadi:
+ *    `apps/web` dan ishga tushganda `../../packages/guidelines`, ildizdan — `packages/guidelines`.
+ */
+export function guidelinesRootCandidates(cwd: string = process.cwd()): string[] {
+  const candidates: string[] = []
+  try {
+    candidates.push(fileURLToPath(new URL('..', import.meta.url)))
+  } catch {
+    // Bundle'da `import.meta.url` `file:` bo'lmasligi mumkin — keyingi nomzodlar.
+  }
+  candidates.push(join(cwd, '../../packages/guidelines'), join(cwd, 'packages/guidelines'))
+  return candidates
+}
+
+/** Birinchi mavjud nomzod (`style.md` bor katalog); hech biri topilmasa — birinchisi. */
+export function resolveGuidelinesRoot(candidates: string[] = guidelinesRootCandidates()): string {
+  return (
+    candidates.find((dir) => existsSync(join(dir, ROOT_MARKER))) ?? candidates[0] ?? process.cwd()
+  )
+}
+
 /** `packages/guidelines` katalogining absolyut yo'li. */
-export const GUIDELINES_ROOT = fileURLToPath(new URL('..', import.meta.url))
+export const GUIDELINES_ROOT = resolveGuidelinesRoot()
 
 export interface DocEntry {
   /** Front-matter'dagi `id` bilan bir xil */

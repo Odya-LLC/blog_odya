@@ -36,6 +36,8 @@ const nextConfig: NextConfig = {
   // `next/og` shriftlari `fs` bilan o'qiladi — OG route funksiyalariga qo'shiladi (M1-06).
   outputFileTracingIncludes: {
     '/og/**': ['./assets/og-fonts/*.ttf'],
+    // MCP resource/prompt'lari `packages/guidelines/*.md` ni `fs` bilan o'qiydi (M2-06).
+    '/api/mcp': ['../../packages/guidelines/*.md'],
   },
   // RSS: `/rss.xml`, `/kr/rss.xml`, `/{category}/rss.xml` → `/feeds/…` (src/site/seo/rewrites.ts).
   rewrites: async () => [...FEED_REWRITES],
