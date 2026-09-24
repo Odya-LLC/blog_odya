@@ -3,7 +3,7 @@
  *
  * Indeks — `posts_locales.search_vector` (FTS, `simple` lug'at, prefiks mosligi `:*`) va
  * `posts_locales.search_text` (`pg_trgm` word similarity — xato yozilgan so'zlar) — migratsiya
- * `20260924_103704_m1_07_search`. Ikkala yozuv qatorlari ham bitta normallashtirilgan ko'rinishda
+ * `20260924_113406_m1_07_search`. Ikkala yozuv qatorlari ham bitta normallashtirilgan ko'rinishda
  * (`search-normalize.ts`), shuning uchun kirill so'rov lotin maqolani topadi va aksincha.
  *
  * SQL faqat mos post ID'larini (reyting bo'yicha, sahifalangan) qaytaradi; kartochkalar Payload

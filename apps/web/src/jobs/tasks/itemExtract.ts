@@ -4,6 +4,7 @@ import type { Payload, TaskConfig } from 'payload'
 import type { ScrapedItem } from '@/payload-types'
 import { archiveKey, getHtml, putHtml } from '@/scraping/archive'
 import { extractArticle, type ExtractMode, type ExtractResult } from '@/scraping/extract'
+import { isScrapeEnrichable, writeScrapeResult } from '@/scraping/itemState'
 import { normalizeUrl } from '@/scraping/url'
 
 import { ITEM_EXTRACT_TASK, SCRAPE_TASK_RETRIES } from '../constants'
@@ -14,7 +15,8 @@ import { getArchiveStorage } from '../scrapeDeps'
  * ajratadi (`src/scraping/extract.ts`), tozalangan HTML'ni gzip qilib arxivga
  * (`raw/{source}/{yyyy-mm}/{id}.clean.html.gz`) yozadi va `scraped-items` ni yangilaydi:
  * sarlavha, muallif, sana, teglar, `og:image`, rasm URL'lari, so'zlar soni, `extractedText`
- * (Markdown), R2 kalitlari, `status = scraped`. DB'ga HTML yozilmaydi.
+ * (Markdown), R2 kalitlari, `status = scraped`. DB'ga HTML yozilmaydi. Muharrir qoralamaga
+ * olgan (`drafted`) elementning holati o'zgarmaydi — faqat matn to'ldiriladi.
  */
 
 export interface ItemExtractOutput {
@@ -74,7 +76,7 @@ export async function extractItem(
     depth: 0,
     disableErrors: true,
   })
-  if (!item || (item.status !== 'pending' && item.status !== 'error')) return { status: 'skipped' }
+  if (!item || !isScrapeEnrichable(item.status)) return { status: 'skipped' }
   const sourceId = relationId(item.source)
   const source = sourceId
     ? await payload.findByID({ collection: 'sources', id: sourceId, depth: 0, disableErrors: true })
@@ -112,16 +114,11 @@ export async function extractItem(
   }
 
   if (result.method === 'none') {
-    await payload.update({
-      collection: 'scraped-items',
-      id: item.id,
-      depth: 0,
-      data: {
-        status: 'error',
-        error: 'item.extract: matn ajratilmadi (sahifa va RSS bo‘sh)',
-        rawHtmlKey: input.rawHtmlKey,
-        fetchMeta: { ...previousMeta, fetch: input.fetchMeta ?? null, extract: extractMeta },
-      },
+    await writeScrapeResult(payload, item.id, {
+      status: 'error',
+      error: 'item.extract: matn ajratilmadi (sahifa va RSS bo‘sh)',
+      rawHtmlKey: input.rawHtmlKey,
+      fetchMeta: { ...previousMeta, fetch: input.fetchMeta ?? null, extract: extractMeta },
     })
     return { status: 'empty', method: result.method }
   }
@@ -146,7 +143,9 @@ export async function extractItem(
     cleanHtmlKey,
     fetchMeta: { ...previousMeta, fetch: input.fetchMeta ?? null, extract: extractMeta },
   }
-  await payload.update({ collection: 'scraped-items', id: item.id, depth: 0, data })
+  // Muharrir shu orada elementni olgan/rad etgan bo'lsa, uning holati saqlanadi (`itemState`).
+  const written = await writeScrapeResult(payload, item.id, data)
+  if (written === 'skip') return { status: 'skipped' }
   return { status: 'scraped', method: result.method, wordCount: result.wordCount, cleanHtmlKey }
 }
 

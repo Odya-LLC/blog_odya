@@ -12,7 +12,7 @@
  * 5. `[a-z0-9]` dan boshqa hamma narsa — bitta bo'shliq.
  *
  * **Postgres'dagi `oblog_search_normalize()` bilan aynan bir xil** (migratsiya
- * `20260924_103704_m1_07_search`); moslik `tests/search.int.test.ts` da tekshiriladi.
+ * `20260924_113406_m1_07_search`); moslik `tests/search.int.test.ts` da tekshiriladi.
  * Yon ta'sirsiz — server va testlarda ishlatiladi.
  */
 

@@ -11,6 +11,7 @@ import sharp from 'sharp'
 import { fileURLToPath } from 'url'
 
 import { anyone, isAdmin, isAdminOrEditor } from './access'
+import { auditLogPlugin } from './audit/plugin'
 import { Authors } from './collections/Authors'
 import { Categories } from './collections/Categories'
 import { Media } from './collections/Media'
@@ -63,6 +64,23 @@ export default buildConfig({
     dateFormat: 'dd.MM.yyyy HH:mm',
     importMap: {
       baseDir: path.resolve(dirname),
+    },
+    // Tahririyat (M2-04, TZ §6.1): navbat va review view'lari, dashboard vidjeti.
+    components: {
+      beforeNavLinks: ['@/components/admin/EditorialNavLinks#EditorialNavLinks'],
+      beforeDashboard: ['@/components/admin/EditorialStats#EditorialStats'],
+      views: {
+        newsQueue: {
+          Component: '@/components/admin/NewsQueueView#NewsQueueView',
+          path: '/news-queue',
+          meta: { title: 'Yangiliklar navbati' },
+        },
+        reviewQueue: {
+          Component: '@/components/admin/ReviewQueueView#ReviewQueueView',
+          path: '/review',
+          meta: { title: 'Tekshiruv navbati' },
+        },
+      },
     },
   },
   i18n,
@@ -153,5 +171,13 @@ export default buildConfig({
     // Lokal: MinIO, production: Cloudflare R2 — farq faqat env'da (TZ §3.1, §3.7).
     // S3_BUCKET berilmasa (masalan, prod migratsiya workflow'ida) plagin o'chiq.
     s3Storage(getS3StorageOptions(env)),
+    // Audit log (TZ §6.4): barcha kolleksiya/global o'zgarishlari — oxirida (plaginlar qo'shgan
+    // kolleksiyalar ham qamrab olinsin). Feed/pipeline texnik yozuvlari (job) — yozilmaydi.
+    auditLogPlugin({
+      collections: {
+        sources: { skipSystemWrites: true },
+        'scraped-items': { skipSystemWrites: true },
+      },
+    }),
   ],
 })

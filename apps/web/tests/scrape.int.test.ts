@@ -356,4 +356,64 @@ describe('scrapeItem: item.fetch → item.extract', () => {
     }
     expect(web.count(pageUrl)).toBe(4)
   })
+
+  describe('muharrir qarori (M2-04) job tomonidan bosib ketilmaydi', () => {
+    /** Sahifa so'ralayotgan paytda (fetch → extract oralig'ida) muharrir elementni hal qiladi. */
+    function decideDuringFetch(pageUrl: string, data: Partial<ScrapedItem>, itemId: () => number) {
+      scrapeDeps.fetchImpl = async (input, init) => {
+        const url =
+          typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+        if (url === pageUrl) {
+          await payload.update({ collection: 'scraped-items', id: itemId(), depth: 0, data })
+        }
+        return web.fetch(input, init)
+      }
+    }
+
+    it('pending element matn ajratilishidan oldin qoralamaga olinsa — drafted saqlanadi, matn to‘ldiriladi', async () => {
+      const pageUrl = hashUrl(fixture('habr', '1').meta.url)!.url
+      let id = 0
+      decideDuringFetch(pageUrl, { status: 'drafted' }, () => id)
+      id = (await enqueueItem('habr', '1')).id
+
+      await runScrapeQueue()
+
+      const doc = await getItem(id)
+      expect(doc.status).toBe('drafted')
+      expect(doc.error ?? null).toBeNull()
+      expect(doc.extractedText!.length).toBeGreaterThan(500)
+      expect(doc.cleanHtmlKey).toBeTruthy()
+      expect(await scrapeJobs()).toHaveLength(0)
+    })
+
+    it('rad etilgan element — holat ham, matn ham o‘zgarmaydi', async () => {
+      const pageUrl = hashUrl(fixture('habr', '1').meta.url)!.url
+      let id = 0
+      decideDuringFetch(pageUrl, { status: 'rejected', rejectReason: 'Mavzuga oid emas' }, () => id)
+      id = (await enqueueItem('habr', '1')).id
+
+      await runScrapeQueue()
+
+      const doc = await getItem(id)
+      expect(doc.status).toBe('rejected')
+      expect(doc.rejectReason).toBe('Mavzuga oid emas')
+      expect(doc.extractedText ?? null).toBeNull()
+      expect(doc.cleanHtmlKey ?? null).toBeNull()
+    })
+
+    it('qoralamaga olingan elementda 404 — status = error ga o‘tmaydi', async () => {
+      const pageUrl = hashUrl(fixture('habr', '1').meta.url)!.url
+      web.status(pageUrl, 404)
+      let id = 0
+      decideDuringFetch(pageUrl, { status: 'drafted' }, () => id)
+      id = (await enqueueItem('habr', '1')).id
+
+      await runScrapeQueue()
+
+      const doc = await getItem(id)
+      expect(doc.status).toBe('drafted')
+      expect(doc.error ?? null).toBeNull()
+      expect(await scrapeJobs()).toHaveLength(0)
+    })
+  })
 })
