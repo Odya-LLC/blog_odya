@@ -1,0 +1,110 @@
+import type { Payload, Where } from 'payload'
+
+import { DUE_SLACK_MS, FEED_POLL_TASK, STALE_JOB_MS } from './constants'
+import { getJobsSettings, type JobsSettings } from './settings'
+
+/**
+ * Scheduler (TZ §3.5): har chaqiruvda (pg_cron → `/api/jobs/run`, yoki `autorun` tick'i)
+ * muddati kelgan faol manbalar uchun `feed.poll` job'ini navbatga qo'yadi.
+ *
+ * - Manba "muddati kelgan" — kamida bitta faol feed `pollIntervalMin` dan beri o'qilmagan.
+ * - Bitta manba uchun bir vaqtda bitta tugallanmagan `feed.poll` (retry kutayotgani ham) —
+ *   takror navbat yo'q, `sources.feeds[]` holatini faqat bitta job yozadi.
+ */
+
+interface FeedPollState {
+  isActive?: boolean | null
+  lastPolledAt?: string | null
+}
+
+export function isFeedDue(feed: FeedPollState, intervalMin: number, now: number): boolean {
+  if (feed.isActive === false) return false
+  if (!feed.lastPolledAt) return true
+  const last = Date.parse(feed.lastPolledAt)
+  if (Number.isNaN(last)) return true
+  return now - last >= intervalMin * 60_000 - DUE_SLACK_MS
+}
+
+/** Tugallanmagan va yakuniy xatoga uchramagan job'lar sharti. */
+const unfinished: Where[] = [{ completedAt: { exists: false } }, { hasError: { not_equals: true } }]
+
+async function sourcesWithPendingPoll(payload: Payload): Promise<Set<number>> {
+  const { docs } = await payload.find({
+    collection: 'payload-jobs',
+    where: { and: [{ taskSlug: { equals: FEED_POLL_TASK } }, ...unfinished] },
+    depth: 0,
+    pagination: false,
+    limit: 0,
+  })
+  const ids = new Set<number>()
+  for (const job of docs) {
+    const sourceId = (job.input as { sourceId?: unknown } | null)?.sourceId
+    if (typeof sourceId === 'number') ids.add(sourceId)
+  }
+  return ids
+}
+
+export interface EnqueueResult {
+  enqueued: number
+  /** `scraping-settings.isEnabled = false` bo'lsa. */
+  disabled: boolean
+}
+
+export async function enqueueDueFeedPolls(
+  payload: Payload,
+  options: { now?: number; settings?: JobsSettings } = {},
+): Promise<EnqueueResult> {
+  const settings = options.settings ?? (await getJobsSettings(payload))
+  if (!settings.isEnabled) return { enqueued: 0, disabled: true }
+
+  const now = options.now ?? Date.now()
+  const [{ docs: sources }, busy] = await Promise.all([
+    payload.find({
+      collection: 'sources',
+      where: { isActive: { equals: true } },
+      select: { feeds: true, pollIntervalMin: true },
+      depth: 0,
+      pagination: false,
+      limit: 0,
+    }),
+    sourcesWithPendingPoll(payload),
+  ])
+
+  let enqueued = 0
+  for (const source of sources) {
+    if (busy.has(source.id)) continue
+    const interval = source.pollIntervalMin ?? settings.defaultPollIntervalMin
+    if (!(source.feeds ?? []).some((feed) => isFeedDue(feed, interval, now))) continue
+    await payload.jobs.queue({ task: FEED_POLL_TASK, input: { sourceId: source.id } })
+    enqueued++
+  }
+  return { enqueued, disabled: false }
+}
+
+/**
+ * Function timeout yoki jarayon uzilishi sababli `processing: true` holatida qolib ketgan
+ * job'larni qayta navbatga qaytaradi (aks holda ular abadiy "band" bo'lib qoladi).
+ */
+export async function releaseStaleJobs(payload: Payload, now = Date.now()): Promise<number> {
+  const { docs } = await payload.update({
+    collection: 'payload-jobs',
+    where: {
+      and: [
+        { processing: { equals: true } },
+        { updatedAt: { less_than: new Date(now - STALE_JOB_MS).toISOString() } },
+      ],
+    },
+    data: { processing: false },
+    depth: 0,
+  })
+  return docs.length
+}
+
+/** Berilgan navbatlardagi hali bajarilmagan (retry kutayotganlari ham) job'lar soni. */
+export async function countRemainingJobs(payload: Payload, queues: readonly string[]) {
+  const { totalDocs } = await payload.count({
+    collection: 'payload-jobs',
+    where: { and: [{ queue: { in: [...queues] } }, ...unfinished] },
+  })
+  return totalDocs
+}

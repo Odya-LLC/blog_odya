@@ -74,6 +74,8 @@ export interface Config {
     authors: Author;
     media: Media;
     users: User;
+    sources: Source;
+    'scraped-items': ScrapedItem;
     redirects: Redirect;
     'payload-kv': PayloadKv;
     'payload-jobs': PayloadJob;
@@ -90,6 +92,8 @@ export interface Config {
     authors: AuthorsSelect<false> | AuthorsSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
+    sources: SourcesSelect<false> | SourcesSelect<true>;
+    'scraped-items': ScrapedItemsSelect<false> | ScrapedItemsSelect<true>;
     redirects: RedirectsSelect<false> | RedirectsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
@@ -122,13 +126,16 @@ export interface Config {
   user: User;
   jobs: {
     tasks: {
+      'feed.poll': TaskFeedPoll;
       schedulePublish: TaskSchedulePublish;
       inline: {
         input: unknown;
         output: unknown;
       };
     };
-    workflows: unknown;
+    workflows: {
+      scrapeItem: WorkflowScrapeItem;
+    };
   };
 }
 export interface UserAuthOperations {
@@ -187,6 +194,7 @@ export interface Post {
     | {
         name?: string | null;
         url: string;
+        scrapedItem?: (number | null) | ScrapedItem;
         id?: string | null;
       }[]
     | null;
@@ -333,6 +341,166 @@ export interface Media {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "scraped-items".
+ */
+export interface ScrapedItem {
+  id: number;
+  title?: string | null;
+  source: number | Source;
+  status: 'pending' | 'scraped' | 'drafted' | 'rejected' | 'duplicate' | 'error';
+  url: string;
+  canonicalUrl?: string | null;
+  urlHash: string;
+  author?: string | null;
+  publishedAt?: string | null;
+  language?: ('en' | 'ru') | null;
+  excerpt?: string | null;
+  extractedText?: string | null;
+  imageUrls?:
+    | {
+        url: string;
+        alt?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  sourceTags?: string[] | null;
+  contentHash?: string | null;
+  clusterId?: string | null;
+  rawHtmlKey?: string | null;
+  cleanHtmlKey?: string | null;
+  fetchMeta?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  error?: string | null;
+  score?: number | null;
+  wordCount?: number | null;
+  suggestedCategory?: (number | null) | Category;
+  post?: (number | null) | Post;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "sources".
+ */
+export interface Source {
+  id: number;
+  name: string;
+  /**
+   * Lotin, ikkala yozuvda bir xil. Bo'sh qoldirilsa sarlavhadan yasaladi.
+   */
+  slug: string;
+  homepageUrl: string;
+  feeds?:
+    | {
+        url: string;
+        feedCategory?: string | null;
+        mapsTo?: (number | null) | Category;
+        isActive?: boolean | null;
+        lastPolledAt?: string | null;
+        lastStatus?: number | null;
+        lastNewItems?: number | null;
+        etag?: string | null;
+        lastModified?: string | null;
+        lastError?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  language: 'en' | 'ru';
+  fetchMode: 'rss_only' | 'rss_plus_page';
+  priority?: number | null;
+  pollIntervalMin?: number | null;
+  rateLimitSec?: number | null;
+  /**
+   * { "content": "...", "title"?, "author"?, "publishedAt"?, "remove"?: [] }
+   */
+  selectors?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  keywordRules?:
+    | {
+        keyword: string;
+        category: number | Category;
+        boost?: number | null;
+        id?: string | null;
+      }[]
+    | null;
+  tosNotes?: string | null;
+  isActive?: boolean | null;
+  robotsCheckedAt?: string | null;
+  /**
+   * Domen bo‘yicha rate limit (rateLimitSec) uchun
+   */
+  lastRequestAt?: string | null;
+  /**
+   * Oxirgi muvaffaqiyat/xato, ketma-ket xatolar soni
+   */
+  stats?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "categories".
+ */
+export interface Category {
+  id: number;
+  name: string;
+  description?: string | null;
+  meta?: {
+    title?: string | null;
+    description?: string | null;
+    /**
+     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
+     */
+    image?: (number | null) | Media;
+    focusKeyword?: string | null;
+    noindex?: boolean | null;
+  };
+  /**
+   * Lotin, ikkala yozuvda bir xil. Bo'sh qoldirilsa sarlavhadan yasaladi.
+   */
+  slug: string;
+  /**
+   * HEX, masalan #52397F (design/brand/tokens.json → category.*.solid)
+   */
+  color?: string | null;
+  order?: number | null;
+  isInMenu?: boolean | null;
+  parent?: (number | null) | Category;
+  breadcrumbs?:
+    | {
+        doc?: (number | null) | Category;
+        url?: string | null;
+        label?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users".
  */
 export interface User {
@@ -384,46 +552,6 @@ export interface Author {
     | {
         platform: 'telegram' | 'x' | 'linkedin' | 'github' | 'instagram' | 'youtube' | 'facebook' | 'website';
         url: string;
-        id?: string | null;
-      }[]
-    | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "categories".
- */
-export interface Category {
-  id: number;
-  name: string;
-  description?: string | null;
-  meta?: {
-    title?: string | null;
-    description?: string | null;
-    /**
-     * Maximum upload file size: 12MB. Recommended file size for images is <500KB.
-     */
-    image?: (number | null) | Media;
-    focusKeyword?: string | null;
-    noindex?: boolean | null;
-  };
-  /**
-   * Lotin, ikkala yozuvda bir xil. Bo'sh qoldirilsa sarlavhadan yasaladi.
-   */
-  slug: string;
-  /**
-   * HEX, masalan #52397F (design/brand/tokens.json → category.*.solid)
-   */
-  color?: string | null;
-  order?: number | null;
-  isInMenu?: boolean | null;
-  parent?: (number | null) | Category;
-  breadcrumbs?:
-    | {
-        doc?: (number | null) | Category;
-        url?: string | null;
-        label?: string | null;
         id?: string | null;
       }[]
     | null;
@@ -632,7 +760,7 @@ export interface PayloadJob {
     | {
         executedAt: string;
         completedAt: string;
-        taskSlug: 'inline' | 'schedulePublish';
+        taskSlug: 'inline' | 'feed.poll' | 'schedulePublish';
         taskID: string;
         input?:
           | {
@@ -665,7 +793,8 @@ export interface PayloadJob {
         id?: string | null;
       }[]
     | null;
-  taskSlug?: ('inline' | 'schedulePublish') | null;
+  workflowSlug?: 'scrapeItem' | null;
+  taskSlug?: ('inline' | 'feed.poll' | 'schedulePublish') | null;
   queue?: string | null;
   waitUntil?: string | null;
   processing?: boolean | null;
@@ -706,6 +835,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'users';
         value: number | User;
+      } | null)
+    | ({
+        relationTo: 'sources';
+        value: number | Source;
+      } | null)
+    | ({
+        relationTo: 'scraped-items';
+        value: number | ScrapedItem;
       } | null)
     | ({
         relationTo: 'redirects';
@@ -774,6 +911,7 @@ export interface PostsSelect<T extends boolean = true> {
     | {
         name?: T;
         url?: T;
+        scrapedItem?: T;
         id?: T;
       };
   relatedPosts?: T;
@@ -1067,6 +1205,88 @@ export interface UsersSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "sources_select".
+ */
+export interface SourcesSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  homepageUrl?: T;
+  feeds?:
+    | T
+    | {
+        url?: T;
+        feedCategory?: T;
+        mapsTo?: T;
+        isActive?: T;
+        lastPolledAt?: T;
+        lastStatus?: T;
+        lastNewItems?: T;
+        etag?: T;
+        lastModified?: T;
+        lastError?: T;
+        id?: T;
+      };
+  language?: T;
+  fetchMode?: T;
+  priority?: T;
+  pollIntervalMin?: T;
+  rateLimitSec?: T;
+  selectors?: T;
+  keywordRules?:
+    | T
+    | {
+        keyword?: T;
+        category?: T;
+        boost?: T;
+        id?: T;
+      };
+  tosNotes?: T;
+  isActive?: T;
+  robotsCheckedAt?: T;
+  lastRequestAt?: T;
+  stats?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "scraped-items_select".
+ */
+export interface ScrapedItemsSelect<T extends boolean = true> {
+  title?: T;
+  source?: T;
+  status?: T;
+  url?: T;
+  canonicalUrl?: T;
+  urlHash?: T;
+  author?: T;
+  publishedAt?: T;
+  language?: T;
+  excerpt?: T;
+  extractedText?: T;
+  imageUrls?:
+    | T
+    | {
+        url?: T;
+        alt?: T;
+        id?: T;
+      };
+  sourceTags?: T;
+  contentHash?: T;
+  clusterId?: T;
+  rawHtmlKey?: T;
+  cleanHtmlKey?: T;
+  fetchMeta?: T;
+  error?: T;
+  score?: T;
+  wordCount?: T;
+  suggestedCategory?: T;
+  post?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "redirects_select".
  */
 export interface RedirectsSelect<T extends boolean = true> {
@@ -1114,6 +1334,7 @@ export interface PayloadJobsSelect<T extends boolean = true> {
         error?: T;
         id?: T;
       };
+  workflowSlug?: T;
   taskSlug?: T;
   queue?: T;
   waitUntil?: T;
@@ -1274,6 +1495,10 @@ export interface ScrapingSetting {
   jobsDeadlineSec?: number | null;
   maxNewItemsPerPoll?: number | null;
   defaultPollIntervalMin?: number | null;
+  /**
+   * Feed’dagi bundan eski yozuvlar olinmaydi
+   */
+  maxItemAgeHours?: number | null;
   extractedTextRetentionDays?: number | null;
   updatedAt?: string | null;
   createdAt?: string | null;
@@ -1397,6 +1622,7 @@ export interface ScrapingSettingsSelect<T extends boolean = true> {
   jobsDeadlineSec?: T;
   maxNewItemsPerPoll?: T;
   defaultPollIntervalMin?: T;
+  maxItemAgeHours?: T;
   extractedTextRetentionDays?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -1411,6 +1637,24 @@ export interface CollectionsWidget {
     [k: string]: unknown;
   };
   width: 'full';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskFeedPoll".
+ */
+export interface TaskFeedPoll {
+  input: {
+    sourceId: number;
+  };
+  output: {
+    polledFeeds?: number | null;
+    notModified?: number | null;
+    failedFeeds?: number | null;
+    newItems?: number | null;
+    duplicates?: number | null;
+    skippedOld?: number | null;
+    deferredFeeds?: number | null;
+  };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1431,6 +1675,19 @@ export interface TaskSchedulePublish {
     } | null;
   };
   output?: unknown;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "WorkflowScrapeItem".
+ */
+export interface WorkflowScrapeItem {
+  input: {
+    scrapedItemId: number;
+    /**
+     * RSS’dagi matn (rss_only manbalar uchun extract shu matndan)
+     */
+    contentHtml?: string | null;
+  };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

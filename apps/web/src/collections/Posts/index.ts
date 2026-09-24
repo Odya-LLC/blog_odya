@@ -49,7 +49,7 @@ export const SCRIPTS = [
  * workflow (TZ §4.1) — `hooks.ts`, o'tishlar — `workflow.ts`. SEO `meta` (L) — `plugin-seo`.
  *
  * Kirill avtomatik generatsiyasi (`cyrlLocked` / `cyrlStale` mantig'i) — M1-03;
- * `sources[].scrapedItem` (rel → scraped-items) — M2-01 da kolleksiya bilan qo'shiladi.
+ * `sources[].scrapedItem` — rel → scraped-items (M2-01).
  */
 export const Posts: CollectionConfig = {
   slug: 'posts',
@@ -160,6 +160,12 @@ export const Posts: CollectionConfig = {
                       admin: { width: '60%' },
                     },
                   ],
+                },
+                {
+                  name: 'scrapedItem',
+                  type: 'relationship',
+                  relationTo: 'scraped-items',
+                  label: 'Yig‘ilgan element',
                 },
               ],
             },

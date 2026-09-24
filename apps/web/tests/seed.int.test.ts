@@ -1,5 +1,6 @@
 import { LEGAL_PAGES } from '@blog-odya/guidelines'
 import categoriesJson from '@blog-odya/shared/seed/categories.json' with { type: 'json' }
+import sourcesJson from '@blog-odya/shared/seed/sources.json' with { type: 'json' }
 import type { CollectionSlug, Payload } from 'payload'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
@@ -36,7 +37,7 @@ describe('seed: idempotent', () => {
     const second = await seed(payload)
 
     // Ikkinchi ishga tushirishda hech narsa yaratilmaydi.
-    for (const key of ['categories', 'pages', 'authors', 'tags', 'posts'] as const) {
+    for (const key of ['categories', 'pages', 'authors', 'tags', 'posts', 'sources'] as const) {
       expect(second[key].created, key).toBe(0)
     }
     expect(second.globals).toEqual({ siteSettings: false, header: false, footer: false })
@@ -64,6 +65,29 @@ describe('seed: idempotent', () => {
         SEED_POSTS.map((p) => p.slug),
       ),
     ).toBe(3)
+    const sourceSlugs = (sourcesJson as { slug: string }[]).map((s) => s.slug)
+    expect(sourceSlugs).toHaveLength(7)
+    expect(await countBySlug('sources', sourceSlugs)).toBe(7)
+  })
+
+  it('manbalar: feed kategoriyalari va kalit so‘z qoidalari ID bilan bog‘langan', async () => {
+    const { docs } = await payload.find({
+      collection: 'sources',
+      where: { slug: { equals: 'habr' } },
+      depth: 1,
+    })
+    const habr = docs[0]!
+    expect(habr).toMatchObject({ language: 'ru', fetchMode: 'rss_plus_page', isActive: true })
+    expect(habr.feeds?.length).toBeGreaterThan(0)
+    const mapsTo = habr.feeds?.[0]?.mapsTo
+    expect(typeof mapsTo === 'object' && mapsTo?.slug).toBeTruthy()
+    expect(habr.keywordRules?.length).toBeGreaterThan(0)
+    expect((habr.selectors as { content?: string }).content).toBeTruthy()
+    const backup = await payload.find({
+      collection: 'sources',
+      where: { slug: { equals: '3dnews' } },
+    })
+    expect(backup.docs[0]?.isActive).toBe(false)
   })
 
   it('site-settings: "Blog Odya" / "Блог Одя"', async () => {

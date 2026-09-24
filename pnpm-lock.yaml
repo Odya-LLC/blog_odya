@@ -95,6 +95,9 @@ importers:
       react-dom:
         specifier: 19.2.6
         version: 19.2.6(react@19.2.6)
+      rss-parser:
+        specifier: 3.13.0
+        version: 3.13.0
       sharp:
         specifier: 0.35.4
         version: 0.35.4(@types/node@24.13.6)
