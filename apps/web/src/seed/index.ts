@@ -1,6 +1,7 @@
 import { fillPlaceholders, LEGAL_PLACEHOLDERS, loadLegalPages } from '@blog-odya/guidelines'
 import categoriesJson from '@blog-odya/shared/seed/categories.json' with { type: 'json' }
-import { categoriesSeedSchema, type Locale } from '@blog-odya/shared'
+import sourcesJson from '@blog-odya/shared/seed/sources.json' with { type: 'json' }
+import { categoriesSeedSchema, sourcesSeedSchema, type Locale } from '@blog-odya/shared'
 import { convertMarkdownToLexical, editorConfigFactory } from '@payloadcms/richtext-lexical'
 import type { CollectionSlug, Payload } from 'payload'
 
@@ -25,6 +26,7 @@ export interface SeedSummary {
   authors: Count
   tags: Count
   posts: Count
+  sources: Count
   globals: { siteSettings: boolean; header: boolean; footer: boolean }
   /** Seed'da to'ldirilmagan huquqiy sahifa o'rinbosarlari (`{{...}}`). */
   unfilledPlaceholders: string[]
@@ -70,7 +72,7 @@ function placeholderValues(options: SeedOptions) {
 
 /**
  * Boshlang'ich ma'lumotlar (`pnpm seed`): 9 kategoriya, 6 huquqiy sahifa, 1 muallif, 3 teg,
- * 3 demo post, `site-settings`, `header`, `footer`.
+ * 3 demo post, 7 manba (`sources.json`, M0-04), `site-settings`, `header`, `footer`.
  *
  * Idempotent: hujjatlar `slug` bo'yicha, globals — to'ldirilganligi bo'yicha tekshiriladi;
  * mavjudlari o'zgartirilmaydi (admin'dagi tahrirlar saqlanadi), dublikat yaratilmaydi.
@@ -83,6 +85,7 @@ export async function seed(payload: Payload, options: SeedOptions = {}): Promise
     authors: { created: 0, existing: 0 },
     tags: { created: 0, existing: 0 },
     posts: { created: 0, existing: 0 },
+    sources: { created: 0, existing: 0 },
     globals: { siteSettings: false, header: false, footer: false },
     unfilledPlaceholders: [],
   }
@@ -136,6 +139,49 @@ export async function seed(payload: Payload, options: SeedOptions = {}): Promise
     summary.categories.created++
   }
   log(`Kategoriyalar: +${summary.categories.created}, mavjud ${summary.categories.existing}`)
+
+  // --- Manbalar (M0-04 → M2-01): kategoriya slug'lari ID'ga aylantiriladi ---
+  for (const source of sourcesSeedSchema.parse(sourcesJson)) {
+    if ((await findIdBySlug(payload, 'sources', source.slug)) !== null) {
+      summary.sources.existing++
+      continue
+    }
+    const categoryId = (slug: string) => {
+      const id = categoryIds.get(slug)
+      if (id === undefined) throw new Error(`Seed: ${source.slug} — kategoriya topilmadi: ${slug}`)
+      return id as number
+    }
+    await payload.create({
+      collection: 'sources',
+      data: {
+        name: source.name,
+        slug: source.slug,
+        homepageUrl: source.homepageUrl,
+        feeds: source.feeds.map((feed) => ({
+          url: feed.url,
+          feedCategory: feed.feedCategory,
+          mapsTo: categoryId(feed.mapsTo),
+          isActive: feed.isActive,
+        })),
+        language: source.language,
+        fetchMode: source.fetchMode,
+        selectors: source.selectors,
+        pollIntervalMin: source.pollIntervalMin,
+        rateLimitSec: source.rateLimitSec,
+        robotsCheckedAt: source.robotsCheckedAt,
+        tosNotes: source.tosNotes,
+        priority: source.priority,
+        keywordRules: source.keywordRules.map((rule) => ({
+          keyword: rule.keyword,
+          category: categoryId(rule.category),
+          boost: rule.boost,
+        })),
+        isActive: source.isActive,
+      },
+    })
+    summary.sources.created++
+  }
+  log(`Manbalar: +${summary.sources.created}, mavjud ${summary.sources.existing}`)
 
   // --- Huquqiy sahifalar (M0-05) ---
   const values = placeholderValues(options)

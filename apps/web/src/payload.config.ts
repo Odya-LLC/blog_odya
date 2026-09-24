@@ -16,6 +16,8 @@ import { Categories } from './collections/Categories'
 import { Media } from './collections/Media'
 import { Pages } from './collections/Pages'
 import { Posts } from './collections/Posts'
+import { ScrapedItems } from './collections/ScrapedItems'
+import { Sources } from './collections/Sources'
 import { Tags } from './collections/Tags'
 import { Users } from './collections/Users'
 import { getDatabaseMode, getDatabasePoolConfig } from './config/database'
@@ -27,6 +29,7 @@ import { ScrapingSettings } from './globals/ScrapingSettings'
 import { SiteSettings } from './globals/SiteSettings'
 import { TelegramSettings } from './globals/TelegramSettings'
 import { uzPluginTranslations } from './i18n/plugins'
+import { buildJobsConfig } from './jobs'
 import { ADMIN_LANGUAGE, uz } from './i18n/uz'
 
 const filename = fileURLToPath(import.meta.url)
@@ -64,9 +67,11 @@ export default buildConfig({
     defaultLocale: DEFAULT_LOCALE,
     fallback: true,
   },
-  collections: [Posts, Pages, Categories, Tags, Authors, Media, Users],
+  collections: [Posts, Pages, Categories, Tags, Authors, Media, Users, Sources, ScrapedItems],
   globals: [SiteSettings, Header, Footer, TelegramSettings, ScrapingSettings],
   editor: lexicalEditor(),
+  // Fon vazifalar (TZ §3.5): feed.poll, scrapeItem; scheduler — JOBS_MODE (src/jobs/index.ts).
+  jobs: buildJobsConfig(env.JOBS_MODE),
   secret: env.PAYLOAD_SECRET ?? '',
   serverURL: env.NEXT_PUBLIC_SITE_URL,
   typescript: {

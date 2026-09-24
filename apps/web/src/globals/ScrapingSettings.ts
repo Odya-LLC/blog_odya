@@ -4,7 +4,8 @@ import { isAdmin, isAdminOrEditor } from '@/access'
 
 /**
  * Scraping sozlamalari (TZ §3.5, §10.15): score chegarasi va jobs/cron limitlari.
- * Qiymatlardan foydalanish (feed.poll, jobs endpoint) — M2-01..M2-03.
+ * `isEnabled`, `jobs*`, `maxNewItemsPerPoll`, `maxItemAgeHours`, `defaultPollIntervalMin` —
+ * `feed.poll` va `/api/jobs/run` (M2-01, `src/jobs/settings.ts`); `minScore`, retention — M2-03.
  */
 export const ScrapingSettings: GlobalConfig = {
   slug: 'scraping-settings',
@@ -46,7 +47,8 @@ export const ScrapingSettings: GlobalConfig = {
           label: 'Ichki deadline (s)',
           defaultValue: 40,
           min: 5,
-          max: 55,
+          // + task'lar uchun 10 s grace — Vercel function limiti (60 s) ichida qolish uchun.
+          max: 45,
           admin: { width: '33%' },
         },
         {
@@ -68,7 +70,18 @@ export const ScrapingSettings: GlobalConfig = {
           label: 'Standart poll oralig‘i (daqiqa)',
           defaultValue: 15,
           min: 5,
-          admin: { width: '50%' },
+          admin: { width: '33%' },
+        },
+        {
+          name: 'maxItemAgeHours',
+          type: 'number',
+          label: 'Eskirgan yangilik chegarasi (soat)',
+          defaultValue: 72,
+          min: 1,
+          admin: {
+            width: '33%',
+            description: 'Feed’dagi bundan eski yozuvlar olinmaydi',
+          },
         },
         {
           name: 'extractedTextRetentionDays',
@@ -76,7 +89,7 @@ export const ScrapingSettings: GlobalConfig = {
           label: 'Matnni saqlash muddati (kun)',
           defaultValue: 30,
           min: 1,
-          admin: { width: '50%' },
+          admin: { width: '33%' },
         },
       ],
     },

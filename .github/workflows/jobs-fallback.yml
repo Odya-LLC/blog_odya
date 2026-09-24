@@ -1,0 +1,54 @@
+# Zaxira scheduler (TZ §3.5): /api/jobs/run ni GitHub Actions'dan chaqirish.
+# Asosiy scheduler — Supabase pg_cron + pg_net (infra/supabase/cron.sql). Bu workflow faqat
+# pg_cron ishlamay qolganda kerak: qo'lda (workflow_dispatch) ishga tushiriladi.
+#
+# `schedule` STANDART HOLATDA O'CHIQ: yopiq repo'da bepul daqiqalar cheklangan (~2 000/oy;
+# har 30 daqiqada ≈ 1 440 ishga tushirish/oy). Yoqish uchun pastdagi `schedule` blokini
+# izohdan chiqaring (docs/runbooks/jobs-scheduler.md → "Zaxira: GitHub Actions").
+#
+# Kerakli repo secrets: JOBS_RUN_URL (https://blog.odya.uz/api/jobs/run), JOBS_SECRET.
+name: Jobs fallback
+
+on:
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: 'Batch hajmi (1–50, bo‘sh — scraping-settings bo‘yicha)'
+        required: false
+        default: ''
+  # schedule:
+  #   - cron: '*/30 * * * *'
+
+concurrency:
+  group: jobs-fallback
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    name: POST /api/jobs/run
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Call jobs endpoint
+        env:
+          JOBS_RUN_URL: ${{ secrets.JOBS_RUN_URL }}
+          JOBS_SECRET: ${{ secrets.JOBS_SECRET }}
+          LIMIT: ${{ inputs.limit }}
+        run: |
+          if [ -z "$JOBS_RUN_URL" ] || [ -z "$JOBS_SECRET" ]; then
+            echo "::error::JOBS_RUN_URL va JOBS_SECRET repo secrets'da sozlanmagan"
+            exit 1
+          fi
+          url="$JOBS_RUN_URL"
+          if [ -n "$LIMIT" ]; then url="$url?limit=$LIMIT"; fi
+          status=$(curl -sS -o response.json -w '%{http_code}' --max-time 90 \
+            -X POST -H "Authorization: Bearer $JOBS_SECRET" -H 'Content-Type: application/json' \
+            "$url")
+          cat response.json; echo
+          if [ "$status" != "200" ]; then
+            echo "::error::/api/jobs/run HTTP $status qaytardi"
+            exit 1
+          fi
