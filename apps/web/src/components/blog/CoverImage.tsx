@@ -1,4 +1,4 @@
-import Image from 'next/image'
+import { StaticImage as Image } from './StaticImage'
 
 import { cn } from '@/lib/utils'
 

@@ -1,11 +1,12 @@
 'use client'
 
 import { MoonIcon, SunIcon } from 'lucide-react'
+// clsx (tailwind-merge'siz): client bundle'da twMerge bo'lmasin — JS byudjeti (TZ §8.4).
+import { clsx as cn } from 'clsx'
 import { useEffect } from 'react'
 
-import { buttonVariants } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button-variants'
 import { THEME_COOKIE, writePreferenceCookie, type Theme } from '@/lib/preferences'
-import { cn } from '@/lib/utils'
 
 type ThemeToggleProps = {
   label: string
@@ -49,7 +50,7 @@ export function ThemeToggle({ label, className }: ThemeToggleProps) {
       onClick={toggle}
       aria-label={label}
       title={label}
-      className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }), 'rounded-full', className)}
+      className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }), 'rounded-full!', className)}
     >
       <MoonIcon className="dark:hidden" aria-hidden />
       <SunIcon className="hidden dark:block" aria-hidden />

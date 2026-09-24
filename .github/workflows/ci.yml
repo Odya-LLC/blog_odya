@@ -1,4 +1,5 @@
-# CI: lint → typecheck → test (Postgres + MinIO) → seed → build → Playwright smoke (TZ §9.7).
+# CI: lint → typecheck → test (Postgres + MinIO) → seed → build → Playwright smoke → Lighthouse CI
+# (TZ §9.7, §8.4).
 # Yopiq repo'da bepul daqiqalarni tejash uchun faqat PR va main'ga push'da ishlaydi.
 name: CI
 
@@ -18,7 +19,7 @@ jobs:
   ci:
     name: lint · typecheck · test · build
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
 
     services:
       postgres:
@@ -105,6 +106,26 @@ jobs:
 
       - name: E2E smoke (Playwright)
         run: pnpm test:e2e
+
+      # Lighthouse CI (M1-07, TZ §8.4 / §11 p.7): mobil Performance ≥ 90, SEO = 100,
+      # Accessibility ≥ 90, birinchi yuklash JS ≤ 150 KB gzip — bosh sahifa, maqola, kategoriya
+      # (demo seed). Shu build'ning `next start`'i — PR'dagi aynan shu kod o'lchanadi.
+      # Vercel Preview URL'iga qarshi alohida o'lchov — `lighthouse-preview.yml`.
+      - name: Lighthouse CI (mobil)
+        working-directory: apps/web
+        env:
+          LHCI_START_SERVER: '1'
+          LHCI_BASE_URL: http://localhost:3100
+        run: npx --yes @lhci/cli@0.15.1 autorun --config=./lighthouserc.cjs
+
+      - name: Upload Lighthouse reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-reports
+          path: apps/web/.lighthouseci/
+          retention-days: 7
+          if-no-files-found: ignore
 
       - name: Upload Playwright traces
         if: failure()

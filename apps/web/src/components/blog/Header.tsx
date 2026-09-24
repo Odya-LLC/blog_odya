@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils'
 import { HeaderMobileMenu } from './HeaderMobileMenu'
 import { HeaderMoreMenu } from './HeaderMoreMenu'
 import { TelegramIcon } from './icons'
+import { newTabProps } from './link-props'
 import { ScriptSwitcher } from './ScriptSwitcher'
 import { SearchForm } from './SearchForm'
 import { ThemeToggle } from './ThemeToggle'
@@ -87,6 +88,7 @@ export function Header({
                   <li key={category.slug}>
                     <Link
                       href={category.href}
+                      {...newTabProps(category.newTab)}
                       aria-current={category.slug === activeCategorySlug ? 'page' : undefined}
                       className="flex h-11 items-center border-b border-border text-base font-semibold text-fg hover:text-accent aria-[current=page]:text-accent"
                     >
@@ -118,6 +120,7 @@ export function Header({
                 <li key={category.slug} className="shrink-0">
                   <Link
                     href={category.href}
+                    {...newTabProps(category.newTab)}
                     aria-current={active ? 'page' : undefined}
                     className={cn(
                       'inline-flex h-9 items-center rounded-full px-3 text-sm font-semibold whitespace-nowrap transition-colors',
@@ -138,6 +141,7 @@ export function Header({
             items={moreCategories.map((category) => ({
               label: category.name,
               href: category.href,
+              newTab: category.newTab,
               active: category.slug === activeCategorySlug,
             }))}
           />

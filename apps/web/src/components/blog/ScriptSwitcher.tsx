@@ -1,10 +1,11 @@
 'use client'
 
-import type { Locale } from '@blog-odya/shared'
+import type { Locale } from '@blog-odya/shared/locales'
 import Link from 'next/link'
+// clsx (tailwind-merge'siz): client bundle'da twMerge bo'lmasin — JS byudjeti (TZ §8.4).
+import { clsx as cn } from 'clsx'
 
 import { SCRIPT_COOKIE, writePreferenceCookie } from '@/lib/preferences'
-import { cn } from '@/lib/utils'
 
 type ScriptSwitcherProps = {
   locale: Locale

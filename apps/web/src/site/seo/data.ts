@@ -145,11 +145,14 @@ export async function loadSitemapCategories(): Promise<SitemapPath[]> {
 export const getSitemapCategories = (): Promise<SitemapPath[]> =>
   cached(loadSitemapCategories, ['seo', 'sitemap-categories'], [CACHE_TAGS.posts, CACHE_TAGS.nav])
 
-/** Bosh sahifa + statik sahifalar (`pages`, chop etilgan). */
+/**
+ * Bosh sahifa + statik sahifalar (`pages`, chop etilgan) + faol mualliflar (`/author/{slug}`,
+ * E-E-A-T — TZ §8.3). Teg sahifalari kiritilmaydi (< 3 postda `noindex`, M1-07).
+ */
 export async function loadSitemapPages(): Promise<SitemapPath[]> {
   if (!hasDatabase()) return []
   const payload = await payloadClient()
-  const [pages, latestPost] = await Promise.all([
+  const [pages, latestPost, authors] = await Promise.all([
     payload.find({
       collection: 'pages',
       locale: 'uz-Latn',
@@ -167,12 +170,24 @@ export async function loadSitemapPages(): Promise<SitemapPath[]> {
       overrideAccess: false,
       select: { publishedAt: true },
     }),
+    payload.find({
+      collection: 'authors',
+      locale: 'uz-Latn',
+      where: { isActive: { equals: true } },
+      pagination: false,
+      depth: 0,
+      overrideAccess: false,
+      select: { slug: true, updatedAt: true },
+    }),
   ])
   const home: SitemapPath = { path: '/', lastmod: latestPost.docs[0]?.publishedAt ?? null }
   const staticPages = (pages.docs as Array<{ slug?: string | null; updatedAt: string } & WithMeta>)
     .filter((page) => page.slug && isIndexable(page))
     .map((page) => ({ path: `/${page.slug}`, lastmod: page.updatedAt }))
-  return [home, ...staticPages]
+  const authorPages = authors.docs
+    .filter((author) => author.slug)
+    .map((author) => ({ path: `/author/${author.slug}`, lastmod: author.updatedAt }))
+  return [home, ...staticPages, ...authorPages]
 }
 
 export const getSitemapPages = (): Promise<SitemapPath[]> =>

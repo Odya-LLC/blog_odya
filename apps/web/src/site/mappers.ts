@@ -8,6 +8,7 @@ import type { Locale } from '@blog-odya/shared'
 import type {
   AuthorRef,
   CategoryRef,
+  FooterColumn,
   ImageRef,
   LinkItem,
   NavCategory,
@@ -29,7 +30,7 @@ import type {
   Tag,
 } from '@/payload-types'
 
-import { authorPath, categoryPath, pagePath, postPath, tagPath } from './paths'
+import { authorPath, categoryPath, localizePath, pagePath, postPath, tagPath } from './paths'
 
 /** Relationship maydoni populyatsiya qilingan bo'lsa — obyekt, aks holda `null`. */
 export function populated<T extends object>(
@@ -130,9 +131,23 @@ export function toNavCategories(
 ): NavCategory[] {
   const fromItems = (items: NavItem[] | null | undefined, isInMenu: boolean): NavCategory[] =>
     (items ?? []).flatMap((item) => {
-      const category = item.type === 'category' ? populated<Category>(item.category) : null
-      if (!category) return []
-      return [{ ...toCategoryRef(category, locale), name: item.label || category.name, isInMenu }]
+      if (item.type === 'category') {
+        const category = populated<Category>(item.category)
+        if (!category) return []
+        return [
+          {
+            ...toCategoryRef(category, locale),
+            name: item.label || category.name,
+            isInMenu,
+            ...(item.newTab ? { newTab: true } : {}),
+          },
+        ]
+      }
+      // Sahifa yoki ixtiyoriy URL ham menyuda bo'lishi mumkin (TZ §7 "Menyular").
+      const link = toMenuLink(item, locale)
+      if (!link) return []
+      const { key, label, href, newTab } = link
+      return [{ slug: key, name: label, href, isInMenu, ...(newTab ? { newTab } : {}) }]
     })
   const fromHeader = [...fromItems(header?.navItems, true), ...fromItems(header?.moreItems, false)]
   if (fromHeader.length > 0) return fromHeader
@@ -144,6 +159,69 @@ export function toNavCategories(
     }))
 }
 
+type MenuLinkInput = {
+  label?: string | null
+  type?: 'category' | 'page' | 'custom' | null
+  category?: number | Category | null
+  page?: number | { slug?: string | null } | null
+  url?: string | null
+  newTab?: boolean | null
+}
+
+/**
+ * Menyu havolasi (`fields/link.ts`) → joriy yozuvdagi URL. `key` — barqaror kalit (React `key`,
+ * faol bandni aniqlash): kategoriya/sahifa slug'i yoki URL. Hal qilib bo'lmasa — `null`.
+ */
+export function toMenuLink(
+  item: MenuLinkInput,
+  locale: Locale,
+): (LinkItem & { key: string }) | null {
+  const link = resolveMenuLink(item, locale)
+  return link && item.newTab ? { ...link, newTab: true } : link
+}
+
+function resolveMenuLink(item: MenuLinkInput, locale: Locale): (LinkItem & { key: string }) | null {
+  switch (item.type) {
+    case 'category': {
+      const category = populated<Category>(item.category)
+      if (!category?.slug) return null
+      return {
+        key: category.slug,
+        label: item.label || category.name,
+        href: categoryPath(locale, category.slug),
+      }
+    }
+    case 'page': {
+      const page = populated<{ slug?: string | null }>(item.page)
+      if (!page?.slug || !item.label) return null
+      return { key: page.slug, label: item.label, href: pagePath(locale, page.slug) }
+    }
+    case 'custom': {
+      const url = item.url?.trim()
+      if (!url || !item.label) return null
+      return { key: url, label: item.label, href: localizePath(locale, url) }
+    }
+    default:
+      return null
+  }
+}
+
+/** Footer ustunlari (`footer.columns`): sarlavha + hal qilingan havolalar (bo'sh ustunlar tashlanadi). */
+export function toFooterColumns(
+  footer: Pick<Footer, 'columns'> | null,
+  locale: Locale,
+): FooterColumn[] {
+  return (footer?.columns ?? []).flatMap((column) => {
+    const links = (column.links ?? []).flatMap((link) => {
+      const resolved = toMenuLink(link, locale)
+      if (!resolved) return []
+      const { label, href, newTab } = resolved
+      return [{ label, href, ...(newTab ? { newTab } : {}) }]
+    })
+    return links.length > 0 ? [{ title: column.title ?? '', links }] : []
+  })
+}
+
 /** Footer'dagi ma'lumot sahifalari (huquqiy): `footer` global'idagi `page`/`custom` havolalar. */
 export function toLegalLinks(footer: Pick<Footer, 'columns'> | null, locale: Locale): LinkItem[] {
   const links: LinkItem[] = []
@@ -151,9 +229,15 @@ export function toLegalLinks(footer: Pick<Footer, 'columns'> | null, locale: Loc
     for (const link of column.links ?? []) {
       if (link.type === 'page') {
         const page = populated<{ slug?: string | null }>(link.page)
-        if (page?.slug) links.push({ label: link.label, href: pagePath(locale, page.slug) })
+        if (page?.slug) {
+          links.push({
+            label: link.label,
+            href: pagePath(locale, page.slug),
+            ...(link.newTab ? { newTab: true } : {}),
+          })
+        }
       } else if (link.type === 'custom' && link.url) {
-        links.push({ label: link.label, href: link.url })
+        links.push({ label: link.label, href: link.url, ...(link.newTab ? { newTab: true } : {}) })
       }
     }
   }

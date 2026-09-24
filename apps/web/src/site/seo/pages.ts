@@ -10,23 +10,42 @@ import type { Locale } from '@blog-odya/shared'
 import type { Metadata } from 'next'
 
 import { getSiteStrings } from '@/i18n/site'
-import type { Author, Category, Media, Post, Tag } from '@/payload-types'
+import { lexicalToPlainText } from '@/lib/lexical'
+import type { Author, Category, Media, Page, Post, Tag } from '@/payload-types'
 
 import { populated, postDate, toSourceRefs } from '../mappers'
-import { authorPath, categoryPath, homePath, postPath } from '../paths'
-import { absoluteUrl, BRAND_NAME, isIndexingAllowed, OG_LOCALE, siteOrigin } from './config'
+import {
+  authorPath,
+  categoryPath,
+  homePath,
+  pagePath,
+  postPath,
+  searchPath,
+  tagPath,
+} from '../paths'
+import {
+  absoluteUrl,
+  BRAND_NAME,
+  isIndexingAllowed,
+  OG_LOCALE,
+  ORGANIZATION,
+  siteOrigin,
+} from './config'
 import {
   breadcrumbJsonLd,
+  type FaqItem,
   faqPageJsonLd,
   type JsonLdObject,
   newsArticleJsonLd,
   organizationJsonLd,
   type PersonInput,
+  personJsonLd,
   websiteJsonLd,
 } from './json-ld'
 import {
   buildPageMetadata,
   generatedOgImage,
+  isTagIndexable,
   mediaOgImage,
   type SeoImage,
   versionToken,
@@ -271,10 +290,182 @@ export function rootLayoutMetadata(locale: Locale, options: Options = {}): Metad
     title: `${t.siteName} — ${t.tagline}`,
     description: t.tagline,
     applicationName: BRAND_NAME[locale],
+    // Brend belgisi (`/favicon.ico` 404 bo'lmasin — Lighthouse "errors-in-console").
+    icons: { icon: ORGANIZATION.logoPath, apple: ORGANIZATION.logoPath },
     openGraph: { siteName: BRAND_NAME[locale], locale: OG_LOCALE, type: 'website' },
     twitter: { card: 'summary_large_image' },
   }
   const indexingAllowed = options.indexingAllowed ?? isIndexingAllowed()
   if (!indexingAllowed) metadata.robots = { index: false, follow: false }
   return metadata
+}
+
+// ---------------------------------------------------------------------------
+// Teg (TZ §8.1: < 3 post — `noindex`)
+// ---------------------------------------------------------------------------
+
+export type TagSeoInput = CategorySeoInput
+
+export function tagSeo(
+  locale: Locale,
+  tag: TagSeoInput,
+  page: number,
+  postCount: number,
+  options: Options = {},
+): PageSeo {
+  const origin = options.origin ?? siteOrigin()
+  const t = getSiteStrings(locale)
+  const base = withoutBrand(tag.metaTitle || t.tagTitle(tag.name), locale)
+  const path = tagPath(locale, tag.slug, page)
+  const metadata = buildPageMetadata({
+    locale,
+    path,
+    title: page > 1 ? `${base} (${t.page(page)})` : base,
+    description: tag.metaDescription || tag.description || t.tagDescription(tag.name),
+    image: generatedOgImage(locale, { kind: 'site' }, `#${tag.name}`, undefined, origin),
+    noindex: Boolean(tag.noindex) || !isTagIndexable(postCount),
+    origin,
+    indexingAllowed: options.indexingAllowed,
+  })
+  const jsonLd = [
+    breadcrumbJsonLd(
+      [
+        { name: t.home, path: homePath(locale) },
+        { name: `#${tag.name}`, path: tagPath(locale, tag.slug) },
+        ...(page > 1 ? [{ name: t.page(page), path }] : []),
+      ],
+      origin,
+    ),
+  ]
+  return { metadata, jsonLd }
+}
+
+// ---------------------------------------------------------------------------
+// Muallif (E-E-A-T, TZ §8.3): `Person` JSON-LD
+// ---------------------------------------------------------------------------
+
+export type AuthorSeoInput = {
+  slug: string
+  name: string
+  position?: string | null
+  bio?: string | null
+  /** Avatar URL (nisbiy yoki to'liq). */
+  image?: string | null
+  sameAs?: string[]
+}
+
+export function authorSeo(
+  locale: Locale,
+  author: AuthorSeoInput,
+  page: number,
+  options: Options = {},
+): PageSeo {
+  const origin = options.origin ?? siteOrigin()
+  const t = getSiteStrings(locale)
+  const path = authorPath(locale, author.slug, page)
+  const base = author.position ? `${author.name}, ${author.position}` : author.name
+  const metadata = buildPageMetadata({
+    locale,
+    path,
+    title: page > 1 ? `${base} (${t.page(page)})` : base,
+    description: author.bio || t.authorDescription(author.name),
+    image: generatedOgImage(locale, { kind: 'site' }, author.name, undefined, origin),
+    origin,
+    indexingAllowed: options.indexingAllowed,
+  })
+  const jsonLd = [
+    personJsonLd(
+      {
+        name: author.name,
+        path: authorPath(locale, author.slug),
+        jobTitle: author.position ?? null,
+        description: author.bio ?? null,
+        image: author.image ?? null,
+        sameAs: author.sameAs,
+      },
+      origin,
+    ),
+    breadcrumbJsonLd(
+      [
+        { name: t.home, path: homePath(locale) },
+        { name: author.name, path: authorPath(locale, author.slug) },
+        ...(page > 1 ? [{ name: t.page(page), path }] : []),
+      ],
+      origin,
+    ),
+  ]
+  return { metadata, jsonLd }
+}
+
+// ---------------------------------------------------------------------------
+// Statik sahifa (`pages`): meta (plugin-seo), FAQ bloklari → `FAQPage`
+// ---------------------------------------------------------------------------
+
+/** Sahifadagi barcha FAQ bloklari savollari. */
+export function pageFaqItems(page: Pick<Page, 'layout'>): FaqItem[] {
+  return (page.layout ?? []).flatMap((block) =>
+    block.blockType === 'faq'
+      ? (block.items ?? []).map((item) => ({ question: item.question, answer: item.answer }))
+      : [],
+  )
+}
+
+/** Sahifa matni (birinchi `content` bloki) — meta description zaxirasi. */
+export function pageTextExcerpt(page: Pick<Page, 'layout'>): string | null {
+  const block = (page.layout ?? []).find((item) => item.blockType === 'content')
+  const text = block?.blockType === 'content' ? lexicalToPlainText(block.richText) : ''
+  return text.trim() || null
+}
+
+export function staticPageSeo(locale: Locale, page: Page, options: Options = {}): PageSeo {
+  const origin = options.origin ?? siteOrigin()
+  const t = getSiteStrings(locale)
+  const path = pagePath(locale, page.slug)
+  const image =
+    mediaOgImage(populated<Media>(page.meta?.image), origin) ??
+    generatedOgImage(locale, { kind: 'site' }, page.title, undefined, origin)
+  const metadata = buildPageMetadata({
+    locale,
+    path,
+    title: page.meta?.title || page.title,
+    // `meta.description` bo'lmasa — birinchi matn blokining boshi (`metaDescription` ~160 belgiga qisqartiradi).
+    description: page.meta?.description || pageTextExcerpt(page),
+    image,
+    noindex: page.meta?.noindex,
+    origin,
+    indexingAllowed: options.indexingAllowed,
+  })
+  const jsonLd = [
+    breadcrumbJsonLd(
+      [
+        { name: t.home, path: homePath(locale) },
+        { name: page.title, path },
+      ],
+      origin,
+    ),
+    faqPageJsonLd(pageFaqItems(page)),
+  ].filter((item): item is JsonLdObject => item !== null)
+  return { metadata, jsonLd }
+}
+
+// ---------------------------------------------------------------------------
+// Qidiruv (TZ §8.1, §8.3): har doim `noindex` (robots.txt'da ham yopiq)
+// ---------------------------------------------------------------------------
+
+export function searchMetadata(
+  locale: Locale,
+  query: string | null,
+  options: Options = {},
+): Metadata {
+  const t = getSiteStrings(locale)
+  return buildPageMetadata({
+    locale,
+    path: searchPath(locale),
+    title: query ? t.searchResultsTitle(query) : t.searchTitle,
+    description: t.searchPrompt,
+    image: generatedOgImage(locale, { kind: 'site' }, t.searchTitle, undefined, options.origin),
+    noindex: true,
+    origin: options.origin,
+    indexingAllowed: options.indexingAllowed,
+  })
 }

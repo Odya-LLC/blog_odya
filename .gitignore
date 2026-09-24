@@ -18,6 +18,7 @@ coverage/
 
 # Playwright
 test-results/
+.lighthouseci/
 playwright-report/
 blob-report/
 

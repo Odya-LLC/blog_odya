@@ -6,8 +6,10 @@ import {
   DEFAULT_TELEGRAM,
   telegramChannelUrl,
   telegramHandle,
+  toFooterColumns,
   toImageRef,
   toLegalLinks,
+  toMenuLink,
   toNavCategories,
   toPostSummary,
   toSourceRefs,
@@ -110,6 +112,8 @@ describe('Payload → UI modeli', () => {
     expect(nav).toEqual([
       { slug: 'suniy-intellekt', name: 'AI', href: '/kr/suniy-intellekt', isInMenu: true },
       { slug: 'ilm-fan', name: 'Илм-фан', href: '/kr/ilm-fan', isInMenu: false },
+      // M1-07: header global'idagi ixtiyoriy URL/sahifa havolalari ham menyuda.
+      { slug: 'https://x', name: 'X', href: 'https://x', isInMenu: false },
     ])
     expect(toNavCategories({ navItems: [], moreItems: [] }, [fan, ai], 'uz-Latn')).toEqual([
       {
@@ -120,6 +124,81 @@ describe('Payload → UI modeli', () => {
       },
       { slug: 'ilm-fan', name: 'Ilm-fan', href: '/ilm-fan', isInMenu: false },
     ])
+  })
+
+  it('menyu havolasi: kategoriya, sahifa, ichki va tashqi URL — joriy yozuvda', () => {
+    const ai = category('suniy-intellekt', 'Сунъий интеллект')
+    expect(toMenuLink({ type: 'category', category: ai, label: '' }, 'uz-Cyrl')).toEqual({
+      key: 'suniy-intellekt',
+      label: 'Сунъий интеллект',
+      href: '/kr/suniy-intellekt',
+    })
+    expect(
+      toMenuLink({ type: 'page', page: { slug: 'aloqa' }, label: 'Алоқа' }, 'uz-Cyrl'),
+    ).toEqual({ key: 'aloqa', label: 'Алоқа', href: '/kr/aloqa' })
+    expect(toMenuLink({ type: 'custom', url: '/bot', label: 'Bot' }, 'uz-Cyrl')?.href).toBe(
+      '/kr/bot',
+    )
+    expect(
+      toMenuLink({ type: 'custom', url: 'https://t.me/x', label: 'TG' }, 'uz-Cyrl')?.href,
+    ).toBe('https://t.me/x')
+    expect(toMenuLink({ type: 'page', page: 5, label: 'Populyatsiyasiz' }, 'uz-Latn')).toBeNull()
+    expect(toMenuLink({ type: 'category', category: 3, label: 'X' }, 'uz-Latn')).toBeNull()
+  })
+
+  it('footer ustunlari: sarlavha + havolalar, bo‘sh ustun tashlanadi', () => {
+    const ai = category('suniy-intellekt', 'Sunʼiy intellekt')
+    expect(
+      toFooterColumns(
+        {
+          columns: [
+            { title: 'Kategoriyalar', links: [{ type: 'category', category: ai, label: 'AI' }] },
+            { title: 'Boʻsh', links: [{ type: 'page', page: 7, label: 'X' }] },
+            {
+              title: 'Blog Odya',
+              links: [{ type: 'page', page: { slug: 'aloqa' } as never, label: 'Aloqa' }],
+            },
+          ],
+        },
+        'uz-Latn',
+      ),
+    ).toEqual([
+      { title: 'Kategoriyalar', links: [{ label: 'AI', href: '/suniy-intellekt' }] },
+      { title: 'Blog Odya', links: [{ label: 'Aloqa', href: '/aloqa' }] },
+    ])
+    expect(toFooterColumns(null, 'uz-Latn')).toEqual([])
+  })
+
+  it('menyu havolasi `newTab` — header va footer modeliga o‘tadi (target="_blank")', () => {
+    const ai = category('suniy-intellekt', 'Sunʼiy intellekt')
+    expect(
+      toMenuLink({ type: 'custom', url: 'https://t.me/x', label: 'TG', newTab: true }, 'uz-Latn'),
+    ).toEqual({ key: 'https://t.me/x', label: 'TG', href: 'https://t.me/x', newTab: true })
+    expect(
+      toMenuLink({ type: 'custom', url: '/bot', label: 'Bot', newTab: false }, 'uz-Latn'),
+    ).toEqual({ key: '/bot', label: 'Bot', href: '/bot' })
+    const nav = toNavCategories(
+      {
+        navItems: [{ type: 'category', category: ai, label: 'AI', newTab: true }],
+        moreItems: [{ type: 'custom', url: 'https://x', label: 'X', newTab: true }],
+      },
+      [],
+      'uz-Latn',
+    )
+    expect(nav.map((item) => item.newTab)).toEqual([true, true])
+    expect(
+      toFooterColumns(
+        {
+          columns: [
+            {
+              title: 'Havolalar',
+              links: [{ type: 'custom', url: 'https://x', label: 'X', newTab: true }],
+            },
+          ],
+        },
+        'uz-Latn',
+      ),
+    ).toEqual([{ title: 'Havolalar', links: [{ label: 'X', href: 'https://x', newTab: true }] }])
   })
 
   it('footer: sahifa va ixtiyoriy havolalar', () => {

@@ -81,18 +81,19 @@ To'xtatish: `Ctrl+C`, keyin `docker compose -f infra/docker-compose.dev.yml down
 
 ### Buyruqlar
 
-| Buyruq                         | Vazifasi                                                                  |
-| ------------------------------ | ------------------------------------------------------------------------- |
-| `pnpm dev`                     | Migratsiyalar + Next.js dev server                                        |
-| `pnpm build`                   | Production build                                                          |
-| `pnpm lint`                    | ESLint (barcha paketlar)                                                  |
-| `pnpm typecheck`               | TypeScript tekshiruvi                                                     |
-| `pnpm test`                    | Vitest: unit + integratsion (Postgres va MinIO ishlab turishi kerak)      |
-| `pnpm format` / `format:check` | Prettier                                                                  |
-| `pnpm migrate`                 | Payload migratsiyalarini qo'llash (`DATABASE_URL_DIRECT` orqali)          |
-| `pnpm migrate:create <nom>`    | Sxema o'zgarganda yangi migratsiya yaratish (faylni commit qiling)        |
-| `pnpm seed`                    | Migratsiyalar + boshlang'ich ma'lumotlar (takror ishga tushirish xavfsiz) |
-| `pnpm test:e2e`                | Playwright smoke (avval `pnpm seed` va `pnpm build`; `next start` o'zi)   |
+| Buyruq                              | Vazifasi                                                                  |
+| ----------------------------------- | ------------------------------------------------------------------------- |
+| `pnpm dev`                          | Migratsiyalar + Next.js dev server                                        |
+| `pnpm build`                        | Production build                                                          |
+| `pnpm lint`                         | ESLint (barcha paketlar)                                                  |
+| `pnpm typecheck`                    | TypeScript tekshiruvi                                                     |
+| `pnpm test`                         | Vitest: unit + integratsion (Postgres va MinIO ishlab turishi kerak)      |
+| `pnpm format` / `format:check`      | Prettier                                                                  |
+| `pnpm migrate`                      | Payload migratsiyalarini qo'llash (`DATABASE_URL_DIRECT` orqali)          |
+| `pnpm migrate:create <nom>`         | Sxema o'zgarganda yangi migratsiya yaratish (faylni commit qiling)        |
+| `pnpm seed`                         | Migratsiyalar + boshlang'ich ma'lumotlar (takror ishga tushirish xavfsiz) |
+| `pnpm test:e2e`                     | Playwright smoke (avval `pnpm seed` va `pnpm build`; `next start` o'zi)   |
+| `pnpm --filter @blog-odya/web lhci` | Lighthouse CI lokal (avval `pnpm seed` va `pnpm build`; port 3100)        |
 
 ### Muhim eslatmalar
 
@@ -105,6 +106,10 @@ To'xtatish: `Ctrl+C`, keyin `docker compose -f infra/docker-compose.dev.yml down
 - **Seed:** `pnpm seed` — 9 kategoriya (`packages/shared/seed/categories.json`, ranglar — `design/brand/tokens.json`), 6 huquqiy sahifa (`packages/guidelines/legal/`), muallif, 3 teg, 3 demo post, `site-settings`/`header`/`footer`. Mavjud hujjatlar (slug bo'yicha) o'zgartirilmaydi. Huquqiy sahifalardagi `{{CONTACT_EMAIL}}` kabi o'rinbosarlar `SEED_<KEY>` env'dan olinadi (masalan, `SEED_CONTACT_EMAIL=...`), Telegram havolalari — `TELEGRAM_CHANNEL_LATN/CYRL` dan; berilmaganlari ro'yxati seed logida chiqadi. `SEED_DEMO=false` — demo kontentsiz (teglar, postlar, muqovalar yo'q); prod — `gh workflow run seed-prod` ("Prod seed").
 - **Ommaviy sayt** (M1-05): lotin — `/`, `/{category}`, `/{category}/page/{n}`, `/{category}/{slug}`; kirill — xuddi shu `/kr` bilan (`<html lang>` mos); marshrutlar — `(latn)/[[...path]]` va `kr/[[...path]]` (`src/site/route.ts`), `next build` DB'ga ulanmaydi, sahifalar birinchi so'rovda chiziladi. Ma'lumot — Payload Local API (`src/site/data.ts`), ISR: `unstable_cache` teglari (`src/site/cache-tags.ts`), publish/unpublish/arxivlashda Payload hook'lari `revalidateTag` chaqiradi (`src/site/revalidate.ts`). DB'ni tashqaridan o'zgartirsangiz (`pnpm seed`, SQL) — kesh yangilanmaydi: lokal'da `rm -rf apps/web/.next` va qayta build. Rasmlar: `next/image` custom loader (`src/lib/image-loader.ts`) — media variantlari (WebP) to'g'ridan-to'g'ri `MEDIA_PUBLIC_URL` dan, `/_next/image` ishlatilmaydi.
 - **Post workflow** (TZ §4.1): `draft → in_progress → review → scheduled/published → archived`, `rejected`. Qoidalar `apps/web/src/collections/Posts/workflow.ts` da, tekshiruv — `beforeChange` hook'da. Chop etish faqat `review`/`scheduled` dan admin'dagi **Publish** (API: `_status: 'published'`) orqali; holat avtomatik `published` bo'ladi. `in_progress` ga o'tganda post 2 soatga band qilinadi (boshqa editor o'zgartira olmaydi, admin — mumkin). Arxivlash — faqat admin. `scheduled` holatida `scheduledAt` vaqtiga `schedulePublish` job navbatga qo'yiladi (job'larni ishga tushirish — M2-01).
+
+- **Qo'shimcha sahifalar** (M1-07): `/tag/{slug}`, `/author/{slug}` (`…/page/{n}` sahifalash), statik sahifalar `/{slug}` (`pages`), `/search?q=` (`noindex`), 404 — hammasi `/kr` bilan. Kategoriya va statik sahifa bitta `/{slug}` nomlar fazosida: bir-birining slug'ini va band marshrut nomlarini (`kr`, `tag`, `author`, `search`, `bot`, `page`, `og`, `feeds`… — `ROUTE_RESERVED_SLUGS`, `src/lib/slug.ts`; `app/` dagi har bir ildiz papka testda tekshiriladi) validatsiya rad etadi. Header/footer menyulari — `header`/`footer` globals'dan (kategoriya, sahifa, URL; `newTab`).
+- **Qidiruv** (TZ §7, §8.1): Postgres FTS + `pg_trgm`, migratsiya `20260924_123153_m1_07_search` (qo'lda yozilgan SQL): `posts_locales.search_vector` (sarlavha A, lid B, Lexical matn C) va `search_title` (trigram, xato yozilgan so'zlar) — STORED generated ustunlar, GIN indekslar. Lotin va kirill bitta qidiruv kalitiga keltiriladi (`odya_search_normalize()` ↔ `src/site/search/normalize.ts`, test ikkisini solishtiradi): kirill so'rov lotin maqolani topadi va aksincha, `oʻ`/`o'`/`o‘`/`o’` bir xil. So'rov — parametrlar bilan, `tsquery` faqat `[a-z0-9]` so'zlardan; natijalar keshlanmaydi.
+- **Lighthouse CI** (TZ §8.4): `apps/web/lighthouserc.cjs` — mobil Performance ≥ 90, SEO = 100, Accessibility ≥ 90, birinchi yuklash JS ≤ 150 KB gzip (bosh sahifa, maqola, kategoriya; 3 o'lchov, mediana). Bloklovchi o'lchov — `ci.yml` ("Lighthouse CI" qadami, shu build'ning `next start` + demo seed); Vercel Preview URL'iga qarshi — `.github/workflows/lighthouse-preview.yml` (`deployment_status`; preview ataylab `noindex`, shuning uchun faqat `is-crawlable` auditi o'tkaziladi). Preview "Vercel Authentication" bilan yopiq bo'lsa — repo secret **`VERCEL_AUTOMATION_BYPASS_SECRET`** (Vercel → Settings → Deployment Protection → Protection Bypass for Automation). Windows'da `lhci autorun` Chrome vaqtinchalik papkasini o'chira olmay yiqilishi mumkin — `lighthouserc.cjs` izohiga qarang.
 
 ### API kalitlar va audit log (M2-05)
 

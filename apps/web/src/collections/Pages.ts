@@ -98,6 +98,6 @@ export const Pages: CollectionConfig = {
         },
       ],
     },
-    slugField('title'),
+    slugField('title', { uniqueAcross: 'categories' }),
   ],
 }
