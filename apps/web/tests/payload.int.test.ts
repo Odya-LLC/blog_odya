@@ -30,6 +30,7 @@ describe('Payload + Postgres', () => {
     const names = result.docs.map((doc) => doc.name ?? '')
     expect(names.some((name) => name.endsWith('_initial'))).toBe(true)
     expect(names.some((name) => name.endsWith('_m1_01_payload_setup'))).toBe(true)
+    expect(names.some((name) => name.endsWith('_m1_02_content'))).toBe(true)
   })
 
   it('runtime ulanishi DATABASE_URL (pooler) orqali, kichik pool bilan', () => {

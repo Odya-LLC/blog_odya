@@ -17,7 +17,7 @@ import {
  * - Editor faqat o'z profilini ko'radi/tahrirlaydi; o'z rolini o'zgartira olmaydi.
  * - `enableAPIKey` — shaxsiy API kalit (REST va MCP uchun, TZ §6.3).
  *
- * `author` (rel) va `lastLoginAt` — M1-02 / M2-05 da qo'shiladi.
+ * - `author` — ommaviy muallif profili (TZ §10.11), faqat admin belgilaydi. `lastLoginAt` — M2-05.
  */
 export const Users: CollectionConfig = {
   slug: 'users',
@@ -69,6 +69,20 @@ export const Users: CollectionConfig = {
       options: ROLES.map((value) => ({ label: ROLE_LABELS[value], value })),
       access: {
         // Rolni faqat admin belgilaydi/o'zgartiradi (editor o'z rolini ko'taraolmaydi).
+        create: isAdminFieldLevel,
+        update: isAdminFieldLevel,
+      },
+      admin: {
+        position: 'sidebar',
+      },
+    },
+    {
+      name: 'author',
+      type: 'relationship',
+      label: 'Muallif profili',
+      relationTo: 'authors',
+      access: {
+        // Qaysi ommaviy profil nomidan yozishni admin belgilaydi.
         create: isAdminFieldLevel,
         update: isAdminFieldLevel,
       },

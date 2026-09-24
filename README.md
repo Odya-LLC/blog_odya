@@ -24,6 +24,9 @@ apps/web/             Next.js (App Router) + Payload CMS 3: sayt, /admin, REST/G
   src/payload.config.ts
   src/config/         DB (pooler/direct) va S3 (MinIO/R2) sozlamalari
   src/access/         Rollar va access helper'lar (isAdmin, isAdminOrEditor)
+  src/collections/    Kolleksiyalar: posts (workflow — Posts/workflow.ts), pages, categories, tags, authors, media, users
+  src/globals/        site-settings, header, footer, telegram-settings, scraping-settings
+  src/seed/           `pnpm seed` — kategoriyalar, huquqiy sahifalar, muallif, demo postlar, sozlamalar
   src/i18n/uz.ts      Admin panel o'zbekcha tarjimasi
   src/migrations/     Payload migratsiyalari (commit qilinadi)
   .env.example        Env namunasi (izohlar bilan)
@@ -75,16 +78,17 @@ To'xtatish: `Ctrl+C`, keyin `docker compose -f infra/docker-compose.dev.yml down
 
 ### Buyruqlar
 
-| Buyruq                         | Vazifasi                                                             |
-| ------------------------------ | -------------------------------------------------------------------- |
-| `pnpm dev`                     | Migratsiyalar + Next.js dev server                                   |
-| `pnpm build`                   | Production build                                                     |
-| `pnpm lint`                    | ESLint (barcha paketlar)                                             |
-| `pnpm typecheck`               | TypeScript tekshiruvi                                                |
-| `pnpm test`                    | Vitest: unit + integratsion (Postgres va MinIO ishlab turishi kerak) |
-| `pnpm format` / `format:check` | Prettier                                                             |
-| `pnpm migrate`                 | Payload migratsiyalarini qo'llash (`DATABASE_URL_DIRECT` orqali)     |
-| `pnpm migrate:create <nom>`    | Sxema o'zgarganda yangi migratsiya yaratish (faylni commit qiling)   |
+| Buyruq                         | Vazifasi                                                                  |
+| ------------------------------ | ------------------------------------------------------------------------- |
+| `pnpm dev`                     | Migratsiyalar + Next.js dev server                                        |
+| `pnpm build`                   | Production build                                                          |
+| `pnpm lint`                    | ESLint (barcha paketlar)                                                  |
+| `pnpm typecheck`               | TypeScript tekshiruvi                                                     |
+| `pnpm test`                    | Vitest: unit + integratsion (Postgres va MinIO ishlab turishi kerak)      |
+| `pnpm format` / `format:check` | Prettier                                                                  |
+| `pnpm migrate`                 | Payload migratsiyalarini qo'llash (`DATABASE_URL_DIRECT` orqali)          |
+| `pnpm migrate:create <nom>`    | Sxema o'zgarganda yangi migratsiya yaratish (faylni commit qiling)        |
+| `pnpm seed`                    | Migratsiyalar + boshlang'ich ma'lumotlar (takror ishga tushirish xavfsiz) |
 
 ### Muhim eslatmalar
 
@@ -94,7 +98,9 @@ To'xtatish: `Ctrl+C`, keyin `docker compose -f infra/docker-compose.dev.yml down
 - Lokal MinIO va production Cloudflare R2 o'rtasidagi farq faqat `S3_*` va `MEDIA_PUBLIC_URL` qiymatlarida. Admin'dan rasm yuklash `clientUploads` bilan to'g'ridan-to'g'ri bucket'ga boradi — R2 bucket'da CORS kerak: [docs/runbooks/r2-cors.md](docs/runbooks/r2-cors.md).
 - **Postgres:** runtime — `DATABASE_URL` (Supabase: transaction pooler, `pool.max = 3`), migratsiyalar — `DATABASE_URL_DIRECT` (direct/session). Sozlama: `apps/web/src/config/database.ts`.
 - **Rollar:** `admin`, `editor` (TZ §4.2); access helper'lar — `apps/web/src/access`. Sayt locale'lari: `uz-Latn` (asosiy), `uz-Cyrl` (`fallback: true`).
+- **Seed:** `pnpm seed` — 9 kategoriya (`packages/shared/seed/categories.json`, ranglar — `design/brand/tokens.json`), 6 huquqiy sahifa (`packages/guidelines/legal/`), muallif, 3 teg, 3 demo post, `site-settings`/`header`/`footer`. Mavjud hujjatlar (slug bo'yicha) o'zgartirilmaydi. Huquqiy sahifalardagi `{{CONTACT_EMAIL}}` kabi o'rinbosarlar `SEED_<KEY>` env'dan olinadi (masalan, `SEED_CONTACT_EMAIL=...`), Telegram havolalari — `TELEGRAM_CHANNEL_LATN/CYRL` dan; berilmaganlari ro'yxati seed logida chiqadi.
+- **Post workflow** (TZ §4.1): `draft → in_progress → review → scheduled/published → archived`, `rejected`. Qoidalar `apps/web/src/collections/Posts/workflow.ts` da, tekshiruv — `beforeChange` hook'da. Chop etish faqat `review`/`scheduled` dan admin'dagi **Publish** (API: `_status: 'published'`) orqali; holat avtomatik `published` bo'ladi. `in_progress` ga o'tganda post 2 soatga band qilinadi (boshqa editor o'zgartira olmaydi, admin — mumkin). Arxivlash — faqat admin. `scheduled` holatida `scheduledAt` vaqtiga `schedulePublish` job navbatga qo'yiladi (job'larni ishga tushirish — M2-01).
 
 ## Holat
 
-Hujjatlash tugadi (OBLOG-1). M0-01 (OBLOG-2) — repozitoriy skeleti tayyor: Next.js + Payload 3 + Postgres, MinIO, lint, test, CI. Keyingi vazifalar — [TASKS.md](docs/TASKS.md).
+Hujjatlash tugadi (OBLOG-1). M0-01 (OBLOG-2) — repozitoriy skeleti tayyor: Next.js + Payload 3 + Postgres, MinIO, lint, test, CI. M1-01 (OBLOG-8) — Payload asosiy sozlash. M1-02 (OBLOG-9) — kontent kolleksiyalari, workflow va seed. Keyingi vazifalar — [TASKS.md](docs/TASKS.md).
