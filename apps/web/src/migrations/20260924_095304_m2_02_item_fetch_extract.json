@@ -6113,6 +6113,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "robots_cache": {
+          "name": "robots_cache",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
         "stats": {
           "name": "stats",
           "type": "jsonb",
@@ -6355,6 +6361,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "og_image": {
+          "name": "og_image",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
         "content_hash": {
           "name": "content_hash",
           "type": "varchar",
@@ -6412,24 +6424,6 @@
         "post_id": {
           "name": "post_id",
           "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "reject_reason": {
-          "name": "reject_reason",
-          "type": "varchar",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "handled_by_id": {
-          "name": "handled_by_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "handled_at": {
-          "name": "handled_at",
-          "type": "timestamp(3) with time zone",
           "primaryKey": false,
           "notNull": false
         },
@@ -6584,21 +6578,6 @@
           "method": "btree",
           "with": {}
         },
-        "scraped_items_handled_by_idx": {
-          "name": "scraped_items_handled_by_idx",
-          "columns": [
-            {
-              "expression": "handled_by_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "scraped_items_updated_at_idx": {
           "name": "scraped_items_updated_at_idx",
           "columns": [
@@ -6663,19 +6642,6 @@
           "tableTo": "posts",
           "columnsFrom": [
             "post_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        },
-        "scraped_items_handled_by_id_users_id_fk": {
-          "name": "scraped_items_handled_by_id_users_id_fk",
-          "tableFrom": "scraped_items",
-          "tableTo": "users",
-          "columnsFrom": [
-            "handled_by_id"
           ],
           "columnsTo": [
             "id"
@@ -10132,6 +10098,8 @@
       "values": [
         "inline",
         "feed.poll",
+        "item.fetch",
+        "item.extract",
         "schedulePublish"
       ]
     },
@@ -10156,6 +10124,8 @@
       "values": [
         "inline",
         "feed.poll",
+        "item.fetch",
+        "item.extract",
         "schedulePublish"
       ]
     },
@@ -10218,6 +10188,6 @@
     "tables": {},
     "columns": {}
   },
-  "id": "268c012a-b7f7-4d6d-943c-90bdc9847825",
+  "id": "5ac37102-eaac-49f2-a8f5-a10a6a0e6f78",
   "prevId": "00000000-0000-0000-0000-000000000000"
 }

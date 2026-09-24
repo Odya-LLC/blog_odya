@@ -1,0 +1,554 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`item.extract: har bir manba fixture’lari > 3dnews (rss_only) > 1: sarlavha, sana, matn 1`] = `
+{
+  "author": null,
+  "canonicalUrl": null,
+  "imageUrls": [],
+  "lang": null,
+  "markdownEnd": "ешила действовать на опережение, представив на этой неделе ИИ-брелок Muse Charm, который позволяет пользователю взаимодействовать с недавно анонсированным ИИ-агентом Muse. Источник изображений: M\\*\\*a",
+  "markdownLength": 345,
+  "markdownStart": "Ощущение того, что спектр формфакторов умных устройств надо расширять, уже давно подогревалось представителями OpenAI, поэтому M\\*\\*a Platforms решила действовать на опережение, представив на этой неделе ИИ-брелок Muse Charm, который позволяет пользователю взаимодействовать с недавно анонсированным ",
+  "method": "rss",
+  "ogImage": null,
+  "publishedAt": "2026-09-24T03:39:00.000Z",
+  "tags": [
+    "разработка и производство электроники",
+  ],
+  "title": "Цукерберг представил умный брелок-тамагочи Muse Charm, в котором живёт плюшевый ИИ-агент Muse",
+  "wordCount": 42,
+}
+`;
+
+exports[`item.extract: har bir manba fixture’lari > 3dnews (rss_only) > 2: sarlavha, sana, matn 1`] = `
+{
+  "author": null,
+  "canonicalUrl": null,
+  "imageUrls": [],
+  "lang": null,
+  "markdownEnd": "ude «самостоятельно обнаружил» новую ферментную систему, схожую с механизмом, лежащим в основе мощного инструмента редактирования генов CRISPR. Об этом пишет The Verge. Источник изображения: Anthropic",
+  "markdownLength": 241,
+  "markdownStart": "Компания Anthropic заявила, что её ИИ Claude «самостоятельно обнаружил» новую ферментную систему, схожую с механизмом, лежащим в основе мощного инструмента редактирования генов CRISPR. Об этом пишет The Verge. Источник изображения: Anthropic",
+  "method": "rss",
+  "ogImage": null,
+  "publishedAt": "2026-09-23T20:43:00.000Z",
+  "tags": [
+    "Искусственный интеллект, машинное обучение, нейросети",
+  ],
+  "title": "ИИ-биолаборатория Anthropic сделала первое открытие — найденную ферментную систему уже сравнивают с CRISPR",
+  "wordCount": 31,
+}
+`;
+
+exports[`item.extract: har bir manba fixture’lari > dexerto (rss_plus_page) > 1: sarlavha, sana, matn 1`] = `
+{
+  "author": "Connor Bennett",
+  "canonicalUrl": "https://www.dexerto.com/valorant/benjyfishy-on-team-heretics-2026-season-valorant-esports-changes-and-off-season-grinding-3410105/",
+  "imageUrls": [
+    {
+      "alt": "Benjyfishy in purple Team Heretics jursey",
+      "url": "https://www.dexerto.com/cdn-image/wp-content/uploads/2026/09/18/benjyfishy-riot-games-london.jpg",
+    },
+    {
+      "alt": "Team Heretics lifting VCT trophy with green victory screen behind",
+      "url": "https://www.dexerto.com/cdn-image/wp-content/uploads/2026/09/18/benjyfishy-riot-games-vct-win-heretics-1024x576.jpg?width=1200&quality=75&format=auto",
+    },
+    {
+      "alt": "Benjyfishy sat at desk with mouse and headphones",
+      "url": "https://www.dexerto.com/cdn-image/wp-content/uploads/2026/09/18/benjyfishy-logitech-g-mouse-1024x576.jpg?width=1200&quality=75&format=auto",
+    },
+  ],
+  "lang": "en",
+  "markdownEnd": "s Superlight 2 has become his trusted mouse of choice. “It’s the mouse I’m the most comfortable on,” Benjy noted. “For me, there are only positives to using it, and I don’t like to change what works.”",
+  "markdownLength": 3091,
+  "markdownStart": "Valorant star Benjy ‘BENJYFISHY’ Fish has discussed Team Heretics’ tough 2026 season and is looking forward to the new VCT changes putting a spotlight on other teams.
+
+In 2027, the Valorant esports scene is going to look a little bit different to how it currently does. Moving forward, open qualifyin",
+  "method": "readability",
+  "ogImage": "https://www.dexerto.com/cdn-image/wp-content/uploads/2026/09/18/benjyfishy-riot-games-london.jpg",
+  "publishedAt": "2026-09-18T16:03:03.000Z",
+  "tags": [
+    "Advertisement Feature",
+    "Team Heretics",
+    "Valorant Champions Tour (VCT)",
+    "Esports",
+    "Sponsored",
+    "Valorant",
+    "Valorant Esports",
+  ],
+  "title": "BENJYFISHY on Team Heretics’ 2026 season, Valorant esports changes, and off-season grinding",
+  "wordCount": 543,
+}
+`;
+
+exports[`item.extract: har bir manba fixture’lari > dexerto (rss_plus_page) > 2: sarlavha, sana, matn 1`] = `
+{
+  "author": "Jessica Filby",
+  "canonicalUrl": "https://www.dexerto.com/call-of-duty/gamesir-denies-its-controllers-are-cheating-as-cod-pros-debate-ban-3407786/",
+  "imageUrls": [
+    {
+      "alt": "Gamesir controllers",
+      "url": "https://www.dexerto.com/cdn-image/wp-content/uploads/2026/09/10/Gamesir-controllers.jpg",
+    },
+  ],
+  "lang": "en",
+  "markdownEnd": " mean the reported GA has been abandoned. However, the manufacturer has made it clear that it is prepared to let CDL players and tournament organizers inspect its controllers before making a decision.",
+  "markdownLength": 2656,
+  "markdownStart": "[Call of Duty](https://www.dexerto.com/call-of-duty/) pros are considering sidelining GameSir controllers over concerns that the hardware could offer an unfair advantage, but the manufacturer insists its products do not include built-in cheats.
+
+Recently, GameSir has become an increasingly popular n",
+  "method": "readability",
+  "ogImage": "https://www.dexerto.com/cdn-image/wp-content/uploads/2026/09/10/Gamesir-controllers.jpg",
+  "publishedAt": "2026-09-10T12:45:10.000Z",
+  "tags": [
+    "Call of Duty",
+    "Call of Duty Esports",
+    "Esports",
+    "Gaming",
+  ],
+  "title": "GameSir denies its controllers are cheating as COD pros debate ban",
+  "wordCount": 361,
+}
+`;
+
+exports[`item.extract: har bir manba fixture’lari > dexerto (rss_plus_page) > 3: sarlavha, sana, matn 1`] = `
+{
+  "author": "Connor Bennett",
+  "canonicalUrl": "https://www.dexerto.com/counter-strike-2/kscerato-on-furias-major-heartbreak-fallens-influence-and-chasing-his-dream-3407176/",
+  "imageUrls": [
+    {
+      "alt": "KSCERATO holding white Logitech mouse",
+      "url": "https://www.dexerto.com/cdn-image/wp-content/uploads/2026/09/09/KSCERATO-on-FURIAs-Major-heartbreak-FalleNs-influence-and-chasing-his-dream.jpg",
+    },
+    {
+      "alt": "KSCERATO with white logitech headphones playing CS2 on PC",
+      "url": "https://www.dexerto.com/cdn-image/wp-content/uploads/2026/09/09/kscerato-cs2-computer-1024x576.jpg?width=1200&quality=75&format=auto",
+    },
+    {
+      "alt": "KSCERATO shaking hands with FalleN",
+      "url": "https://www.dexerto.com/cdn-image/wp-content/uploads/2026/09/09/kscerato-fallen-1024x576.jpg?width=1200&quality=75&format=auto",
+    },
+    {
+      "alt": "KSCERATO holding logitech mouse up to face",
+      "url": "https://www.dexerto.com/cdn-image/wp-content/uploads/2026/09/09/kscerato-logitech-mouse-1024x576.jpg?width=1200&quality=75&format=auto",
+    },
+  ],
+  "lang": "en",
+  "markdownEnd": "le bit, especially giving the T side another pistol round option.
+
+“The map I would remove is Anubis. I don’t hate the map, but I believe it’s completely unnecessary to have it in the pool,” he added.",
+  "markdownLength": 3726,
+  "markdownStart": "FURIA’s Kaike ‘KSCERATO’ Cerato is still trying to achieve his goal of becoming a Counter-Strike Major champion, and as the Brazilian squad is pushing closer to that, he’s reflected on working with FalleN, nurturing Molodoy, and how the SUPERSTRIKE mouse is raising his own game.
+
+While it might feel",
+  "method": "readability",
+  "ogImage": "https://www.dexerto.com/cdn-image/wp-content/uploads/2026/09/09/KSCERATO-on-FURIAs-Major-heartbreak-FalleNs-influence-and-chasing-his-dream.jpg",
+  "publishedAt": "2026-09-09T15:18:33.000Z",
+  "tags": [
+    "Advertisement Feature",
+    "Furia",
+    "Counter-Strike 2",
+    "Counter-Strike 2 Esports",
+    "Esports",
+    "Sponsored",
+  ],
+  "title": "KSCERATO on FURIA’s Major heartbreak, FalleN’s influence and chasing his dream",
+  "wordCount": 621,
+}
+`;
+
+exports[`item.extract: har bir manba fixture’lari > habr (rss_plus_page) > 1: sarlavha, sana, matn 1`] = `
+{
+  "author": "maybe_elf",
+  "canonicalUrl": "https://habr.com/ru/news/1086074/",
+  "imageUrls": [
+    {
+      "url": "https://habr.com/share/publication/1086074/769fb0e54ed2507562f0bd8609f3625e/",
+    },
+    {
+      "url": "https://habrastorage.org/r/w1560/getpro/habr/upload_files/6cf/f0b/215/6cff0b2159db1afc8980a699b4ac1399.JPG",
+    },
+    {
+      "url": "https://habrastorage.org/r/w1560/getpro/habr/upload_files/ed5/349/148/ed5349148af60ea6fe2f191e59da0a1e.JPG",
+    },
+    {
+      "url": "https://habrastorage.org/r/w1560/getpro/habr/upload_files/4eb/114/4c9/4eb1144c9027bd487b58b1611ea12e1d.JPG",
+    },
+  ],
+  "lang": "ru",
+  "markdownEnd": "ие 90 дней. В настоящее время для участия достаточно 1000 подписчиков и 4000 часов просмотра за последний год или 1000 подписчиков и 10 миллионов просмотров коротких видеороликов за последние 90 дней.",
+  "markdownLength": 3687,
+  "markdownStart": "YouTube [представил](https://blog.youtube/news-and-events/made-on-youtube-live-tools-fan-funding-dubbing/) ряд новых инструментов, которые используют искусственный интеллект для тестирования различных подходов к видео и выявления наиболее эффективных решений.
+
+Так, функция Ask Studio позволяет автор",
+  "method": "readability",
+  "ogImage": "https://habr.com/share/publication/1086074/769fb0e54ed2507562f0bd8609f3625e/",
+  "publishedAt": "2026-09-24T09:37:57.000Z",
+  "tags": [
+    "youtube",
+    "youtube studio",
+    "ab-тестирование",
+    "видео",
+    "искусственный интеллект",
+    "обложки",
+    "миниатюры",
+    "названия",
+    "показатели",
+    "продвижение контента",
+  ],
+  "title": "В YouTube Studio появится A/B‑тестирование роликов",
+  "wordCount": 460,
+}
+`;
+
+exports[`item.extract: har bir manba fixture’lari > habr (rss_plus_page) > 2: sarlavha, sana, matn 1`] = `
+{
+  "author": "maybe_elf",
+  "canonicalUrl": "https://habr.com/ru/news/1086064/",
+  "imageUrls": [
+    {
+      "url": "https://habr.com/share/publication/1086064/aff5bec39f4aec9ee9884c4ffbe6b2bf/",
+    },
+    {
+      "url": "https://habrastorage.org/r/w1560/getpro/habr/upload_files/8a7/4c5/506/8a74c550611e47809c63a23110348c17.JPG",
+    },
+  ],
+  "lang": "ru",
+  "markdownEnd": "отрен переходный период, длящийся с момента объявления о закрытии до марта 2027 года. Тем не менее, им следует выполнить резервное копирование или перенос данных до момента прекращения работы сервиса.",
+  "markdownLength": 2970,
+  "markdownStart": "Tencent [прекратит](https://qclawhub.com/news) работу ИИ‑агента [QClaw](https://qclaw.services/) 24 декабря 2026 года. Сейчас платформа уже остановила регистрацию новых пользователей, а также покупку и продление подписок. 
+
+Пользователям с включённым автопродлением не нужно предпринимать никаких дей",
+  "method": "readability",
+  "ogImage": "https://habr.com/share/publication/1086064/aff5bec39f4aec9ee9884c4ffbe6b2bf/",
+  "publishedAt": "2026-09-24T09:17:54.000Z",
+  "tags": [
+    "tencent",
+    "qclaw",
+    "openclaw",
+    "ии-агенты",
+    "искусственный интеллект",
+    "платформы",
+    "прекращение поддержки",
+  ],
+  "title": "Tencent объявила о закрытии ИИ‑ассистента QClaw",
+  "wordCount": 366,
+}
+`;
+
+exports[`item.extract: har bir manba fixture’lari > habr (rss_plus_page) > 3: sarlavha, sana, matn 1`] = `
+{
+  "author": "NataliaZheltova",
+  "canonicalUrl": "https://habr.com/ru/companies/2gis/news/1086058/",
+  "imageUrls": [
+    {
+      "url": "https://habr.com/share/publication/1086058/0aa6900e98dc44d030d2e3827081bfb8/",
+    },
+    {
+      "alt": "Пример сценария, где нужно отобразить объект с карты",
+      "url": "https://habrastorage.org/r/w1560/getpro/habr/upload_files/877/4ab/88b/8774ab88bfc56e6f2d2cf1144c0b0d0e.png",
+    },
+  ],
+  "lang": "ru",
+  "markdownEnd": "чески включает все API, необходимые MCP-серверу, но имеет ограничения по количеству запросов. Детальная инструкция и описание по интеграции — [в документации](https://docs.2gis.com/api/ai/mcp-server).",
+  "markdownLength": 1920,
+  "markdownStart": "Мы создали [MCP-сервер](https://dev.2gis.ru/api/mcp), который позволяет ИИ-агентам работать с геосервисами нашей [API Платформы](https://dev.2gis.ru/api): искать места и адреса, строить маршруты, переводить адреса в координаты и обратно, показывать точки на карте. Официальных аналогов такому инструм",
+  "method": "readability",
+  "ogImage": "https://habr.com/share/publication/1086058/0aa6900e98dc44d030d2e3827081bfb8/",
+  "publishedAt": "2026-09-24T09:10:25.000Z",
+  "tags": [
+    "mcp-server",
+    "геоинформационные сервисы",
+    "api 2гис",
+    "2ГИС",
+  ],
+  "title": "2ГИС выпустил MCP-сервер для бизнеса",
+  "wordCount": 220,
+}
+`;
+
+exports[`item.extract: har bir manba fixture’lari > hltv (rss_only) > 1: sarlavha, sana, matn 1`] = `
+{
+  "author": null,
+  "canonicalUrl": null,
+  "imageUrls": [],
+  "lang": null,
+  "markdownEnd": "It's the French squad's second trophy this month, boosting their Major hopes.",
+  "markdownLength": 77,
+  "markdownStart": "It's the French squad's second trophy this month, boosting their Major hopes.",
+  "method": "rss",
+  "ogImage": null,
+  "publishedAt": "2026-09-24T08:57:00.000Z",
+  "tags": [],
+  "title": "3DMAX shoot up the ranking with Logitech G Play Connect title amid Envy links",
+  "wordCount": 12,
+}
+`;
+
+exports[`item.extract: har bir manba fixture’lari > hltv (rss_only) > 2: sarlavha, sana, matn 1`] = `
+{
+  "author": null,
+  "canonicalUrl": null,
+  "imageUrls": [],
+  "lang": null,
+  "markdownEnd": "Catch up with more Counter-Strike news in bite-sized pieces.",
+  "markdownLength": 60,
+  "markdownStart": "Catch up with more Counter-Strike news in bite-sized pieces.",
+  "method": "rss",
+  "ogImage": null,
+  "publishedAt": "2026-09-24T08:12:00.000Z",
+  "tags": [],
+  "title": "Short news: Week 38",
+  "wordCount": 9,
+}
+`;
+
+exports[`item.extract: har bir manba fixture’lari > hltv (rss_only) > 3: sarlavha, sana, matn 1`] = `
+{
+  "author": null,
+  "canonicalUrl": null,
+  "imageUrls": [],
+  "lang": null,
+  "markdownEnd": "The Brazilian organization has exited Counter-Strike for the foreseeable future.",
+  "markdownLength": 80,
+  "markdownStart": "The Brazilian organization has exited Counter-Strike for the foreseeable future.",
+  "method": "rss",
+  "ogImage": null,
+  "publishedAt": "2026-09-23T21:34:00.000Z",
+  "tags": [],
+  "title": "ODDIK pause esports operations",
+  "wordCount": 10,
+}
+`;
+
+exports[`item.extract: har bir manba fixture’lari > ixbt (rss_only) > 1: sarlavha, sana, matn 1`] = `
+{
+  "author": "Jin",
+  "canonicalUrl": null,
+  "imageUrls": [
+    {
+      "url": "https://cdn.ixbt.site/ixbt-data/1375990/media-5705eb04986ff3a72adb2a137a92e655682c0608d6821805d9b6a1e80c6baa03.png",
+    },
+  ],
+  "lang": null,
+  "markdownEnd": "шум — на 5 дБ относительно предыдущей версии.
+
+Компьютер получил блок питания 400 Вт с сертификатом 80 PLUS Platinum, RGB-подсветку, 2,5-гигабитный Ethernet, Wi-Fi 6E, Bluetooth 5.3 и функцию OMEN AI.",
+  "markdownLength": 1045,
+  "markdownStart": "## За охлаждение отвечают 120-мм и 90-мм вентиляторы и система с двумя тепловыми трубками
+
+Компания HP представила новый игровой настольный компьютер Omen 11 Ice White в белоснежном корпусе объемом 16 л с прозрачной передней панелью. На JD.com новинка стоит 7999 юаней, но с учетом государственной су",
+  "method": "rss",
+  "ogImage": null,
+  "publishedAt": "2026-09-24T06:07:21.000Z",
+  "tags": [],
+  "title": "HP выпустила белоснежный игровой ПК с Core Ultra 5 и RTX 5060 за $1200",
+  "wordCount": 171,
+}
+`;
+
+exports[`item.extract: har bir manba fixture’lari > ixbt (rss_only) > 2: sarlavha, sana, matn 1`] = `
+{
+  "author": "MPAK",
+  "canonicalUrl": null,
+  "imageUrls": [
+    {
+      "url": "https://cdn.ixbt.site/ixbt-data/1375803/media-3175984fd039826a7779277834ad9e15c13f2d1890b2ee1834648de3384098bf.png",
+    },
+    {
+      "url": "https://cdn.ixbt.site/ixbt-data/1375804/media-c880399f41ae3f3e8337f587bb5cfffab81d3a7ccd80c0e3d3ac99c73d35e27f.png",
+    },
+  ],
+  "lang": null,
+  "markdownEnd": "ежат Ryzen 7 9800X3D с жидкостным охлаждением, Zotac GeForce RTX 5080 Solid OC White, 64 ГБ DDR5-6000 и SSD объёмом 2 ТБ. Питает систему блок мощностью 1300 Вт.
+
+Компьютер стоит около 14 200 долларов.",
+  "markdownLength": 1321,
+  "markdownStart": "## Цветы из титанового сплава
+
+Компания Aftershock создала настольный компьютер, у которого внутри корпуса «растёт» дерево. Более того, его цветы раскрываются при определённых условиях.
+
+Источник изображения: Aftershock // https://aftershockpc.com.au/products/cherry-bloom-lvl-12-r7-9800x3d-rtx-5080-",
+  "method": "rss",
+  "ogImage": null,
+  "publishedAt": "2026-09-23T17:19:29.000Z",
+  "tags": [],
+  "title": "Внутри корпуса этого ПК «растёт» сакура, титановые цветы которой раскрываются при нагреве. Aftershock продаёт Cherry Bloom за 14 000 долларов",
+  "wordCount": 162,
+}
+`;
+
+exports[`item.extract: har bir manba fixture’lari > ixbt (rss_only) > 3: sarlavha, sana, matn 1`] = `
+{
+  "author": "Jin",
+  "canonicalUrl": null,
+  "imageUrls": [
+    {
+      "url": "https://cdn.ixbt.site/ixbt-data/1374628/media-teaxlhdmou0l8ryir3iszzhy.png",
+    },
+    {
+      "url": "https://cdn.ixbt.site/ixbt-data/1374629/media-cecckdi4ocsbut3zafof6a1k.png",
+    },
+  ],
+  "lang": null,
+  "markdownEnd": " реальным потребностям государственных и корпоративных пользователей, предоставляя более безопасные, надежные и интеллектуальные услуги офисных терминалов для различных отраслей.  
+ **— Huawei&nbsp;**",
+  "markdownLength": 1683,
+  "markdownStart": "## Он выйдет уже в сентябре
+
+Huawei впервые продемонстрировала настольный компьютер HM650 под управлением собственной операционной системы HarmonyOS.
+
+Новинку показали на конференции Huawei Connect 2026, а официальный выход устройства ожидается уже в сентябре. Компания позиционирует модель как произ",
+  "method": "rss",
+  "ogImage": null,
+  "publishedAt": "2026-09-21T08:48:10.000Z",
+  "tags": [],
+  "title": "Представлен первый настольный ПК Huawei на HarmonyOS",
+  "wordCount": 187,
+}
+`;
+
+exports[`item.extract: har bir manba fixture’lari > techcrunch (rss_only) > 1: sarlavha, sana, matn 1`] = `
+{
+  "author": "Kirsten Korosec, Lucas Ropek",
+  "canonicalUrl": null,
+  "imageUrls": [],
+  "lang": null,
+  "markdownEnd": " Mark Zuckerberg kicked off the company’s annual Connect event in Menlo Park on Wednesday with a keynote that made one thing clear: Meta is going all-in on Muse. It's even coming to Meta's AI glasses.",
+  "markdownLength": 203,
+  "markdownStart": "CEO Mark Zuckerberg kicked off the company’s annual Connect event in Menlo Park on Wednesday with a keynote that made one thing clear: Meta is going all-in on Muse. It's even coming to Meta's AI glasses.",
+  "method": "rss",
+  "ogImage": null,
+  "publishedAt": "2026-09-24T01:13:32.000Z",
+  "tags": [
+    "AI",
+    "TC",
+    "Meta",
+    "muse",
+  ],
+  "title": "Everything new coming to Meta’s AI agent Muse",
+  "wordCount": 36,
+}
+`;
+
+exports[`item.extract: har bir manba fixture’lari > techcrunch (rss_only) > 2: sarlavha, sana, matn 1`] = `
+{
+  "author": "Lucas Ropek",
+  "canonicalUrl": null,
+  "imageUrls": [],
+  "lang": null,
+  "markdownEnd": "The tiny hardware device creates another mobile home for its AI agent Muse.",
+  "markdownLength": 75,
+  "markdownStart": "The tiny hardware device creates another mobile home for its AI agent Muse.",
+  "method": "rss",
+  "ogImage": null,
+  "publishedAt": "2026-09-24T00:46:17.000Z",
+  "tags": [
+    "AI",
+    "Mark Zuckerberg",
+    "Meta",
+    "muse",
+  ],
+  "title": "Meta made a Tamagotchi-like wearable for its Muse AI agent",
+  "wordCount": 13,
+}
+`;
+
+exports[`item.extract: har bir manba fixture’lari > techcrunch (rss_only) > 3: sarlavha, sana, matn 1`] = `
+{
+  "author": "Sarah Perez",
+  "canonicalUrl": null,
+  "imageUrls": [],
+  "lang": null,
+  "markdownEnd": "Meta says the camera-free glasses will be lighter and have up to 12 hours battery life.",
+  "markdownLength": 87,
+  "markdownStart": "Meta says the camera-free glasses will be lighter and have up to 12 hours battery life.",
+  "method": "rss",
+  "ogImage": null,
+  "publishedAt": "2026-09-23T23:39:44.000Z",
+  "tags": [
+    "AI",
+    "Gadgets",
+    "Hardware",
+    "Social",
+    "ai glasses",
+    "Meta",
+  ],
+  "title": "Meta introduces camera-free AI glasses",
+  "wordCount": 16,
+}
+`;
+
+exports[`item.extract: har bir manba fixture’lari > the-verge (rss_only) > 1: sarlavha, sana, matn 1`] = `
+{
+  "author": "Jess Weatherbed",
+  "canonicalUrl": null,
+  "imageUrls": [
+    {
+      "alt": "Vector illustration of the Google Gemini logo",
+      "url": "https://platform.theverge.com/wp-content/uploads/sites/2/2025/02/STK255_Google_Gemini_D.jpg?quality=90&strip=all&crop=0,0,100,100",
+    },
+  ],
+  "lang": null,
+  "markdownEnd": "publication, adding that Google would "continue the fast-paced iteratio …
+
+[Read the full story at The Verge.](https://www.theverge.com/tech/999802/google-deepmind-gemini-4-timeline-koray-kavukcuoglu)",
+  "markdownLength": 871,
+  "markdownStart": "Google is reportedly nearing the launch of its long awaited Gemini 4 model, after dawdling behind rival developers on flagship AI releases. Speaking with [*The Information*](https://www.theinformation.com/articles/google-nears-release-flagship-gemini-4-ai-model) during his first media appearance as ",
+  "method": "rss",
+  "ogImage": null,
+  "publishedAt": "2026-09-24T09:04:18.000Z",
+  "tags": [],
+  "title": "Gemini 4 is almost ready, says new Google DeepMind chief",
+  "wordCount": 111,
+}
+`;
+
+exports[`item.extract: har bir manba fixture’lari > the-verge (rss_only) > 2: sarlavha, sana, matn 1`] = `
+{
+  "author": "Jacob Kastrenakes",
+  "canonicalUrl": null,
+  "imageUrls": [
+    {
+      "url": "https://platform.theverge.com/wp-content/uploads/sites/2/2026/09/lcimg-d4d3d179-80e9-4873-9d38-24ac84737e8d.webp?quality=90&strip=all&crop=0,0,100,100",
+    },
+  ],
+  "lang": null,
+  "markdownEnd": "t three holes for microphones on the front. Zuckerberg said you don't have to unlock a phone or …
+
+[Read the full story at The Verge.](https://www.theverge.com/tech/999750/muse-charm-meta-ai-hardware)",
+  "markdownLength": 754,
+  "markdownStart": "Meta is building a dedicated hardware device for its new Muse AI agent. The product, called Muse Charm, was briefly shown off by Meta CEO Mark Zuckerberg at the end of tonight's Meta Connect presentation. It looks almost like a chunky smartwatch without the strap - just a big screen, plus a little l",
+  "method": "rss",
+  "ogImage": null,
+  "publishedAt": "2026-09-24T00:15:20.000Z",
+  "tags": [],
+  "title": "Meta is making a standalone Muse AI gadget",
+  "wordCount": 124,
+}
+`;
+
+exports[`item.extract: har bir manba fixture’lari > the-verge (rss_only) > 3: sarlavha, sana, matn 1`] = `
+{
+  "author": "Stevie Bonifield",
+  "canonicalUrl": null,
+  "imageUrls": [
+    {
+      "alt": "A promotional image of a person using the Hearing Enhancement feature on Meta AI glasses",
+      "url": "https://platform.theverge.com/wp-content/uploads/sites/2/2026/09/Copy-of-Hearing-enhancement-16x9-1.jpg?quality=90&strip=all&crop=0,0,100,100",
+    },
+  ],
+  "lang": null,
+  "markdownEnd": " for adults with perceived mild to moderate hearing loss." It will be available lat …
+
+[Read the full story at The Verge.](https://www.theverge.com/tech/999673/meta-connect-2026-muse-glasses-features)",
+  "markdownLength": 926,
+  "markdownStart": "Just a couple of weeks after [launching Muse](https://www.theverge.com/tech/993391/meta-muse-ai-hands-on), Meta announced that it's "working on" bringing the agent to its smart glasses, including the new glasses it unveiled at Meta Connect. Users will be able to activate Muse from their glasses by s",
+  "method": "rss",
+  "ogImage": null,
+  "publishedAt": "2026-09-23T23:40:56.000Z",
+  "tags": [],
+  "title": "Muse is coming to Meta smart glasses",
+  "wordCount": 115,
+}
+`;

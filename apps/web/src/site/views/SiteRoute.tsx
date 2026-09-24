@@ -5,8 +5,9 @@ import { notFound, permanentRedirect } from 'next/navigation'
 import { categoryPath } from '../paths'
 import { resolveSiteRoute } from '../route'
 import { ArticleView, articleMetadata } from './ArticleView'
+import { botMetadata, BotView } from './BotView'
 import { CategoryView, categoryMetadata } from './CategoryView'
-import { HomeView } from './HomeView'
+import { HomeView, homeMetadata } from './HomeView'
 
 type Segments = string[] | undefined
 
@@ -23,6 +24,8 @@ export async function SiteRoutePage({ locale, path }: { locale: Locale; path: Se
       permanentRedirect(categoryPath(locale, route.category))
     case 'article':
       return <ArticleView locale={locale} categorySlug={route.category} slug={route.slug} />
+    case 'bot':
+      return <BotView locale={locale} />
     case 'not-found':
       notFound()
   }
@@ -35,8 +38,12 @@ export async function siteRouteMetadata(locale: Locale, path: Segments): Promise
       return categoryMetadata({ locale, slug: route.category, page: route.page })
     case 'article':
       return articleMetadata({ locale, categorySlug: route.category, slug: route.slug })
+    case 'home':
+      return homeMetadata(locale)
+    case 'bot':
+      return botMetadata(locale)
     default:
-      // Bosh sahifa — layout metadata'si.
+      // Redirect / 404 — layout (va not-found) metadata'si.
       return {}
   }
 }

@@ -2,6 +2,7 @@ import type { Block, CollectionConfig } from 'payload'
 
 import { isAdmin, isAdminOrEditor, publishedOrAdminEditor } from '@/access'
 import { slugField } from '@/fields/slug'
+import { revalidatePagesAfterChange, revalidatePagesAfterDelete } from '@/site/revalidate'
 
 /** Matn bloki (Lexical). Huquqiy sahifalar seed'da shu blokka yuklanadi. */
 export const ContentBlock: Block = {
@@ -66,6 +67,11 @@ export const Pages: CollectionConfig = {
   versions: {
     drafts: true,
     maxPerDoc: 10,
+  },
+  hooks: {
+    // Sitemap (M1-06): sahifalar ro'yxati keshi.
+    afterChange: [revalidatePagesAfterChange],
+    afterDelete: [revalidatePagesAfterDelete],
   },
   fields: [
     {

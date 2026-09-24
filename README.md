@@ -97,14 +97,33 @@ To'xtatish: `Ctrl+C`, keyin `docker compose -f infra/docker-compose.dev.yml down
 ### Muhim eslatmalar
 
 - **Sxema faqat migratsiyalar orqali o'zgaradi** — dev'da ham Payload `push` o'chiq. Kolleksiya o'zgargach: `pnpm migrate:create <nom>` → `pnpm migrate`.
-- **Env:** sxema — `apps/web/src/env.schema.ts`. Runtime'da (`next dev`/`start`, Vercel funksiyalari, migratsiya, testlar) to'liq tekshiriladi, majburiy qiymat bo'lmasa ilova ishga tushmaydi. `next build` paytida DB/sirlar majburiy emas (build ularga ulanmaydi) — `pnpm build` env'siz ham o'tadi; berilgan qiymatlar formati baribir tekshiriladi. Turbo strict env mode: yangi env qo'shsangiz, `turbo.json` → `globalPassThroughEnv` ga ham qo'shing.
+- **Env:** sxema — `apps/web/src/env.schema.ts`. Runtime'da (`next dev`/`start`, Vercel funksiyalari, testlar) to'liq tekshiriladi, majburiy qiymat bo'lmasa ilova ishga tushmaydi. Migratsiyada (`pnpm migrate*`, `PAYLOAD_MIGRATING=true`) faqat DB majburiy — `PAYLOAD_SECRET` va `S3_*` ixtiyoriy. `next build` paytida DB/sirlar majburiy emas (build ularga ulanmaydi) — `pnpm build` env'siz ham o'tadi; berilgan qiymatlar formati baribir tekshiriladi. Turbo strict env mode: yangi env qo'shsangiz, `turbo.json` → `globalPassThroughEnv` ga ham qo'shing.
 - **Sirlar** (`.env`) repo'ga commit qilinmaydi — production qiymatlari Vercel Environment Variables (**faqat Production** scope) va GitHub secrets'da. Staging yo'q; Vercel Preview'da migratsiya taqiqlangan (`apps/web/src/config/database.ts`).
 - Lokal MinIO va production Cloudflare R2 o'rtasidagi farq faqat `S3_*` va `MEDIA_PUBLIC_URL` qiymatlarida. Admin'dan rasm yuklash `clientUploads` bilan to'g'ridan-to'g'ri bucket'ga boradi — R2 bucket'da CORS kerak: [docs/runbooks/r2-cors.md](docs/runbooks/r2-cors.md).
-- **Postgres:** runtime — `DATABASE_URL` (Supabase: transaction pooler, `pool.max = 3`), migratsiyalar — `DATABASE_URL_DIRECT` (direct/session). Sozlama: `apps/web/src/config/database.ts`.
+- **Postgres:** runtime — `DATABASE_URL` (Supabase: transaction pooler, `pool.max = 3`), migratsiyalar — `DATABASE_URL_DIRECT` (Supabase: **session** pooler, port 5432 — direct host faqat IPv6). Sozlama: `apps/web/src/config/database.ts`.
 - **Rollar:** `admin`, `editor` (TZ §4.2); access helper'lar — `apps/web/src/access`. Sayt locale'lari: `uz-Latn` (asosiy), `uz-Cyrl` (`fallback: true`).
 - **Seed:** `pnpm seed` — 9 kategoriya (`packages/shared/seed/categories.json`, ranglar — `design/brand/tokens.json`), 6 huquqiy sahifa (`packages/guidelines/legal/`), muallif, 3 teg, 3 demo post, `site-settings`/`header`/`footer`. Mavjud hujjatlar (slug bo'yicha) o'zgartirilmaydi. Huquqiy sahifalardagi `{{CONTACT_EMAIL}}` kabi o'rinbosarlar `SEED_<KEY>` env'dan olinadi (masalan, `SEED_CONTACT_EMAIL=...`), Telegram havolalari — `TELEGRAM_CHANNEL_LATN/CYRL` dan; berilmaganlari ro'yxati seed logida chiqadi.
 - **Ommaviy sayt** (M1-05): lotin — `/`, `/{category}`, `/{category}/page/{n}`, `/{category}/{slug}`; kirill — xuddi shu `/kr` bilan (`<html lang>` mos); marshrutlar — `(latn)/[[...path]]` va `kr/[[...path]]` (`src/site/route.ts`), `next build` DB'ga ulanmaydi, sahifalar birinchi so'rovda chiziladi. Ma'lumot — Payload Local API (`src/site/data.ts`), ISR: `unstable_cache` teglari (`src/site/cache-tags.ts`), publish/unpublish/arxivlashda Payload hook'lari `revalidateTag` chaqiradi (`src/site/revalidate.ts`). DB'ni tashqaridan o'zgartirsangiz (`pnpm seed`, SQL) — kesh yangilanmaydi: lokal'da `rm -rf apps/web/.next` va qayta build. Rasmlar: `next/image` custom loader (`src/lib/image-loader.ts`) — media variantlari (WebP) to'g'ridan-to'g'ri `MEDIA_PUBLIC_URL` dan, `/_next/image` ishlatilmaydi.
 - **Post workflow** (TZ §4.1): `draft → in_progress → review → scheduled/published → archived`, `rejected`. Qoidalar `apps/web/src/collections/Posts/workflow.ts` da, tekshiruv — `beforeChange` hook'da. Chop etish faqat `review`/`scheduled` dan admin'dagi **Publish** (API: `_status: 'published'`) orqali; holat avtomatik `published` bo'ladi. `in_progress` ga o'tganda post 2 soatga band qilinadi (boshqa editor o'zgartira olmaydi, admin — mumkin). Arxivlash — faqat admin. `scheduled` holatida `scheduledAt` vaqtiga `schedulePublish` job navbatga qo'yiladi (job'larni ishga tushirish — M2-01).
+
+## Prod migratsiya
+
+Prod bazaga (Supabase) migratsiyalar GitHub Actions orqali qo'llanadi — [`.github/workflows/migrate-prod.yml`](.github/workflows/migrate-prod.yml). Vercel build'i migratsiya yurgizmaydi, `ci.yml` dagi `Migrate` qadami esa faqat CI test bazasiga ishlaydi.
+
+- **Qachon:** `main` ga push/merge'da, agar migratsiya yo'liga ta'sir qiladigan fayllar o'zgarsa (`apps/web/src/migrations/**`, `payload.config.ts`, `env.schema.ts`, `src/config/**`, `apps/web/package.json`, `pnpm-lock.yaml`, workflow'ning o'zi) + qo'lda. Vercel deploy'i bilan parallel boshlanadi, lekin migratsiya (~1 daqiqa) build'dan tezroq tugaydi. Yangi sxema talab qiladigan PR'ni merge qilgach, `migrate-prod` yashil bo'lganini tekshiring.
+- **Nima qiladi:** `pnpm install --frozen-lockfile` → `pnpm migrate` (`PAYLOAD_MIGRATING=true payload migrate`) → `migrate:status`. Qo'llanmagan migratsiyalargina bajariladi (idempotent). `concurrency: migrate-prod` — bir vaqtda bitta, ishlayotgani bekor qilinmaydi. Job `Production` GitHub Environment'ida (Settings → Environments → Production → Required reviewers bilan approval yoqish mumkin).
+- **Qo'lda ishga tushirish:**
+  ```bash
+  gh workflow run migrate-prod --ref main
+  gh run watch "$(gh run list --workflow migrate-prod --limit 1 --json databaseId -q '.[0].databaseId')"
+  ```
+- **Kerakli sir** (repo yoki `Production` environment secrets): faqat `DATABASE_URL_DIRECT_PROD` — workflow uni `DATABASE_URL` va `DATABASE_URL_DIRECT` sifatida beradi. `PAYLOAD_SECRET` va `S3_*` kerak emas: migratsiya rejimida ixtiyoriy, S3 plagini o'chiq, Payload `secret` o'rniga vaqtinchalik tasodifiy qiymat ishlatiladi (`apps/web/src/config/secret.ts`) — migratsiyalar hech narsani imzolamaydi.
+- **Session pooler shart:** Supabase direct host (`db.<ref>.supabase.co`) faqat IPv6 (AAAA) yozuviga ega — GitHub runner'lar va Vercel (IPv4) `ENOTFOUND` oladi. `DATABASE_URL_DIRECT_PROD` — Supavisor **session** pooler (Supabase → Connect → Session pooler):
+  ```
+  postgresql://postgres.<ref>:<parol>@aws-0-<region>.pooler.supabase.com:5432/postgres
+  ```
+  Foydalanuvchi — `postgres.<ref>` (faqat `postgres` emas), port — 5432 (6543 — transaction pooler, runtime `DATABASE_URL` uchun). Workflow direct host berilsa aniq xato bilan to'xtaydi.
+- **Ruxsat:** `assertMigrationAllowed` faqat Vercel Preview'da (`VERCEL_ENV=preview`) migratsiyani taqiqlaydi; GitHub runner'da `VERCEL*` yo'q — ruxsat etiladi.
 
 ## Holat
 

@@ -865,7 +865,8 @@
       "content": ".article-formatted-body",
       "title": "h1.tm-title",
       "author": ".tm-user-info__username",
-      "publishedAt": ".tm-article-datetime-published time[datetime]"
+      "publishedAt": ".tm-article-datetime-published time[datetime]",
+      "remove": [".tm-article-reading-time", ".tm-data-icons"]
     },
     "pollIntervalMin": 15,
     "rateLimitSec": 10,

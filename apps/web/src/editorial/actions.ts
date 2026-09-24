@@ -1,15 +1,9 @@
-import { sql, type PostgresAdapter } from '@payloadcms/db-postgres'
-import {
-  APIError,
-  commitTransaction,
-  initTransaction,
-  killTransaction,
-  type PayloadRequest,
-} from 'payload'
+import { APIError, type PayloadRequest } from 'payload'
 
 import { isAdminOrEditorUser } from '@/access'
 import { SLUG_MAX_LENGTH, toSlug } from '@/lib/slug'
 import type { Post, ScrapedItem } from '@/payload-types'
+import { inTransaction, lockScrapedItem } from '@/scraping/itemState'
 
 /**
  * Tahririyat navbati amallari (TZ §4.1 `scraped → draft` / `scraped → rejected`, TASKS M2-04):
@@ -47,35 +41,6 @@ export function assertEditor(req: PayloadRequest): Id {
     throw new EditorialError('Bu amal faqat admin va muharrirlar uchun.', 403)
   }
   return user.id as Id
-}
-
-/**
- * Element qatorini tranzaksiya oxirigacha qulflaydi. Qator bo'lmasa — `false`.
- * Postgres bo'lmagan adapterda (hozir yo'q) qulfsiz davom etiladi.
- */
-async function lockScrapedItem(req: PayloadRequest, id: Id): Promise<boolean> {
-  const adapter = req.payload.db as unknown as Partial<PostgresAdapter>
-  if (!adapter.drizzle) return true
-  const transactionID = req.transactionID ? await req.transactionID : undefined
-  const db =
-    (transactionID !== undefined && adapter.sessions?.[transactionID]?.db) || adapter.drizzle
-  const result = await db.execute(
-    sql`SELECT "id" FROM "scraped_items" WHERE "id" = ${id} FOR UPDATE`,
-  )
-  return result.rows.length > 0
-}
-
-/** Tranzaksiya ichida bajaradi: xato bo'lsa — rollback. */
-async function inTransaction<T>(req: PayloadRequest, fn: () => Promise<T>): Promise<T> {
-  const shouldCommit = await initTransaction(req)
-  try {
-    const result = await fn()
-    if (shouldCommit) await commitTransaction(req)
-    return result
-  } catch (error) {
-    if (shouldCommit) await killTransaction(req)
-    throw error
-  }
 }
 
 async function loadItem(req: PayloadRequest, id: Id): Promise<ScrapedItem> {

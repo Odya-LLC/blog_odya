@@ -7,8 +7,12 @@
  * bilgan holda chaqiradi. Ilova kodi `@/env` dan tayyor `env` obyektini oladi.
  *
  * Tekshiruv darajalari (`resolveEnvMode`):
- * - `strict` — runtime (`next start`, Vercel funksiyalari, `next dev`, migratsiya, testlar):
+ * - `strict` — runtime (`next start`, Vercel funksiyalari, `next dev`, testlar):
  *   barcha majburiy qiymatlar bo'lishi shart, aks holda ilova ishga tushmaydi.
+ * - `migrate` — `pnpm migrate*` (`PAYLOAD_MIGRATING=true`): faqat DB majburiy. Migratsiya S3 ga
+ *   ulanmaydi va hech narsani imzolamaydi, shuning uchun `PAYLOAD_SECRET` va `S3_*` ixtiyoriy
+ *   (prod migratsiya workflow'i — `.github/workflows/migrate-prod.yml` — faqat DB sirini oladi).
+ *   Berilgan qiymatlar baribir format bo'yicha tekshiriladi.
  * - `build`  — `next build` (Next.js fazasi `phase-production-build`): build DB/S3 ga ulanmaydi
  *   va sirlarni ishlatmaydi, shuning uchun hech narsa majburiy emas; berilgan qiymatlar baribir
  *   format bo'yicha tekshiriladi. Majburiy qiymatlar runtime'da tekshiriladi.
@@ -50,6 +54,11 @@ export const envSchema = z.object({
   S3_REGION: nonEmpty.default('auto'),
   /** MinIO va R2 uchun `true`. */
   S3_FORCE_PATH_STYLE: booleanString.default(false),
+  /**
+   * Scraping arxivi (raw/clean HTML, gzip) uchun **yopiq** bucket (TZ §3.5; R2: `blog-odya-raw`,
+   * lifecycle 30 kun). Bo'lmasa `scrapeItem` navbati ishga tushirilmaydi — job'lar kutib turadi.
+   */
+  S3_RAW_BUCKET: nonEmpty.optional(),
   /** Media fayllarning ommaviy URL'i (masalan, https://media.odya.uz). Bo'lmasa — Payload orqali beriladi. */
   MEDIA_PUBLIC_URL: z.url().optional(),
 
@@ -88,7 +97,21 @@ function withoutEmptyValues(source: RawEnv): RawEnv {
 /** `next build` fazasi (`next/constants` → `PHASE_PRODUCTION_BUILD`). */
 export const PHASE_PRODUCTION_BUILD = 'phase-production-build'
 
-export type EnvMode = 'strict' | 'build' | 'skip'
+export type EnvMode = 'strict' | 'build' | 'migrate' | 'skip'
+
+/** Migratsiya uchun shart bo'lmagan (faqat runtime'da kerak) majburiy maydonlar. */
+const NOT_REQUIRED_FOR_MIGRATION = {
+  PAYLOAD_SECRET: true,
+  S3_ENDPOINT: true,
+  S3_BUCKET: true,
+  S3_ACCESS_KEY_ID: true,
+  S3_SECRET_ACCESS_KEY: true,
+} as const
+
+/** `pnpm migrate*` skriptlari o'rnatadi (`apps/web/package.json`). */
+export function isMigrating(source: RawEnv = process.env): boolean {
+  return source.PAYLOAD_MIGRATING === 'true'
+}
 
 export function isEnvValidationSkipped(source: RawEnv = process.env): boolean {
   const flag = source.SKIP_ENV_VALIDATION
@@ -103,11 +126,12 @@ export function isEnvValidationSkipped(source: RawEnv = process.env): boolean {
 export function resolveEnvMode(source: RawEnv = process.env, phase?: string): EnvMode {
   if (isEnvValidationSkipped(source)) return 'skip'
   if ((phase ?? source.NEXT_PHASE) === PHASE_PRODUCTION_BUILD) return 'build'
+  if (isMigrating(source)) return 'migrate'
   return 'strict'
 }
 
 function envError(error: z.ZodError, mode: EnvMode): Error {
-  const where = mode === 'build' ? ' (build)' : ''
+  const where = mode === 'build' || mode === 'migrate' ? ` (${mode})` : ''
   return new Error(
     `Muhit o'zgaruvchilari noto'g'ri${where} (apps/web/.env.example ga qarang):\n${z.prettifyError(error)}`,
   )
@@ -117,7 +141,8 @@ function envError(error: z.ZodError, mode: EnvMode): Error {
  * Env'ni tekshiradi va turlangan obyekt qaytaradi; xato bo'lsa tushunarli xabar bilan otiladi.
  *
  * `build` va `skip` rejimlarida majburiy maydonlar `undefined` bo'lishi mumkin — ular faqat
- * runtime'da ishlatiladi (Payload build vaqtida DB/S3 ga ulanmaydi).
+ * runtime'da ishlatiladi (Payload build vaqtida DB/S3 ga ulanmaydi). `migrate` rejimida
+ * `PAYLOAD_SECRET` va `S3_*` `undefined` bo'lishi mumkin (`getPayloadSecret`, S3 plagini o'chiq).
  */
 export function parseEnv(source: RawEnv = process.env, mode = resolveEnvMode(source)): Env {
   const cleaned = withoutEmptyValues(source)
@@ -133,6 +158,13 @@ export function parseEnv(source: RawEnv = process.env, mode = resolveEnvMode(sou
     const partial = envSchema.partial().safeParse(cleaned)
     if (!partial.success) throw envError(partial.error, mode)
     return partial.data as Env
+  }
+
+  if (mode === 'migrate') {
+    // Migratsiya: faqat DB majburiy; PAYLOAD_SECRET va S3_* — ixtiyoriy (format tekshiriladi).
+    const parsed = envSchema.partial(NOT_REQUIRED_FOR_MIGRATION).safeParse(cleaned)
+    if (!parsed.success) throw envError(parsed.error, mode)
+    return parsed.data as Env
   }
 
   const parsed = envSchema.safeParse(cleaned)

@@ -122,6 +122,7 @@ export const sourcesSeedSchema = z
 export type SourceSeed = z.infer<typeof sourceSchema>
 export type FeedSeed = z.infer<typeof feedSchema>
 export type KeywordRule = z.infer<typeof keywordRuleSchema>
+export type SourceSelectors = z.infer<typeof selectorsSchema>
 
 /** Seed ichidagi barcha kategoriya havolalari mavjud kategoriyalarga ishora qilishini tekshiradi. */
 export function findUnknownCategoryRefs(

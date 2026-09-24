@@ -3,6 +3,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { FEED_POLL_TASK, SCRAPE_ITEM_WORKFLOW, SCRAPE_QUEUE } from '@/jobs/constants'
 import { handleJobsRunRequest, type JobsRunResponse } from '@/jobs/runner'
+import { scrapeDeps } from '@/jobs/scrapeDeps'
 import { feedPollDeps } from '@/jobs/tasks/feedPoll'
 import type { Source } from '@/payload-types'
 import { seed } from '@/seed'
@@ -110,6 +111,9 @@ describe('jobs endpoint + feed.poll', () => {
       },
     })
     feedPollDeps.sleep = async () => {}
+    // Arxivsiz: `scrape` navbati ishga tushirilmaydi — bu test faqat feed.poll'ni tekshiradi
+    // (item.fetch/extract — `scrape.int.test.ts`).
+    scrapeDeps.storage = null
   })
 
   beforeEach(() => {
@@ -119,6 +123,7 @@ describe('jobs endpoint + feed.poll', () => {
 
   afterAll(async () => {
     Object.assign(feedPollDeps, originalDeps)
+    scrapeDeps.storage = undefined
     await payload?.db?.destroy?.()
   })
 
@@ -169,7 +174,7 @@ describe('jobs endpoint + feed.poll', () => {
       }
     }
     expect(await countItems()).toBe(expectedTotal)
-    // Har bir yangi element uchun scrapeItem workflow navbatda (M2-02 gacha ishlanmaydi).
+    // Har bir yangi element uchun scrapeItem workflow navbatda (arxivsiz — ishlanmaydi).
     expect(await countScrapeJobs()).toBe(expectedTotal)
     expect(
       fixtures.requests.every((r) => r.headers.get('user-agent')?.startsWith('OdyaBlogBot')),

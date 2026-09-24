@@ -13,6 +13,10 @@ const readOnlySidebar = { readOnly: true, position: 'sidebar' as const }
  * `feeds[]` qatoridagi `etag`, `lastModified`, `lastPolledAt`, `lastStatus`, `lastError` —
  * `feed.poll` holati (shartli so'rovlar va `pollIntervalMin` hisobi uchun); admin'da faqat o'qish.
  * Ularni faqat `feed.poll` yozadi (bitta manba uchun bir vaqtda bitta job — `scheduler.ts`).
+ *
+ * `lastRequestAt` — domen bo'yicha rate limit soati (`feed.poll` va `item.fetch` uchun umumiy),
+ * `robotsCache` — robots.txt keshi; `item.fetch` ularni atomar SQL bilan yangilaydi
+ * (`src/scraping/sourceState.ts`).
  */
 export const Sources: CollectionConfig = {
   slug: 'sources',
@@ -275,6 +279,15 @@ export const Sources: CollectionConfig = {
         ...readOnlySidebar,
         description: 'Domen bo‘yicha rate limit (rateLimitSec) uchun',
         date: { pickerAppearance: 'dayAndTime' },
+      },
+    },
+    {
+      name: 'robotsCache',
+      type: 'json',
+      label: 'robots.txt keshi',
+      admin: {
+        ...readOnlySidebar,
+        description: 'item.fetch: origin → qoidalar, 24 soat keshlanadi (src/scraping/robots.ts)',
       },
     },
     {

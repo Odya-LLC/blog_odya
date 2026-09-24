@@ -72,3 +72,43 @@ describe('env: build vaqtida DB/sirlar majburiy emas (OBLOG-31)', () => {
     expect(() => parseEnv({})).toThrow(/DATABASE_URL[\s\S]*PAYLOAD_SECRET/)
   })
 })
+
+describe('env: migratsiya rejimida faqat DB majburiy (OBLOG-34)', () => {
+  const PROD_MIGRATE = {
+    PAYLOAD_MIGRATING: 'true',
+    DATABASE_URL:
+      'postgresql://postgres.ref:pw@aws-0-eu-central-1.pooler.supabase.com:5432/postgres',
+    DATABASE_URL_DIRECT:
+      'postgresql://postgres.ref:pw@aws-0-eu-central-1.pooler.supabase.com:5432/postgres',
+  }
+
+  it('PAYLOAD_MIGRATING=true → migrate rejimi (build va skip ustun)', () => {
+    expect(resolveEnvMode({ PAYLOAD_MIGRATING: 'true' })).toBe('migrate')
+    expect(resolveEnvMode({ PAYLOAD_MIGRATING: 'false' })).toBe('strict')
+    expect(resolveEnvMode({ PAYLOAD_MIGRATING: 'true' }, PHASE_PRODUCTION_BUILD)).toBe('build')
+    expect(resolveEnvMode({ PAYLOAD_MIGRATING: 'true', SKIP_ENV_VALIDATION: '1' })).toBe('skip')
+  })
+
+  it('PAYLOAD_SECRET va S3_* bo‘lmasa ham xato bermaydi (GitHub migrate-prod workflow)', () => {
+    const env = parseEnv(PROD_MIGRATE)
+    expect(env.DATABASE_URL_DIRECT).toBe(PROD_MIGRATE.DATABASE_URL_DIRECT)
+    expect(env.PAYLOAD_SECRET).toBeUndefined()
+    expect(env.S3_BUCKET).toBeUndefined()
+    expect(env.S3_ENDPOINT).toBeUndefined()
+    expect(env.S3_REGION).toBe('auto')
+  })
+
+  it('DATABASE_URL majburiy, berilgan qiymatlar formati tekshiriladi', () => {
+    expect(() => parseEnv({ PAYLOAD_MIGRATING: 'true' })).toThrow(/\(migrate\)[\s\S]*DATABASE_URL/)
+    expect(() => parseEnv({ ...PROD_MIGRATE, DATABASE_URL_DIRECT: 'mysql://x' })).toThrow(
+      /DATABASE_URL_DIRECT/,
+    )
+    expect(() => parseEnv({ ...PROD_MIGRATE, PAYLOAD_SECRET: 'short' })).toThrow(/PAYLOAD_SECRET/)
+    expect(() => parseEnv({ ...PROD_MIGRATE, S3_ENDPOINT: 'not-a-url' })).toThrow(/S3_ENDPOINT/)
+  })
+
+  it('runtime (migratsiyasiz) — PAYLOAD_SECRET va S3 hali ham majburiy', () => {
+    const { PAYLOAD_MIGRATING: _, ...runtime } = PROD_MIGRATE
+    expect(() => parseEnv(runtime)).toThrow(/PAYLOAD_SECRET[\s\S]*S3_ENDPOINT/)
+  })
+})

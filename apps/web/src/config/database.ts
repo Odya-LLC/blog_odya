@@ -1,6 +1,7 @@
 import type { PostgresAdapterArgs } from '@payloadcms/db-postgres'
 
 import type { Env } from '@/env'
+import { isMigrating } from '@/env.schema'
 
 export type DatabaseMode = 'runtime' | 'migrate'
 
@@ -11,12 +12,13 @@ type PoolConfig = PostgresAdapterArgs['pool']
  *
  * Staging yo'q — faqat bitta (prod) baza. Vercel'da migratsiya faqat Production deploy'da
  * (`VERCEL_ENV=production`) ruxsat etiladi: Preview deploy prod bazaga migratsiya yurgiza
- * olmaydi (`assertMigrationAllowed`).
+ * olmaydi (`assertMigrationAllowed`). Vercel'dan tashqarida (lokal, CI, GitHub Actions
+ * `migrate-prod` workflow'i — `VERCEL`/`VERCEL_ENV` yo'q) migratsiya ruxsat etiladi.
  */
 export function getDatabaseMode(
   source: Record<string, string | undefined> = process.env,
 ): DatabaseMode {
-  if (source.PAYLOAD_MIGRATING !== 'true') return 'runtime'
+  if (!isMigrating(source)) return 'runtime'
   assertMigrationAllowed(source)
   return 'migrate'
 }
@@ -52,8 +54,11 @@ export const RUNTIME_POOL_MAX = 3
  * - `runtime` → `DATABASE_URL` (Supabase: Supavisor **transaction** pooler, port 6543).
  *   Payload/Drizzle nomli prepared statement ishlatmaydi (node-postgres `name` berilmasa
  *   unnamed statement yuboradi), shuning uchun transaction mode'da alohida sozlash shart emas.
- * - `migrate` → `DATABASE_URL_DIRECT` (direct yoki session pooler, port 5432): migratsiyalar
+ * - `migrate` → `DATABASE_URL_DIRECT` (Supavisor **session** pooler, port 5432): migratsiyalar
  *   DDL va uzun tranzaksiyalar bilan ishlaydi. Berilmagan bo'lsa — `DATABASE_URL`.
+ *   Supabase direct host (`db.<ref>.supabase.co`) faqat IPv6 (AAAA) — GitHub runner'lar va
+ *   Vercel IPv4'da `ENOTFOUND` beradi, shuning uchun session pooler ishlatiladi:
+ *   `postgresql://postgres.<ref>:<parol>@aws-0-<region>.pooler.supabase.com:5432/postgres`.
  */
 export function getDatabasePoolConfig(
   env: Pick<Env, 'DATABASE_URL' | 'DATABASE_URL_DIRECT'>,
