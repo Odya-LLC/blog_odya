@@ -1,0 +1,129 @@
+# Prod seed: `pnpm seed` → Supabase prod bazasi (kategoriyalar, 7 manba, huquqiy sahifalar,
+# muallif, site-settings/header/footer). Faqat qo'lda: `gh workflow run seed-prod --ref main`.
+# Default — demo kontentsiz (SEED_DEMO=false: teglar, demo postlar, muqovalar yo'q).
+# Idempotent: mavjud hujjatlar (slug bo'yicha) o'zgartirilmaydi. Batafsil: README → "Prod seed",
+# docs/runbooks/jobs-scheduler.md.
+name: seed-prod
+
+on:
+  workflow_dispatch:
+    inputs:
+      demo:
+        description: 'Demo kontent (3 post, teglar, muqovalar R2 ga) — prod uchun odatda yo‘q'
+        type: boolean
+        default: false
+
+# migrate-prod bilan UMUMIY guruh: seed ham avval `pnpm migrate` yurgizadi — ikkalasi bir vaqtda
+# ishlamaydi, ishlayotgani bekor qilinmaydi. (GitHub guruhda faqat bitta kutayotgan run saqlaydi.)
+concurrency:
+  group: migrate-prod
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  seed:
+    name: pnpm seed (prod)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # GitHub Environment: ixtiyoriy approval (Settings → Environments → Production).
+    environment: Production
+
+    # `payload run` — runtime rejimi: to'liq env tekshiruvi (apps/web/src/env.schema.ts).
+    # - DATABASE_URL(_DIRECT) — Supavisor SESSION pooler (5432), migrate-prod bilan bir xil.
+    # - PAYLOAD_SECRET — har run'da tasodifiy (keyingi qadamda): seed foydalanuvchi, API kalit yoki
+    #   shifrlangan maydon yaratmaydi, shuning uchun hech narsa unga bog'liq emas (Vercel'dagi
+    #   sirni bilish shart emas).
+    # - S3_* — R2 `media` bucket (docs/runbooks/r2-cors.md); demo o'chiq bo'lsa S3 ga murojaat yo'q.
+    # - JOBS_MODE=endpoint — autoRun yo'q; JOBS_SECRET, TELEGRAM_BOT_TOKEN, SENTRY_DSN berilmaydi.
+    # - SEED_* / TELEGRAM_CHANNEL_* — huquqiy sahifa o'rinbosarlari (repo/environment Variables,
+    #   ixtiyoriy). Sahifa bir marta yaratiladi — to'ldirilmaganlari seed logida chiqadi.
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL_DIRECT_PROD }}
+      DATABASE_URL_DIRECT: ${{ secrets.DATABASE_URL_DIRECT_PROD }}
+      S3_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+      S3_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      S3_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      S3_BUCKET: media
+      S3_REGION: auto
+      S3_FORCE_PATH_STYLE: 'true'
+      MEDIA_PUBLIC_URL: https://media.odya.uz
+      NEXT_PUBLIC_SITE_URL: https://blog.odya.uz
+      JOBS_MODE: endpoint
+      SEED_DEMO: ${{ inputs.demo && 'true' || 'false' }}
+      SEED_CONTACT_EMAIL: ${{ vars.SEED_CONTACT_EMAIL }}
+      SEED_EDITORIAL_EMAIL: ${{ vars.SEED_EDITORIAL_EMAIL }}
+      SEED_COPYRIGHT_EMAIL: ${{ vars.SEED_COPYRIGHT_EMAIL }}
+      SEED_PRIVACY_EMAIL: ${{ vars.SEED_PRIVACY_EMAIL }}
+      SEED_ADS_EMAIL: ${{ vars.SEED_ADS_EMAIL }}
+      SEED_LEGAL_ADDRESS: ${{ vars.SEED_LEGAL_ADDRESS }}
+      SEED_COMPANY_TIN: ${{ vars.SEED_COMPANY_TIN }}
+      SEED_EDITOR_IN_CHIEF: ${{ vars.SEED_EDITOR_IN_CHIEF }}
+      SEED_MEDIA_REGISTRATION: ${{ vars.SEED_MEDIA_REGISTRATION }}
+      TELEGRAM_CHANNEL_LATN: ${{ vars.TELEGRAM_CHANNEL_LATN }}
+      TELEGRAM_CHANNEL_CYRL: ${{ vars.TELEGRAM_CHANNEL_CYRL }}
+      NEXT_TELEMETRY_DISABLED: '1'
+      TURBO_TELEMETRY_DISABLED: '1'
+
+    steps:
+      - name: Check secrets
+        run: |
+          if [ -z "$DATABASE_URL_DIRECT" ]; then
+            echo "::error::DATABASE_URL_DIRECT_PROD secret berilmagan (Settings → Secrets → Actions)."
+            exit 1
+          fi
+          host="$(printf '%s' "$DATABASE_URL_DIRECT" | sed -E 's#^[a-z]+://[^@]*@([^:/?]+).*#\1#')"
+          case "$host" in
+            db.*.supabase.co)
+              echo "::error::DATABASE_URL_DIRECT_PROD direct host'ga ($host) ishora qiladi — u faqat IPv6, GitHub runner'da ENOTFOUND. Session pooler (aws-0-<region>.pooler.supabase.com:5432, user postgres.<ref>) ishlating."
+              exit 1
+              ;;
+          esac
+          case "$DATABASE_URL_DIRECT" in
+            *:6543/*)
+              echo "::warning::Port 6543 — transaction pooler. Seed avval migratsiya yurgizadi — session pooler (5432) tavsiya etiladi."
+              ;;
+          esac
+          for name in S3_ENDPOINT S3_ACCESS_KEY_ID S3_SECRET_ACCESS_KEY; do
+            if [ -z "${!name}" ]; then
+              echo "::error::$name bo'sh — R2_ENDPOINT / R2_ACCESS_KEY_ID / R2_SECRET_ACCESS_KEY secret'larini tekshiring."
+              exit 1
+            fi
+          done
+
+      - name: Generate PAYLOAD_SECRET
+        run: |
+          secret="$(openssl rand -hex 32)"
+          echo "::add-mask::$secret"
+          echo "PAYLOAD_SECRET=$secret" >> "$GITHUB_ENV"
+
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      # `pnpm seed` → `pnpm migrate` (qo'llanmaganlari) → `payload run src/seed/run.ts`.
+      # VERCEL/VERCEL_ENV yo'q — assertMigrationAllowed ruxsat beradi.
+      - name: Seed (demo=${{ inputs.demo }})
+        run: |
+          set -o pipefail
+          pnpm seed 2>&1 | tee "$RUNNER_TEMP/seed.log"
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "### seed-prod (SEED_DEMO=$SEED_DEMO)"
+            echo '```'
+            grep -E "Kategoriyalar:|Manbalar:|Sahifalar:|Postlar:|Demo |Globals:|Diqqat:|Seed tugadi|Seed xatosi" \
+              "$RUNNER_TEMP/seed.log" | sed -E 's/\x1b\[[0-9;]*m//g' || echo "(seed logi yo'q)"
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"

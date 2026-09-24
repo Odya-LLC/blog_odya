@@ -27,6 +27,8 @@ const CYRL: Locale = 'uz-Cyrl'
 type Count = { created: number; existing: number }
 
 export interface SeedSummary {
+  /** Demo kontent (teglar, postlar, muqovalar) yuklandimi — `SeedOptions.demo`. */
+  demo: boolean
   categories: Count
   pages: Count
   authors: Count
@@ -42,6 +44,13 @@ export interface SeedSummary {
 
 export interface SeedOptions {
   log?: (message: string) => void
+  /**
+   * Demo kontent: 3 ta namuna post, ularning teglari va muqovalari (S3 ga yuklanadi).
+   * Default — `true` (lokal/dev/testlar). Prod'da — `false` (`SEED_DEMO=false`,
+   * `.github/workflows/seed-prod.yml`): faqat kategoriyalar, manbalar, huquqiy sahifalar,
+   * muallif va globals.
+   */
+  demo?: boolean
   /** Huquqiy sahifalardagi `{{KEY}}` qiymatlari; berilmasa `SEED_<KEY>` env'dan olinadi. */
   placeholders?: Partial<Record<(typeof LEGAL_PLACEHOLDERS)[number], string>>
 }
@@ -119,6 +128,17 @@ function telegramUrl(channel: string | undefined): string | undefined {
   return channel.startsWith('@') ? `https://t.me/${channel.slice(1)}` : undefined
 }
 
+/**
+ * `SEED_DEMO` env → `SeedOptions.demo`. Berilmagan/bo'sh — `true` (avvalgi xatti-harakat);
+ * `false`/`0` — demo o'chiq. Boshqa qiymat — xato (prod'da imlo xatosi demo yuklab yubormasin).
+ */
+export function parseSeedDemo(value: string | undefined): boolean {
+  const normalized = value?.trim().toLowerCase() ?? ''
+  if (normalized === '' || normalized === 'true' || normalized === '1') return true
+  if (normalized === 'false' || normalized === '0') return false
+  throw new Error(`SEED_DEMO noto'g'ri: "${value}" (true/false yoki 1/0 bo'lishi kerak)`)
+}
+
 function placeholderValues(options: SeedOptions) {
   const values: Record<string, string | undefined> = {}
   for (const key of LEGAL_PLACEHOLDERS) {
@@ -132,13 +152,17 @@ function placeholderValues(options: SeedOptions) {
 /**
  * Boshlang'ich ma'lumotlar (`pnpm seed`): 9 kategoriya, 6 huquqiy sahifa, 1 muallif, 3 teg,
  * 3 demo post, 7 manba (`sources.json`, M0-04), `site-settings`, `header`, `footer`.
+ * `demo: false` — teglar, demo postlar va muqovalar o'tkazib yuboriladi (header/footer faqat
+ * kategoriya va huquqiy sahifalarga havola qiladi, demo kontentga bog'liq emas).
  *
  * Idempotent: hujjatlar `slug` bo'yicha, globals — to'ldirilganligi bo'yicha tekshiriladi;
  * mavjudlari o'zgartirilmaydi (admin'dagi tahrirlar saqlanadi), dublikat yaratilmaydi.
  */
 export async function seed(payload: Payload, options: SeedOptions = {}): Promise<SeedSummary> {
   const log = options.log ?? (() => {})
+  const demo = options.demo ?? true
   const summary: SeedSummary = {
+    demo,
     categories: { created: 0, existing: 0 },
     pages: { created: 0, existing: 0 },
     authors: { created: 0, existing: 0 },
@@ -221,6 +245,7 @@ export async function seed(payload: Payload, options: SeedOptions = {}): Promise
           url: feed.url,
           feedCategory: feed.feedCategory,
           mapsTo: categoryId(feed.mapsTo),
+          mappingWeight: feed.mappingWeight ?? 10,
           isActive: feed.isActive,
         })),
         language: source.language,
@@ -309,6 +334,30 @@ export async function seed(payload: Payload, options: SeedOptions = {}): Promise
     summary.authors.existing++
   }
 
+  if (demo) {
+    await seedDemoContent(payload, { authorId, categoryIds, markdownToLexical, summary, log })
+  } else {
+    log("Demo kontent o'tkazib yuborildi (demo: false): teglar, postlar, muqovalar yaratilmadi")
+  }
+
+  await seedGlobals(payload, { categories, categoryIds, pageIds, summary, log })
+
+  return summary
+}
+
+/** Teglar, 3 demo post va ularning muqovalari (faqat `demo: true`). */
+async function seedDemoContent(
+  payload: Payload,
+  ctx: {
+    authorId: Id
+    categoryIds: Map<string, Id>
+    markdownToLexical: (markdown: string) => Record<string, unknown>
+    summary: SeedSummary
+    log: (message: string) => void
+  },
+): Promise<void> {
+  const { authorId, categoryIds, markdownToLexical, summary, log } = ctx
+
   // --- Teglar ---
   const tagIds = new Map<string, Id>()
   for (const tag of SEED_TAGS) {
@@ -388,6 +437,20 @@ export async function seed(payload: Payload, options: SeedOptions = {}): Promise
     `Demo muqovalar: +${summary.media.created}, mavjud ${summary.media.existing}` +
       (summary.media.failed ? `, xato ${summary.media.failed}` : ''),
   )
+}
+
+/** `site-settings`, `header`, `footer` — faqat kategoriya va huquqiy sahifalarga havola qiladi. */
+async function seedGlobals(
+  payload: Payload,
+  ctx: {
+    categories: ReturnType<typeof categoriesSeedSchema.parse>
+    categoryIds: Map<string, Id>
+    pageIds: Map<string, Id>
+    summary: SeedSummary
+    log: (message: string) => void
+  },
+): Promise<void> {
+  const { categories, categoryIds, pageIds, summary, log } = ctx
 
   // --- Globals ---
   // Har bir yozuv alohida tekshiriladi (fallback'siz): bittasi to'ldirilgan bo'lsa ham ikkinchisi to'ladi.
@@ -497,6 +560,4 @@ export async function seed(payload: Payload, options: SeedOptions = {}): Promise
       `header ${summary.globals.header ? 'yaratildi' : 'mavjud'}, ` +
       `footer ${summary.globals.footer ? 'yaratildi' : 'mavjud'}`,
   )
-
-  return summary
 }

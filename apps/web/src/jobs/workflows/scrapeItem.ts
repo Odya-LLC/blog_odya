@@ -1,6 +1,8 @@
 import type { Payload, WorkflowConfig } from 'payload'
 
 import {
+  ITEM_CLASSIFY_TASK,
+  ITEM_DEDUPE_TASK,
   ITEM_EXTRACT_TASK,
   ITEM_FETCH_TASK,
   SCRAPE_ITEM_WORKFLOW,
@@ -18,6 +20,9 @@ import { markItemError } from '../tasks/itemFetch'
  * - Task'lar 3 marta qayta uriniladi (backoff); oxirgi urinish ham xato bo'lsa, element
  *   `status = error`, `error` — xato matni (TZ §3.5 "Ishonchlilik").
  * - Muvaffaqiyatli bosqichlar retry'da qayta bajarilmaydi (Payload task natijasini tiklaydi).
+ * - `item.dedupe` / `item.classify` faqat matn ajratilgandan keyin (`extract.status = scraped`).
+ *   Ularning yakuniy xatosi elementni `error` ga o'tkazmaydi (u allaqachon `scraped` —
+ *   `writeScrapeResult` yozmaydi): element navbatda score/klastersiz qoladi, matn yo'qolmaydi.
  */
 
 /** Payload `TaskError` (eksport qilinmaydi) — `args` bo'yicha aniqlaymiz. */
@@ -52,7 +57,7 @@ async function recordFinalError(payload: Payload, id: number, error: unknown): P
 
 export const scrapeItemWorkflow: WorkflowConfig<'scrapeItem'> = {
   slug: SCRAPE_ITEM_WORKFLOW,
-  label: 'Maqolani yig‘ish (fetch → extract)',
+  label: 'Maqolani yig‘ish (fetch → extract → dedupe → classify)',
   interfaceName: 'WorkflowScrapeItem',
   queue: SCRAPE_QUEUE,
   inputSchema: [
@@ -79,7 +84,7 @@ export const scrapeItemWorkflow: WorkflowConfig<'scrapeItem'> = {
       }
       if (!fetched.rawHtmlKey || (fetched.mode !== 'page' && fetched.mode !== 'rss')) return
 
-      await tasks[ITEM_EXTRACT_TASK]('extract', {
+      const extracted = await tasks[ITEM_EXTRACT_TASK]('extract', {
         input: {
           scrapedItemId,
           rawHtmlKey: fetched.rawHtmlKey,
@@ -87,6 +92,10 @@ export const scrapeItemWorkflow: WorkflowConfig<'scrapeItem'> = {
           fetchMeta: fetched,
         },
       })
+      if (extracted.status !== 'scraped') return
+
+      await tasks[ITEM_DEDUPE_TASK]('dedupe', { input: { scrapedItemId } })
+      await tasks[ITEM_CLASSIFY_TASK]('classify', { input: { scrapedItemId } })
     } catch (error) {
       if (isFinalTaskError(error)) await recordFinalError(req.payload, scrapedItemId, error)
       throw error

@@ -103,7 +103,7 @@ To'xtatish: `Ctrl+C`, keyin `docker compose -f infra/docker-compose.dev.yml down
 - Lokal MinIO va production Cloudflare R2 o'rtasidagi farq faqat `S3_*` va `MEDIA_PUBLIC_URL` qiymatlarida. Admin'dan rasm yuklash `clientUploads` bilan to'g'ridan-to'g'ri bucket'ga boradi — R2 bucket'da CORS kerak: [docs/runbooks/r2-cors.md](docs/runbooks/r2-cors.md).
 - **Postgres:** runtime — `DATABASE_URL` (Supabase: transaction pooler, `pool.max = 3`), migratsiyalar — `DATABASE_URL_DIRECT` (Supabase: **session** pooler, port 5432 — direct host faqat IPv6). Sozlama: `apps/web/src/config/database.ts`.
 - **Rollar:** `admin`, `editor` (TZ §4.2); access helper'lar — `apps/web/src/access`. Sayt locale'lari: `uz-Latn` (asosiy), `uz-Cyrl` (`fallback: true`).
-- **Seed:** `pnpm seed` — 9 kategoriya (`packages/shared/seed/categories.json`, ranglar — `design/brand/tokens.json`), 6 huquqiy sahifa (`packages/guidelines/legal/`), muallif, 3 teg, 3 demo post, `site-settings`/`header`/`footer`. Mavjud hujjatlar (slug bo'yicha) o'zgartirilmaydi. Huquqiy sahifalardagi `{{CONTACT_EMAIL}}` kabi o'rinbosarlar `SEED_<KEY>` env'dan olinadi (masalan, `SEED_CONTACT_EMAIL=...`), Telegram havolalari — `TELEGRAM_CHANNEL_LATN/CYRL` dan; berilmaganlari ro'yxati seed logida chiqadi.
+- **Seed:** `pnpm seed` — 9 kategoriya (`packages/shared/seed/categories.json`, ranglar — `design/brand/tokens.json`), 6 huquqiy sahifa (`packages/guidelines/legal/`), muallif, 3 teg, 3 demo post, `site-settings`/`header`/`footer`. Mavjud hujjatlar (slug bo'yicha) o'zgartirilmaydi. Huquqiy sahifalardagi `{{CONTACT_EMAIL}}` kabi o'rinbosarlar `SEED_<KEY>` env'dan olinadi (masalan, `SEED_CONTACT_EMAIL=...`), Telegram havolalari — `TELEGRAM_CHANNEL_LATN/CYRL` dan; berilmaganlari ro'yxati seed logida chiqadi. `SEED_DEMO=false` — demo kontentsiz (teglar, postlar, muqovalar yo'q); prod — `gh workflow run seed-prod` ("Prod seed").
 - **Ommaviy sayt** (M1-05): lotin — `/`, `/{category}`, `/{category}/page/{n}`, `/{category}/{slug}`; kirill — xuddi shu `/kr` bilan (`<html lang>` mos); marshrutlar — `(latn)/[[...path]]` va `kr/[[...path]]` (`src/site/route.ts`), `next build` DB'ga ulanmaydi, sahifalar birinchi so'rovda chiziladi. Ma'lumot — Payload Local API (`src/site/data.ts`), ISR: `unstable_cache` teglari (`src/site/cache-tags.ts`), publish/unpublish/arxivlashda Payload hook'lari `revalidateTag` chaqiradi (`src/site/revalidate.ts`). DB'ni tashqaridan o'zgartirsangiz (`pnpm seed`, SQL) — kesh yangilanmaydi: lokal'da `rm -rf apps/web/.next` va qayta build. Rasmlar: `next/image` custom loader (`src/lib/image-loader.ts`) — media variantlari (WebP) to'g'ridan-to'g'ri `MEDIA_PUBLIC_URL` dan, `/_next/image` ishlatilmaydi.
 - **Post workflow** (TZ §4.1): `draft → in_progress → review → scheduled/published → archived`, `rejected`. Qoidalar `apps/web/src/collections/Posts/workflow.ts` da, tekshiruv — `beforeChange` hook'da. Chop etish faqat `review`/`scheduled` dan admin'dagi **Publish** (API: `_status: 'published'`) orqali; holat avtomatik `published` bo'ladi. `in_progress` ga o'tganda post 2 soatga band qilinadi (boshqa editor o'zgartira olmaydi, admin — mumkin). Arxivlash — faqat admin. `scheduled` holatida `scheduledAt` vaqtiga `schedulePublish` job navbatga qo'yiladi (job'larni ishga tushirish — M2-01).
 
@@ -147,6 +147,20 @@ Prod bazaga (Supabase) migratsiyalar GitHub Actions orqali qo'llanadi — [`.git
   ```
   Foydalanuvchi — `postgres.<ref>` (faqat `postgres` emas), port — 5432 (6543 — transaction pooler, runtime `DATABASE_URL` uchun). Workflow direct host berilsa aniq xato bilan to'xtaydi.
 - **Ruxsat:** `assertMigrationAllowed` faqat Vercel Preview'da (`VERCEL_ENV=preview`) migratsiyani taqiqlaydi; GitHub runner'da `VERCEL*` yo'q — ruxsat etiladi.
+
+### Prod seed
+
+Prod bazaga boshlang'ich ma'lumotlar (9 kategoriya, 7 manba, 6 huquqiy sahifa, muallif, `site-settings`/`header`/`footer`) — [`.github/workflows/seed-prod.yml`](.github/workflows/seed-prod.yml), faqat qo'lda:
+
+```bash
+gh workflow run seed-prod --ref main              # demo kontentsiz (SEED_DEMO=false)
+gh workflow run seed-prod --ref main -f demo=true # + 3 demo post, teglar, muqovalar (R2 ga)
+```
+
+- **Nima qiladi:** `pnpm seed` → avval `pnpm migrate`, keyin `payload run src/seed/run.ts`. Idempotent: mavjud hujjatlar (slug bo'yicha) o'zgartirilmaydi. Natija — run Summary'sida (`Manbalar: +7, mavjud 0` ...). `concurrency: migrate-prod` — `migrate-prod` bilan bir vaqtda ishlamaydi. `Production` environment.
+- **Demo o'chiq** (`SEED_DEMO=false`, default): teglar, demo postlar va muqovalar yaratilmaydi, S3 ga hech narsa yuklanmaydi; header/footer faqat kategoriya va huquqiy sahifalarga havola qiladi.
+- **Sirlar:** `DATABASE_URL_DIRECT_PROD` (session pooler, `DATABASE_URL` va `DATABASE_URL_DIRECT` sifatida), `R2_ENDPOINT`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` (`S3_*`, bucket `media`). `PAYLOAD_SECRET` — har run'da `openssl rand -hex 32` (seed foydalanuvchi/API kalit yaratmaydi — Vercel'dagi sir kerak emas). `JOBS_MODE=endpoint`; `JOBS_SECRET`, `TELEGRAM_BOT_TOKEN`, `SENTRY_DSN` berilmaydi.
+- **Huquqiy sahifa o'rinbosarlari:** repo yoki `Production` environment **Variables** (`SEED_CONTACT_EMAIL`, `SEED_EDITORIAL_EMAIL`, ..., `TELEGRAM_CHANNEL_LATN/CYRL`) — workflow ularni env sifatida beradi. Sahifa faqat bir marta yaratiladi, shuning uchun ularni birinchi run'dan oldin qo'ying; to'ldirilmaganlari Summary'dagi `Diqqat:` qatorida — keyin admin'da tahrirlang.
 
 ## Holat
 
