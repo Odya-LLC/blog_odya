@@ -370,3 +370,145 @@
 .editorial__pagination .per-page {
   margin-left: auto;
 }
+
+/* MCP qo'llanma (OBLOG-43): `/admin/mcp` — docs/mcp.md + reestr jadvallari. */
+.mcp-doc {
+  max-width: 1100px;
+  line-height: 1.6;
+}
+
+.mcp-doc h2 {
+  margin: calc(var(--base) * 2) 0 calc(var(--base) / 2);
+  padding-top: calc(var(--base) / 2);
+  border-top: 1px solid var(--theme-elevation-100);
+  scroll-margin-top: calc(var(--base) * 4);
+}
+
+.mcp-doc h3 {
+  margin: calc(var(--base) * 1.25) 0 calc(var(--base) / 2);
+}
+
+.mcp-doc code {
+  padding: 1px 4px;
+  border-radius: var(--style-radius-s);
+  background: var(--theme-elevation-100);
+  font-size: 0.9em;
+  overflow-wrap: anywhere;
+}
+
+.mcp-doc blockquote {
+  margin: calc(var(--base) / 2) 0;
+  padding-left: calc(var(--base) * 0.75);
+  border-left: 3px solid var(--theme-elevation-200);
+  color: var(--theme-elevation-700);
+}
+
+.mcp-doc__toc {
+  padding: calc(var(--base) * 0.75);
+  background: var(--theme-elevation-50);
+  border-radius: var(--style-radius-m);
+}
+
+.mcp-doc__toc ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px calc(var(--base) * 0.75);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mcp-doc__code {
+  position: relative;
+  margin: calc(var(--base) / 2) 0;
+}
+
+.mcp-doc__code pre {
+  margin: 0;
+  padding: calc(var(--base) * 0.75);
+  padding-right: calc(var(--base) * 6);
+  overflow-x: auto;
+  border-radius: var(--style-radius-m);
+  background: var(--theme-elevation-50);
+  border: 1px solid var(--theme-elevation-100);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.mcp-doc__code pre code {
+  padding: 0;
+  background: none;
+  overflow-wrap: normal;
+}
+
+.mcp-doc__code .mcp-doc__copy {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
+
+.mcp-doc__copy {
+  padding: 2px 10px;
+  border: 1px solid var(--theme-elevation-200);
+  border-radius: var(--style-radius-s);
+  background: var(--theme-elevation-0);
+  color: var(--theme-elevation-800);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.mcp-doc__copy:hover {
+  background: var(--theme-elevation-100);
+}
+
+.mcp-doc__table {
+  margin: calc(var(--base) / 2) 0;
+  overflow-x: auto;
+}
+
+.mcp-doc__table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.mcp-doc__table th,
+.mcp-doc__table td {
+  padding: 6px 8px;
+  border: 1px solid var(--theme-elevation-100);
+  text-align: left;
+  vertical-align: top;
+}
+
+.mcp-doc__table th {
+  background: var(--theme-elevation-50);
+}
+
+.mcp-doc__args {
+  margin: 0;
+  padding-left: 1.1em;
+}
+
+.mcp-doc__status {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: var(--base);
+  margin-bottom: var(--base);
+  padding: calc(var(--base) * 0.75);
+  background: var(--theme-elevation-50);
+  border-radius: var(--style-radius-m);
+}
+
+.mcp-doc__status > div {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.mcp-doc__endpoint {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
