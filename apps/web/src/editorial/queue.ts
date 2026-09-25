@@ -179,3 +179,82 @@ export function scoringStatus(items: readonly QueueItemLike[]): {
     hasClusters: items.some((item) => Boolean(item.clusterId?.trim())),
   }
 }
+
+/**
+ * Sahifalash (OBLOG-40): navbat klaster guruhlari bo'yicha sahifalanadi — bitta klaster hech
+ * qachon ikki sahifaga bo'linmaydi. `limit` — sahifadagi guruhlar soni.
+ */
+export const QUEUE_PAGE_SIZES = [10, 25, 50, 100] as const
+export const DEFAULT_QUEUE_PAGE_SIZE = 25
+
+export interface QueuePagination {
+  page: number
+  limit: number
+}
+
+/** URL `searchParams` → `page` / `limit` (noto'g'ri qiymatlar — default). */
+export function parseQueuePagination(searchParams: SearchParams): QueuePagination {
+  const limit = positiveInt(first(searchParams?.limit))
+  return {
+    page: positiveInt(first(searchParams?.page)) ?? 1,
+    limit:
+      limit && (QUEUE_PAGE_SIZES as readonly number[]).includes(limit)
+        ? limit
+        : DEFAULT_QUEUE_PAGE_SIZE,
+  }
+}
+
+export interface QueuePageInfo {
+  /** Joriy sahifa (1..totalPages oralig'iga keltirilgan). */
+  page: number
+  limit: number
+  totalPages: number
+  totalGroups: number
+  hasPrevPage: boolean
+  hasNextPage: boolean
+  prevPage: number | null
+  nextPage: number | null
+}
+
+/** Guruhlar ro'yxatidan bitta sahifa. Sahifa raqami chegaradan chiqsa — oxirgi (yoki 1-) sahifa. */
+export function paginateGroups<T>(
+  groups: readonly T[],
+  { page, limit }: QueuePagination,
+): { groups: T[]; info: QueuePageInfo } {
+  const size = Math.max(1, Math.floor(limit))
+  const totalGroups = groups.length
+  const totalPages = Math.max(1, Math.ceil(totalGroups / size))
+  const current = Math.min(Math.max(1, Math.floor(page) || 1), totalPages)
+  const start = (current - 1) * size
+  return {
+    groups: groups.slice(start, start + size),
+    info: {
+      page: current,
+      limit: size,
+      totalPages,
+      totalGroups,
+      hasPrevPage: current > 1,
+      hasNextPage: current < totalPages,
+      prevPage: current > 1 ? current - 1 : null,
+      nextPage: current < totalPages ? current + 1 : null,
+    },
+  }
+}
+
+/**
+ * Navbat URL query'si: filtrlar + sahifalash. `page` = 1 va default `limit` yozilmaydi (URL
+ * qisqa qoladi). Filtr o'zgarsa chaqiruvchi `page` ni bermaydi — 1-sahifaga qaytiladi.
+ */
+export function queueSearchParams(
+  filters: QueueFilters,
+  pagination: Partial<QueuePagination> = {},
+): URLSearchParams {
+  const params = new URLSearchParams({ date: filters.date, status: filters.status })
+  if (filters.source) params.set('source', String(filters.source))
+  if (filters.category) params.set('category', String(filters.category))
+  if (pagination.limit && pagination.limit !== DEFAULT_QUEUE_PAGE_SIZE) {
+    params.set('limit', String(pagination.limit))
+  }
+  if (pagination.page && pagination.page > 1) params.set('page', String(pagination.page))
+  return params
+}
