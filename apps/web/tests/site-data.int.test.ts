@@ -113,11 +113,12 @@ describe('sayt ma’lumotlari (Local API)', () => {
     expect(await loadCategoryPage('uz-Latn', 'bunday-kategoriya-yoq', 1)).toBeNull()
   })
 
-  it('maqola: kirill sarlavha, matn (lotin fallback), muqova variantlari, manba', async () => {
+  it('maqola: kirill sarlavha, matn (avtomatik kirill sinxron), muqova variantlari, manba', async () => {
     const article = await loadArticle('uz-Cyrl', featured.slug)
     expect(article?.post.title).toBe(featured.title['uz-Cyrl'])
     expect(article?.category.slug).toBe(featured.category)
-    expect(JSON.stringify(article?.post.content)).toContain('namuna maqola')
+    // Kirill matn seed'da lotin saqlanganda withCyrlSync orqali yoziladi (TZ §3.6) — fallback emas.
+    expect(JSON.stringify(article?.post.content)).toContain('намуна мақола')
     expect(article?.post.sources?.[0]?.url).toBe(featured.source.url)
     // Demo muqova (seed): kirill alt, WebP variantlar → custom loader src.
     const cover = article?.post.coverImage as Media

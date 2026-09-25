@@ -28,7 +28,12 @@ services:
       retries: 10
 
   minio:
-    image: quay.io/minio/minio:RELEASE.2025-04-22T22-12-26Z
+    # quay.io/minio (2026-09-24 dan 401) va Docker Hub minio/* endi tortilmaydi — o'sha MinIO relizi
+    # Bitnami legacy qayta paketlashidan (tag + digest). Bitnami entrypoint chetlab o'tiladi,
+    # root sifatida /data'da ishlaydi — mavjud minio-data volume'lari bilan mos.
+    image: bitnamilegacy/minio:2025.4.22-debian-12-r2@sha256:50cec18ac4184af4671a78aedd5554942c8ae105d51a465fa82037949046da01
+    user: root
+    entrypoint: ['minio']
     restart: unless-stopped
     command: server /data --console-address ":9001"
     environment:
@@ -52,7 +57,8 @@ services:
   # Bir martalik init: media, raw, backups bucketlarini yaratadi.
   # media — ommaviy o'qish (production'da media.odya.uz → R2 kabi).
   minio-init:
-    image: quay.io/minio/mc:RELEASE.2025-04-16T18-13-26Z
+    image: bitnamilegacy/minio-client:2025.4.16-debian-12-r2@sha256:8a86e441decf053093c5977d49290298295f850c7843652f93e970ab15871dd1
+    user: root
     depends_on:
       minio:
         condition: service_healthy
