@@ -5,7 +5,7 @@ import { runWithAuditChannel } from '@/audit/channel'
 import { apiKeyErrorResponse, authenticateBearer } from '@/auth/api-key'
 import type { RateLimiter } from '@/auth/rate-limit'
 
-import type { McpContext } from './context'
+import type { McpContext, McpMediaOptions } from './context'
 import { MCP_INSTRUCTIONS, MCP_SERVER_INFO, registerOdyaMcp } from './server'
 
 /**
@@ -31,6 +31,8 @@ export interface McpRouteDeps {
   getPayload: () => Promise<Payload>
   siteUrl: string
   limiter?: RateLimiter
+  /** Media toollari (OBLOG-44): stok API kaliti; testlarda — tarmoq o'rnini bosuvchilar. */
+  media?: McpMediaOptions
 }
 
 const NO_STORE = { 'Cache-Control': 'no-store' }
@@ -67,7 +69,12 @@ export function createMcpRoute(deps: McpRouteDeps) {
     })
     if (!auth.ok) return apiKeyErrorResponse(auth)
 
-    const ctx: McpContext = { payload, user: auth.user, siteUrl: deps.siteUrl }
+    const ctx: McpContext = {
+      payload,
+      user: auth.user,
+      siteUrl: deps.siteUrl,
+      ...(deps.media ? { media: deps.media } : {}),
+    }
     const handler = createMcpHandler(
       (server) => registerOdyaMcp(server, ctx),
       { serverInfo: MCP_SERVER_INFO, instructions: MCP_INSTRUCTIONS },

@@ -86,7 +86,7 @@ Claude Desktop masofaviy serverga header bilan to'g'ridan-to'g'ri ulana olmaydi 
 
 <!-- mcp-registry:start — src/mcp/registry.ts dan generatsiya; qo'lda tahrirlamang -->
 
-Jami: 16 ta tool, 2 ta prompt, 5 ta resource.
+Jami: 20 ta tool, 2 ta prompt, 5 ta resource.
 
 ### O'qish toollari (9)
 
@@ -109,10 +109,19 @@ Jami: 16 ta tool, 2 ta prompt, 5 ta resource.
 | `create_draft` | **Qoralama yaratish.** Yig'ilgan element(lar)dan post qoralamasi (holat: draft, sizga biriktiriladi). Atributsiya (sources) avtomatik. Birinchi ID — asosiy manba, qolganlari (shu klasterdan) — qo'shimcha. Element allaqachon olingan bo'lsa — mavjud post qaytadi. | `scrapedItemIds: son[]`, `category?: son \| matn` |
 | `claim_draft` | **Qoralamani olish (lock).** Postni in_progress holatiga o'tkazadi va sizga 2 soatga band qiladi (lock). Faqat draft/in_progress holatidagi, bo'sh yoki sizga biriktirilgan (yoki qulfi tugagan) postlar. | `postId: son` |
 | `release_draft` | **Qulfni bo'shatish.** Postdan voz kechish: biriktirish va lock olib tashlanadi (holat o'zgarmaydi), boshqalar claim_draft bilan olishi mumkin. | `postId: son` |
-| `save_rewrite` | **Qayta yozilgan matnni saqlash.** Lotin: title, excerpt, body (Markdown → Lexical), category, tags (yangi teg yaratiladi). Server tekshiruvlari: kirill harflari yo'q, uzunliklar, havolalar xavfsizligi, sources, manba bilan o'xshashlik. Javob: { ok, errors[], warnings[], seoScore } — ok: false bo'lsa saqlanmaydi, xatolarni tuzatib qayta yuboring. Kirill — avtomatik. | `postId: son`, `title: matn`, `excerpt: matn`, `body: matn`, `category: son \| matn`, `tags?: (son \| matn)[]` |
+| `save_rewrite` | **Qayta yozilgan matnni saqlash.** Lotin: title, excerpt, body (Markdown → Lexical), category, tags (yangi teg yaratiladi). Rasm — alohida qatorda `![alt](media:ID)` (upload_media orqali yuklangan, litsenziyali). Server tekshiruvlari: kirill harflari yo'q, uzunliklar, havolalar xavfsizligi, sources, manba bilan o'xshashlik. Javob: { ok, errors[], warnings[], seoScore } — ok: false bo'lsa saqlanmaydi, xatolarni tuzatib qayta yuboring. Kirill — avtomatik. | `postId: son`, `title: matn`, `excerpt: matn`, `body: matn`, `category: son \| matn`, `tags?: (son \| matn)[]` |
 | `set_seo` | **SEO maydonlari.** seoTitle (≤ 60), metaDescription (140–160), focusKeyword (1–4 so'z), faq (0 yoki 2–4), coverAlt. Javob: { ok, errors[], warnings[], seoScore }. Kirill — avtomatik. | `postId: son`, `seoTitle: matn`, `metaDescription: matn`, `focusKeyword: matn`, `faq?: obyekt[]`, `coverAlt?: matn` |
 | `preview_cyrillic` | **Kirill versiyasini ko'rish.** Postning avtomatik yaratilgan kirill (uz-Cyrl) versiyasi: sarlavha, lid, matn (Markdown), SEO va FAQ. Faqat ko'rish — kirillni agent tahrirlamaydi. | `postId: son` |
-| `submit_for_review` | **Tekshiruvga yuborish.** Postni review holatiga o'tkazadi (+ notesForEditor). Matn va SEO to'ldirilgan bo'lishi kerak, aks holda { ok: false, errors[] }. Publish qilinmaydi — chop etishni muharrir bajaradi. | `postId: son`, `notesForEditor?: matn` |
+| `submit_for_review` | **Tekshiruvga yuborish.** Postni review holatiga o'tkazadi (+ notesForEditor). Matn va SEO to'ldirilgan bo'lishi kerak, aks holda { ok: false, errors[] }. Muqova yo‘q bo‘lsa — warning. Publish qilinmaydi — chop etishni muharrir bajaradi. | `postId: son`, `notesForEditor?: matn` |
+
+### Media toollari (4)
+
+| Tool | Vazifasi | Argumentlar (`?` — ixtiyoriy) |
+| --- | --- | --- |
+| `upload_media` | **Rasm yuklash.** Rasmni media kutubxonasiga yuklaydi: url (http/https) yoki data (base64) + filename. Majburiy: alt (5–15 so'z, lotin) va license; cc_by — licenseUrl, other — licenseNote, press_kit/unsplash/pexels/cc_by — credit. Faqat JPEG/PNG/WebP, ≤ 10 MB, ≥ 400×200. Agentliklar (Getty, Reuters, AP, AFP …), foto-banklar va yangilik manbalarimiz rasmlari rad etiladi. Javob: mediaId, URL, o‘lchamlar. | `url?: matn`, `data?: matn`, `filename?: matn`, `alt: matn`, `caption?: matn`, `credit?: matn`, `license: own \| press_kit \| unsplash \| pexels \| cc_by \| ai_generated \| other`, `licenseUrl?: matn`, `licenseNote?: matn`, `sourceUrl?: matn` |
+| `set_cover` | **Muqova rasmini belgilash.** Postga muqova (coverImage) qo‘yadi: postId, mediaId (+ alt — postning coverAlt). Faqat sizga biriktirilgan draft/in_progress postlar; media litsenziyasi to‘liq bo‘lishi kerak. | `postId: son`, `mediaId: son`, `alt?: matn` |
+| `list_media` | **Media kutubxonasi.** Yuklangan rasmlar (logotiplar, press-kitlar, avval yuklanganlar): qidiruv (fayl nomi, alt, izoh, kredit), litsenziya filtri, mine — faqat o‘zim yuklaganlar. usable — postda ishlatish mumkinmi. | `query?: matn`, `license?: own \| press_kit \| unsplash \| pexels \| cc_by \| ai_generated \| other \| all`, `mine?: ha/yo‘q`, `page?: son`, `limit?: son` |
+| `search_stock_images` | **Legal stok rasmlar qidirish.** Pexels’dan bepul litsenziyali rasmlar: muallif, sahifa va upload_media uchun tayyor argumentlar (uploadWith). Serverda PEXELS_API_KEY sozlanmagan bo‘lsa — xato. | `query: matn`, `orientation?: landscape \| portrait \| square`, `page?: son`, `limit?: son` |
 
 ### Prompts (2)
 
@@ -162,26 +171,38 @@ Server tekshiruvlari (TZ §5.3):
 | `sources` (atributsiya) bo'sh | xato `sources_empty` |
 | Kategoriya yoki teg ID topilmadi | xato `not_found` |
 | Manba bilan 5-gram o'xshashlik ≥ 25% yoki ≥ 16 so'z ketma-ket ko'chirilgan | ogohlantirish `source_similarity` |
-| HTML teglari, rasmlar, `#` (H1) | olib tashlanadi / H2 ga aylanadi — ogohlantirish |
+| HTML teglari, tashqi URL'li rasmlar (`![](https://…)`), `#` (H1) | olib tashlanadi / H2 ga aylanadi — ogohlantirish |
+| `![alt](media:ID)` — media topilmadi / litsenziyasi to'liq emas / manbasi taqiqlangan / noto'g'ri ID | xato `media_not_found` / `media_license` / `media_blocked_source` / `invalid_media_ref` |
+| `submit_for_review`: muqova (`coverImage`) yo'q | ogohlantirish `cover_missing` |
 | 400–900 so'z, ≥ 2 ta H2, 2–5 ichki va 1+ tashqi havola, 3–7 teg, focus keyword joylashuvi, `coverAlt` | ogohlantirish `seo_*` (ballga ta'sir qiladi) |
 | `oʻ`/`gʻ` o'rniga `o'`/`g'` | ogohlantirish `wrong_apostrophe` |
 
 Slug agentdan olinmaydi: `save_rewrite` sarlavhadan `slugify-uz` bilan yaratadi, band bo'lsa `-2`, `-3` qo'shiladi.
 
-**Markdown:** abzaslar, `##`/`###`, `**qalin**`, `*kursiv*`, `~~chizilgan~~`, `` `kod` ``, ro'yxatlar (ichma-ich ham), havolalar (`[matn](https://…)`, ichki — `/kategoriya/slug`), `> iqtibos`, ```` ``` ```` kod bloklari (til bilan), GFM jadvallar, `---`. Xom HTML va skriptlar olib tashlanadi, havolalarda faqat `https://`, `http://`, `mailto:` va nisbiy `/yo'l` ruxsat etiladi (XSS himoyasi).
+**Markdown:** abzaslar, `##`/`###`, `**qalin**`, `*kursiv*`, `~~chizilgan~~`, `` `kod` ``, ro'yxatlar (ichma-ich ham), havolalar (`[matn](https://…)`, ichki — `/kategoriya/slug`), `> iqtibos`, ```` ``` ```` kod bloklari (til bilan), GFM jadvallar, `---`, rasm — alohida qatorda `![alt](media:ID)` (faqat `upload_media` bilan yuklangan fayl → Lexical `upload` tuguni; saytda alt — media'ning `alt` i). Xom HTML va skriptlar olib tashlanadi, havolalarda faqat `https://`, `http://`, `mailto:` va nisbiy `/yo'l` ruxsat etiladi (XSS himoyasi).
 
 **Kirill:** agent faqat lotin yozadi. Har `save_rewrite`/`set_seo` da kirill (uz-Cyrl) versiyasi — sarlavha, lid, matn, SEO, FAQ, alt — avtomatik yaratiladi (kod va URL'lar o'zgarmaydi, glossariydagi brendlar lotinda qoladi). Buni MCP emas, `posts`/`tags` kolleksiyasining umumiy hook'i (`cyrlSyncPlugin`, admin'dagi tahrirlar bilan bir xil) o'sha saqlashda bajaradi; lug'atlar — admin'dagi "Transliteratsiya istisnolari" va "Glossariy" (seed ustidan). Muharrir qo'lda tuzatgan (qulflangan) maydonlar qayta yozilmaydi — lotin o'zgarsa post "kirill eskirgan" deb belgilanadi va javobda ogohlantirish chiqadi.
+
+**Rasmlar (OBLOG-44, `copyright.md` §4):**
+
+- `upload_media` — `url` (http/https) yoki `data` (base64) + `filename`; `alt` (5–15 so'z, lotin — kirill avtomatik, media kolleksiyasining `cyrlSyncPlugin` hook'i), `caption`, `credit`, `license` (majburiy), `licenseUrl` (`cc_by` uchun majburiy), `licenseNote` (`other` uchun majburiy), `sourceUrl`. Javob: `mediaId`, URL, o'lchamlar, WebP variantlar. Fayl Payload Local API orqali kalit egasi nomidan yaratiladi — WebP variantlar, R2/MinIO storage va audit (`channel = mcp`, `tool = upload_media`) odatdagidek; media'da `uploadedVia = mcp`, `uploadedBy` saqlanadi.
+- Rad etiladi: agentliklar va foto-banklar (Getty, Reuters, AP, AFP, EPA, Shutterstock, iStock, Alamy …), **`sources` kolleksiyasidagi yangilik manbalari domenlari** (sayt va RSS host'lari) va ularning CDN'lari (`habrastorage.org` …) — redirect'dan keyingi yakuniy URL va `sourceUrl` ham tekshiriladi.
+- Format: faqat JPEG, PNG, WebP (magic bytes bo'yicha; SVG/GIF — yo'q), ≤ 10 MB, 400×200 … 10 000 px.
+- SSRF himoyasi (`url`): faqat http/https va 80/443 portlar, URL'da login/parol yo'q; DNS natijasidagi barcha manzillar ommaviy bo'lishi kerak (loopback, xususiy tarmoqlar, link-local/bulut metadata, CGNAT, IPv6 ULA/link-local, IPv4-mapped — rad etiladi), ulanish aynan tekshirilgan IP'ga; redirect'lar (≤ 3) har birida qayta tekshiriladi; timeout 15 s, hajm oqim bo'yicha cheklanadi.
+- `set_cover(postId, mediaId, alt?)` — muqova (`save_rewrite`/`set_seo` bilan bir xil egalik/holat qoidalari; `alt` → postning `coverAlt`).
+- `list_media` — mavjud rasmlar (logotiplar, press-kitlar): qidiruv, litsenziya filtri, `mine`; `usable` — postda ishlatish mumkinmi.
+- `search_stock_images` — Pexels (`PEXELS_API_KEY` sozlangan bo'lsa; aks holda "sozlanmagan" xatosi): nomzodlar muallif, sahifa va `upload_media` uchun tayyor argumentlar (`uploadWith`) bilan. Unsplash API ulanmagan — uning qoidalari hotlink talab qiladi (bizda fayl R2 ga ko'chiriladi).
 
 **Glossariy:** `get_glossary` va `odya://glossary` — `packages/guidelines/glossary.seed.json` ustiga admin'dagi `glossary` kolleksiyasi (DB yozuvi ustun, kesh 60 s; javobda `source: "seed+db"`).
 
 ## 4. Ish jarayoni
 
 ```
-list_scraped ─▶ create_draft ─▶ claim_draft ─▶ get_source ─▶ save_rewrite ─▶ set_seo ─▶ submit_for_review
-                   (draft)       (in_progress,                  (Markdown →     (SEO,       (review)
-                                  lock 2 soat)                   Lexical, kirill) kirill)        │
-                                                                                                 ▼
-                                                                      muharrir: tekshiradi, rasm tanlaydi, Publish
+list_scraped ─▶ create_draft ─▶ claim_draft ─▶ get_source ─▶ save_rewrite ─▶ set_seo ─▶ [rasm] ─▶ submit_for_review
+                   (draft)       (in_progress,                  (Markdown →     (SEO,        │          (review)
+                                  lock 2 soat)                   Lexical, kirill) kirill)     │             │
+                                                                                              │             ▼
+        [rasm] = list_media / search_stock_images ─▶ upload_media ─▶ set_cover      muharrir: tekshiradi, rasmni tasdiqlaydi, Publish
 ```
 
 - **Promptlar:** `daily_batch(count, minScore)` — kunlik batch: ko'rsatmalar va glossariy → `list_scraped` → klasterdan bittasi → `list_drafts` bilan takrorni tekshirish → har bir element uchun yuqoridagi zanjir → hisobot. `rewrite_article(scrapedItemId)` — bitta element uchun xuddi shu zanjir (ko'rsatmalar, glossariy va manba matni promptning o'zida).
@@ -191,7 +212,7 @@ list_scraped ─▶ create_draft ─▶ claim_draft ─▶ get_source ─▶ sav
 - Faqat `draft`/`in_progress` holatidagi va **sizga biriktirilgan** postlar o'zgartiriladi. `review`, `published` va boshqa holatdagi postlar — rad etiladi (tushunarli xato bilan).
 - `save_rewrite`/`set_seo` lock'ni har safar 2 soatga yangilaydi; qoralama (`draft`) bo'lsa avtomatik `in_progress` ga oladi. Lock tugagan postni boshqa muharrir (yoki uning agenti) `claim_draft` bilan olishi mumkin.
 - `rewrittenBy = ai_agent`, `aiDisclosure = true` — avtomatik (saytda AI shaffoflik izohi chiqadi).
-- **Muharrir** admin → **Tekshiruv (review)** navbatida (`/admin/review`) matn, SEO, kirill va manbalarni tekshiradi, muqova rasmini tanlaydi va **Publish** qiladi. Muharrir qaytarsa (`review → in_progress`), post yana agent uchun tahrirlanadigan bo'ladi.
+- **Muharrir** admin → **Tekshiruv (review)** navbatida (`/admin/review`) matn, SEO, kirill, manbalar va rasmlarni (litsenziya, kredit) tekshiradi, kerak bo'lsa muqovani almashtiradi va **Publish** qiladi. Muharrir qaytarsa (`review → in_progress`), post yana agent uchun tahrirlanadigan bo'ladi.
 
 ## 5. Namuna so'rovlar
 
@@ -200,7 +221,7 @@ Claude Code yoki Claude Desktop chatiga yozing:
 - **Kunlik batch:**
   > Bugungi score ≥ 60 bo'lgan 5 ta yangilikni qayta yozib review'ga yubor.
 
-  Agent `daily_batch` promptidagi tartibga amal qiladi: ko'rsatmalar → `list_scraped(minScore: 60)` → har biri uchun `create_draft → claim_draft → get_source → save_rewrite → set_seo → submit_for_review`, oxirida post ID'lari va izohlar bilan hisobot. Claude Code'da prompt: `/mcp__odya__daily_batch 5 60`.
+  Agent `daily_batch` promptidagi tartibga amal qiladi: ko'rsatmalar → `list_scraped(minScore: 60)` → har biri uchun `create_draft → claim_draft → get_source → save_rewrite → set_seo → (list_media / search_stock_images → upload_media → set_cover) → submit_for_review`, oxirida post ID'lari va izohlar bilan hisobot. Claude Code'da prompt: `/mcp__odya__daily_batch 5 60`.
 
 - **Bitta yangilik:**
   > 1234-sonli yig'ilgan elementni qayta yozib, review'ga yubor. Ichki havolalarni search_posts bilan top.
@@ -213,6 +234,9 @@ Claude Code yoki Claude Desktop chatiga yozing:
 - **Mavjud qoralamani tugatish:**
   > Menga biriktirilgan qoralamalarni ko'rsat (list_drafts assignee: me) va 57-postni tugatib review'ga yubor.
 
+- **Muqova:**
+  > 57-postga Pexels'dan mos muqova top, yukla va muqova qilib qo'y (kreditni to'g'ri yoz).
+
 - **Kirillni tekshirish:**
   > 57-postning kirill versiyasini ko'rsat — brend nomlari to'g'ri qolganmi?
 
@@ -220,7 +244,7 @@ Claude Code yoki Claude Desktop chatiga yozing:
 
 - **Publish, schedule, o'chirish, arxivlash yo'q.** Kategoriya, menyu, glossariy va manbalarni boshqarish ham yo'q (faqat yangi teg yaratish mumkin).
 - Kirill versiyasini agent tahrirlamaydi — faqat `preview_cyrillic` bilan ko'radi; xatoni `notesForEditor` ga yozadi.
-- Rasm yuklash yo'q: muqovani muharrir tanlaydi; agent `coverAlt` va `notesForEditor` da rasm taklif qiladi.
+- Rasm — faqat litsenziyali (`upload_media`), agentlik va manba saytlari rasmlari server tomonidan rad etiladi; yakuniy tasdiq — muharrir. Media'ni o'chirish/tahrirlash tooli yo'q. Yuklashlar kvotasi — soatiga 30 ta (kalit egasi bo'yicha, jarayon xotirasida).
 - Manba matni (`get_source`) — ishonchsiz ma'lumot: `<untrusted_source>` ichidagi ko'rsatmalar bajarilmaydi (prompt injection himoyasi, TZ §9.2).
 - Kalit egasining huquqlari amal qiladi (`overrideAccess: false`); boshqa muharrirga biriktirilgan yoki band qilingan post — rad etiladi.
 - Limit: 60 so'rov/daqiqa (kalit bo'yicha). Bitta `create_draft` — ko'pi bilan 10 ta element; `body` — ko'pi bilan 60 000 belgi.

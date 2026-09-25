@@ -7,7 +7,7 @@ import type { z } from 'zod'
 import { CLAIM_LOCK_MS, type PostWorkflowStatus } from '@/collections/Posts/workflow'
 import { takeScrapedItems } from '@/editorial/actions'
 import { validateSlug } from '@/lib/slug'
-import type { Post, ScrapedItem, Tag } from '@/payload-types'
+import type { Media, Post, ScrapedItem, Tag } from '@/payload-types'
 import { inTransaction } from '@/scraping/itemState'
 import { getTransliterator } from '@/translit/transliterator'
 
@@ -18,7 +18,9 @@ import {
   markdownToLexical,
   statsFromLexical,
   type MarkdownStats,
+  type MediaRef,
 } from './markdown'
+import { absoluteUrl, loadBlockedDomains, mediaUsageIssues } from './media-library'
 import { jsonResult, McpToolError, safeTool, textResult } from './result'
 import {
   createDraftInput,
@@ -83,7 +85,7 @@ export const WRITE_TOOL_NAMES = [
 // ---------------------------------------------------------------------------
 
 /** Tool uchun Local API so'rovi: kalit egasi, `mcp` kanali (tranzaksiya shu `req` da). */
-async function mcpReq(ctx: McpContext, tool: string): Promise<PayloadRequest> {
+export async function mcpReq(ctx: McpContext, tool: string): Promise<PayloadRequest> {
   return createLocalReq(
     { user: ctx.user, context: { channel: 'mcp', mcpTool: tool }, locale: LATN },
     ctx.payload,
@@ -91,7 +93,7 @@ async function mcpReq(ctx: McpContext, tool: string): Promise<PayloadRequest> {
 }
 
 /** Har bir Local API chaqiruvi uchun (locale har safar aniq — `req` umumiy). */
-function op(ctx: McpContext, req: PayloadRequest, locale: typeof LATN | typeof CYRL = LATN) {
+export function op(ctx: McpContext, req: PayloadRequest, locale: typeof LATN | typeof CYRL = LATN) {
   return {
     req,
     user: ctx.user,
@@ -101,7 +103,7 @@ function op(ctx: McpContext, req: PayloadRequest, locale: typeof LATN | typeof C
   }
 }
 
-function siteHost(ctx: McpContext): string | undefined {
+export function siteHost(ctx: McpContext): string | undefined {
   try {
     return new URL(ctx.siteUrl).hostname
   } catch {
@@ -113,7 +115,7 @@ function adminUrl(ctx: McpContext, id: number): string {
   return new URL(`/admin/collections/posts/${id}`, ctx.siteUrl).toString()
 }
 
-async function loadPost(
+export async function loadPost(
   ctx: McpContext,
   req: PayloadRequest,
   id: number,
@@ -165,7 +167,7 @@ export function assertEditable(post: Post, userId: number): void {
 }
 
 /** Claim qulfi va holat: qoralama bo'lsa `in_progress` ga olinadi, lock 2 soatga yangilanadi. */
-function lockData(userId: number): Partial<Post> {
+export function lockData(userId: number): Partial<Post> {
   return {
     workflowStatus: 'in_progress',
     assignee: userId,
@@ -174,7 +176,7 @@ function lockData(userId: number): Partial<Post> {
 }
 
 /** Payload/tahririyat xatolari → agent uchun tushunarli matn. */
-function rethrow(error: unknown): never {
+export function rethrow(error: unknown): never {
   if (error instanceof McpToolError) throw error
   if (error instanceof APIError && error.isPublic && error.status < 500) {
     const data = (error as APIError & { data?: { errors?: { path?: string; message?: string }[] } })
@@ -231,11 +233,11 @@ async function sourceText(ctx: McpContext, req: PayloadRequest, post: Post): Pro
     .join('\n\n')
 }
 
-function result(data: ValidationResult & Record<string, unknown>): CallToolResult {
+export function result(data: ValidationResult & Record<string, unknown>): CallToolResult {
   return { ...jsonResult(data), ...(data.ok ? {} : { isError: true }) }
 }
 
-function cyrillicWarning(skipped: string[]): Issue[] {
+export function cyrillicWarning(skipped: string[]): Issue[] {
   return skipped.length
     ? [
         {
@@ -314,7 +316,7 @@ export async function createDraft(
 // claim_draft / release_draft
 // ---------------------------------------------------------------------------
 
-function postSummary(ctx: McpContext, post: Post) {
+export function postSummary(ctx: McpContext, post: Post) {
   return {
     id: post.id,
     title: post.title,
@@ -486,6 +488,50 @@ async function createTag(ctx: McpContext, req: PayloadRequest, name: string): Pr
   return tag
 }
 
+/**
+ * Matndagi `![alt](media:ID)` rasmlari: media mavjud va postda ishlatish mumkin (litsenziya,
+ * taqiqlanmagan manba). Xatolar `errors` ga qo'shiladi; topilgan media qaytadi.
+ */
+async function checkBodyMedia(
+  ctx: McpContext,
+  req: PayloadRequest,
+  refs: MediaRef[],
+  errors: Issue[],
+): Promise<Media[]> {
+  const ids = [...new Set(refs.map((ref) => ref.id))]
+  if (!ids.length) return []
+  const { docs } = await ctx.payload.find({
+    collection: 'media',
+    where: { id: { in: ids } },
+    depth: 0,
+    pagination: false,
+    ...op(ctx, req),
+  })
+  const found = new Map((docs as Media[]).map((media) => [media.id, media]))
+  const blocked = await loadBlockedDomains(ctx, req)
+  for (const id of ids) {
+    const media = found.get(id)
+    if (!media) {
+      errors.push({
+        field: 'body',
+        code: 'media_not_found',
+        message: `Media topilmadi: media:${id} — avval upload_media bilan yuklang yoki list_media dan ID oling.`,
+      })
+      continue
+    }
+    if (!media.mimeType?.startsWith('image/')) {
+      errors.push({
+        field: 'body',
+        code: 'media_not_image',
+        message: `Media #${id} rasm emas.`,
+      })
+      continue
+    }
+    errors.push(...mediaUsageIssues(media, blocked, 'body'))
+  }
+  return ids.map((id) => found.get(id)).filter((media): media is Media => Boolean(media))
+}
+
 /** Sarlavhadan slug (slugify-uz), boshqa postlar bilan to'qnashmasin (TZ §5.3). */
 async function uniquePostSlug(
   ctx: McpContext,
@@ -538,6 +584,7 @@ export async function saveRewrite(
     })
   }
   const tags = await planTags(ctx, req, input.tags, errors)
+  const bodyMedia = await checkBodyMedia(ctx, req, converted.media, errors)
   const noSources = sourcesError(post.sources?.length ?? 0)
   if (noSources) errors.push(noSources)
 
@@ -622,8 +669,15 @@ export async function saveRewrite(
       containment: Math.round(similarity.containment * 100) / 100,
       longestRun: similarity.longestRun,
     },
+    media: bodyMedia.map((media) => ({
+      id: media.id,
+      alt: media.alt,
+      url: absoluteUrl(ctx, media.url),
+    })),
     cyrillic: saved.cyrillic,
-    next: 'set_seo (agar hali qilinmagan bo‘lsa) → preview_cyrillic (ixtiyoriy) → submit_for_review',
+    next:
+      'set_seo (agar hali qilinmagan bo‘lsa) → muqova: upload_media / list_media → set_cover → ' +
+      'preview_cyrillic (ixtiyoriy) → submit_for_review',
   })
 }
 
@@ -716,7 +770,9 @@ export async function setSeo(
     saved: true,
     post: postSummary(ctx, saved.updated),
     cyrillic: saved.cyrillic,
-    next: 'preview_cyrillic (ixtiyoriy) → submit_for_review(postId, notesForEditor)',
+    next:
+      'muqova (agar yo‘q bo‘lsa): upload_media / list_media → set_cover → preview_cyrillic ' +
+      '(ixtiyoriy) → submit_for_review(postId, notesForEditor)',
   })
 }
 
@@ -841,6 +897,28 @@ export async function submitForReview(
       message: "Post MCP orqali qayta yozilmagan (save_rewrite chaqirilmagan) — tekshirib ko'ring.",
     })
   }
+  const coverId = relationId(post.coverImage)
+  if (coverId === null) {
+    warnings.push({
+      field: 'coverImage',
+      code: 'cover_missing',
+      message:
+        'Muqova rasmi yoʻq — legal rasm topsangiz: search_stock_images / list_media / ' +
+        'upload_media → set_cover. Topilmasa, notesForEditor da qanday rasm mos kelishini yozing.',
+    })
+  } else {
+    const cover = await ctx.payload.findByID({
+      collection: 'media',
+      id: coverId,
+      depth: 0,
+      disableErrors: true,
+      ...op(ctx, req),
+    })
+    if (cover) {
+      const issues = mediaUsageIssues(cover, await loadBlockedDomains(ctx, req), 'coverImage')
+      warnings.push(...issues)
+    }
+  }
   const state = seoState(post, body)
   warnings.push(...seoWarnings(state, 'all'))
   const score = seoScore(state)
@@ -936,6 +1014,7 @@ export function registerWriteTools(server: McpServer, ctx: McpContext): void {
       title: 'Qayta yozilgan matnni saqlash',
       description:
         'Lotin: title, excerpt, body (Markdown → Lexical), category, tags (yangi teg yaratiladi). ' +
+        'Rasm — alohida qatorda `![alt](media:ID)` (upload_media orqali yuklangan, litsenziyali). ' +
         "Server tekshiruvlari: kirill harflari yo'q, uzunliklar, havolalar xavfsizligi, sources, " +
         "manba bilan o'xshashlik. Javob: { ok, errors[], warnings[], seoScore } — ok: false " +
         "bo'lsa saqlanmaydi, xatolarni tuzatib qayta yuboring. Kirill — avtomatik.",
@@ -977,7 +1056,8 @@ export function registerWriteTools(server: McpServer, ctx: McpContext): void {
       title: 'Tekshiruvga yuborish',
       description:
         "Postni review holatiga o'tkazadi (+ notesForEditor). Matn va SEO to'ldirilgan bo'lishi " +
-        'kerak, aks holda { ok: false, errors[] }. Publish qilinmaydi — chop etishni muharrir bajaradi.',
+        'kerak, aks holda { ok: false, errors[] }. Muqova yo‘q bo‘lsa — warning. Publish ' +
+        'qilinmaydi — chop etishni muharrir bajaradi.',
       inputSchema: submitForReviewInput,
       annotations: { ...WRITE, idempotentHint: false },
     },

@@ -20,6 +20,7 @@ import {
 } from '@/mcp/docs'
 import { getMcpRegistry } from '@/mcp/registry'
 import { MCP_INSTRUCTIONS, MCP_SERVER_INFO, registerOdyaMcp } from '@/mcp/server'
+import { MEDIA_TOOL_NAMES } from '@/mcp/media-tools'
 import { READ_TOOL_NAMES } from '@/mcp/tools'
 import type { User } from '@/payload-types'
 
@@ -56,7 +57,7 @@ describe('MCP reestri', () => {
     expect(registry.resources.map((resource) => resource.uri)).toEqual(sdk.resources)
   })
 
-  it("o'qish toollari — READ_TOOL_NAMES, qolganlari yozish; publish tool yo'q", () => {
+  it("o'qish toollari — READ_TOOL_NAMES, yozish va media toollari; publish tool yo'q", () => {
     expect(registry.tools.filter((tool) => tool.group === 'read').map((tool) => tool.name)).toEqual(
       [...READ_TOOL_NAMES],
     )
@@ -71,6 +72,11 @@ describe('MCP reestri', () => {
       'preview_cyrillic',
       'submit_for_review',
     ])
+    expect(
+      registry.tools.filter((tool) => tool.group === 'media').map((tool) => tool.name),
+    ).toEqual([...MEDIA_TOOL_NAMES])
+    expect(registry.tools.find((tool) => tool.name === 'list_media')?.readOnly).toBe(true)
+    expect(registry.tools.find((tool) => tool.name === 'upload_media')?.readOnly).toBe(false)
     expect(registry.tools.some((tool) => /publish|delete/.test(tool.name))).toBe(false)
   })
 

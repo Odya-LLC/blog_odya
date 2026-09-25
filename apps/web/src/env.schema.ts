@@ -77,6 +77,10 @@ export const envSchema = z.object({
   TELEGRAM_CHANNEL_CYRL: nonEmpty.optional(),
   TELEGRAM_ALERT_CHAT_ID: nonEmpty.optional(),
 
+  // --- Stok rasmlar (ixtiyoriy: bo'lmasa MCP `search_stock_images` "sozlanmagan" deydi) ---
+  /** Pexels API kaliti (https://www.pexels.com/api/) — MCP orqali legal rasm qidirish (OBLOG-44). */
+  PEXELS_API_KEY: nonEmpty.optional(),
+
   // --- Monitoring (ixtiyoriy: bo'lmasa Sentry o'chiq) ---
   SENTRY_DSN: z.url().optional(),
 })

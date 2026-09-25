@@ -6,6 +6,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { apiKeyRateLimiter, createRateLimiter } from '@/auth/rate-limit'
 import { createMcpRoute, MCP_PATH } from '@/mcp/route'
+import { MEDIA_TOOL_NAMES } from '@/mcp/media-tools'
 import { READ_TOOL_NAMES } from '@/mcp/tools'
 import { WRITE_TOOL_NAMES } from '@/mcp/write-tools'
 import type { Category, Post, ScrapedItem, Source, Tag, User } from '@/payload-types'
@@ -258,7 +259,7 @@ describe('MCP server (/api/mcp)', () => {
 
     const { tools } = await client.listTools()
     expect(tools.map((tool) => tool.name).sort()).toEqual(
-      [...READ_TOOL_NAMES, ...WRITE_TOOL_NAMES].sort(),
+      [...READ_TOOL_NAMES, ...WRITE_TOOL_NAMES, ...MEDIA_TOOL_NAMES].sort(),
     )
     const readTools = tools.filter((tool) =>
       (READ_TOOL_NAMES as readonly string[]).includes(tool.name),

@@ -1,8 +1,8 @@
 ---
 id: copyright
 title: Mualliflik huquqi qoidalari
-version: 1.0.0
-updatedAt: 2026-09-23
+version: 1.1.0
+updatedAt: 2026-09-25
 ---
 
 # Blog Odya — mualliflik huquqi qoidalari
@@ -69,8 +69,20 @@ Ruxsat etilgan rasmlar (`media.license` maydoni):
 Qoidalar:
 
 - Har bir rasmda `alt` matni (majburiy), kerak boʻlsa `caption` va `credit` boʻladi.
-- Agent rasm yuklamaydi va tanlamaydi — rasmni muharrir tanlaydi. Agent `set_seo` orqali muqova uchun `coverAlt` taklif qiladi va `notesForEditor` da qanday rasm mos kelishini yozishi mumkin (masalan, «Apple press-kitidan iPhone 18 rasmi»).
 - Getty Images, Reuters, AP, AFP kabi agentliklar rasmlari litsenziyasiz ishlatilmaydi.
+
+### Agent rasm yuklashi (MCP)
+
+Agent faqat **litsenziyasi aniq** rasmni yuklaydi va postga qoʻyadi; yakuniy tanlovni baribir muharrir tasdiqlaydi (post publishdan oldin koʻrib chiqiladi).
+
+- Qidirish tartibi: avval `list_media` (logotiplar, press-kitlar, avval yuklangan rasmlar — qayta yuklanmaydi), keyin rasmiy press-kit/press-reliz, keyin `search_stock_images` (Pexels). Mos legal rasm topilmasa — rasm qoʻyilmaydi, `notesForEditor` da taklif yoziladi.
+- `upload_media`: `url` yoki `data` (base64) + `filename`; `alt` (majburiy, 5–15 soʻz, lotin — kirill avtomatik), `caption`, `credit`, `license` (majburiy), `licenseUrl`, `licenseNote`, `sourceUrl`.
+  - `cc_by` — `licenseUrl` majburiy; `other` — `licenseNote` (yozma ruxsat kimdan va qanday olingani) majburiy; `press_kit`, `unsplash`, `pexels`, `cc_by`, `other` — `credit` majburiy; `ai_generated` — kredit berilmasa «Rasm: AI yordamida yaratilgan».
+  - Server rad etadi: agentliklar va foto-banklar domenlari (gettyimages, reuters, apnews/ap.org, afp, epa, shutterstock, istockphoto, alamy, depositphotos …), **yangilik manbalarimiz** (`sources`) va ularning rasm CDN'lari (masalan, habr.com, habrastorage.org) — scraped maqoladagi rasm ommaga chiqarilmaydi. Tekshiruv redirect'dan keyingi yakuniy manzilga va `sourceUrl` ga ham qoʻllanadi.
+  - Faqat JPEG, PNG, WebP (SVG, GIF — yoʻq), ≤ 10 MB, kamida 400×200 px (muqova uchun ≥ 1200 px kenglik tavsiya etiladi).
+- `set_cover(postId, mediaId, alt?)` — muqova; faqat agentga biriktirilgan `draft`/`in_progress` postlar.
+- Matn ichida — alohida qatorda `![alt](media:ID)` (`save_rewrite`). Tashqi URL'li `![](https://…)` olib tashlanadi.
+- Muqovasiz post ham tekshiruvga yuboriladi, lekin `submit_for_review` ogohlantirish (warning) qaytaradi.
 - Rasm ustiga boshqa nashr logotipi yoki suv belgisi tushgan boʻlsa, u ishlatilmaydi.
 
 ## 5. Manbalarga hurmat
