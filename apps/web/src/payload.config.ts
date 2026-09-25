@@ -84,6 +84,12 @@ export default buildConfig({
           path: '/review',
           meta: { title: 'Tekshiruv navbati' },
         },
+        // MCP qo'llanma (OBLOG-43): docs/mcp.md + MCP reestri.
+        mcpDocs: {
+          Component: '@/components/admin/McpDocsView#McpDocsView',
+          path: '/mcp',
+          meta: { title: 'MCP qo‘llanma' },
+        },
       },
     },
   },

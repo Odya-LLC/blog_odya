@@ -33,6 +33,15 @@ export const isAdminUser = (user: MaybeUser): boolean => hasRole(user, 'admin')
 
 export const isAdminOrEditorUser = (user: MaybeUser): boolean => hasRole(user, 'admin', 'editor')
 
+/**
+ * Tahririyat custom view'lari (`/admin/news-queue`, `/admin/review`, `/admin/mcp`) uchun:
+ * anonim — login sahifasiga, admin/editor — ruxsat, boshqa rol — "ruxsat yo'q".
+ */
+export function editorialAccess(user: MaybeUser): 'login' | 'allowed' | 'forbidden' {
+  if (!user) return 'login'
+  return isAdminOrEditorUser(user) ? 'allowed' : 'forbidden'
+}
+
 /** Kolleksiya darajasida: faqat admin. */
 export const isAdmin: Access = ({ req }) => isAdminUser(req.user)
 

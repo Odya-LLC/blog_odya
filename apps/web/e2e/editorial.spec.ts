@@ -50,6 +50,8 @@ test.describe('tahririyat navbati (admin)', () => {
   test('anonim — login sahifasiga yo‘naltiriladi, endpoint 401', async ({ page, request }) => {
     await page.goto('/admin/news-queue')
     await expect(page).toHaveURL(/\/admin\/login/)
+    await page.goto('/admin/mcp')
+    await expect(page).toHaveURL(/\/admin\/login/)
     const response = await request.post('/api/scraped-items/1/take', { data: {} })
     expect(response.status()).toBe(401)
   })
@@ -159,5 +161,28 @@ test.describe('tahririyat navbati (admin)', () => {
     const published = page.getByTestId('editorial-stats').locator('[data-stat="published"]')
     await expect(published).not.toContainText(/^0/)
     await shot(page, '09-dashboard-after')
+  })
+
+  test('MCP qo‘llanma (/admin/mcp): nav havolasi, joriy domen, toollar jadvali', async ({
+    page,
+  }) => {
+    await page.goto('/admin/login')
+    await page.locator('#field-email').fill(EMAIL!)
+    await page.locator('#field-password').fill(PASSWORD!)
+    await page.locator('button[type="submit"]').click()
+    await page.waitForURL(/\/admin\/?$/)
+    // Nav havolasi (yon panel kichik oynada yopiq bo'lishi mumkin — href tekshiriladi).
+    await expect(page.locator('#nav-mcp')).toHaveAttribute('href', '/admin/mcp')
+    await page.goto('/admin/mcp')
+    await expect(page.getByRole('heading', { level: 1, name: 'MCP qo‘llanma' })).toBeVisible()
+    const origin = new URL(page.url()).origin
+    await expect(page.getByTestId('mcp-endpoint')).toHaveText(`${origin}/api/mcp`)
+    await expect(page.getByTestId('mcp-tool-row').first()).toBeVisible()
+    await expect(page.getByTestId('mcp-read-tools')).toContainText('list_scraped')
+    await expect(page.getByTestId('mcp-write-tools')).toContainText('submit_for_review')
+    await expect(page.locator('.mcp-doc')).toContainText(
+      `claude mcp add --transport http odya ${origin}/api/mcp`,
+    )
+    await shot(page, '10-mcp-docs')
   })
 })

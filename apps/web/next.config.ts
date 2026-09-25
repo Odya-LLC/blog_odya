@@ -38,6 +38,9 @@ const nextConfig: NextConfig = {
     '/og/**': ['./assets/og-fonts/*.ttf'],
     // MCP resource/prompt'lari `packages/guidelines/*.md` ni `fs` bilan o'qiydi (M2-06).
     '/api/mcp': ['../../packages/guidelines/*.md'],
+    // Admin "MCP qo'llanma" (`/admin/mcp`, OBLOG-43) `docs/mcp.md` ni va reestr uchun
+    // ko'rsatmalarni `fs` bilan o'qiydi.
+    '/admin/**': ['../../docs/mcp.md', '../../packages/guidelines/*.md'],
   },
   // RSS: `/rss.xml`, `/kr/rss.xml`, `/{category}/rss.xml` → `/feeds/…` (src/site/seo/rewrites.ts).
   rewrites: async () => [...FEED_REWRITES],

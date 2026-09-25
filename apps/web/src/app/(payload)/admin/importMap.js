@@ -39,6 +39,7 @@ import { EditorialNavLinks as EditorialNavLinks_60680023464659b414314bf8361bc3a3
 import { S3ClientUploadHandler as S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24 } from '@payloadcms/storage-s3/client'
 import { NewsQueueView as NewsQueueView_321187b4b6b66dcf06d4c974a72323c6 } from '@/components/admin/NewsQueueView'
 import { ReviewQueueView as ReviewQueueView_216d44a675099e9e8a84b2e9dbbde6f4 } from '@/components/admin/ReviewQueueView'
+import { McpDocsView as McpDocsView_3aac3e9bd84c230af8eb1f7ebf884f06 } from '@/components/admin/McpDocsView'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 
 /** @type import('payload').ImportMap */
@@ -84,5 +85,6 @@ export const importMap = {
   "@payloadcms/storage-s3/client#S3ClientUploadHandler": S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24,
   "@/components/admin/NewsQueueView#NewsQueueView": NewsQueueView_321187b4b6b66dcf06d4c974a72323c6,
   "@/components/admin/ReviewQueueView#ReviewQueueView": ReviewQueueView_216d44a675099e9e8a84b2e9dbbde6f4,
+  "@/components/admin/McpDocsView#McpDocsView": McpDocsView_3aac3e9bd84c230af8eb1f7ebf884f06,
   "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1
 }

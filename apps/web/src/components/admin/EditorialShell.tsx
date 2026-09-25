@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation'
 import type { AdminViewServerProps } from 'payload'
 import type React from 'react'
 
-import { isAdminOrEditorUser } from '@/access'
+import { editorialAccess } from '@/access'
 
 import './editorial.css'
 
@@ -28,7 +28,8 @@ export function EditorialShell({
   const { req, permissions, visibleEntities, locale } = initPageResult
   const adminRoute = req.payload.config.routes.admin
 
-  if (!req.user) {
+  const access = editorialAccess(req.user)
+  if (access === 'login') {
     redirect(`${adminRoute}/login?redirect=${encodeURIComponent(`${adminRoute}${path}`)}`)
   }
 
@@ -46,7 +47,7 @@ export function EditorialShell({
     >
       <SetStepNav nav={[{ label }]} />
       <Gutter className="editorial">
-        {isAdminOrEditorUser(req.user) ? (
+        {access === 'allowed' ? (
           children
         ) : (
           <p className="editorial__empty">Bu sahifa faqat admin va muharrirlar uchun.</p>

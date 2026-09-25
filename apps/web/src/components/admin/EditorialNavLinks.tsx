@@ -14,6 +14,7 @@ export function EditorialNavLinks() {
   const links = [
     { href: `${admin}/news-queue`, label: 'Yangiliklar navbati', id: 'nav-news-queue' },
     { href: `${admin}/review`, label: 'Tekshiruv (review)', id: 'nav-review' },
+    { href: `${admin}/mcp`, label: 'MCP qo‘llanma', id: 'nav-mcp' },
   ]
   return (
     <NavGroup label="Tahririyat">
