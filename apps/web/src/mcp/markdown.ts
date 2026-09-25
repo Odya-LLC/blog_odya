@@ -5,9 +5,12 @@ import type {
   Code,
   Definition,
   Heading,
+  Image,
+  ImageReference,
   List,
   ListItem,
   Nodes,
+  Paragraph,
   PhrasingContent,
   RootContent,
   Table,
@@ -32,7 +35,9 @@ import { gfm } from 'micromark-extension-gfm'
  *   matn qoladi), ogohlantirish bilan. Lexical matn tugunlari HTML sifatida chiqarilmaydi.
  * - Havolalar: faqat `http(s)://`, `mailto:`, nisbiy `/yo'l` va `#anchor`. `javascript:`,
  *   `data:`, `vbscript:`, `file:`, protokolsiz `//host` va boshqalar — **xato** (saqlanmaydi).
- * - Rasmlar (`![]()`) — olib tashlanadi (rasmni muharrir qo'shadi), ogohlantirish bilan.
+ * - Rasmlar: faqat `upload_media` bilan yuklangan fayllar — `![alt](media:123)` alohida qatorda
+ *   (paragraf) Lexical `upload` tuguniga aylanadi (OBLOG-44); media mavjudligi va litsenziyasi
+ *   `save_rewrite` da tekshiriladi. Tashqi URL'li `![]()` — olib tashlanadi, ogohlantirish bilan.
  */
 
 // ---------------------------------------------------------------------------
@@ -173,9 +178,17 @@ export interface MarkdownStats {
   plainText: string
 }
 
+/** Matndagi `![alt](media:ID)` havolasi. */
+export interface MediaRef {
+  id: number
+  alt: string
+}
+
 export interface MarkdownConversion {
   state: LexicalState
   stats: MarkdownStats
+  /** Matnga qo'yilgan media (`![alt](media:ID)`) — tartib bo'yicha, takrorlar bilan. */
+  media: MediaRef[]
   /** Xatolar (masalan, xavfli havola) — saqlanmaydi. */
   errors: MarkdownIssue[]
   /** Olib tashlangan/o'zgartirilgan qismlar haqida. */
@@ -204,6 +217,29 @@ function textNode(text: string, format: number): LexicalNode {
 
 function elementBase(type: string, children: LexicalNode[]): LexicalNode {
   return { children, direction: null, format: '', indent: 0, type, version: 1 }
+}
+
+/** `media:123` → 123; boshqa sxema — `undefined`; noto'g'ri ID — `null`. */
+export function parseMediaRef(url: string): number | null | undefined {
+  const match = /^\s*media:(.*)$/i.exec(url)
+  if (!match) return undefined
+  const value = match[1]!.trim()
+  if (!/^\d{1,10}$/.test(value)) return null
+  const id = Number(value)
+  return id >= 1 && Number.isSafeInteger(id) ? id : null
+}
+
+/** Payload `upload` tuguni (UploadFeature, v3) — `media` kolleksiyasidagi fayl. */
+export function uploadNode(id: number): LexicalNode {
+  return {
+    type: 'upload',
+    version: 3,
+    format: '',
+    id: nodeId(),
+    fields: {},
+    relationTo: 'media',
+    value: id,
+  }
 }
 
 function paragraph(children: LexicalNode[]): LexicalNode {
@@ -250,6 +286,7 @@ class Converter {
     firstParagraph: '',
     plainText: '',
   }
+  readonly media: MediaRef[] = []
   private readonly definitions = new Map<string, Definition>()
   private readonly textParts: string[] = []
 
@@ -286,14 +323,8 @@ class Converter {
 
   private block(node: RootContent): LexicalNode[] {
     switch (node.type) {
-      case 'paragraph': {
-        const children = mergeText(this.inline(node.children, 0))
-        if (!hasVisibleText(children)) return []
-        const text = plainOf(children)
-        if (!this.stats.firstParagraph) this.stats.firstParagraph = text
-        this.textParts.push(text)
-        return [paragraph(children)]
-      }
+      case 'paragraph':
+        return this.paragraph(node)
       case 'heading':
         return this.heading(node)
       case 'list':
@@ -315,6 +346,77 @@ class Converter {
       default:
         return []
     }
+  }
+
+  /**
+   * Paragraf: undagi `![alt](media:ID)` rasmlar — alohida `upload` tugunlari (Lexical'da rasm —
+   * blok element), atrofidagi matn — oldingi/keyingi paragraflar.
+   */
+  private paragraph(node: Paragraph): LexicalNode[] {
+    const out: LexicalNode[] = []
+    let current: PhrasingContent[] = []
+    const flush = () => {
+      const children = mergeText(this.inline(current, 0))
+      current = []
+      if (!hasVisibleText(children)) return
+      const text = plainOf(children)
+      if (!this.stats.firstParagraph) this.stats.firstParagraph = text
+      this.textParts.push(text)
+      out.push(paragraph(children))
+    }
+    for (const child of node.children) {
+      const isImage = child.type === 'image' || child.type === 'imageReference'
+      if (!isImage || parseMediaRef(this.imageUrl(child)) === undefined) {
+        // Oddiy matn; tashqi rasm — `inlineNode` olib tashlaydi (paragraf bo'linmaydi).
+        current.push(child)
+        continue
+      }
+      const ref = this.imageRef(child)
+      flush()
+      if (ref) {
+        this.media.push(ref)
+        out.push(uploadNode(ref.id))
+      }
+    }
+    flush()
+    return out
+  }
+
+  /**
+   * Rasm tuguni → media havolasi yoki `null` (tashqi URL — olib tashlanadi, ogohlantirish;
+   * noto'g'ri `media:` havolasi — xato).
+   */
+  private imageRef(node: Image | ImageReference): MediaRef | null {
+    const url = this.imageUrl(node)
+    const id = parseMediaRef(url)
+    if (id === undefined) {
+      this.warnExternalImage()
+      return null
+    }
+    if (id === null) {
+      this.errors.push({
+        code: 'invalid_media_ref',
+        message:
+          `Noto'g'ri media havolasi: "${shortUrl(url)}" — ![alt](media:123) ko'rinishida yozing ` +
+          '(ID — upload_media / list_media natijasidan).',
+      })
+      return null
+    }
+    return { id, alt: (node.alt ?? '').trim() }
+  }
+
+  private imageUrl(node: Image | ImageReference): string {
+    return node.type === 'image'
+      ? node.url
+      : (this.definitions.get(node.identifier.toLowerCase())?.url ?? '')
+  }
+
+  private warnExternalImage() {
+    this.warnOnce(
+      'image_removed',
+      'Tashqi rasmlar (![](https://…)) olib tashlandi — rasmni avval upload_media bilan yuklang ' +
+        "va matnga ![alt](media:ID) deb qo'ying (alohida qatorda).",
+    )
   }
 
   private heading(node: Heading): LexicalNode[] {
@@ -495,10 +597,17 @@ class Converter {
       }
       case 'image':
       case 'imageReference':
-        this.warnOnce(
-          'image_removed',
-          "Rasmlar (![]()) olib tashlandi — rasmni muharrir qo'shadi; mos rasmni notesForEditor da taklif qiling.",
-        )
+        // Tashqi rasmlar va paragrafdan tashqaridagi (sarlavha, ro'yxat, iqtibos, jadval,
+        // havola ichidagi) media rasmlari.
+        if (parseMediaRef(this.imageUrl(node)) === undefined) {
+          this.warnExternalImage()
+        } else {
+          this.warnOnce(
+            'media_not_block',
+            "![alt](media:ID) faqat alohida qatorda (paragraf sifatida) ishlaydi — sarlavha, ro'yxat, " +
+              'iqtibos, jadval yoki havola ichidagi rasm olib tashlandi.',
+          )
+        }
         return []
       case 'html':
         this.warnOnce('html_removed', 'HTML teglari olib tashlandi — faqat Markdown ishlating.')
@@ -571,6 +680,7 @@ export function markdownToLexical(
       root: { children, direction: null, format: '', indent: 0, type: 'root', version: 1 },
     },
     stats,
+    media: converter.media,
     errors: converter.errors,
     warnings: converter.warnings,
   }
@@ -638,6 +748,8 @@ function blockMarkdown(node: LexicalNode): string {
       return listMarkdown(node, 0)
     case 'horizontalrule':
       return '---'
+    case 'upload':
+      return `![](media:${String(uploadId(node) ?? '')})`
     case 'block': {
       const fields = (node.fields ?? {}) as { blockType?: string; code?: string; language?: string }
       if (fields.blockType === 'Code') {
@@ -674,6 +786,29 @@ export function lexicalToMarkdown(state: unknown): string {
     .map(blockMarkdown)
     .filter((block) => block.trim() !== '')
     .join('\n\n')
+}
+
+function uploadId(node: LexicalNode): number | null {
+  const value = node.value
+  const id = typeof value === 'object' && value ? (value as { id?: unknown }).id : value
+  return typeof id === 'number' ? id : null
+}
+
+/** Saqlangan Lexical holatidagi `upload` (media) ID'lari. */
+export function mediaIdsFromLexical(state: unknown): number[] {
+  const root = (state as { root?: LexicalNode } | null | undefined)?.root
+  const ids: number[] = []
+  const walk = (nodes: LexicalNode[] | undefined) => {
+    for (const node of nodes ?? []) {
+      if (node.type === 'upload') {
+        const id = uploadId(node)
+        if (id !== null) ids.push(id)
+      }
+      walk(node.children)
+    }
+  }
+  walk(root?.children)
+  return ids
 }
 
 /** Saqlangan Lexical holatidan statistika (`set_seo` / `submit_for_review` tekshiruvlari uchun). */

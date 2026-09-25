@@ -1,8 +1,11 @@
 import { convertLexicalToMarkdown, editorConfigFactory } from '@payloadcms/richtext-lexical'
 import { convertLexicalToHTML } from '@payloadcms/richtext-lexical/html'
 import type { RichTextField, SanitizedConfig } from 'payload'
+import { createElement } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
 import { beforeAll, describe, expect, it } from 'vitest'
 
+import { RichText } from '@/components/richtext/RichText'
 import {
   checkLinkUrl,
   lexicalToMarkdown,
@@ -517,5 +520,35 @@ describe('Markdown → Lexical: XSS va sanitizatsiya', () => {
     expect(checkLinkUrl('nisbiy/yol')).toEqual({ ok: false, reason: 'invalid' })
     expect(checkLinkUrl('https://')).toEqual({ ok: false, reason: 'invalid' })
     expect(checkLinkUrl('')).toEqual({ ok: false, reason: 'invalid' })
+  })
+})
+
+describe('Markdown → Lexical: media rasmlari (OBLOG-44)', () => {
+  it('Payload muharriri `upload` tugunini qabul qiladi, sayt renderer’i <figure> chizadi', () => {
+    const { state, media } = markdownToLexical('Matn.\n\n![Apple iPhone 18](media:5)\n\nDavomi.')
+    expect(media).toEqual([{ id: 5, alt: 'Apple iPhone 18' }])
+    // Headless Lexical (Posts `content` konfiguratsiyasi) — xatosiz parse.
+    expect(() => convertLexicalToMarkdown({ data: state as never, editorConfig })).not.toThrow()
+
+    // Sayt (depth ≥ 1) — upload tuguni `value` sifatida populate qilingan media hujjatini oladi.
+    const populated = structuredClone(state)
+    populated.root.children[1]!.value = {
+      id: 5,
+      alt: 'Apple iPhone 18 smartfoni',
+      caption: null,
+      credit: 'Rasm: Apple',
+      mimeType: 'image/jpeg',
+      url: 'https://media.odya.test/a.jpg',
+      width: 1600,
+      height: 900,
+      sizes: { card: { url: 'https://media.odya.test/a-640.webp', width: 640, height: 360 } },
+    }
+    const html = renderToStaticMarkup(
+      createElement(RichText, { data: populated as never, locale: 'uz-Latn' }),
+    )
+    expect(html).toContain('<figure>')
+    expect(html).toContain('alt="Apple iPhone 18 smartfoni"')
+    expect(html).toContain('<figcaption>Rasm: Apple</figcaption>')
+    expect(html.indexOf('Matn.')).toBeLessThan(html.indexOf('<figure>'))
   })
 })

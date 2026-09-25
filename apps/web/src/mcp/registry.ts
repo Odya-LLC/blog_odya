@@ -3,6 +3,7 @@ import { z } from 'zod'
 
 import type { McpContext } from './context'
 import { registerGuidance } from './guidance'
+import { registerMediaTools } from './media-tools'
 import { registerReadTools } from './tools'
 import { registerWriteTools } from './write-tools'
 
@@ -29,8 +30,11 @@ export interface McpToolInfo {
   name: string
   title: string
   description: string
-  /** O'qish (M2-06, `tools.ts`) yoki yozish (M2-07, `write-tools.ts`) toollari */
-  group: 'read' | 'write'
+  /**
+   * O'qish (M2-06, `tools.ts`), yozish (M2-07, `write-tools.ts`) yoki media (OBLOG-44,
+   * `media-tools.ts`) toollari
+   */
+  group: 'read' | 'write' | 'media'
   /** MCP `readOnlyHint` annotatsiyasi */
   readOnly: boolean
   args: McpArgInfo[]
@@ -173,6 +177,7 @@ export function getMcpRegistry(): McpRegistry {
   const ctx = {} as McpContext
   registerReadTools(createRecorder(registry, 'read'), ctx)
   registerWriteTools(createRecorder(registry, 'write'), ctx)
+  registerMediaTools(createRecorder(registry, 'media'), ctx)
   registerGuidance(createRecorder(registry, 'read'), ctx)
   cached = registry
   return registry

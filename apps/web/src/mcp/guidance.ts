@@ -55,7 +55,8 @@ const WORKFLOW_STEPS = [
   "4. O'zbek tilida (lotin) qayta yozing: so'zma-so'z tarjima emas; faktlar saqlanadi; o'ylab topilgan faktlar taqiqlanadi, noaniq joylar — notesForEditor ga.",
   '5. Ichki havolalar uchun search_posts; kategoriya va teglar — list_categories, list_tags.',
   '6. save_rewrite, keyin set_seo. Server xato qaytarsa — tuzatib qayta yuboring.',
-  '7. submit_for_review(postId, notesForEditor). Publish qilmang — chop etishni faqat muharrir bajaradi.',
+  '7. Rasm (copyright.md §4): list_media (press-kit, logotiplar) yoki search_stock_images → upload_media(url yoki data, alt, license, credit) → set_cover(postId, mediaId). Matn ichida — alohida qatorda ![alt](media:ID) (save_rewrite). Manba sayti, agentlik (Getty, Reuters, AP, AFP) rasmlari — taqiqlangan; legal rasm topilmasa — notesForEditor da taklif qiling.',
+  '8. submit_for_review(postId, notesForEditor). Publish qilmang — chop etishni faqat muharrir bajaradi.',
 ].join('\n')
 
 export async function rewriteArticlePrompt(
@@ -126,7 +127,8 @@ export function dailyBatchPrompt(args: { count?: string; minScore?: string }): G
     "3. Bir klasterdagi (clusterId bir xil) elementlardan faqat bittasini oling — qolganlari qo'shimcha manba sifatida.",
     '4. list_drafts bilan tekshiring: shu element uchun qoralama allaqachon bormi (takrorlamang).',
     `5. Har bir element uchun rewrite_article ish tartibi: create_draft → claim_draft → get_source → ` +
-      'save_rewrite → set_seo → submit_for_review.',
+      'save_rewrite → set_seo → (list_media / search_stock_images → upload_media → set_cover) → ' +
+      'submit_for_review.',
     `6. ${count} ta post review'ga yuborilgach — qisqa hisobot: post ID'lari, sarlavhalar, muharrir uchun izohlar.`,
     '',
     'Publish qilmang — chop etishni faqat muharrir bajaradi. Shubhali yoki tasdiqlanmagan faktlar — notesForEditor ga.',

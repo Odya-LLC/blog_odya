@@ -196,6 +196,7 @@ function ToolTable({ tools, testId }: { tools: McpToolInfo[]; testId: string }) 
 export function McpRegistryTables({ registry }: { registry: McpRegistry }) {
   const read = registry.tools.filter((tool) => tool.group === 'read')
   const write = registry.tools.filter((tool) => tool.group === 'write')
+  const media = registry.tools.filter((tool) => tool.group === 'media')
   return (
     <>
       <p>
@@ -206,6 +207,8 @@ export function McpRegistryTables({ registry }: { registry: McpRegistry }) {
       <ToolTable tools={read} testId="mcp-read-tools" />
       <h3>Yozish toollari ({write.length})</h3>
       <ToolTable tools={write} testId="mcp-write-tools" />
+      <h3>Media toollari ({media.length})</h3>
+      <ToolTable tools={media} testId="mcp-media-tools" />
       <h3>Prompts ({registry.prompts.length})</h3>
       <div className="mcp-doc__table">
         <table data-testid="mcp-prompts">

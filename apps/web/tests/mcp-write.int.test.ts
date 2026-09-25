@@ -6,6 +6,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { apiKeyRateLimiter } from '@/auth/rate-limit'
 import { createMcpRoute, MCP_PATH } from '@/mcp/route'
+import { MEDIA_TOOL_NAMES } from '@/mcp/media-tools'
 import { READ_TOOL_NAMES } from '@/mcp/tools'
 import { WRITE_TOOL_NAMES } from '@/mcp/write-tools'
 import type { Category, Post, ScrapedItem, Source, User } from '@/payload-types'
@@ -250,7 +251,7 @@ describe('MCP yozish toollari (/api/mcp)', () => {
     const client = await connect(editorKey)
     const { tools } = await client.listTools()
     expect(tools.map((tool) => tool.name).sort()).toEqual(
-      [...READ_TOOL_NAMES, ...WRITE_TOOL_NAMES].sort(),
+      [...READ_TOOL_NAMES, ...WRITE_TOOL_NAMES, ...MEDIA_TOOL_NAMES].sort(),
     )
     expect(tools.some((tool) => /publish|delete|schedule/.test(tool.name))).toBe(false)
     const save = tools.find((tool) => tool.name === 'save_rewrite')

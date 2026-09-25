@@ -3,6 +3,8 @@ import type { Payload, RequestContext } from 'payload'
 import type { AuditRequestContext } from '@/audit/channel'
 import type { ApiKeyUser } from '@/auth/api-key'
 
+import type { FetchImageDeps } from './media-fetch'
+
 /**
  * Bitta MCP so'rovi konteksti (TZ §6.3): kalit egasi va Payload. Server har bir HTTP so'rov
  * uchun yangidan yaratiladi (stateless), shuning uchun kontekst closure orqali uzatiladi.
@@ -13,6 +15,17 @@ export interface McpContext {
   user: ApiKeyUser
   /** Sayt manzili (ichki havolalar uchun absolyut URL). */
   siteUrl: string
+  /** Media toollari sozlamalari (OBLOG-44). */
+  media?: McpMediaOptions
+}
+
+export interface McpMediaOptions {
+  /** Pexels API kaliti (`PEXELS_API_KEY`); bo'lmasa `search_stock_images` "sozlanmagan". */
+  pexelsApiKey?: string | undefined
+  /** Testlar uchun: tarmoq/DNS o'rnini bosuvchilar (`upload_media(url)`). */
+  fetchDeps?: FetchImageDeps
+  /** Testlar uchun: stok API `fetch`. */
+  stockFetch?: typeof fetch
 }
 
 /**

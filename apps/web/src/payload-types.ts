@@ -300,6 +300,16 @@ export interface Media {
   license?: ('own' | 'press_kit' | 'unsplash' | 'pexels' | 'cc_by' | 'ai_generated' | 'other') | null;
   licenseUrl?: string | null;
   /**
+   * «Boshqa» litsenziya uchun majburiy (MCP): yozma ruxsat kimdan va qanday olingan
+   */
+  licenseNote?: string | null;
+  /**
+   * Rasm olingan sahifa (masalan, Unsplash/Pexels sahifasi yoki press-kit)
+   */
+  sourceUrl?: string | null;
+  uploadedVia?: ('admin' | 'mcp') | null;
+  uploadedBy?: (number | null) | User;
+  /**
    * Kirill matni qoʻlda tuzatilgan maydonlar: avtomatik qayta yozilmaydi.
    */
   cyrlLocked?:
@@ -369,6 +379,82 @@ export interface Media {
       filename?: string | null;
     };
   };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "users".
+ */
+export interface User {
+  id: number;
+  name: string;
+  role: 'admin' | 'editor';
+  author?: (number | null) | Author;
+  lastLoginAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  enableAPIKey?: boolean | null;
+  apiKey?: string | null;
+  apiKeyIndex?: string | null;
+  hasAPIKey?: boolean | null;
+  email: string;
+  resetPasswordToken?: string | null;
+  resetPasswordExpiration?: string | null;
+  salt?: string | null;
+  hash?: string | null;
+  resetPasswordRequestedAt?: string | null;
+  loginAttempts?: number | null;
+  lockUntil?: string | null;
+  sessions?:
+    | {
+        id: string;
+        createdAt?: string | null;
+        expiresAt: string;
+      }[]
+    | null;
+  password?: string | null;
+  collection: 'users';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "authors".
+ */
+export interface Author {
+  id: number;
+  name: string;
+  /**
+   * Lotin, ikkala yozuvda bir xil. Bo'sh qoldirilsa sarlavhadan yasaladi.
+   */
+  slug: string;
+  position?: string | null;
+  bio?: string | null;
+  avatar?: (number | null) | Media;
+  user?: (number | null) | User;
+  isActive?: boolean | null;
+  socials?:
+    | {
+        platform: 'telegram' | 'x' | 'linkedin' | 'github' | 'instagram' | 'youtube' | 'facebook' | 'website';
+        url: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Kirill matni qoʻlda tuzatilgan maydonlar: avtomatik qayta yozilmaydi.
+   */
+  cyrlLocked?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * Lotin matni oʻzgardi, lekin qulflangan kirill maydonlari yangilanmadi. Tekshirib, belgini oling yoki kirillni qayta generatsiya qiling.
+   */
+  cyrlStale?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -544,82 +630,6 @@ export interface Category {
         doc?: (number | null) | Category;
         url?: string | null;
         label?: string | null;
-        id?: string | null;
-      }[]
-    | null;
-  /**
-   * Kirill matni qoʻlda tuzatilgan maydonlar: avtomatik qayta yozilmaydi.
-   */
-  cyrlLocked?:
-    | {
-        [k: string]: unknown;
-      }
-    | unknown[]
-    | string
-    | number
-    | boolean
-    | null;
-  /**
-   * Lotin matni oʻzgardi, lekin qulflangan kirill maydonlari yangilanmadi. Tekshirib, belgini oling yoki kirillni qayta generatsiya qiling.
-   */
-  cyrlStale?: boolean | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "users".
- */
-export interface User {
-  id: number;
-  name: string;
-  role: 'admin' | 'editor';
-  author?: (number | null) | Author;
-  lastLoginAt?: string | null;
-  updatedAt: string;
-  createdAt: string;
-  enableAPIKey?: boolean | null;
-  apiKey?: string | null;
-  apiKeyIndex?: string | null;
-  hasAPIKey?: boolean | null;
-  email: string;
-  resetPasswordToken?: string | null;
-  resetPasswordExpiration?: string | null;
-  salt?: string | null;
-  hash?: string | null;
-  resetPasswordRequestedAt?: string | null;
-  loginAttempts?: number | null;
-  lockUntil?: string | null;
-  sessions?:
-    | {
-        id: string;
-        createdAt?: string | null;
-        expiresAt: string;
-      }[]
-    | null;
-  password?: string | null;
-  collection: 'users';
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "authors".
- */
-export interface Author {
-  id: number;
-  name: string;
-  /**
-   * Lotin, ikkala yozuvda bir xil. Bo'sh qoldirilsa sarlavhadan yasaladi.
-   */
-  slug: string;
-  position?: string | null;
-  bio?: string | null;
-  avatar?: (number | null) | Media;
-  user?: (number | null) | User;
-  isActive?: boolean | null;
-  socials?:
-    | {
-        platform: 'telegram' | 'x' | 'linkedin' | 'github' | 'instagram' | 'youtube' | 'facebook' | 'website';
-        url: string;
         id?: string | null;
       }[]
     | null;
@@ -1330,6 +1340,10 @@ export interface MediaSelect<T extends boolean = true> {
   credit?: T;
   license?: T;
   licenseUrl?: T;
+  licenseNote?: T;
+  sourceUrl?: T;
+  uploadedVia?: T;
+  uploadedBy?: T;
   cyrlLocked?: T;
   cyrlStale?: T;
   _objectKey?: T;

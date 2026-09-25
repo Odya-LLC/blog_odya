@@ -4,6 +4,8 @@ import { z } from 'zod'
 import { POST_WORKFLOW_STATUSES } from '@/collections/Posts/workflow'
 import { SCRAPED_ITEM_STATUSES } from '@/collections/ScrapedItems'
 
+import { MEDIA_LICENSE_VALUES } from './media-policy'
+
 /**
  * MCP o'qish toollarining kirish sxemalari (TZ §6.3). Xato matnlari o'zbekcha — SDK ularni
  * "Input validation error: …" javobiga qo'shib agentga qaytaradi.
@@ -246,7 +248,8 @@ export const saveRewriteInput = {
   excerpt: text('excerpt', 1000).describe('Lid: 1–2 gap, 160–300 belgi (lotin)'),
   body: text('body', MAX_BODY_CHARS).describe(
     "Matn — Markdown (lotin): 400–900 so'z, ## / ### sarlavhalar, ro'yxatlar, havolalar, " +
-      '> iqtibos, ``` kod, jadvallar. HTML va rasmlar olib tashlanadi; # (H1) ishlatilmaydi',
+      '> iqtibos, ``` kod, jadvallar. Rasm — alohida qatorda ![alt](media:ID) (upload_media); ' +
+      'HTML va tashqi rasmlar olib tashlanadi; # (H1) ishlatilmaydi',
   ),
   category: idOrSlug('category').describe('Kategoriya: ID yoki slug (list_categories)'),
   tags: z
@@ -293,4 +296,98 @@ export const submitForReviewInput = {
       "Muharrir uchun izoh: tekshirib bo'lmagan faktlar, manbalar farqi, rasm taklifi, " +
         'topilmagan ichki havolalar',
     ),
+}
+
+// ---------------------------------------------------------------------------
+// Media toollari (OBLOG-44). Litsenziya, alt va domen qoidalari — `media-policy.ts`.
+// ---------------------------------------------------------------------------
+
+/** base64 uchun: 10 MB fayl ≈ 13,4 mln belgi (+ `data:` prefiksi). */
+export const MAX_BASE64_CHARS = 14_000_000
+
+export const uploadMediaInput = {
+  url: text('url', 2048)
+    .trim()
+    .optional()
+    .describe(
+      "Rasm fayliga to'g'ridan-to'g'ri havola (http/https; JPEG, PNG, WebP; ≤ 10 MB). " +
+        'data bilan birga berilmaydi. Agentliklar, foto-banklar va yangilik manbalarimiz domenlari rad etiladi',
+    ),
+  data: z
+    .string({ error: "data: base64 matn bo'lishi kerak" })
+    .max(MAX_BASE64_CHARS, { error: 'data: fayl 10 MB dan oshmasin' })
+    .optional()
+    .describe(
+      'Fayl mazmuni — base64 (yoki data:image/...;base64,...). url o‘rniga; filename bilan',
+    ),
+  filename: text('filename', 200)
+    .trim()
+    .optional()
+    .describe('Fayl nomi (data bilan; masalan, iphone-18.jpg)'),
+  alt: text('alt', 300).describe("Alt matni (majburiy): 5–15 so'z, lotin — kirill avtomatik"),
+  caption: text('caption', 500).optional().describe('Izoh (caption), lotin — ixtiyoriy'),
+  credit: text('credit', 200)
+    .optional()
+    .describe(
+      'Kredit: «Rasm: Apple», «Rasm: Muallif / Unsplash». press_kit, unsplash, pexels, cc_by, other uchun majburiy',
+    ),
+  license: z
+    .enum(MEDIA_LICENSE_VALUES, { error: `license: ${MEDIA_LICENSE_VALUES.join(', ')}` })
+    .describe(
+      'Litsenziya (majburiy): press_kit, unsplash, pexels, cc_by (licenseUrl bilan), own, ' +
+        'ai_generated, other (licenseNote bilan)',
+    ),
+  licenseUrl: text('licenseUrl', 500)
+    .trim()
+    .optional()
+    .describe('Litsenziya havolasi (cc_by uchun majburiy)'),
+  licenseNote: text('licenseNote', 1000)
+    .optional()
+    .describe('Litsenziya izohi — other uchun majburiy (yozma ruxsat kimdan, qachon)'),
+  sourceUrl: text('sourceUrl', 2048)
+    .trim()
+    .optional()
+    .describe(
+      'Rasm topilgan sahifa (Unsplash/Pexels sahifasi, press-reliz). url berilsa — standart shu',
+    ),
+}
+
+export const setCoverInput = {
+  postId: postId(),
+  mediaId: idSchema('mediaId').describe('Media ID (upload_media / list_media natijasidan)'),
+  alt: text('alt', 300)
+    .optional()
+    .describe(
+      "Muqova alt matni (5–15 so'z, lotin) — postning coverAlt maydoniga; berilmasa media alt",
+    ),
+}
+
+export const MEDIA_LICENSE_FILTERS = [...MEDIA_LICENSE_VALUES, 'all'] as const
+
+export const listMediaInput = {
+  query: searchText('query')
+    .optional()
+    .describe("Fayl nomi, alt, izoh yoki kredit bo'yicha qidiruv (masalan, «Apple», «logo»)"),
+  license: z
+    .enum(MEDIA_LICENSE_FILTERS, { error: `license: ${MEDIA_LICENSE_FILTERS.join(', ')}` })
+    .default('all')
+    .describe('Litsenziya filtri (standart: all)'),
+  mine: z
+    .boolean({ error: "mine: true yoki false bo'lishi kerak" })
+    .default(false)
+    .describe('Faqat men (shu API kalit egasi) yuklagan fayllar'),
+  ...paginationShape(),
+}
+
+export const searchStockImagesInput = {
+  query: searchText('query').describe(
+    'Qidiruv (inglizcha yaxshiroq ishlaydi: «iphone», «data center»)',
+  ),
+  orientation: z
+    .enum(['landscape', 'portrait', 'square'], {
+      error: 'orientation: landscape, portrait, square',
+    })
+    .optional()
+    .describe('Yo‘nalish (muqova uchun — landscape)'),
+  ...paginationShape(10, 30),
 }

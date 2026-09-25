@@ -20,4 +20,5 @@ export const dynamic = 'force-dynamic'
 export const { GET, POST, DELETE } = createMcpRoute({
   getPayload: () => getPayload({ config }),
   siteUrl: env.NEXT_PUBLIC_SITE_URL,
+  media: { pexelsApiKey: env.PEXELS_API_KEY },
 })

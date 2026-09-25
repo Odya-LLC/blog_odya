@@ -67,6 +67,7 @@ function argsCell(args: McpArgInfo[]): string {
 export function renderRegistryMarkdown(registry: McpRegistry): string {
   const read = registry.tools.filter((tool) => tool.group === 'read')
   const write = registry.tools.filter((tool) => tool.group === 'write')
+  const media = registry.tools.filter((tool) => tool.group === 'media')
   const toolTable = (tools: McpRegistry['tools']) => [
     '| Tool | Vazifasi | Argumentlar (`?` — ixtiyoriy) |',
     '| --- | --- | --- |',
@@ -87,6 +88,10 @@ export function renderRegistryMarkdown(registry: McpRegistry): string {
     `### Yozish toollari (${write.length})`,
     '',
     ...toolTable(write),
+    '',
+    `### Media toollari (${media.length})`,
+    '',
+    ...toolTable(media),
     '',
     `### Prompts (${registry.prompts.length})`,
     '',
