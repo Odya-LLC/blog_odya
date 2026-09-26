@@ -124,7 +124,12 @@ describe('env: API kalit va MCP yuklash limitlari (OBLOG-45)', () => {
       expect(env.API_KEY_RATE_LIMIT_PER_MIN).toBe(60)
       expect(env.MCP_MEDIA_UPLOADS_PER_HOUR).toBe(30)
     }
-    expect(limitsFromEnv({})).toEqual({ apiKeyPerMin: 60, mediaUploadsPerHour: 30 })
+    expect(limitsFromEnv({})).toEqual({
+      apiKeyPerMin: 60,
+      mediaUploadsPerHour: 30,
+      mediaFetchTimeoutMs: 45_000,
+      mediaConnectTimeoutMs: 10_000,
+    })
   })
 
   it('musbat butun sonni qabul qiladi', () => {
@@ -137,7 +142,7 @@ describe('env: API kalit va MCP yuklash limitlari (OBLOG-45)', () => {
     expect(env.MCP_MEDIA_UPLOADS_PER_HOUR).toBe(100)
     expect(
       limitsFromEnv({ API_KEY_RATE_LIMIT_PER_MIN: '120', MCP_MEDIA_UPLOADS_PER_HOUR: ' 100 ' }),
-    ).toEqual({ apiKeyPerMin: 120, mediaUploadsPerHour: 100 })
+    ).toMatchObject({ apiKeyPerMin: 120, mediaUploadsPerHour: 100 })
   })
 
   it('manfiy, kasr yoki matn — xato (limitsFromEnv esa standartga qaytadi)', () => {
@@ -151,5 +156,35 @@ describe('env: API kalit va MCP yuklash limitlari (OBLOG-45)', () => {
       /MCP_MEDIA_UPLOADS_PER_HOUR/,
     )
     expect(limitsFromEnv({ API_KEY_RATE_LIMIT_PER_MIN: '-5' }).apiKeyPerMin).toBe(60)
+  })
+})
+
+describe('env: upload_media(url) timeout’lari (OBLOG-46)', () => {
+  it('standart 45 s / 10 s; bo‘sh yoki 0 — standart; musbat son qabul qilinadi', () => {
+    for (const value of [undefined, '', '0']) {
+      const env = parseEnv({
+        ...base,
+        MCP_MEDIA_FETCH_TIMEOUT_MS: value,
+        MCP_MEDIA_CONNECT_TIMEOUT_MS: value,
+      })
+      expect(env.MCP_MEDIA_FETCH_TIMEOUT_MS).toBe(45_000)
+      expect(env.MCP_MEDIA_CONNECT_TIMEOUT_MS).toBe(10_000)
+    }
+    expect(
+      limitsFromEnv({
+        MCP_MEDIA_FETCH_TIMEOUT_MS: '60000',
+        MCP_MEDIA_CONNECT_TIMEOUT_MS: ' 5000 ',
+      }),
+    ).toMatchObject({ mediaFetchTimeoutMs: 60_000, mediaConnectTimeoutMs: 5_000 })
+  })
+
+  it('manfiy yoki matn — xato (limitsFromEnv esa standartga qaytadi)', () => {
+    expect(() => parseEnv({ ...base, MCP_MEDIA_FETCH_TIMEOUT_MS: '-1' })).toThrow(
+      /MCP_MEDIA_FETCH_TIMEOUT_MS/,
+    )
+    expect(() => parseEnv({ ...base, MCP_MEDIA_CONNECT_TIMEOUT_MS: 'slow' })).toThrow(
+      /MCP_MEDIA_CONNECT_TIMEOUT_MS/,
+    )
+    expect(limitsFromEnv({ MCP_MEDIA_FETCH_TIMEOUT_MS: 'x' }).mediaFetchTimeoutMs).toBe(45_000)
   })
 })

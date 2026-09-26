@@ -14,7 +14,8 @@ import { createMcpRoute } from '@/mcp/route'
  * bo'lishi kerak, `app/api/[transport]` esa Payload'ning `/api/[...slug]` REST route'larini
  * to'sib qo'yardi. SSE transporti o'chiq — faqat Streamable HTTP.
  */
-export const maxDuration = 60
+/** = `MCP_MAX_DURATION` (byudjet — `src/mcp/route.ts`; Next statik literal talab qiladi). */
+export const maxDuration = 120
 export const dynamic = 'force-dynamic'
 
 export const { GET, POST, DELETE } = createMcpRoute({
