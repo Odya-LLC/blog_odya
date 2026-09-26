@@ -35,6 +35,9 @@ const nonEmpty = z.string().min(1)
 /** Standart limit qiymatlari (OBLOG-45): env berilmasa yoki `0` bo'lsa — shular. */
 export const DEFAULT_API_KEY_RATE_LIMIT_PER_MIN = 60
 export const DEFAULT_MCP_MEDIA_UPLOADS_PER_HOUR = 30
+/** `upload_media(url)` timeout'lari (OBLOG-46), ms: tanani o'qish va ulanish + birinchi javob. */
+export const DEFAULT_MCP_MEDIA_FETCH_TIMEOUT_MS = 45_000
+export const DEFAULT_MCP_MEDIA_CONNECT_TIMEOUT_MS = 10_000
 
 /**
  * Limit uchun musbat butun son. Berilmagan, bo'sh yoki `0` — standart qiymat (limitni env orqali
@@ -105,6 +108,13 @@ export const envSchema = z.object({
   API_KEY_RATE_LIMIT_PER_MIN: positiveLimit(DEFAULT_API_KEY_RATE_LIMIT_PER_MIN),
   /** MCP `upload_media`: bitta foydalanuvchi uchun soatiga yuklashlar. Standart — 30. */
   MCP_MEDIA_UPLOADS_PER_HOUR: positiveLimit(DEFAULT_MCP_MEDIA_UPLOADS_PER_HOUR),
+  /**
+   * MCP `upload_media(url)`: rasm tanasini o'qish uchun timeout, ms (OBLOG-46). Standart — 45000.
+   * Umumiy yuklab olish byudjeti baribir ≤ 90 s (`media-fetch.ts`, route `maxDuration`).
+   */
+  MCP_MEDIA_FETCH_TIMEOUT_MS: positiveLimit(DEFAULT_MCP_MEDIA_FETCH_TIMEOUT_MS),
+  /** MCP `upload_media(url)`: DNS + ulanish + javob sarlavhalari (har redirect uchun), ms. Standart — 10000. */
+  MCP_MEDIA_CONNECT_TIMEOUT_MS: positiveLimit(DEFAULT_MCP_MEDIA_CONNECT_TIMEOUT_MS),
 
   // --- Monitoring (ixtiyoriy: bo'lmasa Sentry o'chiq) ---
   SENTRY_DSN: z.url().optional(),
@@ -115,6 +125,8 @@ export type Env = z.infer<typeof envSchema>
 export interface ApiLimits {
   apiKeyPerMin: number
   mediaUploadsPerHour: number
+  mediaFetchTimeoutMs: number
+  mediaConnectTimeoutMs: number
 }
 
 /**
@@ -130,6 +142,11 @@ export function limitsFromEnv(source: RawEnv = process.env): ApiLimits {
   return {
     apiKeyPerMin: read('API_KEY_RATE_LIMIT_PER_MIN', DEFAULT_API_KEY_RATE_LIMIT_PER_MIN),
     mediaUploadsPerHour: read('MCP_MEDIA_UPLOADS_PER_HOUR', DEFAULT_MCP_MEDIA_UPLOADS_PER_HOUR),
+    mediaFetchTimeoutMs: read('MCP_MEDIA_FETCH_TIMEOUT_MS', DEFAULT_MCP_MEDIA_FETCH_TIMEOUT_MS),
+    mediaConnectTimeoutMs: read(
+      'MCP_MEDIA_CONNECT_TIMEOUT_MS',
+      DEFAULT_MCP_MEDIA_CONNECT_TIMEOUT_MS,
+    ),
   }
 }
 

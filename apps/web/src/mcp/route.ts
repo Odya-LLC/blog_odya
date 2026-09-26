@@ -26,7 +26,13 @@ export const MCP_PATH = '/api/mcp'
 /** `mcp-handler` endpoint'ni `${basePath}/mcp` deb hisoblaydi → `/api/mcp`. */
 const MCP_BASE_PATH = MCP_PATH.replace(/\/mcp$/, '')
 
-export const MCP_MAX_DURATION = 60
+/**
+ * Vercel function limiti, s (app route'dagi `maxDuration` bilan bir xil bo'lishi shart — Next
+ * statik literal talab qiladi). Byudjet (OBLOG-46): `upload_media(url)` yuklab olishi ≤ 90 s
+ * (`MAX_FETCH_BUDGET_MS`: 10 s ulanish + 45 s tana + 10 s qayta urinish = 65 s standart) +
+ * qayta ishlash ≤ 30 s (sharp, WebP variantlar, R2) = 120 s. Vercel Hobby + Fluid compute — 300 s gacha.
+ */
+export const MCP_MAX_DURATION = 120
 
 export interface McpRouteDeps {
   getPayload: () => Promise<Payload>

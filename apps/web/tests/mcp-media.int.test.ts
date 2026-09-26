@@ -1,13 +1,16 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js'
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
+import { createServer, type Server } from 'node:http'
+import type { AddressInfo } from 'node:net'
+
 import type { Payload } from 'payload'
 import sharp from 'sharp'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { apiKeyRateLimiter, createRateLimiter, type RateLimiter } from '@/auth/rate-limit'
 import type { McpMediaOptions } from '@/mcp/context'
-import type { FetchImageDeps, TransportResponse } from '@/mcp/media-fetch'
+import { type FetchImageDeps, httpTransport, type TransportResponse } from '@/mcp/media-fetch'
 import { MAX_MEDIA_BYTES } from '@/mcp/media-policy'
 import { mediaUploadLimiter } from '@/mcp/media-tools'
 import { createMcpRoute, MCP_PATH } from '@/mcp/route'
@@ -714,5 +717,90 @@ describe('MCP media toollari (/api/mcp)', () => {
     }
     // Editor: `initialize` + `notifications/initialized` — ikkinchi so'rovdayoq limit (1) oshadi.
     await expect(connect(editorKey, strictRoute)).rejects.toThrow(/429|juda ko/)
+  })
+
+  describe('upload_media (url): timeout’lar — haqiqiy HTTP server (OBLOG-46)', () => {
+    let server: Server
+    let base: string
+    const sockets = new Set<import('node:net').Socket>()
+
+    beforeAll(async () => {
+      server = createServer((req, res) => {
+        if (req.url === '/hang.jpg') return // sarlavhalar hech qachon yuborilmaydi
+        res.writeHead(200, { 'content-type': 'image/jpeg', 'content-length': jpegBytes.length })
+        if (req.url === '/stall.jpg') {
+          res.write(jpegBytes.subarray(0, 4096)) // keyin — sukut
+          return
+        }
+        // /slow.jpg: 6 bo'lak × 120 ms ≈ 0,7 s — ulanish timeout'idan (0,3 s) uzoq.
+        const step = Math.ceil(jpegBytes.length / 6)
+        let offset = 0
+        const tick = () => {
+          res.write(jpegBytes.subarray(offset, offset + step))
+          offset += step
+          if (offset >= jpegBytes.length) res.end()
+          else setTimeout(tick, 120)
+        }
+        setTimeout(tick, 120)
+      })
+      server.on('connection', (socket) => {
+        sockets.add(socket)
+        socket.on('close', () => sockets.delete(socket))
+      })
+      await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
+      base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`
+    })
+
+    afterAll(async () => {
+      for (const socket of sockets) socket.destroy()
+      await new Promise((resolve) => server?.close(resolve))
+    })
+
+    /** SSRF tekshiruvi ommaviy IP bilan o'tadi; Node HTTP ulanishi — lokal sekin serverga. */
+    const slowDeps: FetchImageDeps = {
+      resolve: async () => [{ address: '93.184.216.34', family: 4 }],
+      transport: (url, _address, signal) =>
+        httpTransport(new URL(url.pathname, base), { address: '127.0.0.1', family: 4 }, signal),
+      connectTimeoutMs: 300,
+      timeoutMs: 3_000,
+    }
+    const slowRoute = () => makeRoute({ fetchDeps: slowDeps })
+    const args = (path: string) => ({
+      url: `https://press.example.com${path}`,
+      alt: `${ALT} sekin server`,
+      license: 'press_kit',
+      credit: 'Rasm: Meta',
+    })
+
+    it('sekin oqim (ulanish timeoutidan uzoq) tana timeoutiga sig‘adi — yuklanadi', async () => {
+      const client = await connect(editorKey, slowRoute())
+      const started = Date.now()
+      const result = await call(client, 'upload_media', args('/slow.jpg'))
+      expect(Date.now() - started).toBeGreaterThan(500)
+      expect(result.isError).toBeFalsy()
+      expect(jsonOf(result)).toMatchObject({ ok: true, uploaded: true })
+    })
+
+    it('osilib qolgan ulanish (sarlavhasiz) — ulanish timeouti bilan tez bekor qilinadi', async () => {
+      const client = await connect(editorKey, slowRoute())
+      const started = Date.now()
+      const result = await call(client, 'upload_media', args('/hang.jpg'))
+      // 2 urinish × 0,3 s; tana timeout'i (3 s) kutilmaydi.
+      expect(Date.now() - started).toBeLessThan(2_000)
+      expect(result.isError).toBe(true)
+      expect(textOf(result)).toMatch(/press\.example\.com 0\.3 s ichida javob bermadi/)
+    })
+
+    it('to‘xtab qolgan tana — tana timeouti: host va olingan baytlar xabarda', async () => {
+      const client = await connect(
+        editorKey,
+        makeRoute({ fetchDeps: { ...slowDeps, timeoutMs: 400 } }),
+      )
+      const result = await call(client, 'upload_media', args('/stall.jpg'))
+      expect(result.isError).toBe(true)
+      expect(textOf(result)).toMatch(
+        /juda sekin: press\.example\.com dan 0\.4 s ichida faqat 4 KB \//,
+      )
+    })
   })
 })

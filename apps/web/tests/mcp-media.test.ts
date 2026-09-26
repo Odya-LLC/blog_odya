@@ -5,6 +5,8 @@ import { lexicalToMarkdown, markdownToLexical, mediaIdsFromLexical } from '@/mcp
 import {
   checkRemoteUrl,
   fetchRemoteImage,
+  MAX_FETCH_BUDGET_MS,
+  resolveFetchTimeouts,
   type FetchImageDeps,
   type ResolvedAddress,
   type TransportResponse,
@@ -24,6 +26,7 @@ import {
 } from '@/mcp/media-policy'
 import { decodeBase64Image, inspectImage } from '@/mcp/media-tools'
 import { McpToolError } from '@/mcp/result'
+import { MCP_MAX_DURATION } from '@/mcp/route'
 import { PEXELS_LICENSE_URL, searchPexels } from '@/mcp/stock'
 
 /**
@@ -339,17 +342,160 @@ describe('media-fetch: yuklab olish (soxta tarmoq/DNS)', () => {
     expect(streamed.destroy).toHaveBeenCalled()
   })
 
-  it('timeout', async () => {
+  it('ulanish timeout: javob bermayotgan host tez rad etiladi (bitta qayta urinish bilan)', async () => {
+    let attempts = 0
     const deps: FetchImageDeps = {
       resolve: async () => [PUBLIC_IP],
-      timeoutMs: 20,
-      transport: (_url, _address, signal) =>
-        new Promise((_resolve, reject) => {
+      connectTimeoutMs: 20,
+      timeoutMs: 5_000,
+      transport: (_url, _address, signal) => {
+        attempts += 1
+        return new Promise((_resolve, reject) => {
           signal.addEventListener('abort', () => reject(new Error('aborted')))
-        }),
+        })
+      },
     }
-    await rejects(fetchRemoteImage('https://slow.example.com/a.jpg', BLOCKED, deps), /vaqti/)
+    const started = Date.now()
+    await rejects(
+      fetchRemoteImage('https://slow.example.com/a.jpg', BLOCKED, deps),
+      /slow\.example\.com 0\.02 s ichida javob bermadi/,
+    )
+    expect(Date.now() - started).toBeLessThan(1_000)
+    expect(attempts).toBe(2)
   })
+
+  it('sekin tana ulanish timeoutidan uzoq, lekin tana timeoutiga sig‘adi — muvaffaqiyat', async () => {
+    const data = await jpeg()
+    const parts = [data.subarray(0, 200), data.subarray(200, 1000), data.subarray(1000)]
+    const deps: FetchImageDeps = {
+      resolve: async () => [PUBLIC_IP],
+      connectTimeoutMs: 30,
+      timeoutMs: 2_000,
+      transport: async () => ({
+        status: 200,
+        headers: { 'content-type': 'image/jpeg' },
+        body: (async function* () {
+          for (const part of parts) {
+            await new Promise((resolve) => setTimeout(resolve, 40))
+            yield part
+          }
+        })(),
+        destroy: vi.fn(),
+      }),
+    }
+    const result = await fetchRemoteImage('https://slow.example.com/a.jpg', BLOCKED, deps)
+    expect(result.data.equals(data)).toBe(true)
+  })
+
+  it('tana to‘xtab qolsa — tana timeout; host va olingan baytlar xabarda, qayta urinish yo‘q', async () => {
+    let attempts = 0
+    const destroy = vi.fn()
+    const deps: FetchImageDeps = {
+      resolve: async () => [PUBLIC_IP],
+      connectTimeoutMs: 1_000,
+      timeoutMs: 50,
+      transport: async () => {
+        attempts += 1
+        return {
+          status: 200,
+          headers: { 'content-type': 'image/jpeg', 'content-length': '2097152' },
+          body: (async function* () {
+            yield new Uint8Array(2048)
+            await new Promise(() => undefined)
+          })(),
+          destroy,
+        }
+      },
+    }
+    await rejects(
+      fetchRemoteImage('https://stall.example.com/a.jpg', BLOCKED, deps),
+      /juda sekin: stall\.example\.com dan 0\.05 s ichida faqat 2 KB \/ 2\.0 MB/,
+    )
+    expect(attempts).toBe(1)
+    expect(destroy).toHaveBeenCalled()
+  })
+
+  it('tana o‘rtasida uzilish — bitta qayta urinish; ikkinchi uzilish — xato', async () => {
+    const data = await jpeg()
+    let attempts = 0
+    const broken = (): TransportResponse => ({
+      status: 200,
+      headers: { 'content-type': 'image/jpeg' },
+      body: (async function* () {
+        yield data.subarray(0, 100)
+        throw new Error('ECONNRESET')
+      })(),
+      destroy: vi.fn(),
+    })
+    const { deps } = fakeNet({
+      'https://flaky.example.com/a.jpg': () => {
+        attempts += 1
+        return attempts === 1 ? broken() : response(200, { 'content-type': 'image/jpeg' }, [data])
+      },
+      'https://broken.example.com/a.jpg': broken,
+    })
+    const ok = await fetchRemoteImage('https://flaky.example.com/a.jpg', BLOCKED, deps)
+    expect(ok.data.equals(data)).toBe(true)
+    expect(ok.chain).toEqual(['https://flaky.example.com/a.jpg'])
+    expect(attempts).toBe(2)
+    await rejects(
+      fetchRemoteImage('https://broken.example.com/a.jpg', BLOCKED, deps),
+      /uzilish: broken\.example\.com ulanishni uzdi \(100 bayt olindi\)/,
+    )
+  })
+
+  it('ulanish xatosi — bitta qayta urinish; HTTP xato va hajm — qayta urinilmaydi', async () => {
+    const { deps, calls } = fakeNet({
+      'https://x.example.com/404.jpg': () => response(404, {}),
+    })
+    await rejects(fetchRemoteImage('https://down.example.com/a.jpg', BLOCKED, deps), /ulanib/)
+    expect(calls.filter((call) => call.url.includes('down.example.com'))).toHaveLength(2)
+    await rejects(fetchRemoteImage('https://x.example.com/404.jpg', BLOCKED, deps), /HTTP 404/)
+    expect(calls.filter((call) => call.url.includes('404'))).toHaveLength(1)
+  })
+
+  it('umumiy chegara: qayta urinish uchun byudjet qolmasa — urinilmaydi', async () => {
+    let attempts = 0
+    const deps: FetchImageDeps = {
+      resolve: async () => [PUBLIC_IP],
+      connectTimeoutMs: 40,
+      timeoutMs: 1_000,
+      totalTimeoutMs: 60,
+      transport: (_url, _address, signal) => {
+        attempts += 1
+        return new Promise((_resolve, reject) => {
+          signal.addEventListener('abort', () => reject(new Error('aborted')))
+        })
+      },
+    }
+    await rejects(
+      fetchRemoteImage('https://slow.example.com/a.jpg', BLOCKED, deps),
+      /javob bermadi/,
+    )
+    expect(attempts).toBe(1)
+  })
+
+  it('timeout’lar: env standartlari va umumiy 90 s chegarasi', () => {
+    expect(resolveFetchTimeouts()).toEqual({ connectMs: 10_000, bodyMs: 45_000, totalMs: 65_000 })
+    expect(resolveFetchTimeouts({ timeoutMs: 120_000 }).totalMs).toBe(MAX_FETCH_BUDGET_MS)
+    // Route `maxDuration` yuklab olish byudjeti + qayta ishlash (≥ 30 s) ni sig‘diradi.
+    expect(MCP_MAX_DURATION * 1000).toBeGreaterThanOrEqual(MAX_FETCH_BUDGET_MS + 30_000)
+  })
+
+  // Qo'lda: `MEDIA_FETCH_LIVE_URL=<url> pnpm vitest run tests/mcp-media.test.ts` — haqiqiy tarmoq
+  // va standart timeout'lar (OBLOG-46 reproduksiyasi: sekin press-sayt). CI'da o'chiq.
+  it.runIf(process.env.MEDIA_FETCH_LIVE_URL)(
+    'haqiqiy tarmoq: sekin press-rasm yuklanadi',
+    async () => {
+      const started = Date.now()
+      const result = await fetchRemoteImage(process.env.MEDIA_FETCH_LIVE_URL!, BLOCKED)
+      console.info(
+        `live: ${result.data.length} bayt, ${result.format}, ${Date.now() - started} ms, ${result.finalUrl}`,
+      )
+      expect(result.data.length).toBeGreaterThan(0)
+    },
+    120_000,
+  )
 
   it('haqiqiy DNS: localhost / 127.0.0.1 ga ulanilmaydi', async () => {
     await rejects(fetchRemoteImage('http://127.0.0.1/a.jpg', BLOCKED), /Ichki/)
