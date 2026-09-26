@@ -332,6 +332,14 @@ export async function setCover(
     )
     return { updated, cyrillic }
   }).catch(rethrow)
+  // `meta.image` bo'sh (yoki eski muqova) bo'lsa, posts hook'i uni muqovaga tenglaydi (OBLOG-47).
+  const metaImageOf = (doc: Post): unknown => {
+    const image = doc.meta?.image
+    return typeof image === 'object' && image !== null ? image.id : (image ?? null)
+  }
+  const metaImageUpdated =
+    String(metaImageOf(saved.updated)) === String(media.id) &&
+    String(metaImageOf(post)) !== String(media.id)
 
   warnings.push(...cyrillicWarning(saved.cyrillic.skipped))
   return result({
@@ -343,7 +351,9 @@ export async function setCover(
       ...postSummary(ctx, saved.updated),
       coverImage: media.id,
       coverAlt: saved.updated.coverAlt ?? null,
+      metaImage: metaImageOf(saved.updated),
     },
+    metaImageUpdated,
     media: mediaSummary(ctx, media),
     cyrillic: saved.cyrillic,
     next: 'submit_for_review(postId, notesForEditor)',
@@ -456,6 +466,7 @@ export function registerMediaTools(server: McpServer, ctx: McpContext): void {
       title: 'Muqova rasmini belgilash',
       description:
         'Postga muqova (coverImage) qo‘yadi: postId, mediaId (+ alt — postning coverAlt). ' +
+        'SEO rasmi (meta.image) bo‘sh yoki eski muqova bo‘lsa — u ham shu muqovaga tenglanadi (metaImageUpdated). ' +
         'Faqat sizga biriktirilgan draft/in_progress postlar; media litsenziyasi to‘liq bo‘lishi kerak.',
       inputSchema: setCoverInput,
       annotations: {
