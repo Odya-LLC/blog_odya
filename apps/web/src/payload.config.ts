@@ -18,6 +18,7 @@ import { Glossary } from './collections/Glossary'
 import { Media } from './collections/Media'
 import { Pages } from './collections/Pages'
 import { Posts } from './collections/Posts'
+import { postMetaImagePlugin } from './collections/Posts/metaImage'
 import { ScrapedItems } from './collections/ScrapedItems'
 import { Sources } from './collections/Sources'
 import { Tags } from './collections/Tags'
@@ -191,6 +192,8 @@ export default buildConfig({
         },
       ],
     }),
+    // Postlarda `meta.image` ← `coverImage` (bo'sh bo'lsa, barcha locale'lar) — plugin-seo'dan keyin.
+    postMetaImagePlugin(),
     // Lotin → kirill avtomatik sinxronlash (TZ §3.6): plugin-seo'dan keyin (`meta.*` ham).
     cyrlSyncPlugin(CYRL_SYNC),
     // Lokal: MinIO, production: Cloudflare R2 — farq faqat env'da (TZ §3.1, §3.7).

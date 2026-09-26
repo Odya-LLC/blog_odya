@@ -110,6 +110,8 @@ Faqat JPEG/PNG/WebP, ≤ 10 MB, ≥ 400×200 px. Agentliklar, foto-banklar va ya
 | `mediaId` | number | ha       | `upload_media` / `list_media` natijasidan; litsenziyasi toʻliq boʻlishi kerak               |
 | `alt`     | string | yoʻq     | Postning `coverAlt` maydoni (5–15 soʻz); berilmasa va `coverAlt` boʻsh boʻlsa — media `alt` |
 
+Javob: `{ ok, errors[], warnings[], saved, post: { …, coverImage, coverAlt, metaImage }, metaImageUpdated, media, cyrillic }`. SEO rasmi (`meta.image`) boʻsh yoki eski muqovaga teng boʻlsa — u ham shu muqovaga tenglanadi (`metaImageUpdated: true`); qoʻlda tanlangan SEO rasmiga tegilmaydi.
+
 ## `submit_for_review`
 
 | Maydon           | Tip    | Majburiy | Qoida                                                                                                                                                                                                         |

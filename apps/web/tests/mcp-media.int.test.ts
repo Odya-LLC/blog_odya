@@ -482,7 +482,13 @@ describe('MCP media toollari (/api/mcp)', () => {
     expect(jsonOf(ok)).toMatchObject({
       ok: true,
       saved: true,
-      post: { id: post.id, workflowStatus: 'in_progress', coverImage: uploaded.mediaId },
+      post: {
+        id: post.id,
+        workflowStatus: 'in_progress',
+        coverImage: uploaded.mediaId,
+        metaImage: uploaded.mediaId,
+      },
+      metaImageUpdated: true,
     })
     const stored = await payload.findByID({
       collection: 'posts',
@@ -491,6 +497,8 @@ describe('MCP media toollari (/api/mcp)', () => {
       depth: 0,
     })
     expect(stored.coverImage).toBe(uploaded.mediaId)
+    // OBLOG-47: admin SEO tab'i preview'i uchun `meta.image` ham — ikkala locale'da.
+    expect(stored.meta?.image).toBe(uploaded.mediaId)
     expect(stored.coverAlt).toBe('Apple iPhone 18 taqdimoti sahnasi va tomoshabinlar zali')
     const cyrl = await payload.findByID({
       collection: 'posts',
@@ -500,6 +508,12 @@ describe('MCP media toollari (/api/mcp)', () => {
       fallbackLocale: false,
     })
     expect(cyrl.coverAlt).toMatch(/[Ѐ-ӿ]/)
+    expect(cyrl.meta?.image).toMatchObject({ id: uploaded.mediaId })
+    // Qayta set_cover (o'sha media) — meta.image allaqachon muqova.
+    const again = jsonOf(
+      await call(client, 'set_cover', { postId: post.id, mediaId: uploaded.mediaId }),
+    )
+    expect(again).toMatchObject({ ok: true, metaImageUpdated: false })
 
     // Boshqa muharrirning agenti — rad.
     const other = await connect(editor2Key)

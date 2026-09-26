@@ -504,7 +504,7 @@ export function createRegenerateCyrlEndpoint(
  * qilinmagan `array` ichiga ham kiradi (`navItems.label` — har bir qatordagi lokalizatsiya
  * qilingan maydon; qatorlar ikkala yozuvda umumiy).
  */
-function mapFieldAtPath(
+export function mapFieldAtPath(
   fields: Field[],
   segments: string[],
   update: (field: Field) => Field,
