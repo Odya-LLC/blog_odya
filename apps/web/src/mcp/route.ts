@@ -13,8 +13,9 @@ import { MCP_INSTRUCTIONS, MCP_SERVER_INFO, registerOdyaMcp } from './server'
  * stateless (har bir POST — yangi server va transport, sessiya yo'q) — Vercel funksiyasida ishlaydi.
  *
  * - `POST` — JSON-RPC. Majburiy `Authorization: Bearer <API kalit>` (yoki `users API-Key <kalit>`):
- *   kalit bo'yicha rate limit (60/daqiqa, 429) va egasini aniqlash (401). Toollar Local API'ni kalit
- *   egasi nomidan (`overrideAccess: false`) chaqiradi; audit kanali — `mcp`.
+ *   egasini aniqlash (401) va kalit bo'yicha rate limit (`API_KEY_RATE_LIMIT_PER_MIN`, standart
+ *   60/daqiqa, 429; `admin` roliga qo'llanmaydi). Toollar Local API'ni kalit egasi nomidan
+ *   (`overrideAccess: false`) chaqiradi; audit kanali — `mcp`.
  * - `GET` — health: autentifikatsiyasiz 200 (UptimeRobot). `Accept: text/event-stream` bilan
  *   (serverdan oqim so'rovi) — 405: stateless serverda server → mijoz oqimi yo'q (MCP spetsifikatsiyasi
  *   bo'yicha ruxsat etilgan javob).
@@ -31,6 +32,7 @@ export interface McpRouteDeps {
   getPayload: () => Promise<Payload>
   siteUrl: string
   limiter?: RateLimiter
+  failureLimiter?: RateLimiter
   /** Media toollari (OBLOG-44): stok API kaliti; testlarda — tarmoq o'rnini bosuvchilar. */
   media?: McpMediaOptions
 }
@@ -66,6 +68,7 @@ export function createMcpRoute(deps: McpRouteDeps) {
     const payload = await deps.getPayload()
     const auth = await authenticateBearer(payload, request.headers, {
       ...(deps.limiter ? { limiter: deps.limiter } : {}),
+      ...(deps.failureLimiter ? { failureLimiter: deps.failureLimiter } : {}),
     })
     if (!auth.ok) return apiKeyErrorResponse(auth)
 

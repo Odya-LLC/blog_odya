@@ -118,6 +118,20 @@ describe('API kalit: sarlavha va rate limit', () => {
     now += 45_000
     expect(limiter.hit('k').retryAfterSec).toBe(15)
     now += 15_000
-    expect(limiter.hit('k')).toMatchObject({ allowed: true, remaining: 2 })
+    expect(limiter.hit('k')).toMatchObject({ allowed: true, remaining: 2, limit: 3 })
+  })
+
+  it('peek: hisoblamaydi, limit tugaganini ko‘rsatadi (OBLOG-45)', () => {
+    let now = 1_000_000
+    const limiter = createRateLimiter({ limit: 2, windowMs: 60_000, now: () => now })
+    expect(limiter.limit).toBe(2)
+    expect(limiter.peek('ip')).toMatchObject({ allowed: true, remaining: 2 })
+    expect(limiter.peek('ip').allowed).toBe(true)
+    limiter.hit('ip')
+    expect(limiter.peek('ip')).toMatchObject({ allowed: true, remaining: 1 })
+    limiter.hit('ip')
+    expect(limiter.peek('ip')).toMatchObject({ allowed: false, remaining: 0, retryAfterSec: 60 })
+    now += 60_000
+    expect(limiter.peek('ip').allowed).toBe(true)
   })
 })

@@ -2,6 +2,7 @@ import type { Payload, RequestContext } from 'payload'
 
 import type { AuditRequestContext } from '@/audit/channel'
 import type { ApiKeyUser } from '@/auth/api-key'
+import type { RateLimiter } from '@/auth/rate-limit'
 
 import type { FetchImageDeps } from './media-fetch'
 
@@ -26,6 +27,8 @@ export interface McpMediaOptions {
   fetchDeps?: FetchImageDeps
   /** Testlar uchun: stok API `fetch`. */
   stockFetch?: typeof fetch
+  /** Testlar uchun: `upload_media` kvotasi (standart — `mediaUploadLimiter`). */
+  uploadLimiter?: RateLimiter
 }
 
 /**

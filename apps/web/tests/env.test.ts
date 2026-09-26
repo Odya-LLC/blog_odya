@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { parseEnv, PHASE_PRODUCTION_BUILD, resolveEnvMode } from '@/env.schema'
+import { limitsFromEnv, parseEnv, PHASE_PRODUCTION_BUILD, resolveEnvMode } from '@/env.schema'
 
 const base = {
   DATABASE_URL: 'postgres://postgres:postgres@localhost:5442/blog_odya',
@@ -110,5 +110,46 @@ describe('env: migratsiya rejimida faqat DB majburiy (OBLOG-34)', () => {
   it('runtime (migratsiyasiz) — PAYLOAD_SECRET va S3 hali ham majburiy', () => {
     const { PAYLOAD_MIGRATING: _, ...runtime } = PROD_MIGRATE
     expect(() => parseEnv(runtime)).toThrow(/PAYLOAD_SECRET[\s\S]*S3_ENDPOINT/)
+  })
+})
+
+describe('env: API kalit va MCP yuklash limitlari (OBLOG-45)', () => {
+  it('berilmagan, bo‘sh yoki 0 — standart qiymatlar (60/daqiqa, 30/soat)', () => {
+    for (const value of [undefined, '', '0']) {
+      const env = parseEnv({
+        ...base,
+        API_KEY_RATE_LIMIT_PER_MIN: value,
+        MCP_MEDIA_UPLOADS_PER_HOUR: value,
+      })
+      expect(env.API_KEY_RATE_LIMIT_PER_MIN).toBe(60)
+      expect(env.MCP_MEDIA_UPLOADS_PER_HOUR).toBe(30)
+    }
+    expect(limitsFromEnv({})).toEqual({ apiKeyPerMin: 60, mediaUploadsPerHour: 30 })
+  })
+
+  it('musbat butun sonni qabul qiladi', () => {
+    const env = parseEnv({
+      ...base,
+      API_KEY_RATE_LIMIT_PER_MIN: '120',
+      MCP_MEDIA_UPLOADS_PER_HOUR: '100',
+    })
+    expect(env.API_KEY_RATE_LIMIT_PER_MIN).toBe(120)
+    expect(env.MCP_MEDIA_UPLOADS_PER_HOUR).toBe(100)
+    expect(
+      limitsFromEnv({ API_KEY_RATE_LIMIT_PER_MIN: '120', MCP_MEDIA_UPLOADS_PER_HOUR: ' 100 ' }),
+    ).toEqual({ apiKeyPerMin: 120, mediaUploadsPerHour: 100 })
+  })
+
+  it('manfiy, kasr yoki matn — xato (limitsFromEnv esa standartga qaytadi)', () => {
+    expect(() => parseEnv({ ...base, API_KEY_RATE_LIMIT_PER_MIN: '-5' })).toThrow(
+      /API_KEY_RATE_LIMIT_PER_MIN/,
+    )
+    expect(() => parseEnv({ ...base, MCP_MEDIA_UPLOADS_PER_HOUR: '1.5' })).toThrow(
+      /MCP_MEDIA_UPLOADS_PER_HOUR/,
+    )
+    expect(() => parseEnv({ ...base, MCP_MEDIA_UPLOADS_PER_HOUR: 'many' })).toThrow(
+      /MCP_MEDIA_UPLOADS_PER_HOUR/,
+    )
+    expect(limitsFromEnv({ API_KEY_RATE_LIMIT_PER_MIN: '-5' }).apiKeyPerMin).toBe(60)
   })
 })

@@ -5,7 +5,7 @@ import type { Payload } from 'payload'
 import sharp from 'sharp'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { apiKeyRateLimiter } from '@/auth/rate-limit'
+import { apiKeyRateLimiter, createRateLimiter, type RateLimiter } from '@/auth/rate-limit'
 import type { McpMediaOptions } from '@/mcp/context'
 import type { FetchImageDeps, TransportResponse } from '@/mcp/media-fetch'
 import { MAX_MEDIA_BYTES } from '@/mcp/media-policy'
@@ -101,8 +101,8 @@ const stockFetch = vi.fn(async () =>
   }),
 )
 
-function makeRoute(media: McpMediaOptions) {
-  return createMcpRoute({ getPayload: async () => payload, siteUrl: SITE_URL, media })
+function makeRoute(media: McpMediaOptions, deps: { limiter?: RateLimiter } = {}) {
+  return createMcpRoute({ getPayload: async () => payload, siteUrl: SITE_URL, media, ...deps })
 }
 
 const route = makeRoute({ fetchDeps, pexelsApiKey: 'TEST-KEY', stockFetch: stockFetch as never })
@@ -666,5 +666,53 @@ describe('MCP media toollari (/api/mcp)', () => {
     const missing = await call(bare, 'search_stock_images', { query: 'iphone' })
     expect(missing.isError).toBe(true)
     expect(textOf(missing)).toMatch(/sozlanmagan/)
+  })
+
+  // --- OBLOG-45: admin — kvotasiz va kalit limitisiz; editor — kvota + retryAfterSec ------------
+
+  function uploadArgs(n: number) {
+    return {
+      data: `data:image/jpeg;base64,${jpegBytes.toString('base64')}`,
+      filename: `kvota-${n}.jpg`,
+      alt: `${ALT} kvota ${n}`,
+      license: 'press_kit',
+      credit: 'Rasm: Apple',
+    }
+  }
+
+  it('upload_media kvotasi: editor — rate_limited + retryAfterSec, admin — kvotasiz', async () => {
+    const uploadLimiter = createRateLimiter({ limit: 1, windowMs: 60 * 60 * 1000 })
+    const quotaRoute = makeRoute({ fetchDeps, uploadLimiter })
+
+    const editor = await connect(editorKey, quotaRoute)
+    expect((await call(editor, 'upload_media', uploadArgs(1))).isError).toBeFalsy()
+    const limited = await call(editor, 'upload_media', uploadArgs(2))
+    expect(limited.isError).toBe(true)
+    const body = jsonOf(limited)
+    expect(body).toMatchObject({ ok: false, uploaded: false, limitPerHour: 1 })
+    expect(codes(limited)).toEqual(['rate_limited'])
+    expect(body.retryAfterSec).toBeGreaterThan(0)
+    expect(body.retryAfterSec).toBeLessThanOrEqual(3600)
+    expect(body.errors[0].message).toMatch(/soatiga 1 ta/)
+
+    const adminKey = await enableKey(users.admin)
+    const admin = await connect(adminKey, quotaRoute)
+    for (let n = 3; n <= 5; n++) {
+      const result = await call(admin, 'upload_media', uploadArgs(n))
+      expect(result.isError).toBeFalsy()
+      expect(jsonOf(result)).toMatchObject({ ok: true, uploaded: true })
+    }
+  })
+
+  it('MCP: admin kaliti uchun kalit bo‘yicha limit yo‘q, editor — 429', async () => {
+    const strictRoute = makeRoute({ fetchDeps }, { limiter: createRateLimiter({ limit: 1 }) })
+    const adminKey = await enableKey(users.admin)
+    const admin = await connect(adminKey, strictRoute)
+    for (let i = 0; i < 3; i++) {
+      const result = await call(admin, 'list_media', { query: TOKEN, limit: 1 })
+      expect(result.isError).toBeFalsy()
+    }
+    // Editor: `initialize` + `notifications/initialized` — ikkinchi so'rovdayoq limit (1) oshadi.
+    await expect(connect(editorKey, strictRoute)).rejects.toThrow(/429|juda ko/)
   })
 })

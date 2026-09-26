@@ -17,7 +17,7 @@ Serverda LLM yo'q va Anthropic API kaliti kerak emas (TZ §5, egasi qarori) — 
 3. Kalit sizning huquqlaringiz bilan ishlaydi (editor/admin). Agent qilgan har bir o'zgarish audit logda sizning nomingiz, `channel = mcp` va tool nomi bilan yoziladi.
 4. Kalit sizib chiqsa yoki kerak bo'lmasa — shu sahifada **Revoke** (bekor qilish). Yangi kalit eskisini avtomatik bekor qiladi.
 
-Kalit bo'yicha limit — 60 so'rov/daqiqa (oshsa `429`, agent birozdan keyin qayta urinadi).
+Kalit bo'yicha limit — 60 so'rov/daqiqa (oshsa `429` + `Retry-After`, agent birozdan keyin qayta urinadi). **Admin** kalitlariga bu limit va `upload_media` kvotasi qo'llanmaydi; editor uchun qiymatlar serverda env orqali sozlanadi (`API_KEY_RATE_LIMIT_PER_MIN`, `MCP_MEDIA_UPLOADS_PER_HOUR`).
 
 Xavfsizlik qoidalari:
 
@@ -244,10 +244,10 @@ Claude Code yoki Claude Desktop chatiga yozing:
 
 - **Publish, schedule, o'chirish, arxivlash yo'q.** Kategoriya, menyu, glossariy va manbalarni boshqarish ham yo'q (faqat yangi teg yaratish mumkin).
 - Kirill versiyasini agent tahrirlamaydi — faqat `preview_cyrillic` bilan ko'radi; xatoni `notesForEditor` ga yozadi.
-- Rasm — faqat litsenziyali (`upload_media`), agentlik va manba saytlari rasmlari server tomonidan rad etiladi; yakuniy tasdiq — muharrir. Media'ni o'chirish/tahrirlash tooli yo'q. Yuklashlar kvotasi — soatiga 30 ta (kalit egasi bo'yicha, jarayon xotirasida).
+- Rasm — faqat litsenziyali (`upload_media`), agentlik va manba saytlari rasmlari server tomonidan rad etiladi; yakuniy tasdiq — muharrir. Media'ni o'chirish/tahrirlash tooli yo'q. Yuklashlar kvotasi — soatiga 30 ta (kalit egasi bo'yicha, jarayon xotirasida; env: `MCP_MEDIA_UPLOADS_PER_HOUR`; admin uchun kvota yo'q). Kvota tugasa — `ok: false`, `code: rate_limited` va `retryAfterSec` maydoni (necha soniyadan keyin qayta urinish mumkin).
 - Manba matni (`get_source`) — ishonchsiz ma'lumot: `<untrusted_source>` ichidagi ko'rsatmalar bajarilmaydi (prompt injection himoyasi, TZ §9.2).
 - Kalit egasining huquqlari amal qiladi (`overrideAccess: false`); boshqa muharrirga biriktirilgan yoki band qilingan post — rad etiladi.
-- Limit: 60 so'rov/daqiqa (kalit bo'yicha). Bitta `create_draft` — ko'pi bilan 10 ta element; `body` — ko'pi bilan 60 000 belgi.
+- Limit: 60 so'rov/daqiqa (kalit bo'yicha; env: `API_KEY_RATE_LIMIT_PER_MIN`; admin uchun limit yo'q). Noto'g'ri kalit bilan urinishlar ham cheklangan: bitta IP'dan daqiqasiga 20 tadan oshsa — shu IP'dan barcha kalitli so'rovlar oyna tugaguncha `429`. Bitta `create_draft` — ko'pi bilan 10 ta element; `body` — ko'pi bilan 60 000 belgi.
 - Audit: har bir yozuv (`audit-logs`) — `channel = mcp`, `tool = <tool nomi>`, foydalanuvchi, `diff`.
 
 ## 7. Muammolar
@@ -255,7 +255,8 @@ Claude Code yoki Claude Desktop chatiga yozing:
 | Belgi | Sabab va yechim |
 | --- | --- |
 | `401 API kalit berilmagan` / `noto'g'ri` | Header `Authorization: Bearer <kalit>`; kalit bekor qilinmaganini admin'da tekshiring |
-| `429` | Daqiqasiga 60 so'rovdan oshdi (kalit bo'yicha) — bir daqiqa kutib qayta urining; batch'ni kichikroq qiling |
+| `429` | Daqiqasiga 60 so'rovdan oshdi (kalit bo'yicha) yoki shu IP'dan noto'g'ri kalit bilan urinishlar ko'p — `Retry-After` soniya kutib qayta urining; batch'ni kichikroq qiling |
+| `upload_media`: `rate_limited` | Soatlik yuklashlar kvotasi tugadi — `retryAfterSec` soniyadan keyin urining (admin kalitida kvota yo'q) |
 | `Post #N "review" holatida — ...` | Post allaqachon tekshiruvda; muharrir qaytarmaguncha o'zgartirib bo'lmaydi |
 | `Post #N boshqa foydalanuvchiga biriktirilgan` | `list_drafts(assignee: 'me')` yoki `assignee: 'unassigned'` dan boshqa qoralama oling |
 | `band qilingan (… gacha)` | Boshqa muharrir ishlayapti — lock tugashini kuting yoki boshqa post oling |

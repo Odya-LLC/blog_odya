@@ -4,7 +4,9 @@ import type { Where } from 'payload'
 import sharp from 'sharp'
 import type { z } from 'zod'
 
-import { createRateLimiter } from '@/auth/rate-limit'
+import { isAdminUser } from '@/access'
+import { createRateLimiter, type RateLimiter } from '@/auth/rate-limit'
+import { limitsFromEnv } from '@/env.schema'
 import type { Media, Post } from '@/payload-types'
 import { inTransaction } from '@/scraping/itemState'
 
@@ -46,7 +48,9 @@ import {
  *   media hook'lari (WebP variantlar, S3/R2 storage, kirill alt/caption, audit) odatdagidek ishlaydi.
  * - Litsenziya majburiy, agentliklar/foto-banklar/yangilik manbalarimiz domenlari rad etiladi;
  *   URL orqali yuklash — SSRF himoyasi bilan (`media-fetch.ts`); format/hajm/o'lcham tekshiruvi.
- * - Kalit bo'yicha umumiy rate limit (60/daqiqa) + yuklashlar kvotasi (soatiga 30 ta).
+ * - Kalit bo'yicha umumiy rate limit (`API_KEY_RATE_LIMIT_PER_MIN`, standart 60/daqiqa) +
+ *   yuklashlar kvotasi (`MCP_MEDIA_UPLOADS_PER_HOUR`, standart soatiga 30 ta). `admin` roli
+ *   uchun ikkalasi ham qo'llanmaydi (OBLOG-45).
  */
 
 type Input<Shape extends z.ZodRawShape> = z.output<z.ZodObject<Shape>>
@@ -58,9 +62,12 @@ export const MEDIA_TOOL_NAMES = [
   'search_stock_images',
 ] as const
 
-/** Bitta foydalanuvchi uchun soatiga yuklashlar (xotirada; `rate-limit.ts` cheklovi bilan). */
-export const MEDIA_UPLOADS_PER_HOUR = 30
-export const mediaUploadLimiter = createRateLimiter({
+/**
+ * Bitta foydalanuvchi uchun soatiga yuklashlar (`MCP_MEDIA_UPLOADS_PER_HOUR`, standart 30; xotirada,
+ * `rate-limit.ts` cheklovi bilan). `admin` — kvotasiz.
+ */
+export const MEDIA_UPLOADS_PER_HOUR = limitsFromEnv().mediaUploadsPerHour
+export const mediaUploadLimiter: RateLimiter = createRateLimiter({
   limit: MEDIA_UPLOADS_PER_HOUR,
   windowMs: 60 * 60 * 1000,
 })
@@ -172,11 +179,21 @@ export async function uploadMedia(
   }
   if (errors.length) return result({ ok: false, errors, warnings, uploaded: false })
 
-  const quota = mediaUploadLimiter.hit(`user:${ctx.user.id}`)
-  if (!quota.allowed) {
-    throw new McpToolError(
-      `Yuklashlar limiti: soatiga ${MEDIA_UPLOADS_PER_HOUR} ta. ${quota.retryAfterSec} soniyadan keyin urinib ko'ring.`,
-    )
+  // Kvota — admin'dan tashqari barcha rollar uchun (OBLOG-45).
+  if (!isAdminUser(ctx.user)) {
+    const limiter = ctx.media?.uploadLimiter ?? mediaUploadLimiter
+    const quota = limiter.hit(`user:${ctx.user.id}`)
+    if (!quota.allowed) {
+      const message = `Yuklashlar limiti: soatiga ${quota.limit} ta. ${quota.retryAfterSec} soniyadan keyin urinib ko'ring.`
+      return result({
+        ok: false,
+        errors: [{ field: 'upload', code: 'rate_limited', message }],
+        warnings,
+        uploaded: false,
+        retryAfterSec: quota.retryAfterSec,
+        limitPerHour: quota.limit,
+      })
+    }
   }
 
   let raw: Buffer

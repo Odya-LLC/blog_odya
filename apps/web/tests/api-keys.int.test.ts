@@ -343,4 +343,86 @@ describe('API kalitlar: REST va MCP (Bearer)', () => {
       status: 429,
     })
   })
+
+  // --- OBLOG-45: admin limitsiz, noto'g'ri kalitlar cheklangan -------------------------------
+
+  function limitedGet(
+    limiter = createRateLimiter({ limit: 2 }),
+    failureLimiter = createRateLimiter({ limit: 100 }),
+  ) {
+    const handler = createApiKeyGuard({
+      getPayload: async () => payload,
+      limiter,
+      failureLimiter,
+    })(REST_GET(config))
+    return (key: string, ip?: string) =>
+      handler(
+        new Request('http://localhost:3000/api/users/me', {
+          headers: {
+            Authorization: `users API-Key ${key}`,
+            ...(ip ? { 'X-Forwarded-For': `${ip}, 10.0.0.1` } : {}),
+          },
+        }),
+        { params: Promise.resolve({ slug: ['users', 'me'] }) },
+      )
+  }
+
+  it('admin kaliti: kalit bo‘yicha limit qo‘llanmaydi (REST), editor — 429 + retryAfterSec', async () => {
+    const adminKey = await enableKey(users.admin)
+    const editorKey = await enableKey(users.editor)
+    const get = limitedGet()
+    for (let i = 0; i < 5; i++) expect((await get(adminKey)).status).toBe(200)
+
+    expect((await get(editorKey)).status).toBe(200)
+    expect((await get(editorKey)).status).toBe(200)
+    const blocked = await get(editorKey)
+    expect(blocked.status).toBe(429)
+    expect(Number(blocked.headers.get('retry-after'))).toBeGreaterThan(0)
+    expect(blocked.headers.get('x-ratelimit-limit')).toBe('2')
+    const body = (await blocked.json()) as { errors: { retryAfterSec: number }[] }
+    expect(body.errors[0]!.retryAfterSec).toBeGreaterThan(0)
+  })
+
+  it('admin kaliti: MCP Bearer helper limitsiz', async () => {
+    const key = await enableKey(users.admin)
+    const limiter = createRateLimiter({ limit: 1 })
+    const headers = new Headers({ Authorization: `Bearer ${key}` })
+    for (let i = 0; i < 5; i++) {
+      const auth = await authenticateBearer(payload, headers, { limiter })
+      expect(auth.ok && auth.user.id).toBe(users.admin.id)
+    }
+  })
+
+  it('noto‘g‘ri kalit: avval 401, limit oshgach 429 (kalit bo‘yicha)', async () => {
+    const get = limitedGet()
+    const bad = crypto.randomUUID()
+    expect((await get(bad)).status).toBe(401)
+    expect((await get(bad)).status).toBe(401)
+    expect((await get(bad)).status).toBe(429)
+  })
+
+  it('noto‘g‘ri kalitlar IP bo‘yicha: limit oshsa shu IP’dan barcha kalitli so‘rovlar 429', async () => {
+    const editorKey = await enableKey(users.editor)
+    const adminKey = await enableKey(users.admin)
+    const get = limitedGet(createRateLimiter({ limit: 100 }), createRateLimiter({ limit: 2 }))
+    const ip = '203.0.113.7'
+    // Har safar yangi (tasodifiy) kalit — kalit bo'yicha limit ushlamaydi, IP bo'yicha — ushlaydi.
+    expect((await get(crypto.randomUUID(), ip)).status).toBe(401)
+    expect((await get(crypto.randomUUID(), ip)).status).toBe(401)
+    expect((await get(crypto.randomUUID(), ip)).status).toBe(429)
+    // Endi shu IP'dan to'g'ri kalit ham (admin ham) — DB'ga tushmasdan 429.
+    const blocked = await get(editorKey, ip)
+    expect(blocked.status).toBe(429)
+    expect(Number(blocked.headers.get('retry-after'))).toBeGreaterThan(0)
+    expect((await get(adminKey, ip)).status).toBe(429)
+    // Boshqa IP'dan — odatdagidek.
+    expect((await get(editorKey, '198.51.100.9')).status).toBe(200)
+    expect((await get(adminKey, '198.51.100.9')).status).toBe(200)
+  })
+
+  it('to‘g‘ri kalitlar IP bo‘yicha hisobga kirmaydi', async () => {
+    const editorKey = await enableKey(users.editor)
+    const get = limitedGet(createRateLimiter({ limit: 100 }), createRateLimiter({ limit: 1 }))
+    for (let i = 0; i < 4; i++) expect((await get(editorKey, '203.0.113.8')).status).toBe(200)
+  })
 })
