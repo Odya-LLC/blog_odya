@@ -32,6 +32,25 @@ const booleanString = z
 
 const nonEmpty = z.string().min(1)
 
+/** Standart limit qiymatlari (OBLOG-45): env berilmasa yoki `0` bo'lsa — shular. */
+export const DEFAULT_API_KEY_RATE_LIMIT_PER_MIN = 60
+export const DEFAULT_MCP_MEDIA_UPLOADS_PER_HOUR = 30
+
+/**
+ * Limit uchun musbat butun son. Berilmagan, bo'sh yoki `0` — standart qiymat (limitni env orqali
+ * tasodifan o'chirib qo'yib bo'lmaydi); manfiy/kasr/matn — xato. Limitsiz — faqat `admin` roli.
+ */
+const positiveLimit = (fallback: number) =>
+  z.preprocess(
+    (value) =>
+      value === undefined || value === '' || value === '0' || value === 0 ? undefined : value,
+    z.coerce
+      .number()
+      .int('butun son bo‘lishi kerak')
+      .positive('musbat son bo‘lishi kerak')
+      .default(fallback),
+  )
+
 export const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
 
@@ -81,11 +100,38 @@ export const envSchema = z.object({
   /** Pexels API kaliti (https://www.pexels.com/api/) — MCP orqali legal rasm qidirish (OBLOG-44). */
   PEXELS_API_KEY: nonEmpty.optional(),
 
+  // --- API kalit va MCP limitlari (OBLOG-45; admin roli uchun qo'llanmaydi) ---
+  /** Bitta API kalit uchun daqiqasiga so'rovlar (REST, GraphQL, MCP). Standart — 60. */
+  API_KEY_RATE_LIMIT_PER_MIN: positiveLimit(DEFAULT_API_KEY_RATE_LIMIT_PER_MIN),
+  /** MCP `upload_media`: bitta foydalanuvchi uchun soatiga yuklashlar. Standart — 30. */
+  MCP_MEDIA_UPLOADS_PER_HOUR: positiveLimit(DEFAULT_MCP_MEDIA_UPLOADS_PER_HOUR),
+
   // --- Monitoring (ixtiyoriy: bo'lmasa Sentry o'chiq) ---
   SENTRY_DSN: z.url().optional(),
 })
 
 export type Env = z.infer<typeof envSchema>
+
+export interface ApiLimits {
+  apiKeyPerMin: number
+  mediaUploadsPerHour: number
+}
+
+/**
+ * Limitlarni to'g'ridan-to'g'ri `process.env` dan o'qish — `@/env` ni import qilmaydigan
+ * modullar (jarayon bo'yicha umumiy limiter'lar) uchun. Noto'g'ri qiymat — standart
+ * (to'liq tekshiruv va tushunarli xato — `parseEnv`, ilova ishga tushganda).
+ */
+export function limitsFromEnv(source: RawEnv = process.env): ApiLimits {
+  const read = (name: string, fallback: number) => {
+    const parsed = positiveLimit(fallback).safeParse(source[name]?.trim())
+    return parsed.success ? parsed.data : fallback
+  }
+  return {
+    apiKeyPerMin: read('API_KEY_RATE_LIMIT_PER_MIN', DEFAULT_API_KEY_RATE_LIMIT_PER_MIN),
+    mediaUploadsPerHour: read('MCP_MEDIA_UPLOADS_PER_HOUR', DEFAULT_MCP_MEDIA_UPLOADS_PER_HOUR),
+  }
+}
 
 type RawEnv = Record<string, string | undefined>
 
