@@ -128,6 +128,15 @@ Oraliqda (1–2 qadam orasida) chaqiruvlar `401` oladi — keyingi tick'da tikla
   - **Darhol qayta tekshirish:** feed URL'ini o'zgartiring yoki manbani o'chirib-yoqing («Faol») — backoff tozalanadi,
     feed keyingi `/api/jobs/run` da so'raladi.
   - Doimiy yopiq manba (masalan, HLTV.org, 2026-09-27) — admin → Manbalar → manba → «Faol» ni o'chiring.
+- **Yangi yangiliklar xabari (OBLOG-55)** — har scheduler tick'ida (`/api/jobs/run`: barcha job'lardan keyin;
+  `autorun`: har tick oldidan) shu chatga **bitta** qisqa xabar: `🆕 Yangi yangiliklar: N ta`, manbalar bo'yicha
+  (≤ 8 qator, qolgani "+N boshqa"), top-3 rubrika (`suggestedCategory`) va admin → "Yangiliklar navbati" havolasi
+  (`NEXT_PUBLIC_SITE_URL/admin/news-queue`). "Yangi" — oxirgi xabardan beri yaratilgan `scraped-items`
+  (`duplicate`/`rejected` emas; dedupe shu tick'da ulgurmagan `pending` lar ham kiradi). `feed.poll` har manba uchun
+  alohida job bo'lsa ham xabar tick'da bitta (oyna chegarasi `scraping-settings.stats.newItems.watermark`, parallel
+  chaqiruvlar — atomar CAS). 0 ta — xabar yo'q. Admin → Telegram sozlamalari: "Yangi yangiliklar haqida xabar
+  berish" (o'chirish) va "Xabar uchun minimal soni" (kam bo'lsa keyingi tick'larda yig'iladi; oyna ≤ 3 soat orqaga).
+  Token/chat yo'q — jim o'tkaziladi; Telegram xatosi job'ni yiqitmaydi (log, xabar qayta yuborilmaydi).
 - **Sozlash (egasi):** bot'ni admin guruhiga qo'shing, guruh chat ID'sini (`-100…`) Vercel `TELEGRAM_ALERT_CHAT_ID`
   yoki admin → Telegram sozlamalari → "Admin ogohlantirish guruhi" ga yozing; `TELEGRAM_BOT_TOKEN` — Vercel env.
 - **Kunlik tozalashni qayta ishga tushirish:** Scraping sozlamalari statistikasidagi `cleanup.enqueuedDate` bugungi
