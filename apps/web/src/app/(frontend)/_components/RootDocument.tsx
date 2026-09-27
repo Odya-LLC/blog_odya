@@ -2,6 +2,7 @@ import type { Locale } from '@blog-odya/shared'
 import type { ReactNode } from 'react'
 import { preconnect } from 'react-dom'
 
+import { Analytics } from '@/components/analytics/Analytics'
 import { env } from '@/env'
 import { themeInitScript } from '@/lib/preferences'
 
@@ -25,7 +26,11 @@ export function RootDocument({ locale, children }: { locale: Locale; children: R
         {/* Tema: cookie → tizim sozlamasi; bo'yashdan oldin bloklovchi skript (FOUC yo'q, TZ §12.3). */}
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        {/* GA4 / Metrica — faqat cookie roziligidan keyin (TZ §9.5, OBLOG-23). */}
+        <Analytics locale={locale} />
+      </body>
     </html>
   )
 }

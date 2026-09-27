@@ -36,6 +36,7 @@ import { TelegramSettings } from './globals/TelegramSettings'
 import { uzPluginTranslations } from './i18n/plugins'
 import { buildJobsConfig } from './jobs'
 import { ADMIN_LANGUAGE, uz } from './i18n/uz'
+import { capturePayloadError } from './lib/sentry'
 import { revalidateRedirectsAfterChange } from './site/revalidate'
 import { cyrlSyncPlugin } from './translit/cyrlSync'
 import { CYRL_SYNC } from './translit/sync-config'
@@ -116,6 +117,14 @@ export default buildConfig({
   ],
   globals: [SiteSettings, Header, Footer, TelegramSettings, ScrapingSettings],
   editor: lexicalEditor(),
+  // Payload REST/GraphQL 5xx xatolari → Sentry (OBLOG-23; `SENTRY_DSN` bo'lmasa o'chiq).
+  hooks: {
+    afterError: [
+      (args) => {
+        capturePayloadError(args)
+      },
+    ],
+  },
   // Fon vazifalar (TZ §3.5): feed.poll, scrapeItem; scheduler — JOBS_MODE (src/jobs/index.ts).
   jobs: buildJobsConfig(env.JOBS_MODE),
   secret: getPayloadSecret(env, databaseMode),

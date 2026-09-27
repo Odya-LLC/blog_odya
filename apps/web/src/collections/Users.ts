@@ -12,6 +12,11 @@ import {
   ROLE_LABELS,
   ROLES,
 } from '@/access'
+import { enforcePasswordPolicy } from '@/auth/password-policy'
+
+/** Kirish urinishlari (TZ §9.2, OBLOG-23): 5 ta noto'g'ri paroldan keyin 15 daqiqa bloklanadi. */
+export const MAX_LOGIN_ATTEMPTS = 5
+export const LOCK_TIME_MS = 15 * 60 * 1000
 
 /**
  * API kalit invarianti (TZ §9.2): kalit bor ⇔ `enableAPIKey: true`.
@@ -46,6 +51,8 @@ const recordLastLogin: CollectionAfterLoginHook = async ({ req, user }) => {
  * - Birinchi foydalanuvchi (`/admin/create-first-user`) avtomatik `admin` bo'ladi.
  * - Editor faqat o'z profilini ko'radi/tahrirlaydi; o'z rolini o'zgartira olmaydi.
  * - `enableAPIKey` — shaxsiy API kalit (REST va MCP uchun, TZ §6.3).
+ * - Xavfsizlik (TZ §9.2): kuchli parol (`auth/password-policy.ts`), 5 ta xato urinishdan keyin
+ *   15 daqiqa blok (`loginAttempts` / `lockUntil`; admin "Qulfni ochish" bilan ochadi).
  *
  * - `author` — ommaviy muallif profili (TZ §10.11), faqat admin belgilaydi.
  * - API kalit: editor — faqat o'ziniki, admin — hammaniki (`isAdminOrSelf`); kalit va indeks hech
@@ -63,6 +70,8 @@ export const Users: CollectionConfig = {
   },
   auth: {
     useAPIKey: true,
+    maxLoginAttempts: MAX_LOGIN_ATTEMPTS,
+    lockTime: LOCK_TIME_MS,
   },
   access: {
     admin: ({ req }) => isAdminOrEditorUser(req.user),
@@ -73,6 +82,8 @@ export const Users: CollectionConfig = {
     unlock: isAdmin,
   },
   hooks: {
+    // Kuchli parol (TZ §9.2): kamida 12 belgi, kichik/katta harf, raqam, email'siz.
+    beforeValidate: [enforcePasswordPolicy],
     beforeChange: [
       async ({ data, operation, req }) => {
         // Birinchi foydalanuvchi har doim admin (aks holda tizimni boshqarib bo'lmaydi).

@@ -7,6 +7,7 @@ import { DEFAULT_BATCH_LIMIT } from './constants'
 import { runAlertChecks } from './alerts'
 import { activeRunQueues } from './scrapeDeps'
 import { enqueueDailyCleanup, enqueueDueFeedPolls, releaseStaleJobs } from './scheduler'
+import { withErrorCapture } from './sentry'
 import { feedPollTask } from './tasks/feedPoll'
 import { itemClassifyTask } from './tasks/itemClassify'
 import { itemDedupeTask } from './tasks/itemDedupe'
@@ -29,7 +30,7 @@ import { scrapeItemWorkflow } from './workflows/scrapeItem'
  * Task'lar: `feed.poll` (M2-01), `item.fetch` + `item.extract` (`scrapeItem` workflow, M2-02),
  * `item.dedupe` + `item.classify` (workflow davomi) va `maintenance.cleanup` (kuniga 1 marta),
  * ogohlantirishlar — har scheduler chaqiruvida (M2-03), `telegram.post` — post chop etilganda
- * (`default` navbati, M3-01).
+ * (`default` navbati, M3-01). Task xatolari Sentry'ga ham yuboriladi (`./sentry.ts`, OBLOG-23).
  */
 export function buildJobsConfig(mode: Env['JOBS_MODE'] = 'endpoint'): JobsConfig {
   const adminOnly = ({ req }: { req: { user?: unknown } }) =>
@@ -44,7 +45,7 @@ export function buildJobsConfig(mode: Env['JOBS_MODE'] = 'endpoint'): JobsConfig
       itemClassifyTask,
       maintenanceCleanupTask,
       telegramPostTask,
-    ],
+    ].map(withErrorCapture),
     workflows: [scrapeItemWorkflow],
     // Supabase Free 500 MB: muvaffaqiyatli job'lar saqlanmaydi (natija — manba `stats` da).
     deleteJobOnComplete: true,

@@ -4,6 +4,7 @@ packages:
 
 # Build skriptlariga ruxsat berilgan paketlar (pnpm 11)
 allowBuilds:
+  '@sentry/cli': true
   esbuild: true
   sharp: true
   unrs-resolver: true

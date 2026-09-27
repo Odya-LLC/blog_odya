@@ -28,6 +28,7 @@ import type {
 import { env, PHASE_PRODUCTION_BUILD } from '@/env'
 import type { Author, Category, Media, Page, Post, Redirect } from '@/payload-types'
 
+import { type AnalyticsConfig, toAnalyticsConfig } from './analytics'
 import { CACHE_TAGS, categoryTag, postTag } from './cache-tags'
 import {
   populated,
@@ -181,6 +182,35 @@ export async function loadSiteChrome(locale: Locale): Promise<SiteChrome> {
 export const getSiteChrome = (locale: Locale): Promise<SiteChrome> =>
   // `pages` — menyudagi sahifa slug'i o'zgarsa havola ham yangilanadi.
   cached(() => loadSiteChrome(locale), ['site-chrome', locale], [CACHE_TAGS.nav, CACHE_TAGS.pages])
+
+// ---------------------------------------------------------------------------
+// Analitika (TZ §9.5, OBLOG-23)
+// ---------------------------------------------------------------------------
+
+/**
+ * GA4 / Metrica ID'lari (`site-settings`, yozuvga bog'liq emas). Analitika ixtiyoriy — DB xatosi
+ * sahifani yiqitmasin (root layout ham chaqiradi): xato bo'lsa analitika o'chiq.
+ */
+export async function loadAnalyticsConfig(): Promise<AnalyticsConfig> {
+  if (!hasDatabase()) return toAnalyticsConfig(null)
+  const payload = await payloadClient()
+  const settings = await payload.findGlobal({
+    slug: 'site-settings',
+    depth: 0,
+    overrideAccess: false,
+    select: { analytics: true },
+  })
+  return toAnalyticsConfig(settings.analytics)
+}
+
+export async function getAnalyticsConfig(): Promise<AnalyticsConfig> {
+  try {
+    // `nav` — `site-settings` o'zgarganda yangilanadi (`revalidateNavAfterChange`).
+    return await cached(loadAnalyticsConfig, ['analytics'], [CACHE_TAGS.nav])
+  } catch {
+    return toAnalyticsConfig(null)
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Bosh sahifa
