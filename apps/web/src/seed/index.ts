@@ -156,7 +156,7 @@ function placeholderValues(options: SeedOptions) {
 
 /**
  * Boshlang'ich ma'lumotlar (`pnpm seed`): 9 kategoriya, 6 huquqiy sahifa, 1 muallif, 3 teg,
- * 3 demo post, 7 manba (`sources.json`, M0-04), `site-settings`, `header`, `footer`.
+ * 3 demo post, 8 manba (`sources.json`, M0-04, OBLOG-54), `site-settings`, `header`, `footer`.
  * `demo: false` — teglar, demo postlar va muqovalar o'tkazib yuboriladi (header/footer faqat
  * kategoriya va huquqiy sahifalarga havola qiladi, demo kontentga bog'liq emas).
  *

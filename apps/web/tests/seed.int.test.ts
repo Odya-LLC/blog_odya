@@ -94,7 +94,7 @@ describe('seed: demo o‘chiq (prod, SEED_DEMO=false)', () => {
     ).toBe(6)
     expect(await countBySlug('authors', [SEED_AUTHOR.slug])).toBe(1)
     const sourceSlugs = (sourcesJson as { slug: string }[]).map((s) => s.slug)
-    expect(await countBySlug('sources', sourceSlugs)).toBe(7)
+    expect(await countBySlug('sources', sourceSlugs)).toBe(8)
     const header = await payload.findGlobal({ slug: 'header', depth: 0 })
     expect(header.navItems?.length).toBeGreaterThan(0)
     const footer = await payload.findGlobal({ slug: 'footer', depth: 0 })
@@ -137,8 +137,8 @@ describe('seed: idempotent', () => {
       ),
     ).toBe(3)
     const sourceSlugs = (sourcesJson as { slug: string }[]).map((s) => s.slug)
-    expect(sourceSlugs).toHaveLength(7)
-    expect(await countBySlug('sources', sourceSlugs)).toBe(7)
+    expect(sourceSlugs).toHaveLength(8)
+    expect(await countBySlug('sources', sourceSlugs)).toBe(8)
   })
 
   it('manbalar: feed kategoriyalari va kalit so‘z qoidalari ID bilan bog‘langan', async () => {

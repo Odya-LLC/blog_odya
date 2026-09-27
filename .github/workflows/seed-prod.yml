@@ -1,4 +1,4 @@
-# Prod seed: `pnpm seed` → Supabase prod bazasi (kategoriyalar, 7 manba, huquqiy sahifalar,
+# Prod seed: `pnpm seed` → Supabase prod bazasi (kategoriyalar, 8 manba, huquqiy sahifalar,
 # muallif, site-settings/header/footer). Faqat qo'lda: `gh workflow run seed-prod --ref main`.
 # Default — demo kontentsiz (SEED_DEMO=false: teglar, demo postlar, muqovalar yo'q).
 # Idempotent: mavjud hujjatlar (slug bo'yicha) o'zgartirilmaydi. Batafsil: README → "Prod seed",
