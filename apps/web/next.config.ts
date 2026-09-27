@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url'
 
 import { parseEnv, resolveEnvMode } from './src/env.schema'
 import { isIndexingAllowed } from './src/site/seo/config'
-import { FEED_REWRITES } from './src/site/seo/rewrites'
+import { FEED_REWRITES, TRAILING_SLASH_REDIRECTS } from './src/site/seo/rewrites'
 import { NOINDEX_HEADER } from './src/site/seo/robots'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -44,6 +44,10 @@ const nextConfig: NextConfig = {
   },
   // RSS: `/rss.xml`, `/kr/rss.xml`, `/{category}/rss.xml` → `/feeds/…` (src/site/seo/rewrites.ts).
   rewrites: async () => [...FEED_REWRITES],
+  // OBLOG-50: trailing slash'ni `src/proxy.ts` hal qiladi — spam `/products/1/` birdaniga 410
+  // (Next'ning o'rnatilgan 308'i proxy'dan oldin ishlardi). `/api`, `/admin` — `redirects`.
+  skipTrailingSlashRedirect: true,
+  redirects: async () => [...TRAILING_SLASH_REDIRECTS],
   // Preview / `SEO_NOINDEX=1`: barcha javoblarga `X-Robots-Tag: noindex` (TZ §8.3, M1-06).
   headers: async () =>
     isIndexingAllowed(process.env)
