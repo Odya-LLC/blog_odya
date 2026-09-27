@@ -29,7 +29,7 @@ Qayta tekshirish (qo'lda, CI'da o'chiq): 7-bo'limga qarang.
 | 3 | Habr (faqat Новости) | RU | **`rss_plus_page`** | 35 | 15 | 10 | 4 | 50–100 | description (~370–560 belgi) | ✅ `.article-formatted-body` |
 | 4 | iXBT.com | RU | **`rss_only`** | 30 | 15 | 10 | 2 | ~100 | **To'liq matn** (`content:encoded`, ~1.5–2k belgi) | ✅ (kerak emas) |
 | 5a | Dexerto | EN | **`rss_plus_page`** | 30 | 20 | 10 | 2 | ~10 (gaming) + <1 (esports) | description (~140 belgi) | ✅ `#article-content` |
-| 5b | HLTV.org | EN | **`rss_only`** | 25 | 20 | 15 | 1 | ~4 | Sarlavha + 1 jumla (~80 belgi) | ⚠️ Cloudflare (o'zgaruvchan) |
+| 5b | HLTV.org | EN | **`rss_only`** | 25 | 20 | 15 | 1 (**manba o'chiq**, 2026-09-27) | ~4 | Sarlavha + 1 jumla (~80 belgi) | ❌ Cloudflare challenge (doimiy) |
 | — | 3DNews (zaxira) | RU | `rss_only` | 20 | 30 | 10 | 1 (manba o'chiq) | ~37 | description (~400 belgi) | tekshirilmadi |
 
 > Dexerto va HLTV — TZ §2.2 da bitta qator, lekin `sources` da **ikkita alohida yozuv**: domen, `robots.txt`, rate limit va `fetchMode` har xil (`homepageUrl` bitta bo'lishi kerak).
@@ -125,13 +125,15 @@ Jami faol manbalar kuniga ~200–300 material beradi (feedlar orasidagi dublikat
 
 | Feed URL | HTTP | Yozuvlar | ~/kun | `feedCategory` | → `mapsTo` | Faol |
 |---|---|---|---|---|---|---|
-| `https://www.hltv.org/rss/news` | 200 / **403** (o'zgaruvchan) | 10 | ~4 | News (CS2) | `kibersport` | ✅ |
+| `https://www.hltv.org/rss/news` | **403** (Cloudflare challenge, 2026-09-27 dan doimiy) | 10 | ~4 | News (CS2) | `kibersport` | ✅ (manba o'chiq) |
 
 - **Format:** RSS 2.0, 10 yozuv, `<category>` yo'q, description — bitta jumla (~80 belgi); `media:content` rasm havolasi.
 - ⚠️ **Cloudflare:** audit boshida feed va maqola sahifasi 200 qaytardi, lekin `robots.txt` va `/terms` **403 (Cloudflare managed challenge)** qaytardi. Bir necha so'rovdan keyin feed ham 403 challenge qaytara boshladi (curl va Node `fetch` bilan). Challenge'ni chetlab o'tish (JS/CAPTCHA) **qilinmaydi**.
 - **robots.txt / ToS:** **tekshirib bo'lmadi** (403). Ehtiyotkorlik bilan — `rss_only`, `rateLimitSec = 15`, `pollIntervalMin = 20`.
 - **Server HTML:** 200 bo'lganda — ha (`.newstext-con`), lekin ishlatilmaydi.
 - **Xulosa:** `rss_only`. `feed.poll` 403 ni "vaqtinchalik xato" deb hisoblashi kerak (3 marta ketma-ket → ogohlantirish, TZ §3.5). Ochiq masala #2.
+- ❌ **Holat — O'CHIRILGAN (2026-09-27, OBLOG-53):** `/rss/news` har qanday User-Agent uchun (bizning bot, brauzer, Feedly) **doimo** `403` + `server: cloudflare` + `cf-mitigated: challenge` ("Just a moment...") qaytaradi. Scheduler har ~20 daqiqada so'rab, ketma-ket 220 xato va har kuni ogohlantirish bergan. Challenge chetlab o'tilmaydi, shuning uchun manba o'chirildi: seed'da `isActive: false`, production'da — migratsiya `20260927_143458_oblog_53_feed_backoff` (faqat hali faol bo'lsa, `tosNotes` ga izoh bilan). Qo'lda: admin → Manbalar → HLTV.org → «Faol» ni o'chirish.
+- **Himoya (kod):** Cloudflare challenge endi alohida xato turi (`feeds[].lastErrorKind = cloudflare`) — feed darhol kuniga 1 marta tekshiruvga o'tadi, admin'ga bitta xabar (eslatmasiz), ochilsa — "tiklandi" (runbook `jobs-scheduler.md`). Qayta yoqishdan oldin feed'ni brauzersiz (curl) tekshiring. Kibersport uchun o'rinbosar manba — alohida vazifa.
 
 ### 3.6. 3DNews — zaxira (`isActive = false`)
 
@@ -205,12 +207,14 @@ Istisno: HLTV feedi Cloudflare challenge (403 + `cf-mitigated: challenge`) qayta
 
 **2026-09-23 natijasi:** 6 ta manba (The Verge, TechCrunch, Habr + sahifa, iXBT, Dexerto + sahifa, 3DNews) — ✅; HLTV — audit boshida 200, keyinroq 403 (Cloudflare) → SKIP.
 
+**2026-09-27:** HLTV feedi doimo Cloudflare challenge — manba o'chirildi (OBLOG-53, §3.5b).
+
 ## 8. Ochiq masalalar va tavsiyalar
 
 | # | Masala | Tavsiya | Kimga |
 |---|---|---|---|
 | 1 | **Kibersport oqimi zaif:** Dexerto esports ~0.2/kun, HLTV ~4/kun (faqat CS2), Dota 2 / MLBB / PUBG Mobile yo'q. | Zaxiradan kibersport manbasi qo'shish (TZ §2.2: Esports Insider, Cybersport.ru) — alohida audit bilan. | Egasi (qaror), developer |
-| 2 | **HLTV Cloudflare:** robots.txt va ToS tekshirilmadi, feed vaqti-vaqti bilan 403 qaytaradi. | ToS'ni brauzerda qo'lda o'qish; production IP'dan (Vercel) barqarorlikni kuzatish; kerak bo'lsa HLTV'dan RSS uchun ruxsat so'rash. Challenge chetlab o'tilmaydi. | Egasi |
+| 2 | **HLTV Cloudflare:** robots.txt va ToS tekshirilmadi; 2026-09-27 dan feed **doimo** 403 (challenge) qaytaradi — manba o'chirildi (OBLOG-53). | ToS'ni brauzerda qo'lda o'qish; production IP'dan (Vercel) barqarorlikni kuzatish; kerak bo'lsa HLTV'dan RSS uchun ruxsat so'rash. Challenge chetlab o'tilmaydi. | Egasi |
 | 3 | **iXBT iqtibos sharti:** iqtibos uchun oldindan rozilik talab qilinadi. | Stil qo'llanmada (M0-05): iXBT'dan to'g'ridan-to'g'ri iqtibos yo'q, faqat faktlar + havola. Uzoq muddatda — hamkorlik so'rovi. | M0-05 |
 | 4 | **The Verge / TechCrunch — ToS scraping'ni taqiqlaydi**, RSS matni qisqa (TechCrunch ~150 belgi). | `rss_only` saqlanadi; faktlarni tekshirish uchun editor/agent asl maqolani qo'lda ochadi. Litsenziya/hamkorlik — QUESTIONS.md dagi uzoq muddatli taklif. | Egasi |
 | 5 | **Habr `utm_*` havolalari** robots.txt'da yopiq. | `item.fetch` / URL normallashtirishda `utm_*` olib tashlansin (M2-01/M2-02). | M2-01, M2-02 |

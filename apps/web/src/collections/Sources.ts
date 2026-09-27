@@ -1,10 +1,47 @@
 import { FETCH_MODES, SOURCE_LANGUAGES } from '@blog-odya/shared'
-import type { CollectionConfig } from 'payload'
+import type { CollectionBeforeChangeHook, CollectionConfig } from 'payload'
 
 import { isAdmin, isAdminOrEditor } from '@/access'
 import { slugField } from '@/fields/slug'
+import { FEED_ERROR_KINDS } from '@/scraping/feed'
+import { CLEAR_FEED_BACKOFF } from '@/scraping/feedBackoff'
 
 const readOnlySidebar = { readOnly: true, position: 'sidebar' as const }
+
+interface FeedRowLike {
+  id?: string | null
+  url?: string | null
+}
+
+/**
+ * Feed backoff'ini (OBLOG-53) admin harakatida tozalash — feed keyingi scheduler tsiklida darhol
+ * tekshiriladi: feed URL'i o'zgarsa (yangi manzil — eski xatolar tegishli emas) yoki manba
+ * nofaoldan faolga o'tkazilsa (masalan, Cloudflare himoyasi olib tashlangach HLTV qayta yoqilsa).
+ * `feed.poll` o'zi URL'ni ham, `isActive` ni ham o'zgartirmaydi — uning yozuvlariga ta'sir yo'q.
+ */
+export const resetFeedBackoffOnAdminChange: CollectionBeforeChangeHook = ({
+  data,
+  originalDoc,
+  operation,
+}) => {
+  if (operation !== 'update' || !originalDoc) return data
+  const reactivated = data.isActive === true && originalDoc.isActive === false
+  // Qisman yangilash (`{ isActive: true }`) — feed'lar asl hujjatdan olinadi.
+  if (!Array.isArray(data.feeds)) {
+    if (!reactivated || !Array.isArray(originalDoc.feeds)) return data
+    data.feeds = originalDoc.feeds
+  }
+  const previousUrls = new Map<string, string | null | undefined>(
+    ((originalDoc.feeds ?? []) as FeedRowLike[])
+      .filter((feed) => feed.id)
+      .map((feed) => [feed.id!, feed.url]),
+  )
+  data.feeds = (data.feeds as FeedRowLike[]).map((feed) => {
+    const urlChanged = feed.id ? previousUrls.get(feed.id) !== feed.url : false
+    return reactivated || urlChanged ? { ...feed, ...CLEAR_FEED_BACKOFF } : feed
+  })
+  return data
+}
 
 /**
  * Manbalar (TZ §10.1). Boshlang'ich ro'yxat — `packages/shared/seed/sources.json` (M0-04),
@@ -36,6 +73,9 @@ export const Sources: CollectionConfig = {
     group: 'Scraping',
   },
   defaultSort: '-priority',
+  hooks: {
+    beforeChange: [resetFeedBackoffOnAdminChange],
+  },
   fields: [
     {
       name: 'name',
@@ -158,6 +198,43 @@ export const Sources: CollectionConfig = {
               type: 'textarea',
               label: 'Oxirgi xato',
               admin: { readOnly: true },
+            },
+            {
+              type: 'row',
+              fields: [
+                {
+                  name: 'failureCount',
+                  type: 'number',
+                  label: 'Ketma-ket xatolar',
+                  defaultValue: 0,
+                  admin: { readOnly: true, width: '33%' },
+                },
+                {
+                  name: 'lastErrorKind',
+                  type: 'select',
+                  label: 'Xato turi',
+                  options: [
+                    { label: 'Cloudflare challenge', value: FEED_ERROR_KINDS[0] },
+                    { label: 'HTTP xato', value: FEED_ERROR_KINDS[1] },
+                    { label: 'Timeout', value: FEED_ERROR_KINDS[2] },
+                    { label: 'Tarmoq', value: FEED_ERROR_KINDS[3] },
+                    { label: 'Parse', value: FEED_ERROR_KINDS[4] },
+                  ],
+                  admin: { readOnly: true, width: '33%' },
+                },
+                {
+                  name: 'nextPollAt',
+                  type: 'date',
+                  label: 'Keyingi tekshiruv (backoff)',
+                  admin: {
+                    readOnly: true,
+                    width: '33%',
+                    date: { pickerAppearance: 'dayAndTime' },
+                    description:
+                      'Doimiy xatoda so‘rovlar siyraklashadi (Cloudflare — kuniga 1 marta). URL o‘zgarsa yoki manba qayta yoqilsa — tozalanadi.',
+                  },
+                },
+              ],
             },
           ],
         },

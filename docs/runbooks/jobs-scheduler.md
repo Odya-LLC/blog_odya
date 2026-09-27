@@ -114,6 +114,20 @@ Oraliqda (1–2 qadam orasida) chaqiruvlar `401` oladi — keyingi tick'da tikla
   `TELEGRAM_ALERT_CHAT_ID`); sozlanmagan bo'lsa faqat log (`ALERT: ...`). Shartlar: manba feed'i ketma-ket ≥ 3 xato;
   manbaning 24 soatlik yig'ish muvaffaqiyati < 80% (≥ 5 element); DB ≥ 350 MB (70%); R2 ≥ 8 GB. Bir shart —
   24 soatda bir marta (holat `stats.alerts` da), hal bo'lsa keyingi safar darhol.
+- **Feed backoff (OBLOG-53)** — holat `sources.feeds[]` da (admin → Manba → Feed → "Poll holati"):
+  `failureCount`, `lastErrorKind`, `nextPollAt` (shu vaqtgacha feed so'ralmaydi).
+  - **Cloudflare challenge** (`cf-mitigated: challenge` yoki 403/503 + `server: cloudflare` + "Just a moment..."
+    sahifasi) — chetlab o'tilmaydi; feed darhol **kuniga 1 marta** tekshiriladi. Ogohlantirish
+    `source-blocked:<id>` — **bitta** xabar ("Cloudflare himoyasi — fid yopiq, kuniga 1 marta tekshiriladi"),
+    eslatma yo'q.
+  - **Boshqa xatolar** (HTTP, timeout, tarmoq, parse) — 2 ta xatogacha oddiy interval, keyin har safar 2×:
+    30 daq → 1 → 2 → 4 → 8 → 16 → 24 soat (cap). Ogohlantirish `source-failing:<id>` (≥ 3 xato) — eslatma
+    **haftada** 1 marta (avval har 24 soatda o'sib boruvchi hisoblagich bilan edi).
+  - Feed yana o'qilsa — holat tozalanadi va Telegram'ga **"tiklandi"** xabari. Manba o'chirilsa — ogohlantirish jim
+    yopiladi.
+  - **Darhol qayta tekshirish:** feed URL'ini o'zgartiring yoki manbani o'chirib-yoqing («Faol») — backoff tozalanadi,
+    feed keyingi `/api/jobs/run` da so'raladi.
+  - Doimiy yopiq manba (masalan, HLTV.org, 2026-09-27) — admin → Manbalar → manba → «Faol» ni o'chiring.
 - **Sozlash (egasi):** bot'ni admin guruhiga qo'shing, guruh chat ID'sini (`-100…`) Vercel `TELEGRAM_ALERT_CHAT_ID`
   yoki admin → Telegram sozlamalari → "Admin ogohlantirish guruhi" ga yozing; `TELEGRAM_BOT_TOKEN` — Vercel env.
 - **Kunlik tozalashni qayta ishga tushirish:** Scraping sozlamalari statistikasidagi `cleanup.enqueuedDate` bugungi

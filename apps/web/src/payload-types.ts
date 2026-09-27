@@ -538,6 +538,12 @@ export interface Source {
         etag?: string | null;
         lastModified?: string | null;
         lastError?: string | null;
+        failureCount?: number | null;
+        lastErrorKind?: ('cloudflare' | 'http' | 'timeout' | 'network' | 'parse') | null;
+        /**
+         * Doimiy xatoda so‘rovlar siyraklashadi (Cloudflare — kuniga 1 marta). URL o‘zgarsa yoki manba qayta yoqilsa — tozalanadi.
+         */
+        nextPollAt?: string | null;
         id?: string | null;
       }[]
     | null;
@@ -1475,6 +1481,9 @@ export interface SourcesSelect<T extends boolean = true> {
         etag?: T;
         lastModified?: T;
         lastError?: T;
+        failureCount?: T;
+        lastErrorKind?: T;
+        nextPollAt?: T;
         id?: T;
       };
   language?: T;

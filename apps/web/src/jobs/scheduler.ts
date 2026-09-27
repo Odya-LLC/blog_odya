@@ -11,7 +11,8 @@ import { claimDailyCleanup } from './stats'
  * Scheduler (TZ §3.5): har chaqiruvda (pg_cron → `/api/jobs/run`, yoki `autorun` tick'i)
  * muddati kelgan faol manbalar uchun `feed.poll` job'ini navbatga qo'yadi.
  *
- * - Manba "muddati kelgan" — kamida bitta faol feed `pollIntervalMin` dan beri o'qilmagan.
+ * - Manba "muddati kelgan" — kamida bitta faol feed `pollIntervalMin` dan beri o'qilmagan va
+ *   backoff'da emas (`feeds[].nextPollAt` o'tgan yoki yo'q — OBLOG-53, `scraping/feedBackoff.ts`).
  * - Bitta manba uchun bir vaqtda bitta tugallanmagan `feed.poll` (retry kutayotgani ham) —
  *   takror navbat yo'q, `sources.feeds[]` holatini faqat bitta job yozadi.
  */
@@ -19,10 +20,14 @@ import { claimDailyCleanup } from './stats'
 interface FeedPollState {
   isActive?: boolean | null
   lastPolledAt?: string | null
+  /** Backoff: shu vaqtgacha feed o'qilmaydi (doimiy xato / Cloudflare challenge). */
+  nextPollAt?: string | null
 }
 
 export function isFeedDue(feed: FeedPollState, intervalMin: number, now: number): boolean {
   if (feed.isActive === false) return false
+  const backoffUntil = feed.nextPollAt ? Date.parse(feed.nextPollAt) : Number.NaN
+  if (!Number.isNaN(backoffUntil) && now < backoffUntil - DUE_SLACK_MS) return false
   if (!feed.lastPolledAt) return true
   const last = Date.parse(feed.lastPolledAt)
   if (Number.isNaN(last)) return true
