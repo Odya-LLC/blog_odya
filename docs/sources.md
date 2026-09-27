@@ -3,7 +3,7 @@
 | Parametr | Qiymat |
 |---|---|
 | Vazifa | M0-04 (OBLOG-5) — Manbalar auditi va seed ma'lumotlari |
-| Tekshirilgan sana | **2026-09-23** |
+| Tekshirilgan sana | **2026-09-23**; kibersport nomzodlari (OBLOG-54) — **2026-09-27** (§3.7) |
 | User-Agent | `OdyaBlogBot/1.0 (+https://blog.odya.uz/bot)` |
 | Asos | [TZ.md](TZ.md) §2.2, §2.3, §3.5, §10.1, §10.4 |
 | Seed fayllar | [`packages/shared/seed/sources.json`](../packages/shared/seed/sources.json), [`packages/shared/seed/categories.json`](../packages/shared/seed/categories.json) |
@@ -30,11 +30,12 @@ Qayta tekshirish (qo'lda, CI'da o'chiq): 7-bo'limga qarang.
 | 4 | iXBT.com | RU | **`rss_only`** | 30 | 15 | 10 | 2 | ~100 | **To'liq matn** (`content:encoded`, ~1.5–2k belgi) | ✅ (kerak emas) |
 | 5a | Dexerto | EN | **`rss_plus_page`** | 30 | 20 | 10 | 2 | ~10 (gaming) + <1 (esports) | description (~140 belgi) | ✅ `#article-content` |
 | 5b | HLTV.org | EN | **`rss_only`** | 25 | 20 | 15 | 1 (**manba o'chiq**, 2026-09-27) | ~4 | Sarlavha + 1 jumla (~80 belgi) | ❌ Cloudflare challenge (doimiy) |
+| 5c | Cybersport.ru | RU | **`rss_only`** | 25 | 20 | 10 | 1 | ~65 (≈⅔ kibersport) | description (~140 belgi, qirqilgan) | ✅ Nuxt SSR (ToS sababli yuklanmaydi) |
 | — | 3DNews (zaxira) | RU | `rss_only` | 20 | 30 | 10 | 1 (manba o'chiq) | ~37 | description (~400 belgi) | tekshirilmadi |
 
 > Dexerto va HLTV — TZ §2.2 da bitta qator, lekin `sources` da **ikkita alohida yozuv**: domen, `robots.txt`, rate limit va `fetchMode` har xil (`homepageUrl` bitta bo'lishi kerak).
 
-Jami faol manbalar kuniga ~200–300 material beradi (feedlar orasidagi dublikatlar `urlHash` bilan olib tashlangandan keyin taxminan 150–250) — TZ §2.1 dagi 100–200 mo'ljaliga mos.
+Jami faol manbalar kuniga ~250–350 material beradi (OBLOG-54 dan keyin Cybersport.ru bilan) (feedlar orasidagi dublikatlar `urlHash` bilan olib tashlangandan keyin taxminan 150–250) — TZ §2.1 dagi 100–200 mo'ljaliga mos.
 
 ## 3. Manbalar bo'yicha batafsil
 
@@ -135,10 +136,46 @@ Jami faol manbalar kuniga ~200–300 material beradi (feedlar orasidagi dublikat
 - ❌ **Holat — O'CHIRILGAN (2026-09-27, OBLOG-53):** `/rss/news` har qanday User-Agent uchun (bizning bot, brauzer, Feedly) **doimo** `403` + `server: cloudflare` + `cf-mitigated: challenge` ("Just a moment...") qaytaradi. Scheduler har ~20 daqiqada so'rab, ketma-ket 220 xato va har kuni ogohlantirish bergan. Challenge chetlab o'tilmaydi, shuning uchun manba o'chirildi: seed'da `isActive: false`, production'da — migratsiya `20260927_143458_oblog_53_feed_backoff` (faqat hali faol bo'lsa, `tosNotes` ga izoh bilan). Qo'lda: admin → Manbalar → HLTV.org → «Faol» ni o'chirish.
 - **Himoya (kod):** Cloudflare challenge endi alohida xato turi (`feeds[].lastErrorKind = cloudflare`) — feed darhol kuniga 1 marta tekshiruvga o'tadi, admin'ga bitta xabar (eslatmasiz), ochilsa — "tiklandi" (runbook `jobs-scheduler.md`). Qayta yoqishdan oldin feed'ni brauzersiz (curl) tekshiring. Kibersport uchun o'rinbosar manba — alohida vazifa.
 
+### 3.5c. Cybersport.ru — `rss_only` (OBLOG-54, HLTV o'rniga)
+
+| Feed URL | HTTP | Yozuvlar | ~/kun | `feedCategory` | → `mapsTo` | Faol |
+|---|---|---|---|---|---|---|
+| `https://www.cybersport.ru/rss/materials` | 200 (nginx, Cloudflare yo'q) | ~325 | ~65 | Все материалы (kibersport + o'yinlar, kino, temir) | `kibersport` (`mappingWeight` **5**) | ✅ |
+
+- **Tanlov sababi:** 2026-09-27 dagi nomzodlardan (§3.7) yagona mos manba: RSS bor, Cloudflare/DDoS challenge yo'q (feed va `robots.txt` 4 marta, ~4 daqiqa oralig'ida — hammasi 200), `robots.txt` ruxsat beradi, ToS RSS o'qishga (faqat `rss_only`) zid emas. Kuniga ~65 material — Dota 2, CS2, MLBB, Standoff 2, turnir va transferlar (Dexerto Esports ~0.2/kun o'rnini to'ldiradi).
+- **Format:** RSS 2.0; ~325 yozuv (~5 kun). `<category>` **yo'q**; `guid` — slug (URL emas, dedupe `link` bo'yicha); `enclosure` — muqova rasmi (`images.cybersport.ru`, 325/325); `description` — ~140 belgi, `...` bilan qirqilgan, `content:encoded` yo'q. ⚠️ Description'da ichki teglar bo'sh joysiz olib tashlangan (`ТамиромDaze`, `ОрганизаторыESL`) — kalit so'zlar asosan sarlavhadan ishlaydi.
+- **Bo'limlar (faqat URL'da, `/tags/<bo'lim>/...`), 325 yozuv namunasi:** `dota-2` 151, `games` 51, `cs2` 49, `movies` 23, `strimery` 11, `other` 9, `anime` 6, `zhelezo` 5, `series` 5, `mlbb` 4, `standoff-2` 3, boshqalar 1–2 — ≈⅔ kibersport, qolgani o'yinlar/kino/temir. Bo'lim bo'yicha feed yo'q (`?tag=`, `?disciplines=` e'tiborga olinmaydi; `/rss/news`, `/tags/*/rss` — 404).
+- **`mappingWeight = 5`** (keng bo'lim, The Verge "Tech" kabi): RU kalit so'zlari o'yinlar/AI/kiberxavfsizlik yangiliklarini o'z kategoriyasiga o'tkaza oladi. 325 yozuvda (RU qoidalari, `classifyText`): og'irlik 10 — 325/325 `kibersport`; **5 — 308 `kibersport`, 12 `oyinlar`, 2 `kiberxavfsizlik`, 2 `suniy-intellekt`, 1 `dasturlash`**; 3 — `dasturlash`/`oyinlar` ga ko'p xato (Dota yangiliklari ham `игр*` → `oyinlar`). Kino/anime/temir yangiliklari `kibersport` da qoladi — navbatda muharrir rad etadi (8-bo'lim, #1).
+- **robots.txt:** `User-agent: *` — `/search`, `/users/`, `/api/`, `/private/`, `/email-confirm`, `/password-restore`, `/oauth/`, `/_nuxt/$` yopiq; `/rss/` va `/tags/` ochiq. `Crawl-delay` va AI-bot (ClaudeBot, GPTBot...) qoidalari yo'q; `OdyaBlogBot` ro'yxatda yo'q.
+- **ToS** — «Правила пользования сайтом» ([`cybersport.ru/docs/site_rules.pdf`](https://www.cybersport.ru/docs/site_rules.pdf), footer → «Документы»): p. 4.2.4 — «не использовать скрипты (программы) для автоматизированного сбора информации и/или взаимодействия с Сайтом»; «не использовать Сайт … в любых целях помимо получения доступа к Контенту … тем способом, которым Администрация предлагает»; p. 5.12 — IP obyektlaridan foydalanish faqat Ma'muriyat bilan yozma kelishuv asosida. RSS'ni sayt o'zi taklif qiladi (footer'dagi RSS belgisi → `/rss/materials`) — The Verge/TechCrunch'dagi kabi (§3.1–3.2) **faqat RSS**, maqola sahifasi yuklanmaydi.
+- **Server HTML:** ha (Nuxt SSR, matn HTML'da) — ToS sababli **ishlatilmaydi**.
+- **Xulosa:** `rss_only`, `priority = 25` (HLTV bilan bir xil; RU + aralash oqim), `pollIntervalMin = 20`, `rateLimitSec = 10` (bitta feed — so'rovlar kam). Postlarda faqat faktlar + "Manba: Cybersport.ru" havolasi, to'g'ridan-to'g'ri iqtibos yo'q; RSS matni qisqa — faktlarni tekshirish uchun muharrir asl maqolani brauzerda qo'lda ochadi.
+- **Jonli sinov (lokal, 2026-09-27):** `pnpm seed` → `Manbalar: +1, mavjud 7`; `feed.poll` (`maxNewItemsPerPoll = 30`) → 30 ta yangi element; qayta so'rovda (feed holati tozalangan) yana 30 ta **faqat yangi** URL (oldingi 30 tasi `urlHash` bilan dedupe; jami 60, takroriy `url`/`urlHash` — 0). `scrapeItem`: 58 `scraped`, 2 `error` ("matn ajratilmadi" — bo'sh description'li promo yozuvlar: test/fentezi). `suggestedCategory`: **55 `kibersport`**, 3 `oyinlar`, 1 `kiberxavfsizlik`, 1 `dasturlash`. Feed xatosiz (`failureCount = 0`). `pnpm check:feeds -t Cybersport` — ✅.
+- **Production'ga qo'shish:** §6a.
+
 ### 3.6. 3DNews — zaxira (`isActive = false`)
 
 - `https://3dnews.ru/news/rss/` — 200, ~66 yozuv, ~37/kun, har bir yozuvda kategoriya bor ("игры", "Искусственный интеллект..."). → `gadjetlar`.
 - robots.txt: `User-agent: *` — `Allow: /`. ToS **tekshirilmadi** — yoqishdan oldin huquqiy audit kerak.
+
+### 3.7. Kibersport nomzodlari auditi (OBLOG-54, 2026-09-27)
+
+HLTV o'chirilgandan keyin (§3.5b) kibersport uchun nomzodlar. Hammasi `OdyaBlogBot/1.0` UA bilan (brauzer UA'siz), challenge chetlab o'tilmadi. Feed'lar 2026-09-27 da ~15:00–15:25 UTC oralig'ida **4 marta** (~4 daqiqa oralig'ida) tekshirildi; turli kunlarda tekshirib bo'lmadi — production'da `feeds[].lastErrorKind` kuzatiladi (OBLOG-53 backoff).
+
+| Nomzod | Til | RSS / Atom | HTTP (feed) | Cloudflare / challenge | robots.txt | ToS | Feed matni | ~/kun | Rasm | Xulosa |
+|---|---|---|---|---|---|---|---|---|---|---|
+| **Cybersport.ru** | RU | `/rss/materials` (RSS 2.0) | 200 ×4 | yo'q (nginx) | ✅ `/rss/` ochiq | skriptlar bilan avtomatik yig'ish taqiqlangan → faqat RSS | ~140 belgi | ~65 (≈⅔ kibersport) | ✅ `enclosure` | ✅ **qo'shildi** (`rss_only`, §3.5c) |
+| Sports.ru «Кибер» | RU | `cyber.sports.ru/rss/topnews.xml` (20 yozuv, `<category>`: Dota 2, CS 2, Кино, Ставки, Игры) | 200 ×4 | DDoS-Guard (challenge ko'rilmadi) | ✅ `/rss/` ochiq (`/feed/`, `/stat/export/` yopiq) | «Пользовательское соглашение» (`/docs/agreement/`) p. 4.6: yozma ruxsatsiz tijoriy nusxalash/tarqatish taqiqlangan; avtomatik yig'ish alohida taqiqlanmagan | ~125 belgi | ~18 | ❌ (RSS'da yo'q) | ➖ **zaxira nomzod**: `main.xml` da UGC bloglar, `topnews` — faqat 20 yozuv, Cybersport.ru bilan ko'p takror. Kerak bo'lsa — alohida vazifa. |
+| Esports Insider | EN | `/feed` (10 yozuv, `content:encoded` ~3.2k) | 200 ×4 | ⚠️ **ha**: `robots.txt`, bosh sahifa, `/category/*/feed` — vaqti-vaqti bilan 403 `cf-mitigated: challenge` | ❌ `Disallow: /feed/` (`*` uchun; faqat `NewsNow` ga ruxsat) | tekshirilmadi (`/terms*` — 404) | to'liq | ~2 | 6/10 | ❌ robots feed'ni yopadi + Cloudflare |
+| Dot Esports | EN | `/feed` (10 yozuv) | 200 ×4 | ⚠️ **ha**: bosh sahifa, `/terms*` — 403 challenge | ⚠️ `/feed` ochiq, lekin `Disallow: /*/feed/` (bo'lim feedlari) | ❌ tekshirib bo'lmadi (challenge) | ~550 belgi | ~11 (ko'p o'yin gayd/yangiliklari) | ✅ | ❌ ToS tekshirilmaydi, HLTV'dagi xavf |
+| esports.gg | EN | `/feed/` (10 yozuv, `content:encoded` ~4.6k) | 200 ×4 | ⚠️ **ha**: bosh sahifa, `/terms*` — 403 challenge | ✅ feed ochiq | ❌ tekshirib bo'lmadi (challenge) | to'liq | ~10 (Fortnite ko'p) | ✅ | ❌ ToS tekshirilmaydi, HLTV'dagi xavf |
+| Dust2.us (HLTV tarmog'i) | EN | `/rss` (10 yozuv) | 200 ×4 | yo'q (hozircha) | ✅ faqat `/out*` yopiq | ❌ Terms p. 2.2: «conduct, facilitate or organize data mining or web scraping», «commercially exploit … content» taqiqlangan (Better Collective A/S) | ~50 belgi | ~10 (faqat CS2, NA) | ❌ | ❌ ToS |
+| VLR.gg | EN | `/rss` (20 yozuv) | 200 | yo'q | ✅ | ❌ Terms: bot/skript bilan kirish, «spider, robot … scraper», aggregatsiya va tijoriy foydalanish taqiqlangan | ~75 belgi | ~2 (faqat Valorant) | ❌ | ❌ ToS |
+| Esports.net | EN | `/feed/` | 200 | yo'q | ❌ `Disallow: /feed/` | — | to'liq | ~2 (betting affiliat) | 1/10 | ❌ robots |
+| Liquipedia | — | yangiliklar RSS yo'q (`/rss` — 404) | — | — | — | — | — | — | — | ❌ RSS yo'q |
+| HLTV.org | EN | `/rss/news` | 403 | ❌ doimiy challenge | ❌ (403) | ❌ (403) | — | — | — | ❌ o'chiq (§3.5b) |
+
+**Xulosa:** EN nomzodlarning hammasi yo Cloudflare challenge ortida (ToS/robots'ni o'qib bo'lmaydi — HLTV'dagi xavf), yo robots/ToS RSS'ni taqiqlaydi. Tanlangan: **Cybersport.ru** (`rss_only`). EN kibersport oqimi — Dexerto Esports (sust) + boshqa EN manbalardagi kalit so'zlar; qo'shimcha EN manba — faqat ruxsat/hamkorlik bilan (8-bo'lim, #1).
 
 ## 4. Kategoriya mapping (feed → bizning 9 kategoriya, TZ §10.4)
 
@@ -149,7 +186,7 @@ Jami faol manbalar kuniga ~200–300 material beradi (feedlar orasidagi dublikat
 | `gadjetlar` | The Verge Reviews, TechCrunch Hardware, iXBT (mobil + umumiy), 3DNews (zaxira) |
 | `dasturlash` | Habr хаб «Программирование» |
 | `kiberxavfsizlik` | The Verge Security, TechCrunch Security, Habr хаб «Информационная безопасность» |
-| `kibersport` | Dexerto Esports, HLTV |
+| `kibersport` | Dexerto Esports, Cybersport.ru (`mappingWeight` 5); HLTV — o'chiq |
 | `oyinlar` | The Verge Games, Dexerto Gaming |
 | `startaplar` | TechCrunch Startups, TechCrunch Venture |
 | `ilm-fan` | The Verge Science (+ iXBT/Habr kalit so'zlar orqali) |
@@ -192,6 +229,15 @@ To'liq ro'yxat — `sources.json` → `keywordRules`. Qoidalar admin panelda (`s
 - **Relationship maydonlari** (`mapsTo`, `keywordRules[].category`) seed'da kategoriya **slug**'i bilan yozilgan; seed skripti (M1-02 / M2-01) avval kategoriyalarni yaratadi, keyin slug → ID almashtiradi.
 - **Zod sxemalari** — `packages/shared/src/schemas/{category,source}.ts`; qo'shimcha tekshiruvlar: slug formati va takrorlanmasligi, `https` URL, feed domeni = manba domeni, `rss_plus_page` → `selectors.content` majburiy, `rateLimitSec ≥ 5` (TZ §2.3), `priority` 0–50, kirill nomlarda lotin harfi yo'q, kalit so'zlar kichik harfda.
 
+### 6a. Yangi manbani production'ga qo'shish
+
+Seed (`pnpm seed`, `apps/web/src/seed/index.ts`) manbalarni **`slug` bo'yicha idempotent** yaratadi: bazada yo'q slug — yaratiladi (kategoriya slug'lari ID'ga aylantiriladi), mavjudlari **o'zgartirilmaydi**. Shuning uchun:
+
+- **Yangi manba** (masalan OBLOG-54, `cybersport-ru`) — `sources.json` ga qo'shiladi va main'ga merge'dan keyin **prod seed** qayta ishga tushiriladi: `gh workflow run seed-prod --ref main` (demo o'chiq, default). Kutilgan Summary: `Manbalar: +1, mavjud 7`; kategoriya/sahifa/globals — `mavjud` (yangi hech narsa). Migratsiya kerak emas: manba — ma'lumot, sxema o'zgarmaydi; migratsiyada 124 ta kalit so'z qoidasini SQL bilan takrorlash seed mantiqini ikkilantirardi.
+- **Mavjud manbani o'zgartirish** (o'chirish, qoidalar, `mappingWeight`) — seed buni qilmaydi: ma'lumot migratsiyasi (M2-03, OBLOG-53 kabi) yoki admin.
+- **Seed'siz muqobil:** admin → **Manbalar** → «Yangi»: `sources.json` dagi qiymatlarni qo'lda kiritish (feed, `mapsTo = Kibersport`, `mappingWeight = 5`, `fetchMode = rss_only`, `pollIntervalMin = 20`, `rateLimitSec = 10`, `priority = 25`, `language = ru`, `tosNotes`) — lekin 124 ta RU kalit so'z qoidasini qo'lda kiritish noqulay, shuning uchun seed afzal.
+- **Tekshirish:** admin → Manbalar → Cybersport.ru — birinchi `/api/jobs/run` dan keyin (~20 daqiqa) `feeds[0].lastPolledAt` to'ladi, `lastStatus = 200`; admin → Navbat — yangi elementlar `Kibersport` bilan.
+
 ## 7. Tekshiruvlarni ishga tushirish
 
 ```bash
@@ -207,13 +253,13 @@ Istisno: HLTV feedi Cloudflare challenge (403 + `cf-mitigated: challenge`) qayta
 
 **2026-09-23 natijasi:** 6 ta manba (The Verge, TechCrunch, Habr + sahifa, iXBT, Dexerto + sahifa, 3DNews) — ✅; HLTV — audit boshida 200, keyinroq 403 (Cloudflare) → SKIP.
 
-**2026-09-27:** HLTV feedi doimo Cloudflare challenge — manba o'chirildi (OBLOG-53, §3.5b).
+**2026-09-27:** HLTV feedi doimo Cloudflare challenge — manba o'chirildi (OBLOG-53, §3.5b). Cybersport.ru qo'shildi (OBLOG-54, §3.5c) — `check:feeds -t Cybersport` ✅ (200, 324 yozuv, robots ruxsat).
 
 ## 8. Ochiq masalalar va tavsiyalar
 
 | # | Masala | Tavsiya | Kimga |
 |---|---|---|---|
-| 1 | **Kibersport oqimi zaif:** Dexerto esports ~0.2/kun, HLTV ~4/kun (faqat CS2), Dota 2 / MLBB / PUBG Mobile yo'q. | Zaxiradan kibersport manbasi qo'shish (TZ §2.2: Esports Insider, Cybersport.ru) — alohida audit bilan. | Egasi (qaror), developer |
+| 1 | **Kibersport oqimi:** Dexerto esports ~0.2/kun, HLTV o'chiq. OBLOG-54: **Cybersport.ru** qo'shildi (~65/kun, RU, Dota 2 / CS2 / MLBB; §3.5c). Qolgan kamchiliklar: EN kibersport manbasi yo'q (nomzodlar Cloudflare yoki ToS/robots sababli rad etildi, §3.7); Cybersport.ru oqimida ≈⅓ kino/o'yin/temir — navbatda rad etiladi; description qisqa (~140 belgi). | EN uchun — Esports Insider / esports.gg bilan RSS ruxsati yoki hamkorlik (egasi); Sports.ru «Кибер» — zaxira nomzod. Bir necha kundan keyin `sources.stats` bo'yicha Cybersport.ru ulushini va rad etilganlar sonini ko'rib chiqish. | Egasi (qaror), developer |
 | 2 | **HLTV Cloudflare:** robots.txt va ToS tekshirilmadi; 2026-09-27 dan feed **doimo** 403 (challenge) qaytaradi — manba o'chirildi (OBLOG-53). | ToS'ni brauzerda qo'lda o'qish; production IP'dan (Vercel) barqarorlikni kuzatish; kerak bo'lsa HLTV'dan RSS uchun ruxsat so'rash. Challenge chetlab o'tilmaydi. | Egasi |
 | 3 | **iXBT iqtibos sharti:** iqtibos uchun oldindan rozilik talab qilinadi. | Stil qo'llanmada (M0-05): iXBT'dan to'g'ridan-to'g'ri iqtibos yo'q, faqat faktlar + havola. Uzoq muddatda — hamkorlik so'rovi. | M0-05 |
 | 4 | **The Verge / TechCrunch — ToS scraping'ni taqiqlaydi**, RSS matni qisqa (TechCrunch ~150 belgi). | `rss_only` saqlanadi; faktlarni tekshirish uchun editor/agent asl maqolani qo'lda ochadi. Litsenziya/hamkorlik — QUESTIONS.md dagi uzoq muddatli taklif. | Egasi |

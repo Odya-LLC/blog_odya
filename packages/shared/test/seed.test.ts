@@ -39,8 +39,19 @@ const TZ_CATEGORIES = [
   { order: 9, slug: 'ilm-fan', latn: 'Ilm-fan', cyrl: 'Илм-фан', menu: false },
 ]
 
-/** TZ §2.2 — tasdiqlangan manbalar (Dexerto va HLTV alohida yozuv, chunki domen/robots/rate limit har xil). */
-const APPROVED_SOURCES = ['the-verge', 'techcrunch', 'habr', 'ixbt', 'dexerto', 'hltv']
+/**
+ * TZ §2.2 — tasdiqlangan manbalar (Dexerto va HLTV alohida yozuv, chunki domen/robots/rate limit
+ * har xil). Cybersport.ru — TZ §2.2 zaxirasidan, HLTV o'rniga (OBLOG-54, docs/sources.md §3.5c).
+ */
+const APPROVED_SOURCES = [
+  'the-verge',
+  'techcrunch',
+  'habr',
+  'ixbt',
+  'dexerto',
+  'hltv',
+  'cybersport-ru',
+]
 
 /**
  * Tasdiqlangan, lekin vaqtincha o'chirilgan manbalar: HLTV — OBLOG-53, feed doimo Cloudflare
@@ -95,6 +106,26 @@ describe('sources.json', () => {
     expect(hltv.isActive).toBe(false)
     expect(hltv.tosNotes).toContain('OBLOG-53')
     expect(hltv.tosNotes).toContain('Cloudflare')
+  })
+
+  it('Cybersport.ru (OBLOG-54): faol, faqat RSS (ToS avtomatik yig‘ishni taqiqlaydi), kibersport feed’i', () => {
+    const source = sources.find((s) => s.slug === 'cybersport-ru')!
+    expect(source.isActive).toBe(true)
+    expect(source.language).toBe('ru')
+    expect(source.fetchMode).toBe('rss_only')
+    expect(source.selectors).toBeNull()
+    expect(source.tosNotes).toContain('OBLOG-54')
+    const active = source.feeds.filter((f) => f.isActive)
+    expect(active.map((f) => f.mapsTo)).toEqual(['kibersport'])
+    // Feed'da o'yinlar/kino ham bor — kalit so'zlar kategoriyani o'zgartira olishi kerak (< 10).
+    expect(active[0]?.mappingWeight).toBeLessThan(10)
+  })
+
+  it('kibersport kamida ikkita faol manbadan to‘ldiriladi (HLTV o‘chirilgandan keyin, OBLOG-54)', () => {
+    const kibersport = sources.filter(
+      (s) => s.isActive && s.feeds.some((f) => f.isActive && f.mapsTo === 'kibersport'),
+    )
+    expect(kibersport.length).toBeGreaterThanOrEqual(2)
   })
 
   it('barcha mapsTo / keywordRules.category mavjud kategoriyaga ishora qiladi', () => {

@@ -153,7 +153,7 @@ Prod bazaga (Supabase) migratsiyalar GitHub Actions orqali qo'llanadi — [`.git
 
 ### Prod seed
 
-Prod bazaga boshlang'ich ma'lumotlar (9 kategoriya, 7 manba, 6 huquqiy sahifa, muallif, `site-settings`/`header`/`footer`) — [`.github/workflows/seed-prod.yml`](.github/workflows/seed-prod.yml), faqat qo'lda:
+Prod bazaga boshlang'ich ma'lumotlar (9 kategoriya, 8 manba, 6 huquqiy sahifa, muallif, `site-settings`/`header`/`footer`) — [`.github/workflows/seed-prod.yml`](.github/workflows/seed-prod.yml), faqat qo'lda:
 
 ```bash
 gh workflow run seed-prod --ref main              # demo kontentsiz (SEED_DEMO=false)
@@ -161,6 +161,7 @@ gh workflow run seed-prod --ref main -f demo=true # + 3 demo post, teglar, muqov
 ```
 
 - **Nima qiladi:** `pnpm seed` → avval `pnpm migrate`, keyin `payload run src/seed/run.ts`. Idempotent: mavjud hujjatlar (slug bo'yicha) o'zgartirilmaydi. Natija — run Summary'sida (`Manbalar: +7, mavjud 0` ...). `concurrency: migrate-prod` — `migrate-prod` bilan bir vaqtda ishlamaydi. `Production` environment.
+- **Yangi manba** (`sources.json` ga qo'shilgan, masalan OBLOG-54 — Cybersport.ru): merge'dan keyin shu workflow'ni qayta ishga tushiring (demo o'chiq) — faqat bazada yo'q slug'lar yaratiladi (Summary: `Manbalar: +1, mavjud 7`), admin'dagi tahrirlar o'zgarmaydi. Mavjud manbani **o'zgartirish** seed orqali bo'lmaydi — migratsiya yoki admin (masalan OBLOG-53, HLTV). Batafsil: [docs/sources.md](docs/sources.md) §3.5c.
 - **Demo o'chiq** (`SEED_DEMO=false`, default): teglar, demo postlar va muqovalar yaratilmaydi, S3 ga hech narsa yuklanmaydi; header/footer faqat kategoriya va huquqiy sahifalarga havola qiladi.
 - **Sirlar:** `DATABASE_URL_DIRECT_PROD` (session pooler, `DATABASE_URL` va `DATABASE_URL_DIRECT` sifatida), `R2_ENDPOINT`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` (`S3_*`, bucket `media`). `PAYLOAD_SECRET` — har run'da `openssl rand -hex 32` (seed foydalanuvchi/API kalit yaratmaydi — Vercel'dagi sir kerak emas). `JOBS_MODE=endpoint`; `JOBS_SECRET`, `TELEGRAM_BOT_TOKEN`, `SENTRY_DSN` berilmaydi.
 - **Huquqiy sahifa o'rinbosarlari:** repo yoki `Production` environment **Variables** (`SEED_CONTACT_EMAIL`, `SEED_EDITORIAL_EMAIL`, ..., `TELEGRAM_CHANNEL_LATN/CYRL`) — workflow ularni env sifatida beradi. Sahifa faqat bir marta yaratiladi, shuning uchun ularni birinchi run'dan oldin qo'ying; to'ldirilmaganlari Summary'dagi `Diqqat:` qatorida — keyin admin'da tahrirlang.
