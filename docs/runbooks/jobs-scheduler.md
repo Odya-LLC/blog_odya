@@ -120,6 +120,29 @@ Oraliqda (1–2 qadam orasida) chaqiruvlar `401` oladi — keyingi tick'da tikla
   sana bo'lsa, ertaga ishlaydi; darhol kerak bo'lsa SQL: `update scraping_settings set stats = stats #- '{cleanup,enqueuedDate}';`
   va `/api/jobs/run` ni chaqiring.
 
+## Telegram avtopost — `telegram.post` (M3-01)
+
+- **Trigger:** post chop etilganda (Publish, MCP, `schedulePublish`) `posts` `afterChange` har faol kanal uchun
+  `telegram.post` job'ini `default` navbatiga qo'yadi va javobdan keyin (`after()` → Vercel `waitUntil`) darhol
+  bajaradi — odatda bir necha soniyada. `after()` ishlamasa (yoki scheduled publish'da) — `/api/jobs/run` ning
+  o'sha/keyingi chaqiruvida (≤ 10 daqiqa). Qoralama/autosave, arxivlash va "Telegram'ga yubormaslik" — trigger emas.
+- **Kanallar:** admin → Telegram sozlamalari → Kanallar (`script` bo'yicha qator ustun; "Yoqilgan" o'chirilsa —
+  o'sha kanal o'chiq), qator bo'lmasa — env `TELEGRAM_CHANNEL_LATN` / `TELEGRAM_CHANNEL_CYRL`. Bot ikkala kanalda
+  admin ("xabar yuborish" + "tahrirlash"). Token yoki kanal yo'q — xato emas, log'da `warn` ("... sozlanmagan").
+- **Xabar:** muqova bo'lsa `sendPhoto` (`og` → `hero` variant URL'i, `MEDIA_PUBLIC_URL`) + HTML caption ≤ 1024
+  (oshsa lid qisqartiriladi), rasmsiz — `sendMessage` (havola preview). Lotin kanal — `uz-Latn` matni va `/…`,
+  kirill — `uz-Cyrl` va `/kr/…`; UTM `utm_source=telegram&utm_medium=channel&utm_campaign=latn|cyrl`; heshteglar —
+  teglar, keyin kategoriya ("Heshteglar soni", default 3). Telegram rasmni rad etsa (400) — `sendMessage` bilan.
+- **Idempotentlik:** holat `posts.telegram[]` da (`messageId`, `chatId`, `kind`, matn `hash`, `sentAt`, `error`) —
+  admin'da post yon panelidagi "Telegram" bloki. `messageId` bor bo'lsa qayta yuborilmaydi: qayta publish'da matn
+  xeshi o'zgargan bo'lsa (sarlavha/lid/havola) — `editMessageCaption`/`editMessageText`, bo'lmasa hech narsa.
+  Arxivlashda xabar o'chirilmaydi. Allaqachon chop etilgan eski postlar (M3-01 dan oldingi) qayta publish'da
+  yuborilmaydi — faqat birinchi chop etish yuboradi.
+- **Xatolar:** 429 — `retry_after` hurmat qilinadi; 429/5xx/tarmoq — 3 marta qayta urinish (≤ 10 s pauza task
+  ichida, uzunrog'i — job `waitUntil` bilan keyingi tsiklda), keyin (yoki 400/403 kabi qayta urinib bo'lmaydigan
+  xatoda) — `alertChatId` (bo'lmasa `TELEGRAM_ALERT_CHAT_ID`) ga ogohlantirish va `telegram[].error`. Xato bergan
+  kanal postni keyingi publish qilishda qayta uriniladi.
+
 ## Zaxira: GitHub Actions
 
 `.github/workflows/jobs-fallback.yml` — `workflow_dispatch` (Actions → Jobs fallback → Run workflow). Repo secrets: `JOBS_RUN_URL`, `JOBS_SECRET`.

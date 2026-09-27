@@ -138,6 +138,7 @@ export interface Config {
       'item.dedupe': TaskItemDedupe;
       'item.classify': TaskItemClassify;
       'maintenance.cleanup': TaskMaintenanceCleanup;
+      'telegram.post': TaskTelegramPost;
       schedulePublish: TaskSchedulePublish;
       inline: {
         input: unknown;
@@ -227,7 +228,10 @@ export interface Post {
   telegram?:
     | {
         script: 'uz-Latn' | 'uz-Cyrl';
+        chatId?: string | null;
         messageId?: string | null;
+        kind?: ('photo' | 'text') | null;
+        hash?: string | null;
         sentAt?: string | null;
         error?: string | null;
         id?: string | null;
@@ -962,6 +966,7 @@ export interface PayloadJob {
           | 'item.dedupe'
           | 'item.classify'
           | 'maintenance.cleanup'
+          | 'telegram.post'
           | 'schedulePublish';
         taskID: string;
         input?:
@@ -1005,6 +1010,7 @@ export interface PayloadJob {
         | 'item.dedupe'
         | 'item.classify'
         | 'maintenance.cleanup'
+        | 'telegram.post'
         | 'schedulePublish'
       )
     | null;
@@ -1155,7 +1161,10 @@ export interface PostsSelect<T extends boolean = true> {
     | T
     | {
         script?: T;
+        chatId?: T;
         messageId?: T;
+        kind?: T;
+        hash?: T;
         sentAt?: T;
         error?: T;
         id?: T;
@@ -1809,6 +1818,9 @@ export interface Footer {
  */
 export interface TelegramSetting {
   id: number;
+  /**
+   * Yozuv bo'yicha qator bo'lmasa — env TELEGRAM_CHANNEL_LATN / TELEGRAM_CHANNEL_CYRL. Bot kanalda admin bo'lishi kerak.
+   */
   channels?:
     | {
         script: 'uz-Latn' | 'uz-Cyrl';
@@ -1818,7 +1830,7 @@ export interface TelegramSetting {
       }[]
     | null;
   /**
-   * O'rinbosarlar: {{title}}, {{excerpt}}, {{url}}, {{hashtags}}. Caption ≤ 1024 belgi.
+   * O'rinbosarlar: {{title}}, {{excerpt}}, {{url}}, {{hashtags}}. Caption ≤ 1024 belgi (oshsa lid qisqartiriladi). Kirill kanal uchun shablon matni avtomatik kirillga o'giriladi.
    */
   template?: string | null;
   hashtagsCount?: number | null;
@@ -2119,6 +2131,22 @@ export interface TaskMaintenanceCleanup {
     dbBytes?: number | null;
     r2Bytes?: number | null;
     r2Complete?: boolean | null;
+  };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskTelegramPost".
+ */
+export interface TaskTelegramPost {
+  input: {
+    postId: number;
+    script: 'uz-Latn' | 'uz-Cyrl';
+    attempt?: number | null;
+  };
+  output: {
+    status?: string | null;
+    reason?: string | null;
+    messageId?: string | null;
   };
 }
 /**
