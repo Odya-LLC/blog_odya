@@ -3,6 +3,8 @@
  * tashlanadi; tahririyat qoralamalari: `editorial/actions.ts`). To'liq o'zbekcha slugify —
  * `@blog-odya/shared` `slugifyUz` (TZ §8.1): `slugField` (`fields/slug.ts`) va MCP ishlatadi.
  */
+import { GONE_ROOT_SEGMENTS } from '@/site/gone'
+
 export const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 
 export const SLUG_MAX_LENGTH = 80
@@ -40,6 +42,8 @@ export const ROUTE_RESERVED_SLUGS = [
   'static',
   'media',
   'assets',
+  // `410 Gone` ildiz segmentlari (WordPress izlari va spam, OBLOG-50) — `site/gone.ts`.
+  ...GONE_ROOT_SEGMENTS,
 ] as const
 
 /** Apostrof variantlari (U+02BB, U+02BC, ASCII, U+2018, U+2019, backtick) — slug'da tashlanadi. */
