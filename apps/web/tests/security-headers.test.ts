@@ -123,6 +123,21 @@ describe('security headers', () => {
     expect(prod.get('script-src')).not.toContain('https://vercel.live')
   })
 
+  it('MEDIA_PUBLIC_URL yo‘q — media sayt origin’idan (Payload /api/media/file, absolyut URL)', () => {
+    // CI: sahifa `localhost:3100` da, Payload rasm URL'lari `NEXT_PUBLIC_SITE_URL` (3000) bilan.
+    for (const build of [buildSiteCsp, buildAdminCsp]) {
+      const csp = directives(build({ NEXT_PUBLIC_SITE_URL: 'http://localhost:3000' }))
+      expect(csp.get('img-src')).toContain('http://localhost:3000')
+      expect(csp.get('media-src')).toContain('http://localhost:3000')
+      expect(csp.get('connect-src')).toContain('http://localhost:3000')
+    }
+    // Production: R2 media domeni ham, kanonik sayt origin'i ham (preview `*.vercel.app` uchun).
+    const prod = directives(buildSiteCsp(PROD_ENV))
+    expect(prod.get('img-src')).toEqual(
+      expect.arrayContaining(['https://media.odya.uz', 'https://blog.odya.uz']),
+    )
+  })
+
   it('env qiymatlari yo‘q/noto‘g‘ri — CSP buzilmaydi', () => {
     const csp = buildSiteCsp({ MEDIA_PUBLIC_URL: 'not a url' })
     expect(csp).not.toContain('undefined')

@@ -104,13 +104,24 @@ function serialize(directives: Record<string, Array<string | null | undefined | 
     .join('; ')
 }
 
+/**
+ * Media fayllar manbalari: `MEDIA_PUBLIC_URL` (production — R2 domeni) va sayt origin'i
+ * (`NEXT_PUBLIC_SITE_URL`). `MEDIA_PUBLIC_URL` bo'lmasa Payload fayllarni `/api/media/file/…`
+ * orqali **absolyut** URL bilan beradi (`serverURL` = `NEXT_PUBLIC_SITE_URL`), va u sahifa
+ * ochilgan origin'dan farq qilishi mumkin (Vercel preview `*.vercel.app` ↔ kanonik domen, CI
+ * `next start -p 3100` ↔ `localhost:3000`) — `'self'` yetmaydi.
+ */
+function mediaSources(env: RawEnv): Array<string | null> {
+  return [originOf(env.MEDIA_PUBLIC_URL), originOf(env.NEXT_PUBLIC_SITE_URL)]
+}
+
 function isHttps(env: RawEnv): boolean {
   return (env.NEXT_PUBLIC_SITE_URL ?? '').startsWith('https://')
 }
 
 /** Ommaviy sayt CSP'si. */
 export function buildSiteCsp(env: RawEnv, options: SecurityHeadersOptions = {}): string {
-  const media = originOf(env.MEDIA_PUBLIC_URL)
+  const media = mediaSources(env)
   const sentry = [...SENTRY, originOf(env.SENTRY_DSN), originOf(env.NEXT_PUBLIC_SENTRY_DSN)]
   const preview = env.VERCEL_ENV === 'preview' ? VERCEL_LIVE : []
   const dev = options.dev ?? false
@@ -131,7 +142,7 @@ export function buildSiteCsp(env: RawEnv, options: SecurityHeadersOptions = {}):
       "'self'",
       'data:',
       'blob:',
-      media,
+      ...media,
       ...GA4.img,
       ...METRICA.img,
       ...EMBEDS.img,
@@ -140,7 +151,7 @@ export function buildSiteCsp(env: RawEnv, options: SecurityHeadersOptions = {}):
     'font-src': ["'self'", 'data:', ...preview],
     'connect-src': [
       "'self'",
-      media,
+      ...media,
       ...GA4.connect,
       ...METRICA.connect,
       ...EMBEDS.connect,
@@ -148,7 +159,7 @@ export function buildSiteCsp(env: RawEnv, options: SecurityHeadersOptions = {}):
       ...preview,
       dev && 'ws:',
     ],
-    'media-src': ["'self'", media],
+    'media-src': ["'self'", ...media],
     'frame-src': [...EMBEDS.frame, ...METRICA.frame, ...preview],
     'worker-src': ["'self'", 'blob:'],
     'manifest-src': ["'self'"],
@@ -163,7 +174,7 @@ export function buildSiteCsp(env: RawEnv, options: SecurityHeadersOptions = {}):
 
 /** Payload admin (`/admin`) CSP'si. */
 export function buildAdminCsp(env: RawEnv, options: SecurityHeadersOptions = {}): string {
-  const media = originOf(env.MEDIA_PUBLIC_URL)
+  const media = mediaSources(env)
   const bucket = originOf(env.S3_ENDPOINT)
   const sentry = [...SENTRY, originOf(env.SENTRY_DSN), originOf(env.NEXT_PUBLIC_SENTRY_DSN)]
   const preview = env.VERCEL_ENV === 'preview' ? VERCEL_LIVE : []
@@ -176,11 +187,11 @@ export function buildAdminCsp(env: RawEnv, options: SecurityHeadersOptions = {})
     'script-src': ["'self'", "'unsafe-inline'", "'unsafe-eval'", 'blob:', MONACO_CDN, ...preview],
     'style-src': ["'self'", "'unsafe-inline'", MONACO_CDN, ...preview],
     // Muqova/stok rasm oldindan ko'rish (Pexels, manba sahifalari) — istalgan HTTPS rasm.
-    'img-src': ["'self'", 'data:', 'blob:', 'https:', media, bucket],
+    'img-src': ["'self'", 'data:', 'blob:', 'https:', ...media, bucket],
     'font-src': ["'self'", 'data:', MONACO_CDN, ...preview],
     'connect-src': [
       "'self'",
-      media,
+      ...media,
       bucket,
       R2_API,
       MONACO_CDN,
@@ -188,7 +199,7 @@ export function buildAdminCsp(env: RawEnv, options: SecurityHeadersOptions = {})
       ...preview,
       dev && 'ws:',
     ],
-    'media-src': ["'self'", 'blob:', media, bucket],
+    'media-src': ["'self'", 'blob:', ...media, bucket],
     'frame-src': ["'self'", ...preview],
     'worker-src': ["'self'", 'blob:'],
     'manifest-src': ["'self'"],
