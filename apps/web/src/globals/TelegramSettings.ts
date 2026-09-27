@@ -84,5 +84,33 @@ export const TelegramSettings: GlobalConfig = {
       type: 'text',
       label: 'Admin ogohlantirish guruhi (chat ID)',
     },
+    {
+      type: 'row',
+      fields: [
+        {
+          name: 'notifyNewItems',
+          type: 'checkbox',
+          label: 'Yangi yangiliklar haqida xabar berish',
+          defaultValue: true,
+          admin: {
+            width: '50%',
+            description:
+              "Har scheduler tick'idan keyin (yangi element bo'lsa) ogohlantirish guruhiga qisqa xabar: nechta yangi yangilik, manbalar bo'yicha.",
+          },
+        },
+        {
+          name: 'newItemsMinCount',
+          type: 'number',
+          label: 'Xabar uchun minimal soni',
+          defaultValue: 1,
+          min: 1,
+          admin: {
+            width: '50%',
+            description:
+              "Yangi yangiliklar shundan kam bo'lsa — xabar keyingi tick'ga qoldiriladi (yig'iladi).",
+          },
+        },
+      ],
+    },
   ],
 }
