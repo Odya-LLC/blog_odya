@@ -4,7 +4,7 @@ import type { Payload } from 'payload'
 import { env } from '@/env'
 import { escapeTelegramHtml, sendTelegramMessage, TELEGRAM_TIMEOUT_MS } from '@/lib/telegram'
 
-import { ALERT_THRESHOLDS, ALERT_THROTTLE_MS } from './constants'
+import { ALERT_THRESHOLDS, ALERT_THROTTLE_MS, SOURCE_FAILING_REMINDER_MS } from './constants'
 import {
   type AlertStateEntry,
   mergeScrapingStats,
@@ -22,17 +22,34 @@ import {
  *   muvaffaqiyatsiz; kamida 5 ta element bo'lsa);
  * - DB ≥ 70% (350 MB / 500 MB) va R2 ≥ 8 GB — `maintenance.cleanup` o'lchovi (`stats.db/r2`).
  *
+ * Manba feed'lari (OBLOG-53) — ikki xil holat, har manbaga bittadan:
+ * - `source-blocked:<id>` — faol feed Cloudflare challenge qaytarmoqda (`feeds[].lastErrorKind`).
+ *   Birinchi challenge'dayoq bitta aniq xabar; feed kuniga 1 marta tekshiriladi, **eslatma yo'q**
+ *   (holat ma'lum — har kuni o'sib boruvchi hisoblagich bilan eslatish shovqin edi);
+ * - `source-failing:<id>` — boshqa xatolar, ketma-ket ≥ 3 (feed eksponensial backoff'da):
+ *   eslatma haftada 1 marta.
+ * Holat yo'qolsa va manba yana ishlasa (`consecutiveFailures = 0`, feed'larda xato yo'q) —
+ * "tiklandi" xabari (`recoveryMessages`). Manba o'chirilsa — jim yopiladi.
+ *
  * Takrorlanmaslik (`planAlerts`): har bir shart kaliti bo'yicha `stats.alerts[key].sentAt`;
- * shart saqlanib qolsa — 24 soatda bir marta eslatma, yo'qolsa — kalit o'chiriladi (keyingi
- * safar darhol yuboriladi). Tekshiruv har `/api/jobs/run` chaqiruvida (har 10 daqiqa) — arzon
+ * shart saqlanib qolsa — `remindAfterMs` (default 24 soat) da bir marta eslatma, yo'qolsa —
+ * kalit o'chiriladi (keyingi safar darhol yuboriladi). Tekshiruv har `/api/jobs/run` chaqiruvida (har 10 daqiqa) — arzon
  * (2 ta so'rov), Telegram faqat yangi/eslatma shartlarda chaqiriladi.
  */
+
+export interface FeedAlertInfo {
+  url: string
+  isActive?: boolean | null
+  lastErrorKind?: string | null
+  nextPollAt?: string | null
+}
 
 export interface SourceAlertInfo {
   id: number
   name: string
   consecutiveFailures: number
   lastError?: string | null
+  feeds?: FeedAlertInfo[]
 }
 
 export interface SourceItemStats {
@@ -53,6 +70,11 @@ export interface AlertSnapshot {
 export interface AlertCondition {
   key: string
   message: string
+  /**
+   * Shart saqlanib qolsa qayta eslatish oralig'i; `undefined` — `ALERT_THROTTLE_MS` (24 soat),
+   * `Infinity` — eslatma yo'q (faqat bir marta).
+   */
+  remindAfterMs?: number
 }
 
 export type AlertThresholds = typeof ALERT_THRESHOLDS
@@ -64,18 +86,62 @@ function formatBytes(bytes: number): string {
   return bytes >= GB ? `${(bytes / GB).toFixed(2)} GB` : `${Math.round(bytes / MB)} MB`
 }
 
+const tashkentTime = new Intl.DateTimeFormat('ru-RU', {
+  timeZone: 'Asia/Tashkent',
+  day: '2-digit',
+  month: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+})
+
+function activeFeeds(source: SourceAlertInfo): FeedAlertInfo[] {
+  return (source.feeds ?? []).filter((feed) => feed.isActive !== false)
+}
+
+function blockedMessage(source: SourceAlertInfo, blocked: FeedAlertInfo[]): string {
+  return (
+    `«${source.name}» manbasi Cloudflare himoyasi bilan yopilgan — fid yopiq ` +
+    `(${blocked.map((feed) => feed.url).join(', ')}).` +
+    (source.lastError ? `\nOxirgi javob: ${source.lastError.slice(0, 300)}` : '') +
+    `\nHimoya chetlab o'tilmaydi: fid endi kuniga 1 marta tekshiriladi, qayta ochilsa ` +
+    `"tiklandi" xabari keladi. Bu holat haqida qayta eslatma yuborilmaydi.` +
+    `\nDoimiy bo'lsa — admin → Manbalar → «${source.name}» → «Faol» ni o'chiring.`
+  )
+}
+
+function failingMessage(source: SourceAlertInfo): string {
+  const next = activeFeeds(source)
+    .map((feed) => Date.parse(feed.nextPollAt ?? ''))
+    .filter((time) => !Number.isNaN(time))
+  return (
+    `«${source.name}» manbasi ketma-ket ${source.consecutiveFailures} marta xato berdi` +
+    (source.lastError ? `.\nOxirgi xato: ${source.lastError.slice(0, 300)}` : '.') +
+    `\nTekshiruvlar siyraklashtirildi (eng kami kuniga 1 marta); eslatma — haftada 1 marta, ` +
+    `tiklansa xabar beriladi.` +
+    (next.length
+      ? `\nKeyingi tekshiruv: ${tashkentTime.format(Math.min(...next))} (Toshkent).`
+      : '')
+  )
+}
+
 export function evaluateAlerts(
   snapshot: AlertSnapshot,
   thresholds: AlertThresholds = ALERT_THRESHOLDS,
 ): AlertCondition[] {
   const conditions: AlertCondition[] = []
   for (const source of snapshot.sources) {
-    if (source.consecutiveFailures >= thresholds.consecutiveFailures) {
+    const blocked = activeFeeds(source).filter((feed) => feed.lastErrorKind === 'cloudflare')
+    if (blocked.length) {
+      conditions.push({
+        key: `source-blocked:${source.id}`,
+        message: blockedMessage(source, blocked),
+        remindAfterMs: Number.POSITIVE_INFINITY,
+      })
+    } else if (source.consecutiveFailures >= thresholds.consecutiveFailures) {
       conditions.push({
         key: `source-failing:${source.id}`,
-        message:
-          `«${source.name}» manbasi ketma-ket ${source.consecutiveFailures} marta xato berdi` +
-          (source.lastError ? `.\nOxirgi xato: ${source.lastError.slice(0, 300)}` : '.'),
+        message: failingMessage(source),
+        remindAfterMs: SOURCE_FAILING_REMINDER_MS,
       })
     }
   }
@@ -126,10 +192,41 @@ export function planAlerts(
   const active = new Set(conditions.map((c) => c.key))
   const send = conditions.filter((condition) => {
     const sentAt = Date.parse(current[condition.key]?.sentAt ?? '')
-    return Number.isNaN(sentAt) || now - sentAt >= throttleMs
+    return Number.isNaN(sentAt) || now - sentAt >= (condition.remindAfterMs ?? throttleMs)
   })
   const resolved = Object.keys(current).filter((key) => !active.has(key))
   return { send, resolved }
+}
+
+const SOURCE_ALERT_KEY = /^source-(?:blocked|failing):(\d+)$/
+
+/**
+ * Hal bo'lgan manba ogohlantirishlari uchun "tiklandi" xabarlari: manba hali faol (snapshot'da),
+ * `consecutiveFailures = 0` va faol feed'larida xato turi yo'q. Manba o'chirilgan (snapshot'da
+ * yo'q) yoki bir xato holatidan boshqasiga o'tgan bo'lsa — xabar yo'q.
+ */
+export function recoveryMessages(
+  resolved: readonly string[],
+  snapshot: Pick<AlertSnapshot, 'sources'>,
+): AlertCondition[] {
+  const sources = new Map(snapshot.sources.map((source) => [source.id, source]))
+  const seen = new Set<number>()
+  const messages: AlertCondition[] = []
+  for (const key of resolved) {
+    const match = SOURCE_ALERT_KEY.exec(key)
+    if (!match) continue
+    const source = sources.get(Number(match[1]))
+    if (!source || seen.has(source.id)) continue
+    const healthy =
+      source.consecutiveFailures === 0 && activeFeeds(source).every((feed) => !feed.lastErrorKind)
+    if (!healthy) continue
+    seen.add(source.id)
+    messages.push({
+      key,
+      message: `«${source.name}» manbasi tiklandi — fid yana muvaffaqiyatli o'qilmoqda.`,
+    })
+  }
+  return messages
 }
 
 type Rows<T> = { rows: T[] }
@@ -145,7 +242,7 @@ export async function collectAlertSnapshot(
   const { docs } = await payload.find({
     collection: 'sources',
     where: { isActive: { equals: true } },
-    select: { name: true, stats: true },
+    select: { name: true, stats: true, feeds: true },
     depth: 0,
     pagination: false,
     limit: 0,
@@ -170,6 +267,12 @@ export async function collectAlertSnapshot(
         name: source.name,
         consecutiveFailures: Number(stats.consecutiveFailures ?? 0) || 0,
         lastError: typeof stats.lastError === 'string' ? stats.lastError : null,
+        feeds: (source.feeds ?? []).map((feed) => ({
+          url: feed.url,
+          isActive: feed.isActive,
+          lastErrorKind: feed.lastErrorKind ?? null,
+          nextPollAt: feed.nextPollAt ?? null,
+        })),
       }
     }),
     items: rows
@@ -227,12 +330,15 @@ export async function runAlertChecks(
   try {
     const now = deps.now()
     const stats = await readScrapingStats(payload)
-    const conditions = evaluateAlerts(await collectAlertSnapshot(payload, { now, stats }))
+    const snapshot = await collectAlertSnapshot(payload, { now, stats })
+    const conditions = evaluateAlerts(snapshot)
     result.active = conditions.length
     const plan = planAlerts(conditions, stats.alerts, now)
     if (!plan.send.length && !plan.resolved.length) return result
+    const recoveries = recoveryMessages(plan.resolved, snapshot)
 
-    const target = plan.send.length ? await resolveTelegramTarget(payload, deps) : {}
+    const target =
+      plan.send.length || recoveries.length ? await resolveTelegramTarget(payload, deps) : {}
     const next: Record<string, AlertStateEntry> = { ...stats.alerts }
     for (const key of plan.resolved) delete next[key]
 
@@ -260,6 +366,31 @@ export async function runAlertChecks(
         payload.logger.error({
           msg: `ALERT (Telegram yuborilmadi): ${condition.message}`,
           alert: condition.key,
+          error: (error as Error).message,
+        })
+      }
+    }
+    // "Tiklandi" — bir martalik, holatga yozilmaydi; yuborilmasa faqat log (qayta urinish yo'q).
+    for (const recovery of recoveries) {
+      if (!target.token || !target.chatId) {
+        payload.logger.info({ msg: `ALERT RESOLVED: ${recovery.message}`, alert: recovery.key })
+        result.logged++
+        continue
+      }
+      try {
+        await sendTelegramMessage({
+          token: target.token,
+          chatId: target.chatId,
+          text: `<b>Blog Odya — tiklandi</b>\n${escapeTelegramHtml(recovery.message)}`,
+          timeoutMs: Math.min(options.timeoutMs ?? TELEGRAM_TIMEOUT_MS, TELEGRAM_TIMEOUT_MS),
+          fetchImpl: deps.fetchImpl,
+        })
+        result.sent++
+      } catch (error) {
+        result.failed++
+        payload.logger.error({
+          msg: `ALERT RESOLVED (Telegram yuborilmadi): ${recovery.message}`,
+          alert: recovery.key,
           error: (error as Error).message,
         })
       }

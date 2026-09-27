@@ -434,6 +434,10 @@ describe('M2-03: dedupe, klassifikatsiya, tozalash, ogohlantirishlar', () => {
       })
       // Boshqa testlardan qolgan manba statistikasi natijaga ta'sir qilmasin.
       await payload.update({ collection: 'sources', where: {}, data: { stats: null } })
+      await db().execute(sql`
+        UPDATE "sources_feeds"
+        SET "failure_count" = 0, "last_error_kind" = NULL, "next_poll_at" = NULL
+      `)
       const habr = await sourceBySlug('habr')
       await payload.update({
         collection: 'sources',
@@ -463,14 +467,22 @@ describe('M2-03: dedupe, klassifikatsiya, tozalash, ogohlantirishlar', () => {
       expect(await runAlertChecks(payload, { deps })).toMatchObject({ active: 2, sent: 0 })
       expect(messages).toHaveLength(2)
 
-      // Manba tiklandi — holat kaliti o'chiriladi; DB hali katta — 24 soatdan keyin eslatma.
+      // Manba xatosi eslatmasi — 24 soatda emas, haftada 1 marta (OBLOG-53, feed backoff'da).
+      clock += 24 * 60 * 60_000
+      expect(await runAlertChecks(payload, { deps })).toMatchObject({ active: 2, sent: 1 })
+      expect(messages.at(-1)!.text).toContain('DB hajmi')
+
+      // Manba tiklandi — holat kaliti o'chiriladi va "tiklandi" xabari (bir marta).
       await payload.update({
         collection: 'sources',
         id: habr.id,
         data: { stats: { consecutiveFailures: 0 } },
       })
-      clock += 24 * 60 * 60_000
+      clock += 10 * 60_000
       expect(await runAlertChecks(payload, { deps })).toMatchObject({ active: 1, sent: 1 })
+      expect(messages.at(-1)!.text).toContain('tiklandi')
+      expect(messages.at(-1)!.text).toContain('«Habr (Новости)»')
+      expect(await runAlertChecks(payload, { deps })).toMatchObject({ sent: 0 })
       const state = (await readScrapingStats(payload)).alerts ?? {}
       expect(Object.keys(state)).toEqual(['db-size'])
       expect(state['db-size']).toMatchObject({ via: 'telegram' })

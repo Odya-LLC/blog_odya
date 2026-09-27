@@ -57,8 +57,11 @@ async function allSources(): Promise<Source[]> {
   return docs
 }
 
-/** Barcha feed'larni "muddati kelgan" qiladi; `clearValidators` — ETag/Last-Modified ham. */
-async function makeAllDue(clearValidators: boolean) {
+/**
+ * Barcha feed'larni "muddati kelgan" qiladi; `clearValidators` — ETag/Last-Modified ham.
+ * Backoff holati (OBLOG-53) ham tozalanadi, `keepBackoff` bo'lmasa.
+ */
+async function makeAllDue(clearValidators: boolean, options: { keepBackoff?: boolean } = {}) {
   for (const source of await allSources()) {
     await payload.update({
       collection: 'sources',
@@ -70,10 +73,30 @@ async function makeAllDue(clearValidators: boolean) {
           ...feed,
           lastPolledAt: null,
           ...(clearValidators ? { etag: null, lastModified: null } : {}),
+          ...(options.keepBackoff
+            ? {}
+            : { failureCount: 0, lastErrorKind: null, nextPollAt: null }),
         })),
       },
     })
   }
+}
+
+/** HLTV'ning 2026-09-27 dagi javobi (qisqartirilgan): Cloudflare managed challenge. */
+function cloudflareChallenge(): Response {
+  return new Response(
+    '<!DOCTYPE html><html><head><title>Just a moment...</title></head><body>' +
+      '<script src="/cdn-cgi/challenge-platform/h/g/orchestrate/chl_page/v1"></script></body></html>',
+    {
+      status: 403,
+      statusText: 'Forbidden',
+      headers: {
+        server: 'cloudflare',
+        'cf-mitigated': 'challenge',
+        'content-type': 'text/html; charset=UTF-8',
+      },
+    },
+  )
 }
 
 async function countItems(sourceId?: number) {
@@ -134,7 +157,7 @@ describe('jobs endpoint + feed.poll', () => {
     expect(response.status).toBe(401)
   })
 
-  it('yangi scraped-items yaratadi (6 faol manba), takroriy chaqiruv dublikat yaratmaydi', async () => {
+  it('yangi scraped-items yaratadi (seed’dagi faol manbalar), takroriy chaqiruv dublikat yaratmaydi', async () => {
     // Toza holat: oldingi ishga tushirishlardan qolgan elementlar va job'lar.
     await payload.delete({ collection: 'scraped-items', where: { id: { exists: true } } })
     await payload.delete({
@@ -239,6 +262,115 @@ describe('jobs endpoint + feed.poll', () => {
       where: { canonicalUrl: { equals: 'https://www.ixbt.com/news/2026/09/24/brand-new.html' } },
     })
     expect(totalDocs).toBe(1)
+  })
+
+  it('backoff (OBLOG-53): Cloudflare challenge — kuniga 1 marta, muvaffaqiyatda tozalanadi', async () => {
+    await payload.delete({
+      collection: 'payload-jobs',
+      where: { taskSlug: { equals: FEED_POLL_TASK } },
+    })
+    const ixbt = (await allSources()).find((s) => s.slug === 'ixbt')!
+    const ixbtUrls = new Set((ixbt.feeds ?? []).map((f) => f.url))
+    const normal = fixtures.fetch
+    feedPollDeps.fetchImpl = async (input, init) =>
+      ixbtUrls.has(String(input)) ? cloudflareChallenge() : normal(input, init)
+    await makeAllDue(true)
+
+    const { body: first } = await runOk()
+    expect(first.enqueued).toBe(ACTIVE_SOURCES.length)
+    expect(first.done.failed).toBe(0)
+    let blocked = (await allSources()).find((s) => s.slug === 'ixbt')!
+    for (const feed of blocked.feeds ?? []) {
+      expect(feed).toMatchObject({ lastStatus: 403, lastErrorKind: 'cloudflare', failureCount: 1 })
+      expect(feed.lastError).toContain('Cloudflare challenge')
+      // Darhol kuniga 1 marta tekshiruvga (15 daqiqalik interval emas).
+      expect(Date.parse(feed.nextPollAt!) - Date.parse(feed.lastPolledAt!)).toBe(24 * 3_600_000)
+    }
+
+    // Interval o'tdi (lastPolledAt = null), lekin backoff muddati kelmagan — iXBT so'ralmaydi.
+    await makeAllDue(false, { keepBackoff: true })
+    const requestsBefore = fixtures.requests.length
+    const { body: second } = await runOk()
+    expect(second.enqueued).toBe(ACTIVE_SOURCES.length - 1)
+    const polledUrls = fixtures.requests.slice(requestsBefore).map((r) => r.url)
+    expect(polledUrls.some((url) => ixbtUrls.has(url))).toBe(false)
+    blocked = (await allSources()).find((s) => s.slug === 'ixbt')!
+    expect(blocked.feeds?.every((f) => f.failureCount === 1)).toBe(true)
+
+    // Backoff muddati o'tdi va feed yana ochildi — holat tozalanadi.
+    feedPollDeps.fetchImpl = normal
+    await payload.update({
+      collection: 'sources',
+      id: blocked.id,
+      depth: 0,
+      data: {
+        feeds: (blocked.feeds ?? []).map((feed) => ({
+          ...feed,
+          lastPolledAt: null,
+          nextPollAt: new Date(Date.now() - 60_000).toISOString(),
+        })),
+      },
+    })
+    const { body: third } = await runOk()
+    expect(third.enqueued).toBe(1)
+    const recovered = (await allSources()).find((s) => s.slug === 'ixbt')!
+    for (const feed of recovered.feeds ?? []) {
+      expect(feed).toMatchObject({ lastErrorKind: null, nextPollAt: null, failureCount: 0 })
+      expect(feed.lastStatus).toBe(200)
+    }
+    expect((recovered.stats as { consecutiveFailures?: number }).consecutiveFailures).toBe(0)
+  })
+
+  it('backoff: admin manbani qayta yoqsa yoki feed URL’ini o‘zgartirsa — holat tozalanadi', async () => {
+    const ixbt = (await allSources()).find((s) => s.slug === 'ixbt')!
+    const future = new Date(Date.now() + 24 * 3_600_000).toISOString()
+    const blockedFeeds = (ixbt.feeds ?? []).map((feed) => ({
+      ...feed,
+      failureCount: 5,
+      lastErrorKind: 'cloudflare' as const,
+      nextPollAt: future,
+    }))
+    await payload.update({
+      collection: 'sources',
+      id: ixbt.id,
+      depth: 0,
+      data: { isActive: false, feeds: blockedFeeds },
+    })
+    const reactivated = await payload.update({
+      collection: 'sources',
+      id: ixbt.id,
+      depth: 0,
+      data: { isActive: true },
+    })
+    for (const feed of reactivated.feeds ?? [])
+      expect(feed).toMatchObject({ failureCount: 0, lastErrorKind: null, nextPollAt: null })
+
+    // URL o'zgargan feed tozalanadi, qolganlari — yo'q.
+    await payload.update({
+      collection: 'sources',
+      id: ixbt.id,
+      depth: 0,
+      data: { feeds: blockedFeeds },
+    })
+    const [firstFeed, ...rest] = blockedFeeds
+    const changed = await payload.update({
+      collection: 'sources',
+      id: ixbt.id,
+      depth: 0,
+      data: { feeds: [{ ...firstFeed!, url: `${firstFeed!.url}?v=2` }, ...rest] },
+    })
+    expect(changed.feeds![0]).toMatchObject({ failureCount: 0, nextPollAt: null })
+    for (const feed of changed.feeds!.slice(1))
+      expect(feed).toMatchObject({ failureCount: 5, lastErrorKind: 'cloudflare' })
+
+    // Asl holatga qaytarish.
+    await payload.update({
+      collection: 'sources',
+      id: ixbt.id,
+      depth: 0,
+      data: { feeds: ixbt.feeds, isActive: true },
+    })
+    await makeAllDue(true)
   })
 
   it('deadline: osilib qolgan feed’lar bilan ham chaqiruv chegarada tugaydi (< 60 s)', async () => {

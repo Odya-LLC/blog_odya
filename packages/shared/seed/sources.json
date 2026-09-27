@@ -3346,7 +3346,7 @@
     "pollIntervalMin": 20,
     "rateLimitSec": 15,
     "robotsCheckedAt": "2026-09-23",
-    "tosNotes": "robots.txt va /terms OdyaBlogBot uchun Cloudflare challenge (HTTP 403) qaytardi — tekshirib bo'lmadi. RSS (/rss/news) va maqola sahifasi 200 qaytardi (server HTML, .newstext-con). Robots/ToS tasdiqlanmagani uchun ehtiyotkorlik bilan: faqat RSS (sarlavha + 1 jumla description). ToS'ni brauzer orqali qo'lda tekshirish kerak (QUESTIONS). Faqat CS2.",
+    "tosNotes": "robots.txt va /terms OdyaBlogBot uchun Cloudflare challenge (HTTP 403) qaytardi — tekshirib bo'lmadi. RSS (/rss/news) va maqola sahifasi 200 qaytardi (server HTML, .newstext-con). Robots/ToS tasdiqlanmagani uchun ehtiyotkorlik bilan: faqat RSS (sarlavha + 1 jumla description). ToS'ni brauzer orqali qo'lda tekshirish kerak (QUESTIONS). Faqat CS2. OBLOG-53 (2026-09-27): O'CHIRILGAN — /rss/news har qanday User-Agent uchun doimo Cloudflare challenge (HTTP 403, cf-mitigated: challenge) qaytaradi; challenge chetlab o'tilmaydi (docs/sources.md §3.5b). Qayta yoqishdan oldin feed'ni tekshiring.",
     "priority": 25,
     "keywordRules": [
       {
@@ -3965,7 +3965,7 @@
         "boost": 4
       }
     ],
-    "isActive": true
+    "isActive": false
   },
   {
     "name": "3DNews (zaxira)",

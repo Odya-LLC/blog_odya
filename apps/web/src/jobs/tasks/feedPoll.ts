@@ -2,6 +2,7 @@ import type { Payload, TaskConfig } from 'payload'
 
 import type { Source } from '@/payload-types'
 import { fetchFeed, FeedHttpError, type FeedItem } from '@/scraping/feed'
+import { CLEAR_FEED_BACKOFF, classifyFeedError, nextFeedFailureState } from '@/scraping/feedBackoff'
 import { hashUrl } from '@/scraping/url'
 
 import {
@@ -28,6 +29,9 @@ import { getJobsSettings, type JobsSettings } from '../settings'
  *   muddati o'tgan holda qoladi va keyingi chaqiruvda (eng eskisi birinchi) o'qiladi.
  * - HTTP/parse xatolari task'ni yiqitmaydi — `feeds[].lastError` va `stats` ga yoziladi
  *   (ogohlantirishlar — M2-03). Kutilmagan (DB) xatolar — retry (3 marta, backoff).
+ * - Doimiy xato beradigan feed — backoff (`feeds[].failureCount/lastErrorKind/nextPollAt`,
+ *   OBLOG-53, `scraping/feedBackoff.ts`): Cloudflare challenge — kuniga 1 marta, boshqa xatolar —
+ *   eksponensial (24 soatgacha); muvaffaqiyatli o'qish holatni tozalaydi.
  */
 
 export interface FeedPollDeps {
@@ -197,6 +201,7 @@ export async function pollSource(
       })
       feed.lastStatus = result.httpStatus
       feed.lastError = null
+      Object.assign(feed, CLEAR_FEED_BACKOFF)
       if (result.status === 'not-modified') {
         output.notModified++
         feed.lastNewItems = 0
@@ -237,6 +242,10 @@ export async function pollSource(
       feed.lastStatus = error instanceof FeedHttpError ? error.httpStatus : null
       feed.lastError = message.slice(0, 1000)
       feed.lastNewItems = 0
+      Object.assign(
+        feed,
+        nextFeedFailureState(feed, classifyFeedError(error), { requestAt, intervalMin }),
+      )
     }
   }
 

@@ -127,6 +127,11 @@ export const ALERT_THRESHOLDS = {
 
 /** Bir xil ogohlantirish shu vaqt ichida qayta yuborilmaydi (holat saqlanib qolsa — eslatma). */
 export const ALERT_THROTTLE_MS = 24 * 60 * 60_000
+/**
+ * Manba xatosi (`source-failing`, OBLOG-53): feed allaqachon backoff'da (so'rovlar siyraklashgan),
+ * shuning uchun eslatma — haftada 1 marta (har kuni o'sib boruvchi hisoblagich bilan emas).
+ */
+export const SOURCE_FAILING_REMINDER_MS = 7 * 24 * 60 * 60_000
 
 // --- M3-01: Telegram avtopost ---
 

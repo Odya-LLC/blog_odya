@@ -42,6 +42,12 @@ const TZ_CATEGORIES = [
 /** TZ §2.2 — tasdiqlangan manbalar (Dexerto va HLTV alohida yozuv, chunki domen/robots/rate limit har xil). */
 const APPROVED_SOURCES = ['the-verge', 'techcrunch', 'habr', 'ixbt', 'dexerto', 'hltv']
 
+/**
+ * Tasdiqlangan, lekin vaqtincha o'chirilgan manbalar: HLTV — OBLOG-53, feed doimo Cloudflare
+ * challenge qaytaradi (docs/sources.md §3.5b).
+ */
+const DISABLED_SOURCES = ['hltv']
+
 const MIN_RULES_PER_CATEGORY = 5
 
 describe('categories.json', () => {
@@ -77,9 +83,18 @@ describe('sources.json', () => {
     expect(sources.length).toBeGreaterThanOrEqual(APPROVED_SOURCES.length)
   })
 
-  it('TZ §2.2 dagi barcha tasdiqlangan manbalar faol', () => {
+  it('TZ §2.2 dagi tasdiqlangan manbalar mavjud; o‘chirilganlaridan tashqari hammasi faol', () => {
+    for (const slug of APPROVED_SOURCES) expect(sources.map((s) => s.slug)).toContain(slug)
     const active = sources.filter((s) => s.isActive).map((s) => s.slug)
-    expect(active.sort()).toEqual([...APPROVED_SOURCES].sort())
+    const expected = APPROVED_SOURCES.filter((slug) => !DISABLED_SOURCES.includes(slug))
+    expect(active.sort()).toEqual(expected.sort())
+  })
+
+  it('HLTV nofaol (OBLOG-53: doimiy Cloudflare challenge), sababi tosNotes’da', () => {
+    const hltv = sources.find((s) => s.slug === 'hltv')!
+    expect(hltv.isActive).toBe(false)
+    expect(hltv.tosNotes).toContain('OBLOG-53')
+    expect(hltv.tosNotes).toContain('Cloudflare')
   })
 
   it('barcha mapsTo / keywordRules.category mavjud kategoriyaga ishora qiladi', () => {
