@@ -13,6 +13,7 @@ import { postRedirectHooks } from '@/hooks/contentRedirects'
 import { revalidatePostAfterChange, revalidatePostAfterDelete } from '@/site/revalidate'
 
 import { deriveFields, enforceWorkflow, syncScheduledPublish } from './hooks'
+import { preserveTelegramState, queueTelegramAfterChange } from './telegram'
 import { POST_WORKFLOW_STATUSES, WORKFLOW_STATUS_LABELS } from './workflow'
 
 export * from './workflow'
@@ -86,10 +87,12 @@ export const Posts: CollectionConfig = {
     beforeChange: [enforceWorkflow, deriveFields, ...postRedirectHooks.beforeChange],
     // Sayt keshi (ISR): publish/unpublish/arxivlash → revalidateTag (M1-05). Slug/kategoriya
     // o'zgarsa (publish'da) — 301 redirect (`hooks/contentRedirects.ts`, TZ §8.1).
+    // Telegram avtopost (M3-01, TZ §7.1): chop etilganda `telegram.post` job'lari.
     afterChange: [
       syncScheduledPublish,
       ...postRedirectHooks.afterChange,
       revalidatePostAfterChange,
+      queueTelegramAfterChange,
     ],
     afterDelete: [revalidatePostAfterDelete],
   },
@@ -240,11 +243,14 @@ export const Posts: CollectionConfig = {
               },
             },
             {
+              // Holat faqat `telegram.post` job'i yozadi (asosiy jadvalga) — `preserveTelegramState`.
+              // Admin'da ko'rinishi — yon paneldagi "Telegram" bloki (`TelegramPanel`).
               name: 'telegram',
               type: 'array',
               label: 'Telegram (kanal bo‘yicha holat)',
               access: { create: systemOnly, update: systemOnly },
-              admin: { readOnly: true },
+              hooks: { beforeChange: [preserveTelegramState] },
+              admin: { readOnly: true, hidden: true },
               fields: [
                 {
                   name: 'script',
@@ -253,7 +259,18 @@ export const Posts: CollectionConfig = {
                   required: true,
                   options: SCRIPTS.map(({ label, value }) => ({ label, value })),
                 },
+                { name: 'chatId', type: 'text', label: 'Kanal (chat ID)' },
                 { name: 'messageId', type: 'text', label: 'Xabar ID' },
+                {
+                  name: 'kind',
+                  type: 'select',
+                  label: 'Xabar turi',
+                  options: [
+                    { label: 'Rasm + caption (sendPhoto)', value: 'photo' },
+                    { label: 'Matn (sendMessage)', value: 'text' },
+                  ],
+                },
+                { name: 'hash', type: 'text', label: 'Matn xeshi' },
                 { name: 'sentAt', type: 'date', label: 'Yuborilgan' },
                 { name: 'error', type: 'textarea', label: 'Xato' },
               ],
@@ -391,6 +408,15 @@ export const Posts: CollectionConfig = {
       label: "Telegram'ga yubormaslik",
       defaultValue: false,
       admin: { position: 'sidebar' },
+    },
+    // Telegram holati (kanal bo'yicha: yuborilgan / navbatda / xato) — faqat o'qish (M3-01).
+    {
+      name: 'telegramPanel',
+      type: 'ui',
+      admin: {
+        position: 'sidebar',
+        components: { Field: '@/components/admin/TelegramPanel#TelegramPanel' },
+      },
     },
     {
       name: 'cyrlStale',

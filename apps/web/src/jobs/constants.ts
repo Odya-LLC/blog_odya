@@ -127,3 +127,19 @@ export const ALERT_THRESHOLDS = {
 
 /** Bir xil ogohlantirish shu vaqt ichida qayta yuborilmaydi (holat saqlanib qolsa — eslatma). */
 export const ALERT_THROTTLE_MS = 24 * 60 * 60_000
+
+// --- M3-01: Telegram avtopost ---
+
+/** `telegram.post` — bitta (post, yozuv) juftligi uchun yuborish/tahrirlash (TZ §7.1). */
+export const TELEGRAM_POST_TASK = 'telegram.post'
+/** Telegram xatosida qayta urinishlar soni (birinchi urinishdan keyin), keyin — ogohlantirish. */
+export const TELEGRAM_MAX_RETRIES = 3
+/** 429 bo'lmagan xatolarda qayta urinishlar orasidagi pauza: 5 s, 30 s, 120 s. */
+export const TELEGRAM_RETRY_BACKOFF_MS = [5_000, 30_000, 120_000] as const
+/**
+ * Shu vaqtgacha bo'lgan pauza (`retry_after` yoki backoff) task ichida kutiladi (run deadline'i
+ * yetsa); uzunrog'i — job `waitUntil` bilan qayta navbatga qo'yiladi (keyingi scheduler tsikli).
+ */
+export const TELEGRAM_INLINE_WAIT_MAX_MS = 10_000
+/** Bitta Bot API so'rovi timeout'i. */
+export const TELEGRAM_API_TIMEOUT_MS = 10_000

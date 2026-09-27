@@ -8,7 +8,8 @@ export const DEFAULT_TELEGRAM_TEMPLATE =
 /**
  * Telegram avtopost sozlamalari (TZ §7.1, §10.15). Env (`TELEGRAM_CHANNEL_LATN/CYRL`,
  * `TELEGRAM_ALERT_CHAT_ID`) — standart qiymat, shu global ustun turadi. Bot tokeni — faqat env'da.
- * Yuborish mantig'i — M3-01.
+ * Yuborish mantig'i (M3-01) — `src/telegram/` (`telegram.post` job'i), sozlamalarni o'qish —
+ * `src/telegram/config.ts`.
  */
 export const TelegramSettings: GlobalConfig = {
   slug: 'telegram-settings',
@@ -23,6 +24,10 @@ export const TelegramSettings: GlobalConfig = {
       type: 'array',
       label: 'Kanallar',
       maxRows: 2,
+      admin: {
+        description:
+          "Yozuv bo'yicha qator bo'lmasa — env TELEGRAM_CHANNEL_LATN / TELEGRAM_CHANNEL_CYRL. Bot kanalda admin bo'lishi kerak.",
+      },
       fields: [
         {
           type: 'row',
@@ -63,7 +68,7 @@ export const TelegramSettings: GlobalConfig = {
       defaultValue: DEFAULT_TELEGRAM_TEMPLATE,
       admin: {
         description:
-          "O'rinbosarlar: {{title}}, {{excerpt}}, {{url}}, {{hashtags}}. Caption ≤ 1024 belgi.",
+          "O'rinbosarlar: {{title}}, {{excerpt}}, {{url}}, {{hashtags}}. Caption ≤ 1024 belgi (oshsa lid qisqartiriladi). Kirill kanal uchun shablon matni avtomatik kirillga o'giriladi.",
       },
     },
     {

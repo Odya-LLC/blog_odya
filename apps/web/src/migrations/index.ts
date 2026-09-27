@@ -12,6 +12,7 @@ import * as migration_20260924_145141_m1_03c_translit from './20260924_145141_m1
 import * as migration_20260924_160838_oblog_29_cyrl_redirects from './20260924_160838_oblog_29_cyrl_redirects';
 import * as migration_20260925_135926_oblog_44_media_mcp from './20260925_135926_oblog_44_media_mcp';
 import * as migration_20260926_164339_oblog_47_meta_image_backfill from './20260926_164339_oblog_47_meta_image_backfill';
+import * as migration_20260927_074715_oblog_22_telegram_autopost from './20260927_074715_oblog_22_telegram_autopost';
 
 export const migrations = [
   {
@@ -82,6 +83,11 @@ export const migrations = [
   {
     up: migration_20260926_164339_oblog_47_meta_image_backfill.up,
     down: migration_20260926_164339_oblog_47_meta_image_backfill.down,
-    name: '20260926_164339_oblog_47_meta_image_backfill'
+    name: '20260926_164339_oblog_47_meta_image_backfill',
+  },
+  {
+    up: migration_20260927_074715_oblog_22_telegram_autopost.up,
+    down: migration_20260927_074715_oblog_22_telegram_autopost.down,
+    name: '20260927_074715_oblog_22_telegram_autopost'
   },
 ];

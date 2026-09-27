@@ -13,6 +13,7 @@ import { itemDedupeTask } from './tasks/itemDedupe'
 import { itemExtractTask } from './tasks/itemExtract'
 import { itemFetchTask } from './tasks/itemFetch'
 import { maintenanceCleanupTask } from './tasks/maintenanceCleanup'
+import { telegramPostTask } from './tasks/telegramPost'
 import { scrapeItemWorkflow } from './workflows/scrapeItem'
 
 /**
@@ -27,7 +28,8 @@ import { scrapeItemWorkflow } from './workflows/scrapeItem'
  *
  * Task'lar: `feed.poll` (M2-01), `item.fetch` + `item.extract` (`scrapeItem` workflow, M2-02),
  * `item.dedupe` + `item.classify` (workflow davomi) va `maintenance.cleanup` (kuniga 1 marta),
- * ogohlantirishlar — har scheduler chaqiruvida (M2-03).
+ * ogohlantirishlar — har scheduler chaqiruvida (M2-03), `telegram.post` — post chop etilganda
+ * (`default` navbati, M3-01).
  */
 export function buildJobsConfig(mode: Env['JOBS_MODE'] = 'endpoint'): JobsConfig {
   const adminOnly = ({ req }: { req: { user?: unknown } }) =>
@@ -41,6 +43,7 @@ export function buildJobsConfig(mode: Env['JOBS_MODE'] = 'endpoint'): JobsConfig
       itemDedupeTask,
       itemClassifyTask,
       maintenanceCleanupTask,
+      telegramPostTask,
     ],
     workflows: [scrapeItemWorkflow],
     // Supabase Free 500 MB: muvaffaqiyatli job'lar saqlanmaydi (natija — manba `stats` da).
