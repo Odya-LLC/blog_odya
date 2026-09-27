@@ -242,6 +242,14 @@ export const PERMISSIONS_POLICY = [
 export const HSTS = 'max-age=63072000; includeSubDomains'
 
 /**
+ * Hujjat sarlavhalari (CSP, `X-Frame-Options`, `Permissions-Policy`) qo'llanadigan yo'llar —
+ * Next.js'ning versiyalangan statik fayllaridan (`/_next/static`, `/_next/image`) tashqari
+ * hammasi. Chunk'lar hujjat emas (bu sarlavhalar ularga ta'sir qilmaydi), lekin har chunk
+ * javobiga ~2 KB qo'shib, Lighthouse'ning JS byudjetini (uzatilgan hajm, sarlavhalar bilan) yeydi.
+ */
+export const DOCUMENT_SOURCES = ['/', '/:path((?!_next/static/|_next/image).+)'] as const
+
+/**
  * `next.config.ts` `headers()` qoidalari. Bir xil kalit bir nechta qoidaga mos kelsa, Next.js
  * oxirgisini qo'llaydi — shuning uchun admin qoidasi umumiy qoidadan keyin turadi.
  */
@@ -249,25 +257,24 @@ export function securityHeaderRules(
   env: RawEnv,
   options: SecurityHeadersOptions = {},
 ): HeaderRule[] {
+  // Hamma javoblarga (statik fayllarga ham) — qisqa sarlavhalar.
   const common = [
     { key: 'Strict-Transport-Security', value: HSTS },
     { key: 'X-Content-Type-Options', value: 'nosniff' },
     { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+  ]
+  const site = [
     { key: 'Permissions-Policy', value: PERMISSIONS_POLICY },
+    { key: 'Content-Security-Policy', value: buildSiteCsp(env, options) },
+    { key: 'X-Frame-Options', value: 'DENY' },
   ]
   const admin = [
     { key: 'Content-Security-Policy', value: buildAdminCsp(env, options) },
     { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
   ]
   return [
-    {
-      source: '/:path*',
-      headers: [
-        ...common,
-        { key: 'Content-Security-Policy', value: buildSiteCsp(env, options) },
-        { key: 'X-Frame-Options', value: 'DENY' },
-      ],
-    },
+    { source: '/:path*', headers: common },
+    ...DOCUMENT_SOURCES.map((source) => ({ source, headers: site })),
     { source: '/admin', headers: admin },
     { source: '/admin/:path*', headers: admin },
     { source: '/api/graphql-playground', headers: admin },

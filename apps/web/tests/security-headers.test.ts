@@ -30,7 +30,7 @@ function headersFor(path: string, env = PROD_ENV): Record<string, string> {
   const result: Record<string, string> = {}
   for (const rule of securityHeaderRules(env)) {
     const pattern = new RegExp(
-      `^${rule.source.replace(/\/:path\*$/, '(?:/.*)?').replace(/\/:path\*/, '.*')}$`,
+      `^${rule.source.replace(/\/:path\*$/, '(?:/.*)?').replace(/:path\((.*)\)$/, '($1)')}$`,
     )
     if (!pattern.test(path)) continue
     for (const { key, value } of rule.headers) result[key] = value
@@ -48,6 +48,24 @@ describe('security headers', () => {
     expect(headers['Permissions-Policy']).not.toContain('fullscreen')
     expect(headers['X-Frame-Options']).toBe('DENY')
     expect(headers['Content-Security-Policy']).toBe(buildSiteCsp(PROD_ENV))
+  })
+
+  it('bosh sahifa ham hujjat sarlavhalarini oladi', () => {
+    expect(headersFor('/')['Content-Security-Policy']).toBe(buildSiteCsp(PROD_ENV))
+    expect(headersFor('/kr')['X-Frame-Options']).toBe('DENY')
+  })
+
+  it('statik chunk’lar: faqat qisqa sarlavhalar (JS byudjeti — sarlavhalar ham hisoblanadi)', () => {
+    for (const path of ['/_next/static/chunks/abc.js', '/_next/image']) {
+      const headers = headersFor(path)
+      expect(headers['Strict-Transport-Security']).toBe(HSTS)
+      expect(headers['X-Content-Type-Options']).toBe('nosniff')
+      expect(headers['Content-Security-Policy']).toBeUndefined()
+      expect(headers['Permissions-Policy']).toBeUndefined()
+      expect(headers['X-Frame-Options']).toBeUndefined()
+    }
+    // `_next/data`, API, media fayllar — hujjat qoidasi saqlanadi.
+    expect(headersFor('/api/media/file/x.webp')['Content-Security-Policy']).toBeDefined()
   })
 
   it('admin: o‘z CSP’si va SAMEORIGIN', () => {
