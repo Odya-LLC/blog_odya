@@ -44,6 +44,37 @@ export function toAnalyticsConfig(
   }
 }
 
+/** Search Console / Yandex Webmaster tasdiq kodlari (`<meta name="…-verification">`). */
+export interface SiteVerification {
+  google: string | null
+  yandex: string | null
+}
+
+/** Tasdiq kodi: token belgilari (`A-Za-z0-9_-`), 8–128 ta. */
+const VERIFICATION_TOKEN = /^[\w-]{8,128}$/
+
+/**
+ * Admin kodni o'zini ham, butun `<meta name="…" content="KOD" />` tegini ham yozishi mumkin —
+ * ikkalasidan ham kod ajratiladi; boshqa matn — `null` (meta chizilmaydi).
+ */
+export function toVerificationToken(value: string | null | undefined): string | null {
+  const raw = value?.trim() ?? ''
+  const token = /content\s*=\s*["']([^"']*)["']/i.exec(raw)?.[1]?.trim() ?? raw
+  return VERIFICATION_TOKEN.test(token) ? token : null
+}
+
+export function toSiteVerification(
+  analytics:
+    | { googleSiteVerification?: string | null; yandexVerification?: string | null }
+    | null
+    | undefined,
+): SiteVerification {
+  return {
+    google: toVerificationToken(analytics?.googleSiteVerification),
+    yandex: toVerificationToken(analytics?.yandexVerification),
+  }
+}
+
 export function hasAnalytics(config: AnalyticsConfig): boolean {
   return Boolean(config.ga4Id || config.metricaId)
 }

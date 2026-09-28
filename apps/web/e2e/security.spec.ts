@@ -9,7 +9,8 @@ import { SEED_POSTS } from '../src/seed/data'
 const post = SEED_POSTS[0]!
 const article = `/${post.category}/${post.slug}`
 
-const ANALYTICS = /googletagmanager\.com|google-analytics\.com|mc\.yandex\./
+const ANALYTICS =
+  /googletagmanager\.com|google-analytics\.com|analytics\.google\.com|doubleclick\.net|google\.[a-z.]+\/(g\/collect|ads)|mc\.yandex\./
 
 test.describe('xavfsizlik va monitoring (OBLOG-23)', () => {
   for (const path of ['/', '/kr', article]) {

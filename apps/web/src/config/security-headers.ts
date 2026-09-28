@@ -27,21 +27,55 @@ export interface HeaderRule {
   headers: Array<{ key: string; value: string }>
 }
 
-/** GA4 (gtag.js). Region domenlari: `region1.google-analytics.com`, `*.analytics.google.com`. */
+/**
+ * Google ccTLD'lari: Google signals yoqilgan GA4 `www.google.<tld>/ads/ga-audiences` rasmini
+ * foydalanuvchi mintaqasi domeniga yuboradi (CSP'da TLD wildcard yo'q). Qolgan mintaqalarda
+ * bu rasm bloklanadi — hit'larga ta'sir qilmaydi.
+ */
+const GOOGLE_REGIONAL = [
+  'https://www.google.co.uz',
+  'https://www.google.kz',
+  'https://www.google.ru',
+]
+
+/**
+ * GA4 (gtag.js) — Google'ning GA4 + Google signals uchun CSP tavsiyasi bo'yicha. Real tag
+ * (OBLOG-23 tekshiruvi) hit'larni `analytics.google.com/g/collect` (apex — `*.` ga mos
+ * kelmaydi), `www.google.com/g/collect`, `stats.g.doubleclick.net/g/collect` va
+ * `region1.google-analytics.com` ga yuboradi.
+ */
 const GA4 = {
-  script: ['https://www.googletagmanager.com'],
+  script: ['https://*.googletagmanager.com'],
   connect: [
     'https://*.google-analytics.com',
+    'https://analytics.google.com',
     'https://*.analytics.google.com',
     'https://*.googletagmanager.com',
+    'https://*.g.doubleclick.net',
+    'https://*.google.com',
+    ...GOOGLE_REGIONAL,
   ],
-  img: ['https://*.google-analytics.com', 'https://*.googletagmanager.com'],
+  img: [
+    'https://*.google-analytics.com',
+    'https://*.googletagmanager.com',
+    'https://*.g.doubleclick.net',
+    'https://*.google.com',
+    ...GOOGLE_REGIONAL,
+  ],
 }
 
-/** Yandex Metrica (`tag.js`): skript, hit'lar, `clickmap`/`webvisor` iframe va websocket. */
+/**
+ * Yandex Metrica (`tag.js`): skript, hit'lar (`/watch/<id>`), `clickmap`/`webvisor` iframe
+ * (`/metrika/match.html`) va websocket (`wss://mc.yandex.ru/solid.ws`).
+ */
 const METRICA = {
   script: ['https://mc.yandex.ru', 'https://mc.yandex.com', 'https://yastatic.net'],
-  connect: ['https://mc.yandex.ru', 'https://mc.yandex.com', 'wss://mc.yandex.com'],
+  connect: [
+    'https://mc.yandex.ru',
+    'https://mc.yandex.com',
+    'wss://mc.yandex.ru',
+    'wss://mc.yandex.com',
+  ],
   img: ['https://mc.yandex.ru', 'https://mc.yandex.com'],
   frame: ['https://mc.yandex.ru', 'https://mc.yandex.com'],
 }

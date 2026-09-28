@@ -26,9 +26,14 @@ import type {
   TelegramLinks,
 } from '@/components/blog/types'
 import { env, PHASE_PRODUCTION_BUILD } from '@/env'
-import type { Author, Category, Media, Page, Post, Redirect } from '@/payload-types'
+import type { Author, Category, Media, Page, Post, Redirect, SiteSetting } from '@/payload-types'
 
-import { type AnalyticsConfig, toAnalyticsConfig } from './analytics'
+import {
+  type AnalyticsConfig,
+  type SiteVerification,
+  toAnalyticsConfig,
+  toSiteVerification,
+} from './analytics'
 import { CACHE_TAGS, categoryTag, postTag } from './cache-tags'
 import {
   populated,
@@ -187,12 +192,15 @@ export const getSiteChrome = (locale: Locale): Promise<SiteChrome> =>
 // Analitika (TZ §9.5, OBLOG-23)
 // ---------------------------------------------------------------------------
 
+type AnalyticsSettings = NonNullable<SiteSetting['analytics']>
+
 /**
- * GA4 / Metrica ID'lari (`site-settings`, yozuvga bog'liq emas). Analitika ixtiyoriy — DB xatosi
- * sahifani yiqitmasin (root layout ham chaqiradi): xato bo'lsa analitika o'chiq.
+ * `site-settings` → "Analitika va veb-master" guruhi (yozuvga bog'liq emas). Analitika va tasdiq
+ * kodlari ixtiyoriy — DB xatosi sahifani yiqitmasin (root layout ham chaqiradi): xato bo'lsa
+ * bo'sh guruh (analitika o'chiq, meta yo'q).
  */
-export async function loadAnalyticsConfig(): Promise<AnalyticsConfig> {
-  if (!hasDatabase()) return toAnalyticsConfig(null)
+export async function loadAnalyticsSettings(): Promise<AnalyticsSettings | null> {
+  if (!hasDatabase()) return null
   const payload = await payloadClient()
   const settings = await payload.findGlobal({
     slug: 'site-settings',
@@ -200,16 +208,26 @@ export async function loadAnalyticsConfig(): Promise<AnalyticsConfig> {
     overrideAccess: false,
     select: { analytics: true },
   })
-  return toAnalyticsConfig(settings.analytics)
+  return settings.analytics ?? null
 }
 
-export async function getAnalyticsConfig(): Promise<AnalyticsConfig> {
+async function getAnalyticsSettings(): Promise<AnalyticsSettings | null> {
   try {
     // `nav` — `site-settings` o'zgarganda yangilanadi (`revalidateNavAfterChange`).
-    return await cached(loadAnalyticsConfig, ['analytics'], [CACHE_TAGS.nav])
+    return await cached(loadAnalyticsSettings, ['analytics-settings'], [CACHE_TAGS.nav])
   } catch {
-    return toAnalyticsConfig(null)
+    return null
   }
+}
+
+/** GA4 / Metrica ID'lari (TZ §9.5). */
+export async function getAnalyticsConfig(): Promise<AnalyticsConfig> {
+  return toAnalyticsConfig(await getAnalyticsSettings())
+}
+
+/** Search Console / Yandex Webmaster tasdiq kodlari — root layout'dagi `<meta>` teglari. */
+export async function getSiteVerification(): Promise<SiteVerification> {
+  return toSiteVerification(await getAnalyticsSettings())
 }
 
 // ---------------------------------------------------------------------------

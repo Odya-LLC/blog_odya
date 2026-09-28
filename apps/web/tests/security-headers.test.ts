@@ -88,7 +88,7 @@ describe('security headers', () => {
       expect.arrayContaining([
         "'self'",
         "'unsafe-inline'",
-        'https://www.googletagmanager.com',
+        'https://*.googletagmanager.com',
         'https://mc.yandex.ru',
         'https://platform.twitter.com',
         'https://telegram.org',
@@ -101,7 +101,13 @@ describe('security headers', () => {
     expect(csp.get('connect-src')).toEqual(
       expect.arrayContaining([
         'https://*.google-analytics.com',
+        // Real GA4 tag hit'lari (OBLOG-23 review): apex `analytics.google.com`, `www.google.com`,
+        // `stats.g.doubleclick.net` (Google signals); Metrica websocket.
+        'https://analytics.google.com',
+        'https://*.google.com',
+        'https://*.g.doubleclick.net',
         'https://mc.yandex.ru',
+        'wss://mc.yandex.ru',
         'https://*.sentry.io',
         'https://o123.ingest.us.sentry.io',
       ]),

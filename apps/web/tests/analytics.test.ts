@@ -7,6 +7,7 @@ import {
   metricaInitScript,
   readConsent,
   toAnalyticsConfig,
+  toSiteVerification,
 } from '@/site/analytics'
 
 /** Analitika (OBLOG-23, TZ §9.5): ID tekshiruvi, rozilik cookie'si, `content_group`. */
@@ -41,5 +42,19 @@ describe('analytics', () => {
     const metrica = metricaInitScript('12345678', 'latn')
     expect(metrica).toContain(`ym(12345678,'init',`)
     expect(metrica).toContain('"params":{"content_group":"latn"}')
+  })
+
+  it('veb-master tasdiq kodlari: kod yoki butun <meta> teg', () => {
+    expect(
+      toSiteVerification({
+        googleSiteVerification:
+          ' <meta name="google-site-verification" content="AbC-123_xyzTOKEN" /> ',
+        yandexVerification: '0123456789abcdef',
+      }),
+    ).toEqual({ google: 'AbC-123_xyzTOKEN', yandex: '0123456789abcdef' })
+    expect(
+      toSiteVerification({ googleSiteVerification: '"><script>', yandexVerification: 'short' }),
+    ).toEqual({ google: null, yandex: null })
+    expect(toSiteVerification(null)).toEqual({ google: null, yandex: null })
   })
 })
