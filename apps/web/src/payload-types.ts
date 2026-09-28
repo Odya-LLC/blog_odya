@@ -1844,6 +1844,14 @@ export interface TelegramSetting {
   template?: string | null;
   hashtagsCount?: number | null;
   alertChatId?: string | null;
+  /**
+   * Har scheduler tick'idan keyin (yangi element bo'lsa) ogohlantirish guruhiga qisqa xabar: nechta yangi yangilik, manbalar bo'yicha.
+   */
+  notifyNewItems?: boolean | null;
+  /**
+   * Yangi yangiliklar shundan kam bo'lsa — xabar keyingi tick'ga qoldiriladi (yig'iladi).
+   */
+  newItemsMinCount?: number | null;
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -1998,6 +2006,8 @@ export interface TelegramSettingsSelect<T extends boolean = true> {
   template?: T;
   hashtagsCount?: T;
   alertChatId?: T;
+  notifyNewItems?: T;
+  newItemsMinCount?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

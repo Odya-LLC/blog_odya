@@ -15,6 +15,7 @@ import {
   TASK_GRACE_MS,
 } from './constants'
 import { runWithDeadline } from './context'
+import { type NewItemsNotifyResult, runNewItemsNotification } from './newItemsNotify'
 import { activeRunQueues } from './scrapeDeps'
 import {
   countRemainingJobs,
@@ -111,7 +112,7 @@ export function isAuthorized(header: string | null, secret: string): boolean {
 export const ALERTS_HARD_LIMIT_MS = RESPONSE_BUDGET_MS
 
 /** Pre-step'lar deadline'ni yeb qo'ysa o'tkazib yuboriladigan qadamlar (keyingi tick'da). */
-export type SkippedStep = 'feedPolls' | 'cleanup' | 'alerts'
+export type SkippedStep = 'feedPolls' | 'cleanup' | 'alerts' | 'newItems'
 
 export interface JobsRunResponse {
   ok: true
@@ -120,6 +121,8 @@ export interface JobsRunResponse {
   cleanupEnqueued: boolean
   /** Ogohlantirishlar: faol shartlar / yuborilgan / faqat log / xato; vaqt yetmasa — null. */
   alerts: AlertRunResult | null
+  /** "Yangi yangiliklar" xabari (OBLOG-55); vaqt yetmasa — null (keyingi tick'da yig'iladi). */
+  newItems: NewItemsNotifyResult | null
   scrapingDisabled: boolean
   releasedStale: number
   batches: number
@@ -223,12 +226,21 @@ async function runJobsRequest(
         timeoutMs: Math.min(TELEGRAM_TIMEOUT_MS, timeLeft),
       })
     } else skipped.push('alerts')
+    // Tick'da bitta xabar: barcha `feed.poll` job'laridan keyin (OBLOG-55).
+    const notifyTimeLeft = ALERTS_HARD_LIMIT_MS - (now() - startedAt)
+    let newItems: NewItemsNotifyResult | null = null
+    if (notifyTimeLeft >= 1_000) {
+      newItems = await runNewItemsNotification(payload, {
+        timeoutMs: Math.min(TELEGRAM_TIMEOUT_MS, notifyTimeLeft),
+      })
+    } else skipped.push('newItems')
 
     const body: JobsRunResponse = {
       ok: true,
       enqueued: polls?.enqueued ?? 0,
       cleanupEnqueued,
       alerts,
+      newItems,
       scrapingDisabled: polls?.disabled ?? !settings.isEnabled,
       releasedStale,
       batches: run.batches,

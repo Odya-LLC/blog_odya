@@ -5,7 +5,8 @@ import type { Payload } from 'payload'
  * `scraping-settings.stats` (M2-03) — job'lar yozadigan xizmat ma'lumotlari:
  * - `db`, `r2` — `maintenance.cleanup` o'lchagan hajmlar (kuniga 1 marta);
  * - `cleanup` — oxirgi tozalash natijasi va kunlik navbat belgisi (`enqueuedDate`);
- * - `alerts` — yuborilgan ogohlantirishlar (qayta yubormaslik uchun, `src/jobs/alerts.ts`).
+ * - `alerts` — yuborilgan ogohlantirishlar (qayta yubormaslik uchun, `src/jobs/alerts.ts`);
+ * - `newItems` — "yangi yangiliklar" xabari oynasi chegarasi (OBLOG-55, `src/jobs/newItemsNotify.ts`).
  *
  * Yozish — to'g'ridan-to'g'ri SQL: yuqori darajadagi kalitlar JSONB `||` bilan atomar
  * birlashtiriladi, shuning uchun parallel job'lar (cleanup ↔ alerts) bir-birining kalitini
@@ -45,6 +46,14 @@ export interface ScrapingStats {
   r2?: R2SizeStats | null
   cleanup?: CleanupStats | null
   alerts?: Record<string, AlertStateEntry> | null
+  newItems?: NewItemsNotifyState | null
+}
+
+export interface NewItemsNotifyState {
+  /** Shu vaqtgacha (ISO) yaratilgan elementlar allaqachon xabarda hisoblangan. */
+  watermark?: string
+  lastSentAt?: string
+  lastCount?: number
 }
 
 function drizzle(payload: Payload) {
@@ -97,6 +106,34 @@ export async function claimDailyCleanup(payload: Payload, date: string): Promise
       ) || jsonb_build_object('enqueuedDate', ${date}::text)
     )
     WHERE COALESCE("stats"->'cleanup'->>'enqueuedDate', '') <> ${date}
+    RETURNING "id"
+  `)) as unknown as { rows: unknown[] }
+  return result.rows.length > 0
+}
+
+/**
+ * "Yangi yangiliklar" oynasini band qilish (compare-and-swap): `stats.newItems.watermark` hali
+ * `previous` ga teng bo'lsa (`null` — yo'q), `next` ni yozadi va `true` qaytaradi. Parallel
+ * chaqiruvlardan (pg_cron + GitHub Actions zaxirasi) faqat bittasi `true` oladi — bitta oyna
+ * uchun bitta xabar.
+ */
+export async function claimNewItemsWindow(
+  payload: Payload,
+  previous: string | null,
+  next: NewItemsNotifyState & { watermark: string },
+): Promise<boolean> {
+  await ensureSettingsRow(payload)
+  const result = (await drizzle(payload).execute(sql`
+    UPDATE "scraping_settings"
+    SET "stats" = jsonb_set(
+      CASE WHEN jsonb_typeof("stats") = 'object' THEN "stats" ELSE '{}'::jsonb END,
+      '{newItems}',
+      (
+        CASE WHEN jsonb_typeof("stats"->'newItems') = 'object'
+          THEN "stats"->'newItems' ELSE '{}'::jsonb END
+      ) || ${JSON.stringify(next)}::jsonb
+    )
+    WHERE COALESCE("stats"->'newItems'->>'watermark', '') = ${previous ?? ''}
     RETURNING "id"
   `)) as unknown as { rows: unknown[] }
   return result.rows.length > 0

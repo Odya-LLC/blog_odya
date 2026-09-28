@@ -5,6 +5,7 @@ import type { Env } from '@/env'
 
 import { DEFAULT_BATCH_LIMIT } from './constants'
 import { runAlertChecks } from './alerts'
+import { runNewItemsNotification } from './newItemsNotify'
 import { activeRunQueues } from './scrapeDeps'
 import { enqueueDailyCleanup, enqueueDueFeedPolls, releaseStaleJobs } from './scheduler'
 import { withErrorCapture } from './sentry'
@@ -64,6 +65,8 @@ export function buildJobsConfig(mode: Env['JOBS_MODE'] = 'endpoint'): JobsConfig
             await enqueueDueFeedPolls(payload)
             await enqueueDailyCleanup(payload)
             await runAlertChecks(payload)
+            // Oldingi tick'larda (daqiqa oldin) yig'ilganlar — bitta xabar (OBLOG-55).
+            await runNewItemsNotification(payload)
             return true
           },
         }
