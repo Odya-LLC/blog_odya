@@ -1,20 +1,21 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
-import Script from 'next/script'
 import { useEffect, useRef, useSyncExternalStore } from 'react'
 
-import { buttonVariants } from '@/components/ui/button-variants'
 import {
+  type AnalyticsWindow,
   consentCookie,
   type ConsentValue,
   type ContentGroup,
   GA4_SRC,
-  ga4InitScript,
+  initGa4,
+  initMetrica,
   METRICA_SRC,
-  metricaInitScript,
   readConsent,
 } from '@/site/analytics'
+
+import { BANNER_BUTTON } from './banner-classes'
 
 type ConsentAnalyticsProps = {
   ga4Id: string | null
@@ -22,8 +23,6 @@ type ConsentAnalyticsProps = {
   contentGroup: ContentGroup
   strings: { label: string; text: string; accept: string; decline: string }
 }
-
-type YmWindow = Window & { ym?: (id: number, method: string, ...args: unknown[]) => void }
 
 // Rozilik holati — cookie; o'zgarishi haqida faqat shu komponent xabar beradi.
 const listeners = new Set<() => void>()
@@ -42,8 +41,10 @@ const getServerConsent = () => undefined
  *
  * - Rozilik `cookie_consent` cookie'sida; server uni o'qimaydi (sahifalar ISR/statik qoladi) —
  *   holat mount'dan keyin aniqlanadi, banner `fixed` (CLS yo'q).
- * - GA4 va Metrica skriptlari **faqat** `granted` bo'lganda chiziladi, `lazyOnload` bilan
- *   (brauzer bo'sh vaqtida, `load` dan keyin) — rozilikkacha hech qanday so'rov ketmaydi.
+ * - GA4 va Metrica skriptlari **faqat** `granted` bo'lganda qo'shiladi (`<script async>`,
+ *   `lazyOnload` kabi: `load` dan keyin, brauzer bo'sh vaqtida) — rozilikkacha hech qanday
+ *   so'rov ketmaydi. `next/script` ishlatilmaydi: uning runtime'i banner chunk'ini JS
+ *   byudjetidan (≤ 150 KB, TZ §8.4) oshirardi.
  * - Client navigatsiya: GA4 enhanced measurement (history) o'zi `page_view` yuboradi, Metrica
  *   uchun `hit` qo'lda.
  */
@@ -82,14 +83,14 @@ export function ConsentAnalytics({
             <button
               type="button"
               onClick={() => decide('denied')}
-              className={buttonVariants({ variant: 'outline', size: 'sm' })}
+              className={BANNER_BUTTON.decline}
             >
               {strings.decline}
             </button>
             <button
               type="button"
               onClick={() => decide('granted')}
-              className={buttonVariants({ size: 'sm' })}
+              className={BANNER_BUTTON.accept}
             >
               {strings.accept}
             </button>
@@ -98,6 +99,40 @@ export function ConsentAnalytics({
       ) : null}
     </>
   )
+}
+
+/** `<script async src>` (CSP `script-src` dagi domenlar; inline skript yo'q). */
+function injectScript(src: string) {
+  const script = document.createElement('script')
+  script.async = true
+  script.src = src
+  document.head.appendChild(script)
+}
+
+/**
+ * `lazyOnload` ekvivalenti: `load` hodisasidan keyin, brauzer bo'sh vaqtida
+ * (`requestIdleCallback`, bo'lmasa `setTimeout`). Qaytaradi — bekor qilish funksiyasi.
+ */
+function afterLoadIdle(run: () => void): () => void {
+  let cancelIdle = () => {}
+  const schedule = () => {
+    if (typeof window.requestIdleCallback === 'function') {
+      const handle = window.requestIdleCallback(run)
+      cancelIdle = () => window.cancelIdleCallback(handle)
+    } else {
+      const handle = window.setTimeout(run, 1)
+      cancelIdle = () => window.clearTimeout(handle)
+    }
+  }
+  if (document.readyState === 'complete') {
+    schedule()
+    return () => cancelIdle()
+  }
+  window.addEventListener('load', schedule, { once: true })
+  return () => {
+    window.removeEventListener('load', schedule)
+    cancelIdle()
+  }
 }
 
 function AnalyticsScripts({
@@ -109,34 +144,33 @@ function AnalyticsScripts({
   const lastPath = useRef(pathname)
   const lastUrl = useRef<string | null>(null)
 
-  // Metrica `init` birinchi sahifani o'zi hisoblaydi; keyingi client navigatsiyalar — `hit`.
+  // Rozilikdan keyin bir marta: navbat stub'lari + skriptlar. `initGa4`/`initMetrica` global
+  // bor bo'lsa `false` qaytaradi — qayta render/remount'da ikki marta init/yuklash yo'q.
+  useEffect(
+    () =>
+      afterLoadIdle(() => {
+        const win = window as AnalyticsWindow
+        if (ga4Id && initGa4(win, ga4Id, contentGroup)) injectScript(GA4_SRC(ga4Id))
+        if (metricaId && initMetrica(win, metricaId, contentGroup)) injectScript(METRICA_SRC)
+      }),
+    [ga4Id, metricaId, contentGroup],
+  )
+
+  // GA4: client navigatsiyada `page_view` ni enhanced measurement (history) o'zi yuboradi.
+  // Metrica: `init` birinchi sahifani hisoblaydi; keyingi client navigatsiyalar — `hit`.
   useEffect(() => {
     const url = window.location.href
     const referer = lastUrl.current
     lastUrl.current = url
     if (!metricaId || pathname === lastPath.current) return
     lastPath.current = pathname
-    ;(window as YmWindow).ym?.(Number(metricaId), 'hit', url, referer ? { referer } : undefined)
+    ;(window as AnalyticsWindow).ym?.(
+      Number(metricaId),
+      'hit',
+      url,
+      referer ? { referer } : undefined,
+    )
   }, [metricaId, pathname])
 
-  return (
-    <>
-      {ga4Id ? (
-        <>
-          <Script id="ga4-src" src={GA4_SRC(ga4Id)} strategy="lazyOnload" />
-          <Script id="ga4-init" strategy="lazyOnload">
-            {ga4InitScript(ga4Id, contentGroup)}
-          </Script>
-        </>
-      ) : null}
-      {metricaId ? (
-        <>
-          <Script id="metrica-init" strategy="lazyOnload">
-            {metricaInitScript(metricaId, contentGroup)}
-          </Script>
-          <Script id="metrica-src" src={METRICA_SRC} strategy="lazyOnload" />
-        </>
-      ) : null}
-    </>
-  )
+  return null
 }

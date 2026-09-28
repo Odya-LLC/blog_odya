@@ -10,7 +10,7 @@ import { AnalyticsLoader } from './AnalyticsLoader'
  * Analitika + cookie banner (TZ §9.5, OBLOG-23). `site-settings` da GA4 ham, Metrica ham
  * berilmagan bo'lsa — hech narsa (banner ham) chizilmaydi.
  *
- * Banner/`next/script` kodi `AnalyticsLoader` orqali lazy chunk — faqat ID'lar sozlangan
+ * Banner/skript yuklovchi kodi `AnalyticsLoader` orqali lazy chunk — faqat ID'lar sozlangan
  * bo'lsa yuklanadi (JS byudjeti ≤ 150 KB, TZ §8.4).
  */
 export async function Analytics({ locale }: { locale: Locale }) {

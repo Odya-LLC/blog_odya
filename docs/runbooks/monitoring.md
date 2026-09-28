@@ -109,7 +109,8 @@ qo'shing, aks holda brauzer bloklaydi (konsolda `Refused to …`). Tekshiruv: `t
   Ikkalasi ham bo'sh — banner ham chiqmaydi.
 - Banner (lotin/kirill matn) — "Roziman" / "Rad etish"; tanlov `cookie_consent` cookie'sida
   (`granted` — 1 yil, `denied` — 6 oy). **Rozilikkacha** GA4/Metrica skriptlari va so'rovlari yo'q;
-  rozilikdan keyin `next/script` `lazyOnload` bilan yuklanadi.
+  rozilikdan keyin `<script async>` bilan, `load` hodisasidan keyin brauzer bo'sh vaqtida
+  (`requestIdleCallback`) yuklanadi (`next/script` emas — uning runtime'i JS byudjetiga sig'masdi).
 - Segmentatsiya: GA4 `content_group` va Metrica `params.content_group` = `latn` (`/…`) yoki `cyrl` (`/kr/…`).
   GA4: *Explore* → dimension *Content group*; Metrica: *Parametry vizitov* → `content_group`.
 - Client navigatsiya: GA4 — *Enhanced measurement → Page changes based on browser history events* (yoqilgan

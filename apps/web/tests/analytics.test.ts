@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest'
 
+import { BANNER_BUTTON } from '@/components/analytics/banner-classes'
+import { buttonVariants } from '@/components/ui/button-variants'
 import {
+  type AnalyticsWindow,
   consentCookie,
-  ga4InitScript,
   hasAnalytics,
-  metricaInitScript,
+  initGa4,
+  initMetrica,
   readConsent,
   toAnalyticsConfig,
   toSiteVerification,
@@ -35,13 +38,36 @@ describe('analytics', () => {
     expect(consentCookie('denied', false)).not.toContain('Secure')
   })
 
-  it('content_group — lotin/kirill segmenti', () => {
-    expect(ga4InitScript('G-TEST1234', 'cyrl')).toContain(
-      `gtag('config',"G-TEST1234",{content_group:"cyrl"})`,
-    )
-    const metrica = metricaInitScript('12345678', 'latn')
-    expect(metrica).toContain(`ym(12345678,'init',`)
-    expect(metrica).toContain('"params":{"content_group":"latn"}')
+  it('content_group — lotin/kirill segmenti; qayta init yo‘q', () => {
+    const win: AnalyticsWindow = {}
+    expect(initGa4(win, 'G-TEST1234', 'cyrl')).toBe(true)
+    // gtag.js `arguments` obyektlarini kutadi (massiv emas).
+    const queued = (win.dataLayer ?? []).map((entry) => Array.from(entry as ArrayLike<unknown>))
+    expect(Object.prototype.toString.call(win.dataLayer?.[0])).toBe('[object Arguments]')
+    expect(queued[0]?.[0]).toBe('js')
+    expect(queued[1]).toEqual(['config', 'G-TEST1234', { content_group: 'cyrl' }])
+    expect(initGa4(win, 'G-TEST1234', 'cyrl')).toBe(false)
+    expect(win.dataLayer).toHaveLength(2)
+
+    expect(initMetrica(win, '12345678', 'latn')).toBe(true)
+    expect(typeof win.ym?.l).toBe('number')
+    expect(Array.from(win.ym?.a?.[0] as ArrayLike<unknown>)).toEqual([
+      12345678,
+      'init',
+      {
+        clickmap: true,
+        trackLinks: true,
+        accurateTrackBounce: true,
+        params: { content_group: 'latn' },
+      },
+    ])
+    expect(initMetrica(win, '12345678', 'latn')).toBe(false)
+    expect(win.ym?.a).toHaveLength(1)
+  })
+
+  it('banner tugmalari klasslari buttonVariants bilan bir xil', () => {
+    expect(BANNER_BUTTON.accept).toBe(buttonVariants({ size: 'sm' }))
+    expect(BANNER_BUTTON.decline).toBe(buttonVariants({ variant: 'outline', size: 'sm' }))
   })
 
   it('veb-master tasdiq kodlari: kod yoki butun <meta> teg', () => {

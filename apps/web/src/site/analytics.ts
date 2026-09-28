@@ -89,22 +89,53 @@ export function consentCookie(value: ConsentValue, secure: boolean): string {
   return `${CONSENT_COOKIE}=${value}; Path=/; Max-Age=${CONSENT_MAX_AGE[value]}; SameSite=Lax${secure ? '; Secure' : ''}`
 }
 
-/** GA4: `gtag('config', …, { content_group })` — Explorations'da lotin/kirill segmenti. */
-export function ga4InitScript(id: string, contentGroup: ContentGroup): string {
-  return `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}window.gtag=gtag;gtag('js',new Date());gtag('config',${JSON.stringify(id)},{content_group:${JSON.stringify(contentGroup)}});`
+export const GA4_SRC = (id: string) =>
+  `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(id)}`
+export const METRICA_SRC = 'https://mc.yandex.ru/metrika/tag.js'
+
+type Queue = ((...args: unknown[]) => void) & { a?: unknown[]; l?: number }
+
+/** gtag.js / Metrica `tag.js` global'lari (navbat stub'lari). */
+export interface AnalyticsWindow {
+  dataLayer?: unknown[]
+  gtag?: Queue
+  ym?: Queue
 }
 
-/** Yandex Metrica: navbat stub'i + `init` (`params.content_group` — "Parametry vizitov"). */
-export function metricaInitScript(id: string, contentGroup: ContentGroup): string {
-  const options = {
+/**
+ * GA4 navbati: `gtag('js')` + `gtag('config', id, { content_group })` (Explorations'da
+ * lotin/kirill segmenti). gtag.js `dataLayer` da `arguments` obyektlarini kutadi — shuning uchun
+ * oddiy `function`. Qayta chaqiruv (`gtag` bor) — hech narsa qilmaydi, `false`.
+ */
+export function initGa4(win: AnalyticsWindow, id: string, contentGroup: ContentGroup): boolean {
+  if (win.gtag) return false
+  const dataLayer = (win.dataLayer ??= [])
+  win.gtag = function gtag() {
+    // eslint-disable-next-line prefer-rest-params
+    dataLayer.push(arguments)
+  }
+  win.gtag('js', new Date())
+  win.gtag('config', id, { content_group: contentGroup })
+  return true
+}
+
+/**
+ * Yandex Metrica navbati (rasmiy stub: `ym.a`, `ym.l`) + `init` (`params.content_group` —
+ * "Parametry vizitov"). Qayta chaqiruv (`ym` bor) — hech narsa qilmaydi, `false`.
+ */
+export function initMetrica(win: AnalyticsWindow, id: string, contentGroup: ContentGroup): boolean {
+  if (win.ym) return false
+  const ym: Queue = function () {
+    // eslint-disable-next-line prefer-rest-params
+    ;(ym.a ??= []).push(arguments)
+  }
+  ym.l = Date.now()
+  win.ym = ym
+  ym(Number(id), 'init', {
     clickmap: true,
     trackLinks: true,
     accurateTrackBounce: true,
     params: { content_group: contentGroup },
-  }
-  return `window.ym=window.ym||function(){(window.ym.a=window.ym.a||[]).push(arguments)};window.ym.l=1*new Date();window.ym(${Number(id)},'init',${JSON.stringify(options)});`
+  })
+  return true
 }
-
-export const GA4_SRC = (id: string) =>
-  `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(id)}`
-export const METRICA_SRC = 'https://mc.yandex.ru/metrika/tag.js'
