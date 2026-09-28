@@ -1,14 +1,13 @@
 import type { Metadata, Viewport } from 'next'
 import type { ReactNode } from 'react'
 
-import { rootLayoutMetadata } from '@/site/seo/pages'
-
+import { rootMetadata } from '../_components/root-metadata'
 import { RootDocument } from '../_components/RootDocument'
 
 const LOCALE = 'uz-Cyrl'
 
-/** Standart metadata + preview'da `noindex` (TZ §8.3, M1-06). Sahifalar o'zinikini qo'shadi. */
-export const metadata: Metadata = rootLayoutMetadata(LOCALE)
+/** Standart metadata (preview'da `noindex`) + veb-master tasdiq kodlari (`root-metadata`). */
+export const generateMetadata = (): Promise<Metadata> => rootMetadata(LOCALE)
 
 export const viewport: Viewport = {
   themeColor: [

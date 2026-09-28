@@ -116,8 +116,15 @@ export const envSchema = z.object({
   /** MCP `upload_media(url)`: DNS + ulanish + javob sarlavhalari (har redirect uchun), ms. Standart — 10000. */
   MCP_MEDIA_CONNECT_TIMEOUT_MS: positiveLimit(DEFAULT_MCP_MEDIA_CONNECT_TIMEOUT_MS),
 
-  // --- Monitoring (ixtiyoriy: bo'lmasa Sentry o'chiq) ---
+  // --- Monitoring (ixtiyoriy: bo'lmasa Sentry o'chiq; OBLOG-23, docs/runbooks/monitoring.md) ---
+  /** Server (route'lar, Payload, job'lar) xatolari. Brauzer ham shuni oladi (`next.config.ts`). */
   SENTRY_DSN: z.url().optional(),
+  /** Brauzer uchun alohida DSN (ixtiyoriy; build vaqtida bundle'ga yoziladi). */
+  NEXT_PUBLIC_SENTRY_DSN: z.url().optional(),
+  /** Faqat build: source map'larni Sentry'ga yuklash (`SENTRY_ORG`, `SENTRY_PROJECT` bilan). */
+  SENTRY_AUTH_TOKEN: nonEmpty.optional(),
+  SENTRY_ORG: nonEmpty.optional(),
+  SENTRY_PROJECT: nonEmpty.optional(),
 })
 
 export type Env = z.infer<typeof envSchema>

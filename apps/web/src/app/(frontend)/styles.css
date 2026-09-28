@@ -205,3 +205,8 @@
     margin-block: 0;
   }
 }
+
+/* Cookie banner (OBLOG-23): tanlov qilingan (`<html data-consent>`, inline skript) — yashirin. */
+html[data-consent] #cookie-banner {
+  display: none;
+}

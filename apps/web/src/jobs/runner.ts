@@ -3,6 +3,7 @@ import { createHash, timingSafeEqual } from 'node:crypto'
 import type { Payload } from 'payload'
 
 import { runWithAuditChannel } from '@/audit/channel'
+import { captureError, flushSentry } from '@/lib/sentry'
 import { TELEGRAM_TIMEOUT_MS } from '@/lib/telegram'
 
 import { type AlertRunResult, runAlertChecks } from './alerts'
@@ -252,9 +253,13 @@ async function runJobsRequest(
       durationMs: now() - startedAt,
     }
     payload.logger.info({ msg: 'jobs/run', ...body })
+    // Task xatolari (`jobs/sentry.ts`) javobdan oldin yuborib olinadi (serverless muzlatish).
+    if (run.failed > 0) await flushSentry()
     return json(body, 200)
   } catch (error) {
     payload.logger.error({ err: error, msg: 'jobs/run xatosi' })
+    captureError(error, { tags: { endpoint: 'jobs/run' } })
+    await flushSentry()
     return json({ ok: false, error: 'Internal error', durationMs: now() - startedAt }, 500)
   }
 }

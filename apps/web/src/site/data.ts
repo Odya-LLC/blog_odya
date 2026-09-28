@@ -26,8 +26,14 @@ import type {
   TelegramLinks,
 } from '@/components/blog/types'
 import { env, PHASE_PRODUCTION_BUILD } from '@/env'
-import type { Author, Category, Media, Page, Post, Redirect } from '@/payload-types'
+import type { Author, Category, Media, Page, Post, Redirect, SiteSetting } from '@/payload-types'
 
+import {
+  type AnalyticsConfig,
+  type SiteVerification,
+  toAnalyticsConfig,
+  toSiteVerification,
+} from './analytics'
 import { CACHE_TAGS, categoryTag, postTag } from './cache-tags'
 import {
   populated,
@@ -181,6 +187,48 @@ export async function loadSiteChrome(locale: Locale): Promise<SiteChrome> {
 export const getSiteChrome = (locale: Locale): Promise<SiteChrome> =>
   // `pages` — menyudagi sahifa slug'i o'zgarsa havola ham yangilanadi.
   cached(() => loadSiteChrome(locale), ['site-chrome', locale], [CACHE_TAGS.nav, CACHE_TAGS.pages])
+
+// ---------------------------------------------------------------------------
+// Analitika (TZ §9.5, OBLOG-23)
+// ---------------------------------------------------------------------------
+
+type AnalyticsSettings = NonNullable<SiteSetting['analytics']>
+
+/**
+ * `site-settings` → "Analitika va veb-master" guruhi (yozuvga bog'liq emas). Analitika va tasdiq
+ * kodlari ixtiyoriy — DB xatosi sahifani yiqitmasin (root layout ham chaqiradi): xato bo'lsa
+ * bo'sh guruh (analitika o'chiq, meta yo'q).
+ */
+export async function loadAnalyticsSettings(): Promise<AnalyticsSettings | null> {
+  if (!hasDatabase()) return null
+  const payload = await payloadClient()
+  const settings = await payload.findGlobal({
+    slug: 'site-settings',
+    depth: 0,
+    overrideAccess: false,
+    select: { analytics: true },
+  })
+  return settings.analytics ?? null
+}
+
+async function getAnalyticsSettings(): Promise<AnalyticsSettings | null> {
+  try {
+    // `nav` — `site-settings` o'zgarganda yangilanadi (`revalidateNavAfterChange`).
+    return await cached(loadAnalyticsSettings, ['analytics-settings'], [CACHE_TAGS.nav])
+  } catch {
+    return null
+  }
+}
+
+/** GA4 / Metrica ID'lari (TZ §9.5). */
+export async function getAnalyticsConfig(): Promise<AnalyticsConfig> {
+  return toAnalyticsConfig(await getAnalyticsSettings())
+}
+
+/** Search Console / Yandex Webmaster tasdiq kodlari — root layout'dagi `<meta>` teglari. */
+export async function getSiteVerification(): Promise<SiteVerification> {
+  return toSiteVerification(await getAnalyticsSettings())
+}
 
 // ---------------------------------------------------------------------------
 // Bosh sahifa

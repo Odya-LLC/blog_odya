@@ -27,6 +27,9 @@
     "MCP_MEDIA_FETCH_TIMEOUT_MS",
     "MCP_MEDIA_CONNECT_TIMEOUT_MS",
     "SENTRY_DSN",
+    "SENTRY_AUTH_TOKEN",
+    "SENTRY_ORG",
+    "SENTRY_PROJECT",
     "PAYLOAD_MIGRATING",
     "ENABLE_STYLEGUIDE",
     "VERCEL",
@@ -39,7 +42,7 @@
     "build": {
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "env": ["NEXT_PUBLIC_*"],
+      "env": ["NEXT_PUBLIC_*", "MEDIA_PUBLIC_URL", "S3_ENDPOINT", "SENTRY_DSN", "VERCEL_ENV"],
       "outputs": [".next/**", "!.next/cache/**", "dist/**"]
     },
     "lint": {
