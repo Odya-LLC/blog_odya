@@ -15,6 +15,7 @@ import * as migration_20260926_164339_oblog_47_meta_image_backfill from './20260
 import * as migration_20260927_074715_oblog_22_telegram_autopost from './20260927_074715_oblog_22_telegram_autopost';
 import * as migration_20260927_143458_oblog_53_feed_backoff from './20260927_143458_oblog_53_feed_backoff';
 import * as migration_20260927_165003_oblog_55_new_items_notify from './20260927_165003_oblog_55_new_items_notify';
+import * as migration_20260928_102322_oblog_57_seo_news from './20260928_102322_oblog_57_seo_news';
 
 export const migrations = [
   {
@@ -100,6 +101,11 @@ export const migrations = [
   {
     up: migration_20260927_165003_oblog_55_new_items_notify.up,
     down: migration_20260927_165003_oblog_55_new_items_notify.down,
-    name: '20260927_165003_oblog_55_new_items_notify'
+    name: '20260927_165003_oblog_55_new_items_notify',
+  },
+  {
+    up: migration_20260928_102322_oblog_57_seo_news.up,
+    down: migration_20260928_102322_oblog_57_seo_news.down,
+    name: '20260928_102322_oblog_57_seo_news'
   },
 ];

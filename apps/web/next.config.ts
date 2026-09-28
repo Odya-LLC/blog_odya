@@ -8,7 +8,11 @@ import { fileURLToPath } from 'url'
 import { securityHeaderRules } from './src/config/security-headers'
 import { parseEnv, resolveEnvMode } from './src/env.schema'
 import { isIndexingAllowed } from './src/site/seo/config'
-import { FEED_REWRITES, TRAILING_SLASH_REDIRECTS } from './src/site/seo/rewrites'
+import {
+  FEED_REWRITES,
+  INDEXNOW_KEY_REWRITE,
+  TRAILING_SLASH_REDIRECTS,
+} from './src/site/seo/rewrites'
 import { NOINDEX_HEADER } from './src/site/seo/robots'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -47,8 +51,9 @@ const nextConfig: NextConfig = {
     // ko'rsatmalarni `fs` bilan o'qiydi.
     '/admin/**': ['../../docs/mcp.md', '../../packages/guidelines/*.md'],
   },
-  // RSS: `/rss.xml`, `/kr/rss.xml`, `/{category}/rss.xml` → `/feeds/…` (src/site/seo/rewrites.ts).
-  rewrites: async () => [...FEED_REWRITES],
+  // RSS: `/rss.xml`, `/kr/rss.xml`, `/{category}/rss.xml` → `/feeds/…`; IndexNow kalit fayli
+  // `/{key}.txt` → `/indexnow/{key}` (src/site/seo/rewrites.ts).
+  rewrites: async () => [...FEED_REWRITES, INDEXNOW_KEY_REWRITE],
   // OBLOG-50: trailing slash'ni `src/proxy.ts` hal qiladi — spam `/products/1/` birdaniga 410
   // (Next'ning o'rnatilgan 308'i proxy'dan oldin ishlardi). `/api`, `/admin` — `redirects`.
   skipTrailingSlashRedirect: true,

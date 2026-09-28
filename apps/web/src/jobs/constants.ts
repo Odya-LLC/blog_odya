@@ -148,3 +148,10 @@ export const TELEGRAM_RETRY_BACKOFF_MS = [5_000, 30_000, 120_000] as const
 export const TELEGRAM_INLINE_WAIT_MAX_MS = 10_000
 /** Bitta Bot API so'rovi timeout'i. */
 export const TELEGRAM_API_TIMEOUT_MS = 10_000
+
+// --- OBLOG-57: IndexNow ---
+
+/** `indexnow.submit` — maqola URL'larini IndexNow'ga yuborish (`src/indexnow`). */
+export const INDEXNOW_SUBMIT_TASK = 'indexnow.submit'
+/** 429/5xx/tarmoq xatosida qayta urinishlar orasidagi pauza (job `waitUntil`): 1, 5, 15 daqiqa. */
+export const INDEXNOW_RETRY_BACKOFF_MS = [60_000, 5 * 60_000, 15 * 60_000] as const

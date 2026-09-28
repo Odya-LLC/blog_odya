@@ -14,6 +14,20 @@
 /** Nisbati asl rasm bilan bir xil bo'lgan variantlar (`og` — 1200×630 kesilgan, kirmaydi). */
 export const RESPONSIVE_SIZES = ['thumb', 'card', 'hero', 'full'] as const
 
+/**
+ * Google News / Discover uchun kesilgan variantlar (OBLOG-57): ≥ 1200 px kenglikda 16:9, 4:3,
+ * 1:1 — `NewsArticle.image` massiviga (developers.google.com/search/docs/appearance/structured-data/article).
+ * Sahifada ko'rsatilmaydi (srcset'ga kirmaydi). Kesish — focal point bo'yicha (Payload).
+ * Asl rasm har ikki o'lchamda kichik bo'lsa variant yaratilmaydi (kattalashtirilmaydi).
+ */
+export const NEWS_IMAGE_SIZES = [
+  { name: 'news16x9', width: 1200, height: 675 },
+  { name: 'news4x3', width: 1200, height: 900 },
+  { name: 'news1x1', width: 1200, height: 1200 },
+] as const
+
+export type NewsImageSizeName = (typeof NEWS_IMAGE_SIZES)[number]['name']
+
 const MARKER = '#odya-img='
 
 export type MediaVariant = { width: number; url: string }

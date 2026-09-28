@@ -11,6 +11,7 @@ import {
   localeAlternates,
   mediaOgImage,
   metaDescription,
+  INDEXABLE_ROBOTS,
   robotsMeta,
   tagRobots,
   versionToken,
@@ -161,7 +162,8 @@ describe('OpenGraph va Twitter Card', () => {
       images: [image],
     })
     expect(metadata.twitter).toMatchObject({ card: 'summary_large_image', title: 'X' })
-    expect(metadata.robots).toBeUndefined()
+    // OBLOG-57: Discover / Top Stories katta rasm uchun.
+    expect(metadata.robots).toEqual(INDEXABLE_ROBOTS)
   })
 
   it('kirill: siteName — Блог Одя, og:locale — uz_UZ', () => {
@@ -281,7 +283,13 @@ describe('indekslash: noindex va preview (TZ §8.3)', () => {
   it('robots meta: preview — noindex, nofollow (sahifa sozlamasidan qat’i nazar)', () => {
     expect(robotsMeta(false, false)).toEqual({ index: false, follow: false })
     expect(robotsMeta(true, true)).toEqual({ index: false, follow: true })
-    expect(robotsMeta(false, true)).toBeUndefined()
+    expect(robotsMeta(false, true)).toEqual({
+      index: true,
+      follow: true,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+      'max-video-preview': -1,
+    })
     const metadata = buildPageMetadata({
       locale: 'uz-Latn',
       path: '/',
@@ -307,7 +315,7 @@ describe('indekslash: noindex va preview (TZ §8.3)', () => {
     expect(isTagIndexable(2)).toBe(false)
     expect(isTagIndexable(3)).toBe(true)
     expect(tagRobots(2, false, true)).toEqual({ index: false, follow: true })
-    expect(tagRobots(3, false, true)).toBeUndefined()
+    expect(tagRobots(3, false, true)).toEqual(INDEXABLE_ROBOTS)
     expect(tagRobots(10, true, true)).toEqual({ index: false, follow: true })
     expect(tagRobots(10, false, false)).toEqual({ index: false, follow: false })
   })

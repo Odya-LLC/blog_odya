@@ -2,6 +2,8 @@ import { readFileSync } from 'node:fs'
 
 import type { Locale } from '@blog-odya/shared'
 
+import { DEFAULT_AUTHOR } from '../collections/Posts/defaultAuthor'
+
 /**
  * Seed ma'lumotlari: muallif, teglar, demo postlar, sayt sozlamalari.
  * Kategoriyalar — `packages/shared/seed/categories.json` (M0-04), huquqiy sahifalar —
@@ -23,17 +25,8 @@ export const SITE_DESCRIPTION: Localized = {
     'Сунъий интеллект, технологиялар, гаджетлар, дастурлаш, киберхавфсизлик, ўйинлар ва киберспорт ҳақидаги янгиликлар — лотин ва кирилл ёзувларида.',
 }
 
-export const SEED_AUTHOR = {
-  slug: 'tahririyat',
-  name: { 'uz-Latn': 'Blog Odya tahririyati', 'uz-Cyrl': 'Блог Одя таҳририяти' },
-  position: { 'uz-Latn': 'Tahririyat', 'uz-Cyrl': 'Таҳририят' },
-  bio: {
-    'uz-Latn':
-      'Blog Odya tahririyati: xalqaro manbalardagi texnologiya yangiliklarini oʻzbek tilida tayyorlaydi va tekshiradi.',
-    'uz-Cyrl':
-      'Блог Одя таҳририяти: халқаро манбалардаги технология янгиликларини ўзбек тилида тайёрлайди ва текширади.',
-  },
-} as const
+/** Standart muallif (OBLOG-57) — posts hook'i ham shu ma'lumotdan yaratadi. */
+export const SEED_AUTHOR = DEFAULT_AUTHOR
 
 export const SEED_TAGS = [
   { slug: 'chatgpt', name: { 'uz-Latn': 'ChatGPT', 'uz-Cyrl': 'ChatGPT' } },
