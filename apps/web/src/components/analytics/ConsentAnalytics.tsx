@@ -5,9 +5,11 @@ import { useEffect, useRef, useSyncExternalStore } from 'react'
 
 import {
   type AnalyticsWindow,
+  CONSENT_ATTRIBUTE,
   consentCookie,
   type ConsentValue,
   type ContentGroup,
+  COOKIE_BANNER_ID,
   GA4_SRC,
   initGa4,
   initMetrica,
@@ -15,13 +17,10 @@ import {
   readConsent,
 } from '@/site/analytics'
 
-import { BANNER_BUTTON } from './banner-classes'
-
 type ConsentAnalyticsProps = {
   ga4Id: string | null
   metricaId: string | null
   contentGroup: ContentGroup
-  strings: { label: string; text: string; accept: string; decline: string }
 }
 
 // Rozilik holati — cookie; o'zgarishi haqida faqat shu komponent xabar beradi.
@@ -33,14 +32,15 @@ function subscribe(listener: () => void) {
   }
 }
 const getConsent = () => readConsent(document.cookie)
-/** SSR/hydration: holat noma'lum (`undefined`) — hech narsa chizilmaydi. */
+/** SSR/hydration: holat noma'lum (`undefined`) — hech narsa yuklanmaydi. */
 const getServerConsent = () => undefined
 
 /**
- * Cookie banner + analitika (TZ §9.5, §9.6; OBLOG-23).
+ * Cookie banner tugmalari + analitika (TZ §9.5, §9.6; OBLOG-23).
  *
- * - Rozilik `cookie_consent` cookie'sida; server uni o'qimaydi (sahifalar ISR/statik qoladi) —
- *   holat mount'dan keyin aniqlanadi, banner `fixed` (CLS yo'q).
+ * - Banner'ning o'zi serverda chiziladi (`Analytics.tsx`, LCP uchun); bu komponent uning
+ *   tugmalarini (`data-consent-value`) ulaydi: tanlov → `cookie_consent` cookie'si va
+ *   `<html data-consent>` (CSS bannerni yashiradi).
  * - GA4 va Metrica skriptlari **faqat** `granted` bo'lganda qo'shiladi (`<script async>`,
  *   `lazyOnload` kabi: `load` dan keyin, brauzer bo'sh vaqtida) — rozilikkacha hech qanday
  *   so'rov ketmaydi. `next/script` ishlatilmaydi: uning runtime'i banner chunk'ini JS
@@ -48,57 +48,31 @@ const getServerConsent = () => undefined
  * - Client navigatsiya: GA4 enhanced measurement (history) o'zi `page_view` yuboradi, Metrica
  *   uchun `hit` qo'lda.
  */
-export function ConsentAnalytics({
-  ga4Id,
-  metricaId,
-  contentGroup,
-  strings,
-}: ConsentAnalyticsProps) {
-  // `undefined` — hali aniqlanmagan (SSR/hydration), `null` — tanlov yo'q (banner).
+export function ConsentAnalytics({ ga4Id, metricaId, contentGroup }: ConsentAnalyticsProps) {
   const consent = useSyncExternalStore<ConsentValue | null | undefined>(
     subscribe,
     getConsent,
     getServerConsent,
   )
 
-  const decide = (value: ConsentValue) => {
-    document.cookie = consentCookie(value, window.location.protocol === 'https:')
-    listeners.forEach((listener) => listener())
-  }
+  useEffect(() => {
+    const banner = document.getElementById(COOKIE_BANNER_ID)
+    if (!banner) return
+    const onClick = (event: MouseEvent) => {
+      const target = event.target instanceof Element ? event.target : null
+      const value = target?.closest<HTMLElement>('[data-consent-value]')?.dataset.consentValue
+      if (value !== 'granted' && value !== 'denied') return
+      document.cookie = consentCookie(value, window.location.protocol === 'https:')
+      document.documentElement.setAttribute(CONSENT_ATTRIBUTE, value)
+      listeners.forEach((listener) => listener())
+    }
+    banner.addEventListener('click', onClick)
+    return () => banner.removeEventListener('click', onClick)
+  }, [])
 
-  return (
-    <>
-      {consent === 'granted' ? (
-        <AnalyticsScripts ga4Id={ga4Id} metricaId={metricaId} contentGroup={contentGroup} />
-      ) : null}
-      {consent === null ? (
-        <section
-          role="region"
-          aria-label={strings.label}
-          data-testid="cookie-banner"
-          className="fixed inset-x-3 bottom-3 z-50 mx-auto flex max-w-2xl flex-col gap-3 rounded-lg border border-border bg-bg p-4 text-sm text-fg shadow-lg sm:flex-row sm:items-center"
-        >
-          <p className="flex-1 text-muted">{strings.text}</p>
-          <div className="flex shrink-0 gap-2">
-            <button
-              type="button"
-              onClick={() => decide('denied')}
-              className={BANNER_BUTTON.decline}
-            >
-              {strings.decline}
-            </button>
-            <button
-              type="button"
-              onClick={() => decide('granted')}
-              className={BANNER_BUTTON.accept}
-            >
-              {strings.accept}
-            </button>
-          </div>
-        </section>
-      ) : null}
-    </>
-  )
+  return consent === 'granted' ? (
+    <AnalyticsScripts ga4Id={ga4Id} metricaId={metricaId} contentGroup={contentGroup} />
+  ) : null
 }
 
 /** `<script async src>` (CSP `script-src` dagi domenlar; inline skript yo'q). */
@@ -135,11 +109,7 @@ function afterLoadIdle(run: () => void): () => void {
   }
 }
 
-function AnalyticsScripts({
-  ga4Id,
-  metricaId,
-  contentGroup,
-}: Omit<ConsentAnalyticsProps, 'strings'>) {
+function AnalyticsScripts({ ga4Id, metricaId, contentGroup }: ConsentAnalyticsProps) {
   const pathname = usePathname()
   const lastPath = useRef(pathname)
   const lastUrl = useRef<string | null>(null)

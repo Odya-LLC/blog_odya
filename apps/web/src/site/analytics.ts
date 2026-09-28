@@ -89,6 +89,17 @@ export function consentCookie(value: ConsentValue, secure: boolean): string {
   return `${CONSENT_COOKIE}=${value}; Path=/; Max-Age=${CONSENT_MAX_AGE[value]}; SameSite=Lax${secure ? '; Secure' : ''}`
 }
 
+/** Server chizadigan cookie banner (`components/analytics/Analytics.tsx`). */
+export const COOKIE_BANNER_ID = 'cookie-banner'
+/** `<html data-consent="granted|denied">` — tanlov qilingan; CSS bannerni yashiradi. */
+export const CONSENT_ATTRIBUTE = 'data-consent'
+
+/**
+ * Banner'dan oldin (bloklovchi) inline skript: cookie'da tanlov bo'lsa `<html data-consent>`
+ * qo'yadi — banner umuman ko'rinmaydi (miltillash yo'q).
+ */
+export const consentInitScript = `(function(){try{var m=document.cookie.match(/(?:^|;\\s*)${CONSENT_COOKIE}=(granted|denied)(?:;|$)/);if(m)document.documentElement.setAttribute('${CONSENT_ATTRIBUTE}',m[1])}catch(e){}})();`
+
 export const GA4_SRC = (id: string) =>
   `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(id)}`
 export const METRICA_SRC = 'https://mc.yandex.ru/metrika/tag.js'

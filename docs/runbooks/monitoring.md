@@ -111,6 +111,9 @@ qo'shing, aks holda brauzer bloklaydi (konsolda `Refused to …`). Tekshiruv: `t
   (`granted` — 1 yil, `denied` — 6 oy). **Rozilikkacha** GA4/Metrica skriptlari va so'rovlari yo'q;
   rozilikdan keyin `<script async>` bilan, `load` hodisasidan keyin brauzer bo'sh vaqtida
   (`requestIdleCallback`) yuklanadi (`next/script` emas — uning runtime'i JS byudjetiga sig'masdi).
+- Banner HTML'da (server) chiziladi — JS'dan keyin kech paydo bo'lsa, u LCP elementiga aylanib
+  Lighthouse Performance'ni tushirardi. Tanlov qilgan tashrifchida inline skript `<html data-consent>`
+  qo'yadi va CSS bannerni yashiradi (miltillamaydi).
 - Segmentatsiya: GA4 `content_group` va Metrica `params.content_group` = `latn` (`/…`) yoki `cyrl` (`/kr/…`).
   GA4: *Explore* → dimension *Content group*; Metrica: *Parametry vizitov* → `content_group`.
 - Client navigatsiya: GA4 — *Enhanced measurement → Page changes based on browser history events* (yoqilgan

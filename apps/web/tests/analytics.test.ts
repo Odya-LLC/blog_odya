@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'vitest'
 
-import { BANNER_BUTTON } from '@/components/analytics/banner-classes'
-import { buttonVariants } from '@/components/ui/button-variants'
 import {
   type AnalyticsWindow,
   consentCookie,
+  consentInitScript,
   hasAnalytics,
   initGa4,
   initMetrica,
@@ -65,9 +64,22 @@ describe('analytics', () => {
     expect(win.ym?.a).toHaveLength(1)
   })
 
-  it('banner tugmalari klasslari buttonVariants bilan bir xil', () => {
-    expect(BANNER_BUTTON.accept).toBe(buttonVariants({ size: 'sm' }))
-    expect(BANNER_BUTTON.decline).toBe(buttonVariants({ variant: 'outline', size: 'sm' }))
+  it('inline skript: tanlov bo‘lsa <html data-consent> (banner yashiriladi)', () => {
+    const run = (cookie: string) => {
+      const attributes: Record<string, string> = {}
+      const document = {
+        cookie,
+        documentElement: {
+          setAttribute: (name: string, value: string) => (attributes[name] = value),
+        },
+      }
+      new Function('document', consentInitScript)(document)
+      return attributes
+    }
+    expect(run('theme=dark; cookie_consent=granted')).toEqual({ 'data-consent': 'granted' })
+    expect(run('cookie_consent=denied')).toEqual({ 'data-consent': 'denied' })
+    expect(run('xcookie_consent=granted; cookie_consent=maybe')).toEqual({})
+    expect(run('')).toEqual({})
   })
 
   it('veb-master tasdiq kodlari: kod yoki butun <meta> teg', () => {
