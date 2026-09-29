@@ -2,8 +2,8 @@
 id: legal-privacy-policy
 title: Maxfiylik siyosati
 slug: maxfiylik-siyosati
-version: 1.0.0
-updatedAt: 2026-09-23
+version: 1.1.0
+updatedAt: 2026-09-29
 ---
 
 # Maxfiylik siyosati
@@ -18,19 +18,28 @@ Biz Oʻzbekiston Respublikasining «Shaxsga doir maʼlumotlar toʻgʻrisida»gi 
 
 Saytdan foydalanganingizda quyidagi texnik maʼlumotlar avtomatik qayd etilishi mumkin:
 
-- **Analitika maʼlumotlari** — faqat siz rozilik bergan boʻlsangiz: koʻrilgan sahifalar, saytga qanday kelganingiz (masalan, qidiruv tizimi yoki Telegram orqali), qurilma va brauzer turi, taxminiy joylashuv (mamlakat, shahar darajasida), sessiya davomiyligi.
+- **Analitika maʼlumotlari** (anonim statistika): koʻrilgan sahifalar, saytga qanday kelganingiz (masalan, qidiruv tizimi yoki Telegram orqali), qurilma va brauzer turi, taxminiy joylashuv (mamlakat, shahar darajasida), sessiya davomiyligi.
 - **Server jurnallari** — IP manzil, soʻrov vaqti, soʻralgan sahifa, brauzer maʼlumoti (User-Agent). Ular Saytning xavfsizligi va barqaror ishlashi uchun qisqa muddat saqlanadi.
 
 ## 2. Cookie fayllari
 
 Sayt quyidagi turdagi cookie fayllaridan foydalanadi:
 
-| Tur       | Maqsadi                                                                                      | Rozilik                                             |
-| --------- | -------------------------------------------------------------------------------------------- | --------------------------------------------------- |
-| Zarur     | Tanlangan yozuv (lotin yoki kirill), yorugʻ yoki qorongʻi rejim, cookie boʻyicha tanlovingiz | Talab qilinmaydi — ularsiz Sayt toʻgʻri ishlamaydi  |
-| Analitika | Google Analytics 4 va Yandex Metrica orqali tashriflar statistikasi                          | Faqat cookie bannerida rozilik berganingizdan keyin |
+| Tur       | Maqsadi                                                                                              | Rozilik                                               |
+| --------- | ---------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| Zarur     | Tanlangan yozuv (lotin yoki kirill), yorugʻ yoki qorongʻi rejim                                      | Soʻralmaydi — ularsiz Sayt toʻgʻri ishlamaydi         |
+| Analitika | Google Analytics 4 va Yandex Metrica orqali tashriflar boʻyicha anonim (umumlashtirilgan) statistika | Soʻralmaydi — Saytga kirganingizda avtomatik yoqiladi |
 
-Analitika cookie fayllariga rozilikni istalgan vaqtda cookie sozlamalari orqali qaytarib olishingiz yoki brauzeringizda cookie fayllarini oʻchirib qoʻyishingiz mumkin.
+Sayt Google Analytics 4 va Yandex Metrica cookie fayllaridan anonim statistika uchun alohida rozilik soʻramasdan foydalanadi. Bu maʼlumotlar orqali biz sizni shaxsan aniqlamaymiz va ulardan faqat Saytni yaxshilash uchun foydalanamiz.
+
+Analitika cookie fayllarini istalgan vaqtda oʻchirib qoʻyishingiz mumkin:
+
+- brauzeringiz sozlamalarida ushbu Sayt uchun cookie fayllarini bloklash yoki oʻchirish;
+- reklama va kuzatuv blokerlaridan (ad-blocker) foydalanish;
+- Google Analytics uchun rasmiy [Google Analytics Opt-out](https://tools.google.com/dlpage/gaoptout) brauzer qoʻshimchasini oʻrnatish;
+- Yandex Metrica uchun [Yandex yoʻriqnomasidagi](https://yandex.ru/support/metrica/general/opt-out.html) usullardan foydalanish.
+
+Analitika oʻchirilgan boʻlsa ham Sayt toʻliq ishlaydi.
 
 ## 3. Maʼlumotlardan nima uchun foydalanamiz
 

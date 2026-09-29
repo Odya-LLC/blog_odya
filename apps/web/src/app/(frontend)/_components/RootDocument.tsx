@@ -28,7 +28,7 @@ export function RootDocument({ locale, children }: { locale: Locale; children: R
       </head>
       <body>
         {children}
-        {/* GA4 / Metrica — faqat cookie roziligidan keyin (TZ §9.5, OBLOG-23). */}
+        {/* GA4 / Metrica — har bir tashrifchida, bannersiz (TZ §9.5; OBLOG-23, OBLOG-60). */}
         <Analytics locale={locale} />
       </body>
     </html>

@@ -2,7 +2,7 @@
 
 TZ §9.2, §9.4, §9.5, §3.7.2. Kod: `apps/web/src/config/security-headers.ts`, `apps/web/src/lib/health.ts`
 (`/api/health`), `apps/web/src/lib/sentry.ts` + `src/instrumentation*.ts` (Sentry),
-`apps/web/src/site/analytics.ts` + `src/components/analytics/` (GA4, Metrica, cookie banner).
+`apps/web/src/site/analytics.ts` + `src/components/analytics/` (GA4, Metrica).
 
 ## 1. `/api/health` va UptimeRobot
 
@@ -102,18 +102,19 @@ qo'shing, aks holda brauzer bloklaydi (konsolda `Refused to …`). Tekshiruv: `t
   (`apps/web/src/auth/password-policy.ts`, yaratish/yangilashda). Eski parollar kirishda tekshirilmaydi —
   keyingi o'zgartirishda qoidaga tushadi.
 
-## 5. Analitika (GA4, Yandex Metrica) va cookie banner
+## 5. Analitika (GA4, Yandex Metrica)
 
 - ID'lar: admin → **Sayt sozlamalari** → *Analitika va veb-master*: `GA4 Measurement ID` (`G-XXXXXXX`),
   `Yandex Metrica ID` (raqam). Noto'g'ri formatdagi qiymat e'tiborsiz qoldiriladi (analitika o'chiq).
-  Ikkalasi ham bo'sh — banner ham chiqmaydi.
-- Banner (lotin/kirill matn) — "Roziman" / "Rad etish"; tanlov `cookie_consent` cookie'sida
-  (`granted` — 1 yil, `denied` — 6 oy). **Rozilikkacha** GA4/Metrica skriptlari va so'rovlari yo'q;
-  rozilikdan keyin `<script async>` bilan, `load` hodisasidan keyin brauzer bo'sh vaqtida
-  (`requestIdleCallback`) yuklanadi (`next/script` emas — uning runtime'i JS byudjetiga sig'masdi).
-- Banner HTML'da (server) chiziladi — JS'dan keyin kech paydo bo'lsa, u LCP elementiga aylanib
-  Lighthouse Performance'ni tushirardi. Tanlov qilgan tashrifchida inline skript `<html data-consent>`
-  qo'yadi va CSS bannerni yashiradi (miltillamaydi).
+  Ikkalasi ham bo'sh — hech narsa chizilmaydi va analitika JS chunk'i yuklanmaydi.
+- **Cookie banner yo'q** (egasi qarori, OBLOG-60): GA4 va Metrica har bir tashrifchida, rozilik
+  so'ralmasdan yuklanadi (banner bor paytda rozilik bermaganlar statistikaga tushmasdi). Maxfiylik
+  siyosatida (`packages/guidelines/legal/maxfiylik-siyosati.md`, 2-bo'lim) buni va qanday o'chirish
+  mumkinligini yozganmiz. GA4 consent mode (`denied` default'lar) ishlatilmaydi — oddiy `config`.
+- Skriptlar `<script async>` bilan, `load` hodisasidan keyin brauzer bo'sh vaqtida
+  (`requestIdleCallback`) yuklanadi — LCP/TBT'ga ta'sir qilmaydi (`next/script` emas — uning runtime'i
+  JS byudjetiga sig'masdi). Qayta render/remount'da ikki marta init/yuklash yo'q.
+- Metrica: `clickmap`, `trackLinks`, `accurateTrackBounce` (webvisor yoqilmagan).
 - Segmentatsiya: GA4 `content_group` va Metrica `params.content_group` = `latn` (`/…`) yoki `cyrl` (`/kr/…`).
   GA4: *Explore* → dimension *Content group*; Metrica: *Parametry vizitov* → `content_group`.
 - Client navigatsiya: GA4 — *Enhanced measurement → Page changes based on browser history events* (yoqilgan

@@ -610,7 +610,7 @@ Usullar: ISR + `revalidateTag`, RSC, `next/image` custom loader (tayyor WebP var
 - Contabo bosqichida: Uptime Kuma, Prometheus/Grafana/Loki.
 
 ### 9.5. Analitika
-GA4 + Yandex Metrica (cookie banner bilan) + Google Search Console + Yandex Webmaster. Lotin va kirill versiyalari bo'yicha alohida segment (URL `/kr/`).
+GA4 + Yandex Metrica (cookie bannersiz, har bir tashrifchida — egasi qarori, OBLOG-60; maxfiylik siyosatida yozilgan) + Google Search Console + Yandex Webmaster. Lotin va kirill versiyalari bo'yicha alohida segment (URL `/kr/`).
 
 ### 9.6. Huquqiy va mahalliy talablar
 - **OAV sifatida ro'yxatdan o'tish** (AOKA) — egasi tizimdan mustaqil ravishda hal qiladi; saytda "Biz haqimizda" sahifasida yuridik ma'lumotlar (Odya LLC) ko'rsatiladi, guvohnoma olingach qo'shiladi.
