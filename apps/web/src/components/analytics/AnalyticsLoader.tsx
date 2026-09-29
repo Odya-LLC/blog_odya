@@ -1,24 +1,24 @@
 'use client'
 
-import { type ComponentProps, lazy, Suspense } from 'react'
+import { lazy, Suspense } from 'react'
 
-import type { ConsentAnalytics as ConsentAnalyticsType } from './ConsentAnalytics'
+import type { AnalyticsTargets } from '@/site/analytics'
 
 /**
- * Banner tugmalari + analitika kodi (`ConsentAnalytics`) alohida chunk: faqat bu komponent
- * chizilganda (ya'ni `site-settings` da GA4/Metrica ID bo'lsa) yuklanadi. Root layout'dagi statik
- * import (yoki server komponentdagi `await import`) uni ID'lar bo'lmasa ham har sahifaning
- * birinchi yuklash JS'iga qo'shardi — JS byudjeti ≤ 150 KB (TZ §8.4). `React.lazy` — qo'shimcha
- * runtime'siz (`next/dynamic` dan kichik). Rozilik baribir faqat brauzerda aniqlanadi.
+ * Analitika kodi (`AnalyticsScripts`) alohida chunk: faqat bu komponent chizilganda (ya'ni
+ * `site-settings` da GA4/Metrica ID bo'lsa) yuklanadi. Root layout'dagi statik import (yoki
+ * server komponentdagi `await import`) uni ID'lar bo'lmasa ham har sahifaning birinchi yuklash
+ * JS'iga qo'shardi — JS byudjeti ≤ 150 KB (TZ §8.4). `React.lazy` — qo'shimcha runtime'siz
+ * (`next/dynamic` dan kichik).
  */
-const ConsentAnalytics = lazy(() =>
-  import('./ConsentAnalytics').then((module) => ({ default: module.ConsentAnalytics })),
+const AnalyticsScripts = lazy(() =>
+  import('./AnalyticsScripts').then((module) => ({ default: module.AnalyticsScripts })),
 )
 
-export function AnalyticsLoader(props: ComponentProps<typeof ConsentAnalyticsType>) {
+export function AnalyticsLoader(props: AnalyticsTargets) {
   return (
     <Suspense fallback={null}>
-      <ConsentAnalytics {...props} />
+      <AnalyticsScripts {...props} />
     </Suspense>
   )
 }

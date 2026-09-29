@@ -85,11 +85,6 @@ export const siteStrings = {
     searchPrompt: 'Maqolalarni sarlavha, lid yoki matn boʻyicha qidiring — lotin yoki kirillda.',
     searchTooShort: 'Kamida 2 ta harf kiriting.',
     faq: 'Savol-javoblar',
-    cookieBannerLabel: 'Cookie-fayllar',
-    cookieBannerText:
-      'Saytdan qanday foydalanilishini tushunish uchun analitika cookie-fayllaridan (Google Analytics, Yandex Metrica) foydalanamiz. Ular faqat roziligingizdan keyin yoqiladi.',
-    cookieAccept: 'Roziman',
-    cookieDecline: 'Rad etish',
   },
   'uz-Cyrl': {
     siteName: 'Блог Одя',
@@ -167,11 +162,6 @@ export const siteStrings = {
     searchPrompt: 'Мақолаларни сарлавҳа, лид ёки матн бўйича қидиринг — лотин ёки кирилда.',
     searchTooShort: 'Камида 2 та ҳарф киритинг.',
     faq: 'Савол-жавоблар',
-    cookieBannerLabel: 'Cookie-файллар',
-    cookieBannerText:
-      'Сайтдан қандай фойдаланилишини тушуниш учун аналитика cookie-файлларидан (Google Analytics, Yandex Metrica) фойдаланамиз. Улар фақат розилигингиздан кейин ёқилади.',
-    cookieAccept: 'Розиман',
-    cookieDecline: 'Рад этиш',
   },
 } satisfies Record<Locale, Record<string, unknown>>
 
