@@ -4,6 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { MEDIA_IMAGE_SIZES } from '@/collections/Media'
 import { env } from '@/env'
+import { createS3MediaStorage, regenerateNewsSizes } from '@/lib/media-regenerate'
 import type { Media, User } from '@/payload-types'
 
 import { asUser, deleteTestUsers, initTestPayload, testEmail } from './helpers/payload'
@@ -80,6 +81,10 @@ describe('media: yuklash va WebP variantlar (MinIO)', () => {
       hero: { width: 1280, height: 853 },
       og: { width: 1200, height: 630 },
       full: { width: 1920, height: 1280 },
+      // OBLOG-57: Google News/Discover nisbatlari (kesilgan, focal point bo'yicha).
+      news16x9: { width: 1200, height: 675 },
+      news4x3: { width: 1200, height: 900 },
+      news1x1: { width: 1200, height: 1200 },
     }
     expect(Object.keys(expected).sort()).toEqual(MEDIA_IMAGE_SIZES.map((s) => s.name).sort())
 
@@ -104,6 +109,58 @@ describe('media: yuklash va WebP variantlar (MinIO)', () => {
       expect(stored.meta.format, size.name).toBe('webp')
       expect(stored.meta.width, size.name).toBe(size.width)
     }
+  })
+
+  it('media:regenerate — yetishmayotgan news* variantlari tiklanadi, qolganlari o‘zgarmaydi', async () => {
+    const empty = {
+      url: null,
+      filename: null,
+      width: null,
+      height: null,
+      mimeType: null,
+      filesize: null,
+    }
+    const before = await payload.findByID({ collection: 'media', id: doc.id, depth: 0 })
+    // Eski rasm holati: news* variantlari yo'q (migratsiyadan oldin yuklangan).
+    await payload.db.updateOne({
+      collection: 'media',
+      id: doc.id,
+      data: { sizes: { ...before.sizes, news16x9: empty, news4x3: empty, news1x1: empty } },
+      returning: false,
+    })
+    const stripped = await payload.findByID({ collection: 'media', id: doc.id, depth: 0 })
+    expect(stripped.sizes?.news4x3?.filename ?? null).toBeNull()
+
+    const storage = createS3MediaStorage(env)
+    const summary = await regenerateNewsSizes(payload, {
+      storage,
+      ids: [doc.id],
+      publicUrl: env.MEDIA_PUBLIC_URL,
+      log: () => {},
+    })
+    expect(summary).toMatchObject({ scanned: 1, updated: 1, sizesCreated: 3, failed: 0 })
+
+    const after = await payload.findByID({ collection: 'media', id: doc.id, depth: 0 })
+    for (const name of ['news16x9', 'news4x3', 'news1x1'] as const) {
+      expect(after.sizes?.[name]?.filename, name).toBe(before.sizes?.[name]?.filename)
+      expect(after.sizes?.[name]?.width, name).toBe(before.sizes?.[name]?.width)
+      expect(after.sizes?.[name]?.height, name).toBe(before.sizes?.[name]?.height)
+      expect(after.sizes?.[name]?.url, name).toBe(before.sizes?.[name]?.url)
+      const stored = await readStored(after.sizes?.[name]?.filename)
+      expect([stored.contentType, stored.meta.width, stored.meta.height], name).toEqual([
+        'image/webp',
+        before.sizes?.[name]?.width,
+        before.sizes?.[name]?.height,
+      ])
+    }
+    // Asl fayl, boshqa variantlar va lokalizatsiya qilingan maydonlar o'zgarmagan.
+    expect(after.filename).toBe(before.filename)
+    expect(after.sizes?.og).toEqual(before.sizes?.og)
+    expect(after.alt).toBe(before.alt)
+
+    // Idempotent: qayta ishga tushirish hech narsa qilmaydi.
+    const again = await regenerateNewsSizes(payload, { storage, ids: [doc.id], log: () => {} })
+    expect(again).toMatchObject({ scanned: 1, updated: 0, skipped: 1 })
   })
 
   it.runIf(publicBase)('URL’lar MEDIA_PUBLIC_URL orqali ochiladi', async () => {

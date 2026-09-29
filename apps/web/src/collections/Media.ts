@@ -2,6 +2,7 @@ import type { CollectionConfig, FieldHook, ImageSize, PayloadRequest } from 'pay
 
 import { isAdmin, isAdminOrEditor } from '@/access'
 import { resolveAuditChannel } from '@/audit/channel'
+import { NEWS_IMAGE_SIZES } from '@/lib/media-image'
 
 /**
  * Tizim maydoni: yaratishda so'rovdan hisoblanadi, keyin o'zgarmaydi (mijoz yuborgan qiymat
@@ -14,7 +15,11 @@ function systemValue(name: string, compute: (req: PayloadRequest) => unknown): F
   }
 }
 
-/** Rasm variantlari (TZ §3.1, §10.7) — hammasi WebP. */
+/**
+ * Rasm variantlari (TZ §3.1, §10.7) — hammasi WebP. `news*` — Google News/Discover uchun
+ * 16:9, 4:3, 1:1 (≥ 1200 px, OBLOG-57; `lib/media-image.ts`). Yangi variant qo'shilsa, mavjud
+ * rasmlar uchun: `pnpm --filter @blog-odya/web media:regenerate` (`scripts/regenerate-media-sizes.ts`).
+ */
 const webp: ImageSize['formatOptions'] = { format: 'webp', options: { quality: 80 } }
 
 export const MEDIA_IMAGE_SIZES = [
@@ -23,6 +28,7 @@ export const MEDIA_IMAGE_SIZES = [
   { name: 'hero', width: 1280 },
   { name: 'og', width: 1200, height: 630 },
   { name: 'full', width: 1920 },
+  ...NEWS_IMAGE_SIZES,
 ] as const satisfies ReadonlyArray<{ name: string; width: number; height?: number }>
 
 /** Ixtiyoriy http(s) havola maydoni. */

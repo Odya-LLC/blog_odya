@@ -116,6 +116,16 @@ export const envSchema = z.object({
   /** MCP `upload_media(url)`: DNS + ulanish + javob sarlavhalari (har redirect uchun), ms. Standart — 10000. */
   MCP_MEDIA_CONNECT_TIMEOUT_MS: positiveLimit(DEFAULT_MCP_MEDIA_CONNECT_TIMEOUT_MS),
 
+  // --- IndexNow (ixtiyoriy: bo'lmasa yuborilmaydi, faqat warning; OBLOG-57) ---
+  /**
+   * IndexNow kaliti (Bing, Yandex, Seznam, Naver): 8–128 belgi, `a-z A-Z 0-9 -`
+   * (`openssl rand -hex 16`). Kalit fayli — `/{INDEXNOW_KEY}.txt`. Google IndexNow'ni qo'llamaydi.
+   */
+  INDEXNOW_KEY: z
+    .string()
+    .regex(/^[A-Za-z0-9-]{8,128}$/, '8–128 belgi: lotin harflari, raqamlar va "-"')
+    .optional(),
+
   // --- Monitoring (ixtiyoriy: bo'lmasa Sentry o'chiq; OBLOG-23, docs/runbooks/monitoring.md) ---
   /** Server (route'lar, Payload, job'lar) xatolari. Brauzer ham shuni oladi (`next.config.ts`). */
   SENTRY_DSN: z.url().optional(),

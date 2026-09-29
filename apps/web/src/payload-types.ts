@@ -139,6 +139,7 @@ export interface Config {
       'item.classify': TaskItemClassify;
       'maintenance.cleanup': TaskMaintenanceCleanup;
       'telegram.post': TaskTelegramPost;
+      'indexnow.submit': TaskIndexNowSubmit;
       schedulePublish: TaskSchedulePublish;
       inline: {
         input: unknown;
@@ -375,6 +376,30 @@ export interface Media {
       filename?: string | null;
     };
     full?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+    news16x9?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+    news4x3?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+    news1x1?: {
       url?: string | null;
       width?: number | null;
       height?: number | null;
@@ -973,6 +998,7 @@ export interface PayloadJob {
           | 'item.classify'
           | 'maintenance.cleanup'
           | 'telegram.post'
+          | 'indexnow.submit'
           | 'schedulePublish';
         taskID: string;
         input?:
@@ -1017,6 +1043,7 @@ export interface PayloadJob {
         | 'item.classify'
         | 'maintenance.cleanup'
         | 'telegram.post'
+        | 'indexnow.submit'
         | 'schedulePublish'
       )
     | null;
@@ -1417,6 +1444,36 @@ export interface MediaSelect<T extends boolean = true> {
               filename?: T;
             };
         full?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        news16x9?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        news4x3?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        news1x1?:
           | T
           | {
               url?: T;
@@ -2166,6 +2223,29 @@ export interface TaskTelegramPost {
     status?: string | null;
     reason?: string | null;
     messageId?: string | null;
+  };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskIndexNowSubmit".
+ */
+export interface TaskIndexNowSubmit {
+  input: {
+    urls:
+      | {
+          [k: string]: unknown;
+        }
+      | unknown[]
+      | string
+      | number
+      | boolean
+      | null;
+    attempt?: number | null;
+  };
+  output: {
+    status?: string | null;
+    httpStatus?: number | null;
+    reason?: string | null;
   };
 }
 /**

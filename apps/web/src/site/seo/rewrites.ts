@@ -13,6 +13,16 @@ export const FEED_REWRITES = [
 ] as const
 
 /**
+ * IndexNow kalit fayli (OBLOG-57): `/{key}.txt` → `app/(seo)/indexnow/[key]` (kalit formati —
+ * 8–128 belgi `A-Za-z0-9-`; `/robots.txt` kabi qisqa nomlar mos kelmaydi, fayl route'lari esa
+ * rewrite'dan oldin tekshiriladi). Noma'lum kalit — 404.
+ */
+export const INDEXNOW_KEY_REWRITE = {
+  source: '/:key([A-Za-z0-9-]{8,128}).txt',
+  destination: '/indexnow/:key',
+} as const
+
+/**
  * Trailing-slash redirect (`/x/` → `308 /x`) Payload yo'llari uchun. Qolgan yo'llarda buni
  * `src/proxy.ts` qiladi (410 tekshiruvidan keyin, OBLOG-50): `skipTrailingSlashRedirect: true`
  * Next'ning o'rnatilgan redirect'ini o'chiradi, `/api/…`, `/admin/…` esa proxy matcher'idan

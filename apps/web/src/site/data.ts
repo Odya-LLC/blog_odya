@@ -25,6 +25,7 @@ import type {
   TagRef,
   TelegramLinks,
 } from '@/components/blog/types'
+import { DEFAULT_AUTHOR_SLUG } from '@/collections/Posts/defaultAuthor'
 import { env, PHASE_PRODUCTION_BUILD } from '@/env'
 import type { Author, Category, Media, Page, Post, Redirect, SiteSetting } from '@/payload-types'
 
@@ -598,7 +599,34 @@ export async function loadArticle(locale: Locale, slug: string): Promise<Article
   const post = docs[0]
   const category = post ? populated<Category>(post.category) : null
   if (!post || !category) return null
-  return { post, category, related: await findRelated(locale, post, category) }
+  const withAuthor = hasPopulatedAuthor(post)
+    ? post
+    : { ...post, authors: await loadDefaultAuthor(locale, payload) }
+  return { post: withAuthor, category, related: await findRelated(locale, post, category) }
+}
+
+function hasPopulatedAuthor(post: Post): boolean {
+  return (post.authors ?? []).some((author) => populated<Author>(author)?.name)
+}
+
+/**
+ * Muallifsiz chop etilgan (OBLOG-57 dan oldingi) postlar: standart muallif ("Blog Odya
+ * tahririyati") — sahifadagi muallif qatori va JSON-LD `author` (`Person`) uchun. Yangi postlarda
+ * muallifni `posts` hook'i qo'yadi (`collections/Posts/defaultAuthor.ts`).
+ */
+async function loadDefaultAuthor(
+  locale: Locale,
+  payload: Awaited<ReturnType<typeof payloadClient>>,
+): Promise<Author[]> {
+  const { docs } = await payload.find({
+    collection: 'authors',
+    locale,
+    where: { slug: { equals: DEFAULT_AUTHOR_SLUG } },
+    limit: 1,
+    depth: 1,
+    overrideAccess: false,
+  })
+  return docs as Author[]
 }
 
 export const getArticle = (locale: Locale, slug: string): Promise<ArticleData | null> =>

@@ -1,0 +1,104 @@
+# Prod media variantlari (OBLOG-57): mavjud rasmlar uchun Google News/Discover variantlari
+# (`news16x9`, `news4x3`, `news1x1`) — `pnpm --filter @blog-odya/web media:regenerate`.
+# Faqat qo'lda: `gh workflow run media-regenerate --ref main` (avval `-f dry_run=true` bilan).
+# Idempotent: faqat yetishmayotgan variantlar yaratiladi, asl fayl va eski variantlar o'zgarmaydi.
+# Migratsiya (`20260928_…_oblog_57_seo_news`) avval `migrate-prod` bilan qo'llangan bo'lishi kerak.
+name: media-regenerate
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Faqat ro‘yxat (fayl yozilmaydi, DB o‘zgarmaydi)'
+        type: boolean
+        default: true
+      limit:
+        description: 'Ko‘pi bilan N ta rasm (bo‘sh — hammasi)'
+        type: string
+        default: ''
+
+# migrate-prod / seed-prod bilan umumiy guruh — bir vaqtda ishlamaydi.
+concurrency:
+  group: migrate-prod
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  regenerate:
+    name: media:regenerate (prod)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: Production
+
+    # seed-prod bilan bir xil env (session pooler, R2 `media` bucket). PAYLOAD_SECRET — tasodifiy:
+    # skript shifrlangan maydon yoki foydalanuvchi bilan ishlamaydi.
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL_DIRECT_PROD }}
+      DATABASE_URL_DIRECT: ${{ secrets.DATABASE_URL_DIRECT_PROD }}
+      S3_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+      S3_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      S3_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      S3_BUCKET: media
+      S3_REGION: auto
+      S3_FORCE_PATH_STYLE: 'true'
+      MEDIA_PUBLIC_URL: https://media.odya.uz
+      NEXT_PUBLIC_SITE_URL: https://blog.odya.uz
+      JOBS_MODE: endpoint
+      NEXT_TELEMETRY_DISABLED: '1'
+      TURBO_TELEMETRY_DISABLED: '1'
+
+    steps:
+      - name: Check secrets
+        run: |
+          for name in DATABASE_URL_DIRECT S3_ENDPOINT S3_ACCESS_KEY_ID S3_SECRET_ACCESS_KEY; do
+            if [ -z "${!name}" ]; then
+              echo "::error::$name bo'sh — DATABASE_URL_DIRECT_PROD / R2_* secret'larini tekshiring."
+              exit 1
+            fi
+          done
+
+      - name: Generate PAYLOAD_SECRET
+        run: |
+          secret="$(openssl rand -hex 32)"
+          echo "::add-mask::$secret"
+          echo "PAYLOAD_SECRET=$secret" >> "$GITHUB_ENV"
+
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Regenerate (dry_run=${{ inputs.dry_run }})
+        env:
+          DRY_RUN: ${{ inputs.dry_run && 'dry-run' || '' }}
+          LIMIT: ${{ inputs.limit }}
+        run: |
+          set -o pipefail
+          args=()
+          [ -n "$DRY_RUN" ] && args+=("$DRY_RUN")
+          if [ -n "$LIMIT" ]; then
+            case "$LIMIT" in
+              *[!0-9]*) echo "::error::limit — musbat butun son bo'lishi kerak"; exit 1 ;;
+            esac
+            args+=("limit=$LIMIT")
+          fi
+          pnpm --filter @blog-odya/web media:regenerate "${args[@]}" 2>&1 | tee "$RUNNER_TEMP/regenerate.log"
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "### media-regenerate (dry_run=${{ inputs.dry_run }})"
+            echo '```'
+            grep -E "media:regenerate" "$RUNNER_TEMP/regenerate.log" | sed -E 's/\x1b\[[0-9;]*m//g' || echo "(log yo'q)"
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"

@@ -9,8 +9,10 @@
 import type { Locale } from '@blog-odya/shared'
 import type { Metadata } from 'next'
 
+import { DEFAULT_AUTHOR } from '@/collections/Posts/defaultAuthor'
 import { getSiteStrings } from '@/i18n/site'
 import { lexicalToPlainText } from '@/lib/lexical'
+import { NEWS_IMAGE_SIZES } from '@/lib/media-image'
 import type { Author, Category, Media, Page, Post, Tag } from '@/payload-types'
 
 import { populated, postDate, toSourceRefs } from '../mappers'
@@ -71,7 +73,24 @@ function feedFor(locale: Locale, categorySlug?: string, categoryName?: string) {
 
 export type ArticleSeoInput = { post: Post; category: Category }
 
+/**
+ * JSON-LD mualliflari. Muallif bo'lmasa (eski postlar, standart muallif hujjati hali yo'q) —
+ * standart muallif (`Person`, `/author/tahririyat`): Google News/Discover `author` sifatida
+ * `Organization` emas, `Person` kutadi (OBLOG-57).
+ */
 function authorPersons(post: Post, locale: Locale, origin: string): PersonInput[] {
+  const persons = postAuthorPersons(post, locale, origin)
+  if (persons.length > 0) return persons
+  return [
+    {
+      name: DEFAULT_AUTHOR.name[locale],
+      path: authorPath(locale, DEFAULT_AUTHOR.slug),
+      jobTitle: DEFAULT_AUTHOR.position[locale],
+    },
+  ]
+}
+
+function postAuthorPersons(post: Post, locale: Locale, origin: string): PersonInput[] {
   return (post.authors ?? []).flatMap((author) => {
     const doc = populated<Author>(author)
     if (!doc?.name) return []
@@ -88,14 +107,29 @@ function authorPersons(post: Post, locale: Locale, origin: string): PersonInput[
   })
 }
 
-/** Maqola rasmlari: `meta.image` → muqova → avtomatik OG (`next/og`). */
+/**
+ * Google News/Discover variantlari (16:9, 4:3, 1:1, ≥ 1200 px) — faqat mavjudlari (eski rasmlarda
+ * `media:regenerate` ishlatilmaguncha bo'lmasligi mumkin), to'liq URL.
+ */
+function newsImageUrls(media: Media | null | undefined, origin: string): string[] {
+  return NEWS_IMAGE_SIZES.flatMap(({ name, width }) => {
+    const size = media?.sizes?.[name]
+    return size?.url && size.width && size.width >= width ? [absoluteUrl(size.url, origin)] : []
+  })
+}
+
+/**
+ * Maqola rasmlari: og:image — `meta.image` → muqova → avtomatik OG (`next/og`). JSON-LD `image`
+ * (OBLOG-57) — avval News/Discover nisbatlari (16:9, 4:3, 1:1), keyin asl muqova va OG (1200×630).
+ */
 export function articleImages(
   locale: Locale,
   post: Post,
   origin: string = siteOrigin(),
 ): { og: SeoImage; jsonLd: string[] } {
   const title = post.title
-  const metaImage = mediaOgImage(populated<Media>(post.meta?.image), origin)
+  const metaMedia = populated<Media>(post.meta?.image)
+  const metaImage = mediaOgImage(metaMedia, origin)
   const cover = populated<Media>(post.coverImage)
   const coverOg = mediaOgImage(cover, origin)
   const generated = generatedOgImage(
@@ -108,11 +142,12 @@ export function articleImages(
   const og = metaImage ?? coverOg ?? generated
   const jsonLd = cover
     ? [
+        ...newsImageUrls(cover, origin),
         ...(cover.url ? [absoluteUrl(cover.url, origin)] : []),
         ...(coverOg ? [coverOg.url] : []),
-        ...(metaImage ? [metaImage.url] : []),
+        ...(metaImage ? [...newsImageUrls(metaMedia, origin), metaImage.url] : []),
       ]
-    : [og.url]
+    : [...newsImageUrls(metaMedia, origin), og.url]
   return { og: { ...og, alt: og.alt || title }, jsonLd: [...new Set(jsonLd)] }
 }
 

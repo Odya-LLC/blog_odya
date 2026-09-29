@@ -12,7 +12,13 @@ import { slugField } from '@/fields/slug'
 import { postRedirectHooks } from '@/hooks/contentRedirects'
 import { revalidatePostAfterChange, revalidatePostAfterDelete } from '@/site/revalidate'
 
+import { applyDefaultAuthor } from './defaultAuthor'
 import { deriveFields, enforceWorkflow, syncScheduledPublish } from './hooks'
+import {
+  queueIndexNowAfterChange,
+  queueIndexNowAfterDelete,
+  rememberIndexNowState,
+} from './indexnow'
 import { preserveTelegramState, queueTelegramAfterChange } from './telegram'
 import { POST_WORKFLOW_STATUSES, WORKFLOW_STATUS_LABELS } from './workflow'
 
@@ -84,17 +90,26 @@ export const Posts: CollectionConfig = {
     maxPerDoc: 10,
   },
   hooks: {
-    beforeChange: [enforceWorkflow, deriveFields, ...postRedirectHooks.beforeChange],
+    // Bo'sh `authors` → standart muallif (yaratish va chop etishda, OBLOG-57).
+    beforeChange: [
+      enforceWorkflow,
+      deriveFields,
+      applyDefaultAuthor,
+      ...postRedirectHooks.beforeChange,
+      rememberIndexNowState,
+    ],
     // Sayt keshi (ISR): publish/unpublish/arxivlash → revalidateTag (M1-05). Slug/kategoriya
     // o'zgarsa (publish'da) — 301 redirect (`hooks/contentRedirects.ts`, TZ §8.1).
     // Telegram avtopost (M3-01, TZ §7.1): chop etilganda `telegram.post` job'lari.
+    // IndexNow (OBLOG-57): publish/unpublish/slug o'zgarishida `indexnow.submit` job'i.
     afterChange: [
       syncScheduledPublish,
       ...postRedirectHooks.afterChange,
       revalidatePostAfterChange,
       queueTelegramAfterChange,
+      queueIndexNowAfterChange,
     ],
-    afterDelete: [revalidatePostAfterDelete],
+    afterDelete: [revalidatePostAfterDelete, queueIndexNowAfterDelete],
   },
   fields: [
     {

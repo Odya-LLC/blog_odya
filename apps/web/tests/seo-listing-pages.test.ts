@@ -24,7 +24,7 @@ describe('teg sahifasi SEO', () => {
     expect(few.robots).toEqual({ index: false, follow: true })
     expect(few.robots).toEqual(tagRobots(TAG_INDEX_MIN_POSTS - 1, false, true))
     const many = tagSeo('uz-Latn', tag, 1, TAG_INDEX_MIN_POSTS, opts).metadata
-    expect(many.robots).toBeUndefined()
+    expect(many.robots).toMatchObject({ index: true, 'max-image-preview': 'large' })
     const metaNoindex = tagSeo('uz-Latn', { ...tag, noindex: true }, 1, 50, opts).metadata
     expect(metaNoindex.robots).toEqual({ index: false, follow: true })
   })

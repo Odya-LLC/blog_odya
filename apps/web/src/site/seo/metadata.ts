@@ -1,7 +1,8 @@
 /**
  * Sahifa metadata'si (TZ §8.2): `<title>`, description, canonical (o'ziga), hreflang
  * (`uz-Latn`, `uz-Cyrl`, `x-default` → lotin), OpenGraph (`og:locale=uz_UZ`, `article:*`),
- * Twitter Card (`summary_large_image`), `robots` (noindex: sahifa/teg qoidasi yoki preview).
+ * Twitter Card (`summary_large_image`), `robots` (noindex: sahifa/teg qoidasi yoki preview;
+ * indekslanadigan sahifada — `max-image-preview:large` va boshqalar, OBLOG-57).
  *
  * Yon ta'sirsiz — unit testlanadi (hreflang juftliklari o'zaro to'g'riligi va h.k.).
  */
@@ -158,14 +159,30 @@ export function generatedOgImage(
 
 export type NoindexReason = boolean | null | undefined
 
-/** Robots meta: sahifa `noindex` bo'lsa yoki muhit indekslashga yopiq bo'lsa (preview). */
+/**
+ * Indekslanadigan sahifalar robots meta'si (OBLOG-57): `max-image-preview:large` bo'lmasa Google
+ * Discover va Top Stories katta rasm ko'rsatmaydi; `max-snippet:-1`, `max-video-preview:-1` —
+ * snippet/video uzunligi cheklanmaydi. Umumiy `robots` (faqat `googlebot` emas) — Bing ham o'qiydi.
+ */
+export const INDEXABLE_ROBOTS = {
+  index: true,
+  follow: true,
+  'max-image-preview': 'large',
+  'max-snippet': -1,
+  'max-video-preview': -1,
+} as const satisfies Metadata['robots']
+
+/**
+ * Robots meta: sahifa `noindex` bo'lsa yoki muhit indekslashga yopiq bo'lsa (preview) — `noindex`
+ * (`max-*` direktivalarsiz); aks holda `INDEXABLE_ROBOTS`.
+ */
 export function robotsMeta(
   noindex: NoindexReason,
   indexingAllowed: boolean = isIndexingAllowed(),
-): Metadata['robots'] {
+): NonNullable<Metadata['robots']> {
   if (!indexingAllowed) return { index: false, follow: false }
   if (noindex) return { index: false, follow: true }
-  return undefined
+  return { ...INDEXABLE_ROBOTS }
 }
 
 /** Teg sahifasi: < 3 post — `noindex` (TZ §8.1). M1-07 teg sahifasi shu funksiyani ishlatadi. */
@@ -269,7 +286,6 @@ export function buildPageMetadata(input: PageSeoInput): Metadata {
       images: input.image ? [{ url: input.image.url, alt: input.image.alt }] : undefined,
     },
   }
-  const robots = robotsMeta(input.noindex, input.indexingAllowed)
-  if (robots) metadata.robots = robots
+  metadata.robots = robotsMeta(input.noindex, input.indexingAllowed)
   return metadata
 }

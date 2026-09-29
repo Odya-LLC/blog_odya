@@ -53,6 +53,10 @@ const cover = {
       height: 630,
       mimeType: 'image/webp',
     },
+    // OBLOG-57: Google News/Discover nisbatlari (4:3 — hali qayta generatsiya qilinmagan).
+    news16x9: { url: 'https://media.odya.uz/cover-1200x675.webp', width: 1200, height: 675 },
+    news4x3: { url: null, width: null, height: null },
+    news1x1: { url: 'https://media.odya.uz/cover-1200x1200.webp', width: 1200, height: 1200 },
   },
 } as Media
 
@@ -105,7 +109,7 @@ function expectValidNewsArticle(article: JsonLdObject, locale: Locale, path: str
   const authors = article.author as Array<Record<string, unknown>>
   expect(authors.length).toBeGreaterThan(0)
   for (const person of authors) {
-    expect(['Person', 'NewsMediaOrganization']).toContain(person['@type'])
+    expect(person['@type']).toBe('Person')
     expect(typeof person.name).toBe('string')
     expect(person.url).toMatch(ABSOLUTE_URL)
   }
@@ -130,7 +134,10 @@ describe('NewsArticle (TZ §8.2)', () => {
       const article = byType(jsonLd, 'NewsArticle')
       expectValidNewsArticle(article, locale, path)
       expect(article.isBasedOn).toBe('https://www.hltv.org/news/1/x')
+      // Avval News/Discover nisbatlari (faqat mavjudlari), keyin asl muqova va OG.
       expect(article.image).toEqual([
+        'https://media.odya.uz/cover-1200x675.webp',
+        'https://media.odya.uz/cover-1200x1200.webp',
         'https://media.odya.uz/cover.png',
         'https://media.odya.uz/cover-1200x630.webp',
       ])
@@ -180,7 +187,7 @@ describe('NewsArticle (TZ §8.2)', () => {
     ])
   })
 
-  it('muallifsiz — Organization, bitta manbasiz — isBasedOn yo‘q, FAQ bo‘lmasa FAQPage yo‘q', () => {
+  it('muallifsiz — standart muallif (Person), bitta manbasiz — isBasedOn yo‘q, FAQ bo‘lmasa FAQPage yo‘q', () => {
     const { jsonLd } = articleSeo(
       'uz-Latn',
       { post: makePost({ authors: [], sources: [], faq: [] }), category },
@@ -188,6 +195,26 @@ describe('NewsArticle (TZ §8.2)', () => {
     )
     const article = byType(jsonLd, 'NewsArticle')
     expectValidNewsArticle(article, 'uz-Latn', '/kibersport/ozbek-jamoasi-cs2-turnirida-galaba')
+    // OBLOG-57: Google News/Discover — `author` Person bo'lishi kerak (Organization emas).
+    expect(article.author).toEqual([
+      expect.objectContaining({
+        '@type': 'Person',
+        name: 'Blog Odya tahririyati',
+        url: `${ORIGIN}/author/tahririyat`,
+      }),
+    ])
+    const cyrl = byType(
+      articleSeo('uz-Cyrl', { post: makePost({ authors: [] }), category }, { origin: ORIGIN })
+        .jsonLd,
+      'NewsArticle',
+    )
+    expect(cyrl.author).toEqual([
+      expect.objectContaining({
+        '@type': 'Person',
+        name: 'Блог Одя таҳририяти',
+        url: `${ORIGIN}/kr/author/tahririyat`,
+      }),
+    ])
     expect(article.isBasedOn).toBeUndefined()
     expect(jsonLd.some((item) => item['@type'] === 'FAQPage')).toBe(false)
   })

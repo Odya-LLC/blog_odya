@@ -10,6 +10,7 @@ import { activeRunQueues } from './scrapeDeps'
 import { enqueueDailyCleanup, enqueueDueFeedPolls, releaseStaleJobs } from './scheduler'
 import { withErrorCapture } from './sentry'
 import { feedPollTask } from './tasks/feedPoll'
+import { indexNowSubmitTask } from './tasks/indexNowSubmit'
 import { itemClassifyTask } from './tasks/itemClassify'
 import { itemDedupeTask } from './tasks/itemDedupe'
 import { itemExtractTask } from './tasks/itemExtract'
@@ -31,7 +32,8 @@ import { scrapeItemWorkflow } from './workflows/scrapeItem'
  * Task'lar: `feed.poll` (M2-01), `item.fetch` + `item.extract` (`scrapeItem` workflow, M2-02),
  * `item.dedupe` + `item.classify` (workflow davomi) va `maintenance.cleanup` (kuniga 1 marta),
  * ogohlantirishlar — har scheduler chaqiruvida (M2-03), `telegram.post` — post chop etilganda
- * (`default` navbati, M3-01). Task xatolari Sentry'ga ham yuboriladi (`./sentry.ts`, OBLOG-23).
+ * (`default` navbati, M3-01), `indexnow.submit` — publish/unpublish/slug o'zgarishida (OBLOG-57).
+ * Task xatolari Sentry'ga ham yuboriladi (`./sentry.ts`, OBLOG-23).
  */
 export function buildJobsConfig(mode: Env['JOBS_MODE'] = 'endpoint'): JobsConfig {
   const adminOnly = ({ req }: { req: { user?: unknown } }) =>
@@ -46,6 +48,7 @@ export function buildJobsConfig(mode: Env['JOBS_MODE'] = 'endpoint'): JobsConfig
       itemClassifyTask,
       maintenanceCleanupTask,
       telegramPostTask,
+      indexNowSubmitTask,
     ].map(withErrorCapture),
     workflows: [scrapeItemWorkflow],
     // Supabase Free 500 MB: muvaffaqiyatli job'lar saqlanmaydi (natija — manba `stats` da).

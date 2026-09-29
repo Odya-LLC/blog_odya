@@ -27,6 +27,7 @@ export const ROUTE_RESERVED_SLUGS = [
   'page',
   'og',
   'feeds',
+  'indexnow',
   'sitemaps',
   'sitemap',
   'news-sitemap',
