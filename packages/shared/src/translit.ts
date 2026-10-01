@@ -17,6 +17,12 @@
  *     natijada asl so'zning bosh harfi (yoki butunlay katta harf) saqlanadi.
  *  4. Chet so'zlar lotinda qoladi: `w`, `ch` siz `c`, diakritikali harflar, ichki katta harf
  *     (`iPhone`, `OnePlus`), rim raqamlari (`XXI`), raqamga yopishgan katta harfli model nomlari.
+ *  5. OBLOG-67: 2–6 harfli katta harfli qisqartmalar (`GTA`, `ESLning`) lotinda qoladi — o'zbekcha
+ *     qisqartmalar (`AQSH`, `BMT`) `whole_word` istisno sifatida o'giriladi; butunlay katta harfli
+ *     gapda (sarlavha) qoida o'chadi. Lotin nomlar ketma-ketligida ikki lotin so'z orasidagilar
+ *     (`Space Launch Complex`) va qavs ichidagi asl yozilish (`Sem Altman (Sam Altman)`) ham
+ *     lotinda qoladi. Post darajasidagi himoya — `withProtectedTerms` (teglar, `keepLatin`).
+ *     `toCyrillic(text, suspicious)` — agent uchun shubhali so'zlar ro'yxati.
  *
  * Kutubxona kamchiliklari adapterda tuzatilgan: unli harfdan keyingi `e → э` (`poeziya`, `duel`),
  * butunlay katta harfli so'zlar, `ts → ц` va yumshoq belgi — istisnolar lug'ati orqali.
@@ -154,8 +160,12 @@ function transliterateContinuation(rest: string, previous: string): string {
   return transliterateWordCore(context + rest).slice(1)
 }
 
-/** Istisno kirill shakliga asl so'zning registrini beradi. */
+/**
+ * Istisno kirill shakliga asl so'zning registrini beradi. Butunlay katta harfli kirill shakli
+ * (qisqartma: `AQSH → АҚШ`) har doim shundayligicha qoladi (`AQSh`, `aqsh` → `АҚШ`).
+ */
 function applyCase(source: string, cyrillic: string): string {
+  if (isAllUpper(cyrillic)) return cyrillic
   if (isAllUpper(source)) return cyrillic.toUpperCase()
   const first = source.match(/\p{L}/u)?.[0]
   if (!first || !cyrillic) return cyrillic
@@ -178,6 +188,205 @@ function shouldKeepLatin(word: string, before: string | undefined, after: string
   if (word.length >= 2 && ROMAN_RE.test(word)) return true
   const nearDigit = /\d/.test(before ?? '') || /\d/.test(after ?? '')
   return nearDigit && HAS_UPPER_RE.test(word) && !/[a-z]/.test(word)
+}
+
+/**
+ * Qisqartma: 2–6 ta katta lotin harfi (`GTA`, `ESL`, `NIST`). `whole_word` istisnolarida bo'lmasa
+ * lotinda qoladi; o'zbekcha qisqartmalar (`AQSH`, `BMT`, `XKS`) istisno sifatida yoziladi va
+ * odatdagidek o'giriladi.
+ */
+const ABBREVIATION_RE = /^[A-Z]{2,6}$/
+/** Qisqartma + o'zbekcha qo'shimcha (`ESLning`, `GTAdan`) — qo'shimcha o'giriladi. */
+const ABBREVIATION_SUFFIX_RE = /^([A-Z]{2,6})([a-z]+)$/
+
+/**
+ * Gap butunlay katta harf bilan yozilgan (sarlavha, `YANGI SHAHAR QURILDI`): qisqartma qoidasi
+ * o'chadi, so'zlar odatdagidek o'giriladi. Shart — kichik lotin harfi yo'q va kamida 3 ta katta
+ * harfli so'z yoki 6 harfdan uzun katta harfli so'z bor.
+ */
+function isShoutingText(words: readonly string[], plainText: string): boolean {
+  if (/[a-zß-ÿ]/.test(plainText)) return false
+  const upper = words.filter((word) => isAllUpper(word))
+  return upper.length >= 3 || upper.some((word) => (word.match(LETTERS_RE) ?? []).length > 6)
+}
+
+/** Lotin nomlar ketma-ketligida bog'lovchi bo'lishi mumkin bo'lgan inglizcha so'zlar. */
+const NAME_CONNECTORS = new Set(['of', 'the', 'and', 'for', 'de', 'von', 'van'])
+/** Lotin nom oldidagi artikl (`The Sanctuary`, `The Verge`). */
+const LEADING_ARTICLES = new Set(['The'])
+
+// ---------------------------------------------------------------------------
+// Shubhali so'zlar (agent uchun ogohlantirish)
+// ---------------------------------------------------------------------------
+
+/**
+ * Katta harf bilan boshlangan, lekin o'zbekcha ekanligi deyarli aniq bo'lgan so'zlar — shubhali
+ * ro'yxatga kiritilmaydi (joy nomlari, tashkilotlar nomidagi so'zlar).
+ */
+const UZBEK_PROPER_WORDS = new Set(
+  [
+    'toshkent',
+    'samarqand',
+    'buxoro',
+    'xiva',
+    'xorazm',
+    'andijon',
+    'namangan',
+    'navoiy',
+    'jizzax',
+    'termiz',
+    'nukus',
+    'urganch',
+    'guliston',
+    'sirdaryo',
+    'surxondaryo',
+    'qashqadaryo',
+    'rossiya',
+    'xitoy',
+    'yaponiya',
+    'koreya',
+    'hindiston',
+    'turkiya',
+    'germaniya',
+    'angliya',
+    'britaniya',
+    'buyuk',
+    'amerika',
+    'yevropa',
+    'osiyo',
+    'afrika',
+    'avstraliya',
+    'kanada',
+    'braziliya',
+    'eron',
+    'isroil',
+    'ukraina',
+    'moskva',
+    'pekin',
+    'tokio',
+    'seul',
+    'london',
+    'parij',
+    'berlin',
+    'dubay',
+    'markaziy',
+    'janubiy',
+    'shimoliy',
+    'sharqiy',
+    'respublika',
+    'respublikasi',
+    'prezident',
+    'prezidenti',
+    'vazir',
+    'vazirlar',
+    'vazirligi',
+    'mahkamasi',
+    'hukumat',
+    'hukumati',
+    'davlat',
+    'milliy',
+    'xalqaro',
+    'tashkiloti',
+    'universiteti',
+    'instituti',
+    'markazi',
+    'banki',
+    'majlis',
+    'majlisi',
+    'oliy',
+    'senat',
+    'senati',
+    'ittifoqi',
+    'agentligi',
+    'kompaniyasi',
+  ].map((word) => word.toLowerCase()),
+)
+
+/** O'zbekcha yozuv belgilari (`q`, `oʻ`, `gʻ`, tutuq) yoki tipik qo'shimchalar/tugallanmalar. */
+const UZBEK_MARKER_RE = /[qQ]|[oOgG]ʻ|ʼ/
+const UZBEK_ENDING_RE =
+  /(?:iston|obod|ova|eva|yev|yeva|ov|ev|iya|lar|larni|ning|dagi|dan|ga|da|ni|si|ligi|lik|chi|siz|imiz|ingiz|gan|moqda|yapti)$/i
+
+/**
+ * Gap boshi: matn boshi yoki oldingi bo'sh bo'lmagan belgi — gap oxiri, qator, ochuvchi
+ * qo'shtirnoq/qavs, tire. Ikki nuqtadan keyingi katta harfli so'z hisobga olinadi (ko'pincha nom).
+ */
+const SENTENCE_START_RE = /(?:^|[.!?…\n«"“„(—–•*-])\s*$/u
+
+function isSuspiciousCandidate(token: string): boolean {
+  if (!/^\p{Lu}/u.test(token)) return false
+  if (UZBEK_MARKER_RE.test(token)) return false
+  const lower = token.toLowerCase()
+  if (UZBEK_PROPER_WORDS.has(lower)) return false
+  if (!isAllUpper(token) && UZBEK_ENDING_RE.test(token)) return false
+  return true
+}
+
+// ---------------------------------------------------------------------------
+// Asl yozilishi qavs ichida: «Sem Altman (Sam Altman)»
+// ---------------------------------------------------------------------------
+
+const PAREN_RE = /\(([^()\n]{2,80})\)/g
+const NAME_WORD = "[A-ZÀ-Þ][\\p{L}ʻʼ'’.-]*"
+const PAREN_NAME_RE = new RegExp(`^${NAME_WORD}(?: ${NAME_WORD}){0,3}$`, 'u')
+const PRECEDING_NAMES_RE = new RegExp(
+  `((?:${NAME_WORD}[ \\u00A0]+){0,3}${NAME_WORD})[ \\u00A0]*$`,
+  'u',
+)
+
+/** Bosh harflar talaffuzda mos keladimi (`Sem/Sam`, `Xuang/Huang`, `Ilon/Elon`, `Jorj/George`). */
+const SOUND_GROUPS = ['aeiouy', 'xh', 'kcq', 'sczt', 'jgd', 'fp', 'vw']
+function similarInitial(a: string, b: string): boolean {
+  const x = a[0]?.toLowerCase()
+  const y = b[0]?.toLowerCase()
+  if (!x || !y) return false
+  if (x === y) return true
+  return SOUND_GROUPS.some((group) => group.includes(x) && group.includes(y))
+}
+
+interface OriginalNames {
+  /** Qavs ichidagi asl yozilish (o'zgarmaydi). */
+  ranges: Range[]
+  /** Qavsdan oldingi o'zbekcha yozilgan ism (shubhali ro'yxatga kiritilmaydi). */
+  intentional: Range[]
+}
+
+/**
+ * Qavs ichidagi asl yozilish (style.md §7): `Sem Altman (Sam Altman)` — qavs ichidagi 1–4 ta katta
+ * harfli lotin so'z, undan oldin xuddi shuncha katta harfli so'z va oxirgi so'zlarning bosh harfi
+ * talaffuzda mos (`Altman/Altman`, `Mask/Musk`). Yoki qavs ichida lotinda qoladigan so'z bor
+ * (`(Paul MacPherson)`) — butun qavs ichi lotinda qoladi.
+ */
+function findOriginalNames(text: string, isAnchor: (word: string) => boolean): OriginalNames {
+  const ranges: Range[] = []
+  const intentional: Range[] = []
+  for (const match of text.matchAll(PAREN_RE)) {
+    const inner = match[1]!
+    if (!PAREN_NAME_RE.test(inner)) continue
+    const innerWords = inner.split(' ')
+    const start = match.index + 1
+    const before = text.slice(0, match.index)
+    const preceding = PRECEDING_NAMES_RE.exec(before)
+    const looksUzbek = innerWords.some(
+      (word) => UZBEK_MARKER_RE.test(word) || UZBEK_PROPER_WORDS.has(word.toLowerCase()),
+    )
+    let matched = false
+    if (preceding && !looksUzbek) {
+      const words = [...preceding[1]!.matchAll(/\S+/g)]
+      const tail = words.slice(-innerWords.length)
+      if (
+        tail.length === innerWords.length &&
+        similarInitial(tail.at(-1)![0], innerWords.at(-1)!) &&
+        tail.map((word) => word[0]).join(' ') !== inner
+      ) {
+        matched = true
+        intentional.push([preceding.index + tail[0]!.index, preceding.index + preceding[1]!.length])
+      }
+    }
+    if (!matched) matched = innerWords.some((word) => isAnchor(normalizeApostrophes(word)))
+    if (matched) ranges.push([start, start + inner.length])
+  }
+  return { ranges, intentional }
 }
 
 // ---------------------------------------------------------------------------
@@ -324,20 +533,57 @@ function addRanges(target: Range[], candidates: Range[]): void {
 export interface TransliteratorOptions {
   /** Istisnolar (seed + DB). Takroriy kalitlarda oxirgisi ustun. */
   exceptions?: readonly TranslitExceptionInput[]
-  /** O'girilmaydigan atamalar (glossariy `doNotTransliterate`). */
+  /**
+   * O'girilmaydigan atamalar: glossariy `doNotTransliterate`, postning teglari va `keepLatin`
+   * ro'yxati (katta-kichik harf farqlanadi, butun so'z sifatida).
+   */
   protectedTerms?: readonly string[]
   /** `#hashtag` o'zgarishsiz qoladi (default: true). */
   preserveHashtags?: boolean
 }
 
 export interface Transliterator {
-  /** Oddiy matnni lotindan kirillga o'giradi. */
-  toCyrillic(text: string): string
+  /**
+   * Oddiy matnni lotindan kirillga o'giradi. `suspicious` berilsa — shubhali so'zlar (katta harf
+   * bilan boshlangan, istisno/glossariyda yo'q, odatdagi qoidalar bilan o'girilgan lotin so'zlar:
+   * ehtimol brend yoki chet nom) shu to'plamga yig'iladi.
+   */
+  toCyrillic(text: string, suspicious?: Set<string>): string
   /** Bitta so'zni (himoyalangan bo'laklarsiz) o'giradi. */
   word(word: string): string
+  /** Qo'shimcha himoyalangan atamalar bilan yangi transliterator (masalan, post teglari). */
+  withProtectedTerms(terms: readonly string[]): Transliterator
 }
 
 const WORD_RE = /[A-Za-zÀ-ɏ](?:[A-Za-zÀ-ɏʻ]|ʼ(?=[A-Za-z])|-(?=[A-Za-z]))*/g
+
+type DecisionKind = 'keep' | 'exception' | 'core'
+
+interface Decision {
+  kind: DecisionKind
+  out: string
+}
+
+/** Matndagi bo'lak: so'z (oddiy matnda) yoki himoyalangan bo'lak. */
+interface Unit {
+  start: number
+  end: number
+  /** So'z (normallashtirilgan apostroflar bilan); himoyalangan bo'lakda — asl matn. */
+  token: string
+  protected: boolean
+  /** Lotinda qoladi (glossariy atamasi, chet so'z, qisqartma). */
+  anchor: boolean
+  decision?: Decision
+  before?: string
+  after?: string
+}
+
+interface Segment {
+  start: number
+  normalized: string
+}
+
+const RUN_GAP_RE = /^[ \u00A0]$/
 
 export function createTransliterator(options: TransliteratorOptions = {}): Transliterator {
   const wholeWords = new Map<string, string>()
@@ -368,28 +614,93 @@ export function createTransliterator(options: TransliteratorOptions = {}): Trans
     return undefined
   }
 
-  function word(input: string, before?: string, after?: string): string {
-    const normalized = normalizeApostrophes(input)
-    if (shouldKeepLatin(normalized, before, after)) return input
-    const fromTable = fromExceptions(normalized)
-    if (fromTable !== undefined) return fromTable
-    if (normalized.includes('-')) {
-      return normalized
-        .split('-')
-        .map((part) => (part ? word(part) : part))
-        .join('-')
+  /** Qisqartma qoidasi (`GTA`, `ESLning`); o'zbekcha qisqartma (`whole_word` istisno) — yo'q. */
+  function abbreviation(word: string): Decision | undefined {
+    if (ABBREVIATION_RE.test(word)) {
+      return wholeWords.has(word.toLowerCase()) ? undefined : { kind: 'keep', out: word }
     }
-    return transliterateWordCore(normalized)
+    const match = ABBREVIATION_SUFFIX_RE.exec(word)
+    if (!match) return undefined
+    const head = match[1]!
+    const suffix = match[2]!
+    if (!isSuffixChain(suffix) || wholeWords.has(head.toLowerCase())) return undefined
+    return { kind: 'keep', out: head + transliterateContinuation(suffix, head) }
   }
 
-  function plain(segment: string): string {
-    const normalized = normalizeApostrophes(segment)
-    return normalized.replace(WORD_RE, (token, offset: number) =>
-      word(token, normalized[offset - 1], normalized[offset + token.length]),
-    )
+  function decide(
+    input: string,
+    before: string | undefined,
+    after: string | undefined,
+    shouting: boolean,
+  ): Decision {
+    const normalized = normalizeApostrophes(input)
+    // Butun so'z istisnosi chet so'z belgilaridan ustun (`YaIM` — ichki katta harf, lekin o'zbekcha).
+    const whole = wholeWords.get(normalized.toLowerCase())
+    if (whole !== undefined) return { kind: 'exception', out: applyCase(normalized, whole) }
+    if (shouldKeepLatin(normalized, before, after)) return { kind: 'keep', out: input }
+    if (!shouting) {
+      const abbr = abbreviation(normalized)
+      if (abbr) return abbr
+    }
+    const fromTable = fromExceptions(normalized)
+    if (fromTable !== undefined) return { kind: 'exception', out: fromTable }
+    if (normalized.includes('-')) {
+      const parts = normalized
+        .split('-')
+        .map((part) => (part ? decide(part, undefined, undefined, shouting) : undefined))
+      const kinds = new Set(parts.map((part) => part?.kind))
+      return {
+        kind: kinds.has('core') ? 'core' : kinds.has('exception') ? 'exception' : 'keep',
+        out: parts.map((part) => part?.out ?? '').join('-'),
+      }
+    }
+    return { kind: 'core', out: transliterateWordCore(normalized) }
   }
 
-  function toCyrillic(text: string): string {
+  /** So'z o'zi lotinda qoladimi (qavs ichidagi asl yozilish uchun)? */
+  const isAnchorWord = (word: string): boolean => {
+    const decision = decide(word, undefined, undefined, false)
+    return decision.kind === 'keep' && decision.out === word
+  }
+
+  /**
+   * Katta harfli lotin nomlar ketma-ketligi (`Space Launch Complex 40`, `Windows Media Player
+   * Legacy`): birinchi va oxirgi lotinda qoladigan bo'lak orasidagi so'zlar ham lotinda qoladi,
+   * ketma-ketlik boshidagi `The` artikli ham (`The Sanctuary`). Ketma-ketlik — bitta bo'shliq bilan
+   * ajratilgan, katta harf bilan boshlangan so'zlar/atamalar (orada `of`, `and`, `the` mumkin).
+   * Bitta lotin so'zga qo'shni o'zbekcha nom (`Microsoft Toshkent ofisi`) o'giriladi.
+   */
+  function applyNameRuns(units: Unit[], text: string): void {
+    const capitalized = (unit: Unit) => /^\p{Lu}/u.test(unit.token)
+    const connector = (unit: Unit) => !unit.protected && NAME_CONNECTORS.has(unit.token)
+    const force = (unit: Unit) => {
+      if (unit.protected || unit.decision?.kind === 'keep') return
+      unit.decision = { kind: 'keep', out: unit.token }
+      unit.anchor = true
+    }
+    let run: Unit[] = []
+    const flush = () => {
+      while (run.length && connector(run.at(-1)!)) run.pop()
+      const anchors = run.flatMap((unit, index) => (unit.anchor ? [index] : []))
+      if (anchors.length > 0) {
+        const first = anchors[0]!
+        const last = anchors.at(-1)!
+        for (let i = first + 1; i < last; i++) force(run[i]!)
+        for (let i = first - 1; i >= 0 && LEADING_ARTICLES.has(run[i]!.token); i--) force(run[i]!)
+      }
+      run = []
+    }
+    for (const unit of units) {
+      const previous = run.at(-1)
+      const joined = previous !== undefined && RUN_GAP_RE.test(text.slice(previous.end, unit.start))
+      if (!joined) flush()
+      if (capitalized(unit) || (run.length > 0 && connector(unit))) run.push(unit)
+      else flush()
+    }
+    flush()
+  }
+
+  function toCyrillic(text: string, suspicious?: Set<string>): string {
     if (!text) return text
     const ranges: Range[] = []
     addRanges(ranges, regexRanges(text, INLINE_CODE_RE))
@@ -398,17 +709,96 @@ export function createTransliterator(options: TransliteratorOptions = {}): Trans
     addRanges(ranges, regexRanges(text, DOMAIN_RE, true))
     addRanges(ranges, regexRanges(text, MENTION_RE))
     if (preserveHashtags) addRanges(ranges, regexRanges(text, HASHTAG_RE))
-    addRanges(ranges, findTermRanges(text, termIndex))
+    const termRanges = findTermRanges(text, termIndex)
+    const originals = findOriginalNames(text, isAnchorWord)
+    addRanges(ranges, originals.ranges)
+    addRanges(ranges, termRanges)
     ranges.sort((a, b) => a[0] - b[0])
+    const anchorStarts = new Set([...termRanges, ...originals.ranges].map(([start]) => start))
 
-    let out = ''
+    // Bo'laklar tartib bilan: oddiy matndagi so'zlar va himoyalangan bo'laklar.
+    const units: Unit[] = []
+    const segments: Segment[] = []
+    const collectWords = (start: number, end: number) => {
+      const normalized = normalizeApostrophes(text.slice(start, end))
+      segments.push({ start, normalized })
+      for (const match of normalized.matchAll(WORD_RE)) {
+        units.push({
+          start: start + match.index,
+          end: start + match.index + match[0].length,
+          token: match[0],
+          protected: false,
+          anchor: false,
+          before: normalized[match.index - 1],
+          after: normalized[match.index + match[0].length],
+        })
+      }
+    }
     let cursor = 0
     for (const [start, end] of ranges) {
-      out += plain(text.slice(cursor, start)) + text.slice(start, end)
+      collectWords(cursor, start)
+      units.push({
+        start,
+        end,
+        token: text.slice(start, end),
+        protected: true,
+        anchor: anchorStarts.has(start),
+      })
       cursor = end
     }
-    return out + plain(text.slice(cursor))
+    collectWords(cursor, text.length)
+
+    const words = units.filter((unit) => !unit.protected)
+    const shouting = isShoutingText(
+      words.map((unit) => unit.token),
+      segments.map((segment) => segment.normalized).join(' '),
+    )
+    for (const unit of words) {
+      unit.decision = decide(unit.token, unit.before, unit.after, shouting)
+      unit.anchor = unit.decision.kind === 'keep'
+    }
+    applyNameRuns(units, text)
+
+    if (suspicious && !shouting) {
+      for (const unit of words) {
+        if (unit.decision?.kind !== 'core' || !isSuspiciousCandidate(unit.token)) continue
+        if (SENTENCE_START_RE.test(text.slice(0, unit.start))) continue
+        if (originals.intentional.some(([s, e]) => unit.start >= s && unit.end <= e)) continue
+        suspicious.add(unit.token)
+      }
+    }
+
+    // Natija: oddiy matn — normallashtirilgan apostroflar bilan, himoyalangan bo'laklar — asl.
+    const byStart = new Map(words.map((unit) => [unit.start, unit]))
+    let out = ''
+    const emitPlain = (segment: Segment) => {
+      let local = 0
+      for (const match of segment.normalized.matchAll(WORD_RE)) {
+        const unit = byStart.get(segment.start + match.index)
+        out += segment.normalized.slice(local, match.index) + (unit?.decision?.out ?? match[0])
+        local = match.index + match[0].length
+      }
+      out += segment.normalized.slice(local)
+    }
+    ranges.forEach(([start, end], index) => {
+      emitPlain(segments[index]!)
+      out += text.slice(start, end)
+    })
+    emitPlain(segments[ranges.length]!)
+    return out
   }
 
-  return { toCyrillic, word: (w) => word(w) }
+  const self: Transliterator = {
+    toCyrillic,
+    word: (w) => decide(w, undefined, undefined, false).out,
+    withProtectedTerms: (terms) => {
+      const extra = terms.map((term) => term.trim()).filter(Boolean)
+      if (extra.length === 0) return self
+      return createTransliterator({
+        ...options,
+        protectedTerms: [...(options.protectedTerms ?? []), ...extra],
+      })
+    },
+  }
+  return self
 }

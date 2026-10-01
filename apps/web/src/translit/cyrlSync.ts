@@ -96,9 +96,33 @@ export interface CyrlSyncFieldSpec {
   ) => unknown
   /** Bo'shlikni tekshirish (default: matn/Lexical matni bo'sh). */
   isEmpty?: (value: unknown) => boolean
+  /** Hujjat darajasidagi qo'shimcha himoyalangan atamalar (default — `CyrlSyncOptions` dan). */
+  protectedTerms?: CyrlSyncDocOptions['protectedTerms']
+  /** Lotin o'zgarmasa ham kirillni qayta yozish sharti (default — `CyrlSyncOptions` dan). */
+  refreshWhen?: CyrlSyncDocOptions['refreshWhen']
 }
 
-export interface CyrlSyncOptions {
+/** Hujjat darajasidagi hook argumentlari (saqlanayotgan `data` va saqlashdan oldingi hujjat). */
+export interface CyrlDocArgs {
+  data: Record<string, unknown>
+  originalDoc: Record<string, unknown> | undefined
+  req: PayloadRequest
+}
+
+export interface CyrlSyncDocOptions {
+  /**
+   * Hujjat uchun qo'shimcha o'girilmaydigan atamalar (OBLOG-67: post teglari, `keepLatin`).
+   * Bitta saqlashda bir marta hisoblanadi (barcha maydon hook'lari uchun umumiy).
+   */
+  protectedTerms?: (args: CyrlDocArgs) => Promise<readonly string[]> | readonly string[]
+  /**
+   * Lotin matni o'zgarmasa ham qulflanmagan maydonlarning kirilli qayta yozilsinmi (masalan,
+   * `keepLatin` yoki teglar o'zgardi). Qulflar olinmaydi.
+   */
+  refreshWhen?: (args: CyrlDocArgs) => boolean
+}
+
+export interface CyrlSyncOptions extends CyrlSyncDocOptions {
   /** Oddiy matn maydonlari (text, textarea) yoki to'liq spetsifikatsiyalar. */
   fields?: Array<string | CyrlSyncFieldSpec>
   /** Lexical richText maydonlari. */
@@ -202,27 +226,63 @@ export function newRowId(): string {
   return randomBytes(12).toString('hex')
 }
 
-async function toCyrillicValue(
+/**
+ * Lotin qiymatidan kirill qiymati (hook, qayta sinxronlash skripti va MCP uchun umumiy).
+ * `suspicious` berilsa — shubhali so'zlar yig'iladi (`Transliterator.toCyrillic`).
+ */
+export function cyrillicFromLatin(
+  specInput: CyrlSyncFieldSpec,
   value: unknown,
-  spec: NormalizedSpec,
-  req: PayloadRequest,
-  previous: unknown,
-): Promise<unknown> {
-  const transliterator = await getTransliterator(req.payload)
-  if (spec.transform) return spec.transform(value, transliterator, { previous })
+  transliterator: Transliterator,
+  previous?: unknown,
+  suspicious?: Set<string>,
+): unknown {
+  const spec = normalizeSpec(specInput)
+  const tr: Transliterator = suspicious
+    ? { ...transliterator, toCyrillic: (text) => transliterator.toCyrillic(text, suspicious) }
+    : transliterator
+  if (spec.transform) return spec.transform(value, tr, { previous })
   if (spec.kind === 'richText') {
-    return transliterateLexical(value, transliterator.toCyrillic, {
+    return transliterateLexical(value, (text) => tr.toCyrillic(text), {
       transformBlock: spec.transformBlock,
     })
   }
-  return typeof value === 'string' ? transliterator.toCyrillic(value) : value
+  return typeof value === 'string' ? tr.toCyrillic(value) : value
+}
+
+/** Bitta saqlash (`data` obyekti) uchun hujjat atamalari — barcha maydon hook'lari uchun bitta. */
+const docTermsCache = new WeakMap<object, Promise<readonly string[]>>()
+
+function docTerms(spec: NormalizedSpec, args: CyrlDocArgs): Promise<readonly string[]> {
+  const resolve = spec.protectedTerms
+  if (!resolve) return Promise.resolve([])
+  let cached = docTermsCache.get(args.data)
+  if (!cached) {
+    cached = Promise.resolve(resolve(args)).catch((error: unknown) => {
+      args.req.payload.logger.warn({ err: error }, 'Kirill: hujjat atamalari oʻqilmadi')
+      return []
+    })
+    docTermsCache.set(args.data, cached)
+  }
+  return cached
+}
+
+async function toCyrillicValue(
+  value: unknown,
+  spec: NormalizedSpec,
+  args: CyrlDocArgs,
+  previous: unknown,
+): Promise<unknown> {
+  const terms = await docTerms(spec, args)
+  const transliterator = (await getTransliterator(args.req.payload)).withProtectedTerms(terms)
+  return cyrillicFromLatin(spec, value, transliterator, previous)
 }
 
 // ---------------------------------------------------------------------------
 // Hook
 // ---------------------------------------------------------------------------
 
-interface NormalizedSpec extends CyrlSyncFieldSpec {
+export interface NormalizedSpec extends CyrlSyncFieldSpec {
   kind: CyrlFieldKind
   lockKey: string
 }
@@ -231,16 +291,23 @@ function normalizeSpec(spec: CyrlSyncFieldSpec): NormalizedSpec {
   return { kind: 'text', ...spec, lockKey: spec.lockKey ?? spec.path }
 }
 
-function normalizeSpecs(options: CyrlSyncOptions): NormalizedSpec[] {
+/** Sinxronlanadigan maydonlar (hujjat darajasidagi `protectedTerms`/`refreshWhen` bilan). */
+export function normalizeSpecs(options: CyrlSyncOptions): NormalizedSpec[] {
+  const doc: CyrlSyncDocOptions = {
+    ...(options.protectedTerms ? { protectedTerms: options.protectedTerms } : {}),
+    ...(options.refreshWhen ? { refreshWhen: options.refreshWhen } : {}),
+  }
   const specs: NormalizedSpec[] = []
   for (const item of options.fields ?? []) {
-    specs.push(normalizeSpec(typeof item === 'string' ? { path: item } : item))
+    specs.push(normalizeSpec({ ...doc, ...(typeof item === 'string' ? { path: item } : item) }))
   }
   for (const item of options.richTextFields ?? []) {
     specs.push(
-      normalizeSpec(
-        typeof item === 'string' ? { path: item, kind: 'richText' } : { ...item, kind: 'richText' },
-      ),
+      normalizeSpec({
+        ...doc,
+        ...(typeof item === 'string' ? { path: item } : item),
+        kind: 'richText',
+      }),
     )
   }
   return specs
@@ -287,10 +354,16 @@ export function createCyrlSyncFieldHook(specInput: CyrlSyncFieldSpec): FieldHook
     const writeCyrillic = (cyrillic: unknown) => {
       siblingDocWithLocales[name] = { ...stored, [CYRILLIC_LOCALE]: cyrillic }
     }
+    const docArgs: CyrlDocArgs = {
+      data: data as Record<string, unknown>,
+      originalDoc: isPlainObject(originalDoc) ? originalDoc : undefined,
+      req,
+    }
 
     if (locale === LATIN_LOCALE) {
       const regenerate = regenerateRequested(req, spec)
-      const latin = value !== undefined ? value : regenerate ? oldLatin : undefined
+      const refresh = spec.refreshWhen?.(docArgs) ?? false
+      const latin = value !== undefined ? value : regenerate || refresh ? oldLatin : undefined
       if (latin === undefined) return value
 
       const latinChanged = !equal(latin, oldLatin)
@@ -299,8 +372,10 @@ export function createCyrlSyncFieldHook(specInput: CyrlSyncFieldSpec): FieldHook
         return value
       }
       if (regenerate) delete locks[lockKey]
-      if (latinChanged || regenerate || isEmpty(oldCyrillic)) {
-        writeCyrillic(isEmpty(latin) ? latin : await toCyrillicValue(latin, spec, req, oldCyrillic))
+      if (latinChanged || regenerate || refresh || isEmpty(oldCyrillic)) {
+        writeCyrillic(
+          isEmpty(latin) ? latin : await toCyrillicValue(latin, spec, docArgs, oldCyrillic),
+        )
       }
       return value === undefined ? latin : value
     }
@@ -311,7 +386,7 @@ export function createCyrlSyncFieldHook(specInput: CyrlSyncFieldSpec): FieldHook
     if (isEmpty(value) || fallbackEcho) {
       delete locks[lockKey]
       if (isEmpty(oldLatin)) return value
-      return toCyrillicValue(oldLatin, spec, req, oldCyrillic)
+      return toCyrillicValue(oldLatin, spec, docArgs, oldCyrillic)
     }
     locks[lockKey] = true
     ;(data as Record<string, unknown>)[CYRL_STALE_FIELD] = false

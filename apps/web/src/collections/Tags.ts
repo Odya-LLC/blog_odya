@@ -7,6 +7,8 @@ import { revalidatePostListsAfterChange } from '@/site/revalidate'
 
 /**
  * Teglar (TZ §10.5): o'yin/platforma/kompaniya nomlari (CS2, ChatGPT, iPhone ...).
+ * `doNotTransliterate` (OBLOG-67) — brend teg: nomi postlar kirill versiyasida lotinda qoladi
+ * (`src/translit/post-terms.ts`).
  * SEO `meta` (L) guruhi — `plugin-seo`.
  */
 export const Tags: CollectionConfig = {
@@ -65,6 +67,17 @@ export const Tags: CollectionConfig = {
                   required: true,
                 },
               ],
+            },
+            {
+              // OBLOG-67: brend teg — nomi kirill versiyasida ham lotinda qoladi.
+              name: 'doNotTransliterate',
+              type: 'checkbox',
+              label: 'Kirillda lotinda qoladi (brend)',
+              defaultValue: false,
+              admin: {
+                description:
+                  'Belgilansa, teg nomi (masalan, "Figure", "Game Informer") tegning oʻzida va shu teg biriktirilgan postlarning kirill versiyasida transliteratsiya qilinmaydi. Kirill nomi lotin nomi bilan bir xil boʻlsa ham shunday ishlaydi.',
+              },
             },
           ],
         },

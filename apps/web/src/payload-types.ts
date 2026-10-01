@@ -239,6 +239,18 @@ export interface Post {
       }[]
     | null;
   /**
+   * JSON roʻyxat, masalan ["Figure", "Game Informer"]: shu postning kirill versiyasida bu atamalar transliteratsiya qilinmaydi (katta-kichik harf farqlanadi; qoʻshimcha qoʻshilsa ham — "Figuredan"). Hamma postlar uchun — glossariy (doNotTransliterate). MCP agent save_rewrite(keepLatin) bilan yozadi.
+   */
+  keepLatin?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
    * { title, excerpt, content, meta, faq, coverAlt } — kirill qoʻlda tuzatilganda avtomatik qulflanadi; "Kirillni qayta generatsiya qilish" qulfni oladi
    */
   cyrlLocked?:
@@ -704,6 +716,10 @@ export interface Tag {
         id?: string | null;
       }[]
     | null;
+  /**
+   * Belgilansa, teg nomi (masalan, "Figure", "Game Informer") tegning oʻzida va shu teg biriktirilgan postlarning kirill versiyasida transliteratsiya qilinmaydi. Kirill nomi lotin nomi bilan bir xil boʻlsa ham shunday ishlaydi.
+   */
+  doNotTransliterate?: boolean | null;
   meta?: {
     title?: string | null;
     description?: string | null;
@@ -1202,6 +1218,7 @@ export interface PostsSelect<T extends boolean = true> {
         error?: T;
         id?: T;
       };
+  keepLatin?: T;
   cyrlLocked?: T;
   meta?:
     | T
@@ -1333,6 +1350,7 @@ export interface TagsSelect<T extends boolean = true> {
         value?: T;
         id?: T;
       };
+  doNotTransliterate?: T;
   meta?:
     | T
     | {

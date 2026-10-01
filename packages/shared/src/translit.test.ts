@@ -151,7 +151,7 @@ describe('translit: digraflar va umumiy matn', () => {
   it.each([
     ['shahar', 'шаҳар'],
     ['Choy', 'Чой'],
-    ['SHAHAR', 'ШАҲАР'],
+    ['YANGI SHAHAR QURILDI', 'ЯНГИ ШАҲАР ҚУРИЛДИ'],
     ['AQSh prezidenti', 'АҚШ президенти'],
     ['Toshkentdagi tong', 'Тошкентдаги тонг'],
     ['mashq', 'машқ'],
@@ -186,7 +186,7 @@ describe('translit: brendlar va chet so‘zlar (glossariy doNotTransliterate)', 
     ['Mobile Legends: Bang Bang oʻyini', 'Mobile Legends: Bang Bang ўйини'],
     ['Microsoft kompaniyasi', 'Microsoft компанияси'],
     ['Samsungdan', 'Samsungдан'],
-    ['Nvidia GeForce RTX', 'Nvidia GeForce РТХ'],
+    ['Nvidia GeForce RTX', 'Nvidia GeForce RTX'],
     ['5G tarmogʻi', '5G тармоғи'],
     ['Twitter tarmogʻi', 'Twitter тармоғи'],
     ['OnePlus va TikTok', 'OnePlus ва TikTok'],
@@ -370,5 +370,148 @@ describe('translit: Lexical JSON', () => {
   it('Lexical bo‘lmagan qiymat o‘zgarishsiz qaytadi', () => {
     expect(transliterateLexical(null, t)).toBeNull()
     expect(transliterateLexical('matn', t)).toBe('matn')
+  })
+})
+
+describe('translit (OBLOG-67): brendlar, qisqartmalar va asl nomlar lotinda qoladi', () => {
+  // Muammo jadvalidagi misollar (MCP postlari, 2026-10-01) — glossariy seed'i va qoidalar bilan.
+  it.each([
+    ['Figure robotlari', 'Figure роботлари'],
+    ['Helix modeli', 'Helix модели'],
+    ['AI Index hisoboti', 'AI Index ҳисоботи'],
+    ['Claude Opus, Sonnet va Haiku', 'Claude Opus, Sonnet ва Haiku'],
+    ['Gemini Flash va Max', 'Gemini Flash ва Max'],
+    ['Muse, dots va Teams', 'Muse, dots ва Teams'],
+    ['Crew Dragon kemasi', 'Crew Dragon кемаси'],
+    ['Space Launch Complex 40 maydonchasi', 'Space Launch Complex 40 майдончаси'],
+    ['Game Informer nashri', 'Game Informer нашри'],
+    ['Windows Latest xabar berdi', 'Windows Latest хабар берди'],
+    ['Bloomberg maʼlumotiga koʻra', 'Bloomberg маълумотига кўра'],
+    ['App Store va Google Play', 'App Store ва Google Play'],
+    ['LANXESS Arena zalida', 'LANXESS Arena залида'],
+    ['The Sanctuary inshooti', 'The Sanctuary иншооти'],
+    ['Windows Media Player dasturi', 'Windows Media Player дастури'],
+    ['Windows Media Player Legacy versiyasi', 'Windows Media Player Legacy версияси'],
+    ['Administrative Templates boʻlimi', 'Administrative Templates бўлими'],
+    ['prompt injection hujumi', 'prompt injection ҳужуми'],
+    ['double elimination formati', 'double elimination формати'],
+    ['Rockstar Games kompaniyasi', 'Rockstar Games компанияси'],
+  ])('%s → %s', (latin, cyrillic) => {
+    expect(toCyrillic(latin)).toBe(cyrillic)
+  })
+
+  it.each([
+    ['GTA', 'GTA'],
+    ['ESL', 'ESL'],
+    ['IEM', 'IEM'],
+    ['TLS', 'TLS'],
+    ['VLA', 'VLA'],
+    ['NIST', 'NIST'],
+    ['IPP', 'IPP'],
+    ['USB', 'USB'],
+    ['PGL', 'PGL'],
+    ['HBM', 'HBM'],
+    ['OLED displey', 'OLED дисплей'],
+    ['GTA VI chiqdi', 'GTA VI чиқди'],
+  ])('qisqartma (2–6 katta harf) lotinda qoladi: %s → %s', (latin, cyrillic) => {
+    expect(toCyrillic(latin)).toBe(cyrillic)
+  })
+
+  it.each([
+    ['AQSH prezidenti', 'АҚШ президенти'],
+    ['AQSh prezidenti', 'АҚШ президенти'],
+    ['AQSHda', 'АҚШда'],
+    ['XKS ekipaji', 'ХКС экипажи'],
+    ['BMT va MDH', 'БМТ ва МДҲ'],
+    ['YAIM oʻsdi', 'ЯИМ ўсди'],
+    ['YaIM oʻsdi', 'ЯИМ ўсди'],
+    ['MCHJ va AJ', 'МЧЖ ва АЖ'],
+    ['QQS stavkasi', 'ҚҚС ставкаси'],
+    ['OAVlar', 'ОАВлар'],
+    ['IIV xabari', 'ИИВ хабари'],
+    ['SI modellari', 'СИ моделлари'],
+  ])('o‘zbekcha qisqartmalar (istisno) o‘giriladi: %s → %s', (latin, cyrillic) => {
+    expect(toCyrillic(latin)).toBe(cyrillic)
+  })
+
+  it.each([
+    ['Figuredan', 'Figureдан'],
+    ['ESLning', 'ESLнинг'],
+    ['GTAni', 'GTAни'],
+    ['IEMda', 'IEMда'],
+    ['Bloombergga', 'Bloombergга'],
+    ['ChatGPTdan', 'ChatGPTдан'],
+  ])('brend/qisqartma + qo‘shimcha: %s → %s', (latin, cyrillic) => {
+    expect(toCyrillic(latin)).toBe(cyrillic)
+  })
+
+  it.each([
+    [
+      'OpenAI bosh direktori Sem Altman (Sam Altman)',
+      'OpenAI бош директори Сем Алтман (Sam Altman)',
+    ],
+    ['Pol Makferson (Paul MacPherson) aytdi', 'Пол Макферсон (Paul MacPherson) айтди'],
+    ['Ilon Mask (Elon Musk)', 'Илон Маск (Elon Musk)'],
+    ['Jensen Xuang (Jensen Huang)', 'Женсен Хуанг (Jensen Huang)'],
+    ['Silikon vodiysi (Silicon Valley)', 'Силикон водийси (Silicon Valley)'],
+  ])('asl yozilish qavs ichida lotinda qoladi: %s → %s', (latin, cyrillic) => {
+    expect(toCyrillic(latin)).toBe(cyrillic)
+  })
+
+  it.each([
+    ['Toshkent (Oʻzbekiston)', 'Тошкент (Ўзбекистон)'],
+    ['Samarqand (Surxondaryo)', 'Самарқанд (Сурхондарё)'],
+    ['Shavkat Mirziyoyev (Prezident)', 'Шавкат Мирзиёев (Президент)'],
+    ['Microsoft Toshkent ofisi', 'Microsoft Тошкент офиси'],
+    ['Apple Markaziy Osiyoda', 'Apple Марказий Осиёда'],
+    ['Oʻzbekiston Respublikasi Prezidenti', 'Ўзбекистон Республикаси Президенти'],
+    ['Toshkent va Samarqand', 'Тошкент ва Самарқанд'],
+    ['Rustam Azimov', 'Рустам Азимов'],
+    ['Maxsus loyiha', 'Махсус лойиҳа'],
+    ['Figura va indeks', 'Фигура ва индекс'],
+    ['Arena va Media', 'Арена ва Медиа'],
+    ['OʻZBEKISTON', 'ЎЗБЕКИСТОН'],
+    ['SENTABR', 'СЕНТЯБРЬ'],
+  ])('o‘zbekcha nomlar odatdagidek o‘giriladi: %s → %s', (latin, cyrillic) => {
+    expect(toCyrillic(latin)).toBe(cyrillic)
+  })
+
+  it('realistik gap: bir nechta brend, qisqartma va ism', () => {
+    expect(
+      toCyrillic(
+        'Figure kompaniyasi Helix modelini taqdim etdi: Crew Dragon va GTA haqida Game Informer, ' +
+          'ESL va IEM turnirlari haqida HLTV yozdi. Sem Altman (Sam Altman) AQSHda gapirdi.',
+      ),
+    ).toBe(
+      'Figure компанияси Helix моделини тақдим этди: Crew Dragon ва GTA ҳақида Game Informer, ' +
+        'ESL ва IEM турнирлари ҳақида HLTV ёзди. Сем Алтман (Sam Altman) АҚШда гапирди.',
+    )
+  })
+
+  it('withProtectedTerms: post teglari va keepLatin', () => {
+    const base = createTransliterator()
+    expect(base.toCyrillic('Nimbus Pro chiqdi')).toBe('Нимбус Про чиқди')
+    const extended = base.withProtectedTerms(['Nimbus Pro', 'Orbit'])
+    expect(extended.toCyrillic('Nimbus Pro chiqdi, Orbitdan farqi')).toBe(
+      'Nimbus Pro чиқди, Orbitдан фарқи',
+    )
+    expect(base.withProtectedTerms([' ', ''])).toBe(base)
+  })
+
+  it('shubhali so‘zlar: gap o‘rtasidagi katta harfli, odatdagidek o‘girilgan lotin so‘zlar', () => {
+    const suspicious = new Set<string>()
+    createSeededTransliterator().toCyrillic(
+      'Yangi Nimbus modeli va Orbit tizimi Toshkent hamda Oʻzbekistonda sinovdan oʻtdi. ' +
+        'Kompaniya rahbari Sem Altman (Sam Altman) va Figure, GTA haqida gapirdi. ' +
+        'Ammo Zentrix hali ishlamaydi.',
+      suspicious,
+    )
+    expect([...suspicious].sort()).toEqual(['Nimbus', 'Orbit', 'Zentrix'])
+  })
+
+  it('shubhali so‘zlar: katta harfli sarlavhada hisoblanmaydi', () => {
+    const suspicious = new Set<string>()
+    createSeededTransliterator().toCyrillic('YANGI NIMBUS MODELI CHIQDI', suspicious)
+    expect([...suspicious]).toEqual([])
   })
 })

@@ -1,6 +1,6 @@
 {
-  "version": "1.0.0",
-  "updatedAt": "2026-09-23",
+  "version": "1.1.0",
+  "updatedAt": "2026-10-02",
   "description": "Lotin → kirill transliteratsiya istisnolari (boshlangʻich roʻyxat, TZ §3.6, §10.9). Adapter tartibi: avval whole_word (butun soʻz), keyin eng uzun prefix mosligi; katta-kichik harf farqlanmaydi, natijada asl soʻzning bosh harfi saqlanadi.",
   "items": [
     {
@@ -2090,6 +2090,252 @@
       "cyrillic": "плей-офф",
       "matchType": "whole_word",
       "note": "Sport va kibersport"
+    },
+    {
+      "latin": "AQSH",
+      "cyrillic": "АҚШ",
+      "matchType": "whole_word",
+      "note": "Oʻzbekcha qisqartma (Amerika Qoʻshma Shtatlari): kirillda ham qisqartma. Qisqartma qoidasi (2–6 katta harf lotinda qoladi) uchun istisno"
+    },
+    {
+      "latin": "BAA",
+      "cyrillic": "БАА",
+      "matchType": "whole_word",
+      "note": "Oʻzbekcha qisqartma (Birlashgan Arab Amirliklari): kirillda ham qisqartma. Qisqartma qoidasi (2–6 katta harf lotinda qoladi) uchun istisno"
+    },
+    {
+      "latin": "BMT",
+      "cyrillic": "БМТ",
+      "matchType": "whole_word",
+      "note": "Oʻzbekcha qisqartma (Birlashgan Millatlar Tashkiloti): kirillda ham qisqartma. Qisqartma qoidasi (2–6 katta harf lotinda qoladi) uchun istisno"
+    },
+    {
+      "latin": "MDH",
+      "cyrillic": "МДҲ",
+      "matchType": "whole_word",
+      "note": "Oʻzbekcha qisqartma (Mustaqil Davlatlar Hamdoʻstligi): kirillda ham qisqartma. Qisqartma qoidasi (2–6 katta harf lotinda qoladi) uchun istisno"
+    },
+    {
+      "latin": "XXR",
+      "cyrillic": "ХХР",
+      "matchType": "whole_word",
+      "note": "Oʻzbekcha qisqartma (Xitoy Xalq Respublikasi): kirillda ham qisqartma. Qisqartma qoidasi (2–6 katta harf lotinda qoladi) uchun istisno"
+    },
+    {
+      "latin": "KXDR",
+      "cyrillic": "КХДР",
+      "matchType": "whole_word",
+      "note": "Oʻzbekcha qisqartma (Koreya Xalq Demokratik Respublikasi): kirillda ham qisqartma. Qisqartma qoidasi (2–6 katta harf lotinda qoladi) uchun istisno"
+    },
+    {
+      "latin": "RF",
+      "cyrillic": "РФ",
+      "matchType": "whole_word",
+      "note": "Oʻzbekcha qisqartma (Rossiya Federatsiyasi): kirillda ham qisqartma. Qisqartma qoidasi (2–6 katta harf lotinda qoladi) uchun istisno"
+    },
+    {
+      "latin": "JSST",
+      "cyrillic": "ЖССТ",
+      "matchType": "whole_word",
+      "note": "Oʻzbekcha qisqartma (Jahon sogʻliqni saqlash tashkiloti): kirillda ham qisqartma. Qisqartma qoidasi (2–6 katta harf lotinda qoladi) uchun istisno"
+    },
+    {
+      "latin": "XVF",
+      "cyrillic": "ХВФ",
+      "matchType": "whole_word",
+      "note": "Oʻzbekcha qisqartma (Xalqaro valyuta fondi): kirillda ham qisqartma. Qisqartma qoidasi (2–6 katta harf lotinda qoladi) uchun istisno"
+    },
+    {
+      "latin": "SHHT",
+      "cyrillic": "ШҲТ",
+      "matchType": "whole_word",
+      "note": "Oʻzbekcha qisqartma (Shanxay hamkorlik tashkiloti): kirillda ham qisqartma. Qisqartma qoidasi (2–6 katta harf lotinda qoladi) uchun istisno"
+    },
+    {
+      "latin": "NATO",
+      "cyrillic": "НАТО",
+      "matchType": "whole_word",
+      "note": "Oʻzbekcha qisqartma (Shimoliy Atlantika shartnomasi tashkiloti): kirillda ham qisqartma. Qisqartma qoidasi (2–6 katta harf lotinda qoladi) uchun istisno"
+    },
+    {
+      "latin": "IIV",
+      "cyrillic": "ИИВ",
+      "matchType": "whole_word",
+      "note": "Oʻzbekcha qisqartma (Ichki ishlar vazirligi): kirillda ham qisqartma. Qisqartma qoidasi (2–6 katta harf lotinda qoladi) uchun istisno"
+    },
+    {
+      "latin": "IIB",
+      "cyrillic": "ИИБ",
+      "matchType": "whole_word",
+      "note": "Oʻzbekcha qisqartma (Ichki ishlar boshqarmasi): kirillda ham qisqartma. Qisqartma qoidasi (2–6 katta harf lotinda qoladi) uchun istisno"
+    },
+    {
+      "latin": "DXX",
+      "cyrillic": "ДХХ",
+      "matchType": "whole_word",
+      "note": "Oʻzbekcha qisqartma (Davlat xavfsizlik xizmati): kirillda ham qisqartma. Qisqartma qoidasi (2–6 katta harf lotinda qoladi) uchun istisno"
+    },
+    {
+      "latin": "FVV",
+      "cyrillic": "ФВВ",
+      "matchType": "whole_word",
+      "note": "Oʻzbekcha qisqartma (Favqulodda vaziyatlar vazirligi): kirillda ham qisqartma. Qisqartma qoidasi (2–6 katta harf lotinda qoladi) uchun istisno"
+    },
+    {
+      "latin": "SSV",
+      "cyrillic": "ССВ",
+      "matchType": "whole_word",
+      "note": "Oʻzbekcha qisqartma (Sogʻliqni saqlash vazirligi): kirillda ham qisqartma. Qisqartma qoidasi (2–6 katta harf lotinda qoladi) uchun istisno"
+    },
+    {
+      "latin": "DSQ",
+      "cyrillic": "ДСҚ",
+      "matchType": "whole_word",
+      "note": "Oʻzbekcha qisqartma (Davlat soliq qoʻmitasi): kirillda ham qisqartma. Qisqartma qoidasi (2–6 katta harf lotinda qoladi) uchun istisno"
+    },
+    {
+      "latin": "YHXB",
+      "cyrillic": "ЙҲХБ",
+      "matchType": "whole_word",
+      "note": "Oʻzbekcha qisqartma (Yoʻl harakati xavfsizligi boshqarmasi): kirillda ham qisqartma. Qisqartma qoidasi (2–6 katta harf lotinda qoladi) uchun istisno"
+    },
+    {
+      "latin": "YTH",
+      "cyrillic": "ЙТҲ",
+      "matchType": "whole_word",
+      "note": "Oʻzbekcha qisqartma (Yoʻl-transport hodisasi): kirillda ham qisqartma. Qisqartma qoidasi (2–6 katta harf lotinda qoladi) uchun istisno"
+    },
+    {
+      "latin": "OAV",
+      "cyrillic": "ОАВ",
+      "matchType": "whole_word",
+      "note": "Oʻzbekcha qisqartma (Ommaviy axborot vositalari): kirillda ham qisqartma. Qisqartma qoidasi (2–6 katta harf lotinda qoladi) uchun istisno"
+    },
+    {
+      "latin": "NNT",
+      "cyrillic": "ННТ",
+      "matchType": "whole_word",
+      "note": "Oʻzbekcha qisqartma (Nodavlat notijorat tashkiloti): kirillda ham qisqartma. Qisqartma qoidasi (2–6 katta harf lotinda qoladi) uchun istisno"
+    },
+    {
+      "latin": "OTM",
+      "cyrillic": "ОТМ",
+      "matchType": "whole_word",
+      "note": "Oʻzbekcha qisqartma (Oliy taʼlim muassasasi): kirillda ham qisqartma. Qisqartma qoidasi (2–6 katta harf lotinda qoladi) uchun istisno"
+    },
+    {
+      "latin": "DTM",
+      "cyrillic": "ДТМ",
+      "matchType": "whole_word",
+      "note": "Oʻzbekcha qisqartma (Davlat test markazi): kirillda ham qisqartma. Qisqartma qoidasi (2–6 katta harf lotinda qoladi) uchun istisno"
+    },
+    {
+      "latin": "YAIM",
+      "cyrillic": "ЯИМ",
+      "matchType": "whole_word",
+      "note": "Oʻzbekcha qisqartma (Yalpi ichki mahsulot): kirillda ham qisqartma. Qisqartma qoidasi (2–6 katta harf lotinda qoladi) uchun istisno"
+    },
+    {
+      "latin": "QQS",
+      "cyrillic": "ҚҚС",
+      "matchType": "whole_word",
+      "note": "Oʻzbekcha qisqartma (Qoʻshilgan qiymat soligʻi): kirillda ham qisqartma. Qisqartma qoidasi (2–6 katta harf lotinda qoladi) uchun istisno"
+    },
+    {
+      "latin": "MCHJ",
+      "cyrillic": "МЧЖ",
+      "matchType": "whole_word",
+      "note": "Oʻzbekcha qisqartma (Masʼuliyati cheklangan jamiyat): kirillda ham qisqartma. Qisqartma qoidasi (2–6 katta harf lotinda qoladi) uchun istisno"
+    },
+    {
+      "latin": "AJ",
+      "cyrillic": "АЖ",
+      "matchType": "whole_word",
+      "note": "Oʻzbekcha qisqartma (Aksiyadorlik jamiyati): kirillda ham qisqartma. Qisqartma qoidasi (2–6 katta harf lotinda qoladi) uchun istisno"
+    },
+    {
+      "latin": "XK",
+      "cyrillic": "ХК",
+      "matchType": "whole_word",
+      "note": "Oʻzbekcha qisqartma (Xususiy korxona): kirillda ham qisqartma. Qisqartma qoidasi (2–6 katta harf lotinda qoladi) uchun istisno"
+    },
+    {
+      "latin": "YATT",
+      "cyrillic": "ЯТТ",
+      "matchType": "whole_word",
+      "note": "Oʻzbekcha qisqartma (Yakka tartibdagi tadbirkor): kirillda ham qisqartma. Qisqartma qoidasi (2–6 katta harf lotinda qoladi) uchun istisno"
+    },
+    {
+      "latin": "ATB",
+      "cyrillic": "АТБ",
+      "matchType": "whole_word",
+      "note": "Oʻzbekcha qisqartma (Aksiyadorlik tijorat banki): kirillda ham qisqartma. Qisqartma qoidasi (2–6 katta harf lotinda qoladi) uchun istisno"
+    },
+    {
+      "latin": "AKT",
+      "cyrillic": "АКТ",
+      "matchType": "whole_word",
+      "note": "Oʻzbekcha qisqartma (Axborot-kommunikatsiya texnologiyalari): kirillda ham qisqartma. Qisqartma qoidasi (2–6 katta harf lotinda qoladi) uchun istisno"
+    },
+    {
+      "latin": "SI",
+      "cyrillic": "СИ",
+      "matchType": "whole_word",
+      "note": "Oʻzbekcha qisqartma (Sunʼiy intellekt): kirillda ham qisqartma. Qisqartma qoidasi (2–6 katta harf lotinda qoladi) uchun istisno"
+    },
+    {
+      "latin": "XKS",
+      "cyrillic": "ХКС",
+      "matchType": "whole_word",
+      "note": "Oʻzbekcha qisqartma (Xalqaro kosmik stansiya): kirillda ham qisqartma. Qisqartma qoidasi (2–6 katta harf lotinda qoladi) uchun istisno"
+    },
+    {
+      "latin": "AES",
+      "cyrillic": "АЭС",
+      "matchType": "whole_word",
+      "note": "Oʻzbekcha qisqartma (Atom elektr stansiyasi): kirillda ham qisqartma. Qisqartma qoidasi (2–6 katta harf lotinda qoladi) uchun istisno"
+    },
+    {
+      "latin": "IES",
+      "cyrillic": "ИЭС",
+      "matchType": "whole_word",
+      "note": "Oʻzbekcha qisqartma (Issiqlik elektr stansiyasi): kirillda ham qisqartma. Qisqartma qoidasi (2–6 katta harf lotinda qoladi) uchun istisno"
+    },
+    {
+      "latin": "GES",
+      "cyrillic": "ГЭС",
+      "matchType": "whole_word",
+      "note": "Oʻzbekcha qisqartma (Gidroelektr stansiyasi): kirillda ham qisqartma. Qisqartma qoidasi (2–6 katta harf lotinda qoladi) uchun istisno"
+    },
+    {
+      "latin": "XDP",
+      "cyrillic": "ХДП",
+      "matchType": "whole_word",
+      "note": "Oʻzbekcha qisqartma (Xalq demokratik partiyasi): kirillda ham qisqartma. Qisqartma qoidasi (2–6 katta harf lotinda qoladi) uchun istisno"
+    },
+    {
+      "latin": "TATU",
+      "cyrillic": "ТАТУ",
+      "matchType": "whole_word",
+      "note": "Oʻzbekcha qisqartma (Toshkent axborot texnologiyalari universiteti): kirillda ham qisqartma. Qisqartma qoidasi (2–6 katta harf lotinda qoladi) uchun istisno"
+    },
+    {
+      "latin": "TDTU",
+      "cyrillic": "ТДТУ",
+      "matchType": "whole_word",
+      "note": "Oʻzbekcha qisqartma (Toshkent davlat texnika universiteti): kirillda ham qisqartma. Qisqartma qoidasi (2–6 katta harf lotinda qoladi) uchun istisno"
+    },
+    {
+      "latin": "TDIU",
+      "cyrillic": "ТДИУ",
+      "matchType": "whole_word",
+      "note": "Oʻzbekcha qisqartma (Toshkent davlat iqtisodiyot universiteti): kirillda ham qisqartma. Qisqartma qoidasi (2–6 katta harf lotinda qoladi) uchun istisno"
+    },
+    {
+      "latin": "JCH",
+      "cyrillic": "ЖЧ",
+      "matchType": "whole_word",
+      "note": "Oʻzbekcha qisqartma (Jahon chempionati): kirillda ham qisqartma. Qisqartma qoidasi (2–6 katta harf lotinda qoladi) uchun istisno"
     }
   ]
 }

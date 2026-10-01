@@ -363,7 +363,8 @@ describe('globals: site-settings, header, footer', () => {
     expect((await regenerateGlobal('site-settings', users.editor)).status).toBe(403)
     expect((await regenerateGlobal('site-settings', users.admin)).status).toBe(200)
     cyrl = await read<SiteSetting>('site-settings', CYRL)
-    expect(cyrl.tagline).toBe('ИТ янгиликлари')
+    // OBLOG-67: 2–6 harfli qisqartma (IT) kirillda lotinda qoladi.
+    expect(cyrl.tagline).toBe('IT янгиликлари')
     expect(cyrl.cyrlLocked).toEqual({})
     expect(cyrl.cyrlStale).toBe(false)
   })

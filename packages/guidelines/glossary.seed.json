@@ -1,6 +1,6 @@
 {
-  "version": "1.0.0",
-  "updatedAt": "2026-09-23",
+  "version": "1.1.0",
+  "updatedAt": "2026-10-02",
   "description": "Glossariy boshlangʻich roʻyxati: EN/RU atama → oʻzbekcha (lotin). Brendlar tarjima ham, transliteratsiya ham qilinmaydi (TZ §3.6, §5.2, §10.8).",
   "items": [
     {
@@ -2662,6 +2662,411 @@
       "kind": "term",
       "doNotTranslate": false,
       "doNotTransliterate": false
+    },
+    {
+      "term": "Figure",
+      "language": "en",
+      "translation": "Figure",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Gumanoid robotlar ishlab chiquvchi kompaniya (Figure AI)"
+    },
+    {
+      "term": "Figure AI",
+      "language": "en",
+      "translation": "Figure AI",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Gumanoid robotlar kompaniyasi"
+    },
+    {
+      "term": "Helix",
+      "language": "en",
+      "translation": "Helix",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Figure robotlarining VLA modeli"
+    },
+    {
+      "term": "Opus",
+      "language": "en",
+      "translation": "Opus",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Claude modellari oilasi"
+    },
+    {
+      "term": "Sonnet",
+      "language": "en",
+      "translation": "Sonnet",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Claude modellari oilasi"
+    },
+    {
+      "term": "Haiku",
+      "language": "en",
+      "translation": "Haiku",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Claude modellari oilasi"
+    },
+    {
+      "term": "Fable",
+      "language": "en",
+      "translation": "Fable",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Claude modellari oilasi"
+    },
+    {
+      "term": "Flash",
+      "language": "en",
+      "translation": "Flash",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Gemini modellari oilasi"
+    },
+    {
+      "term": "Max",
+      "language": "en",
+      "translation": "Max",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Mahsulot versiyasi nomi (Pro Max, Max)"
+    },
+    {
+      "term": "Muse",
+      "language": "en",
+      "translation": "Muse",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Mahsulot nomi"
+    },
+    {
+      "term": "dots",
+      "language": "en",
+      "translation": "dots",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Mahsulot nomi (kichik harf bilan yoziladi)"
+    },
+    {
+      "term": "Teams",
+      "language": "en",
+      "translation": "Teams",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Microsoft Teams"
+    },
+    {
+      "term": "Microsoft Teams",
+      "language": "en",
+      "translation": "Microsoft Teams",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Microsoft korporativ messenjeri"
+    },
+    {
+      "term": "Index",
+      "language": "en",
+      "translation": "Index",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Mahsulot yoki hisobot nomi (AI Index)"
+    },
+    {
+      "term": "Dragon",
+      "language": "en",
+      "translation": "Dragon",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "SpaceX kosmik kemasi"
+    },
+    {
+      "term": "Crew Dragon",
+      "language": "en",
+      "translation": "Crew Dragon",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "SpaceX boshqariladigan kosmik kemasi"
+    },
+    {
+      "term": "Falcon",
+      "language": "en",
+      "translation": "Falcon",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "SpaceX raketalari oilasi"
+    },
+    {
+      "term": "Falcon 9",
+      "language": "en",
+      "translation": "Falcon 9",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "SpaceX raketasi"
+    },
+    {
+      "term": "Game Informer",
+      "language": "en",
+      "translation": "Game Informer",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Oʻyinlar haqidagi nashr"
+    },
+    {
+      "term": "Windows Latest",
+      "language": "en",
+      "translation": "Windows Latest",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Windows haqidagi nashr"
+    },
+    {
+      "term": "Bloomberg",
+      "language": "en",
+      "translation": "Bloomberg",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Moliyaviy yangiliklar agentligi"
+    },
+    {
+      "term": "App Store",
+      "language": "en",
+      "translation": "App Store",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Apple ilovalar doʻkoni"
+    },
+    {
+      "term": "Google Play",
+      "language": "en",
+      "translation": "Google Play",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Google ilovalar doʻkoni"
+    },
+    {
+      "term": "Media Player",
+      "language": "en",
+      "translation": "Media Player",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Microsoft media pleyeri"
+    },
+    {
+      "term": "Windows Media Player",
+      "language": "en",
+      "translation": "Windows Media Player",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Microsoft media pleyeri"
+    },
+    {
+      "term": "Rockstar Games",
+      "language": "en",
+      "translation": "Rockstar Games",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Oʻyin ishlab chiquvchi kompaniya"
+    },
+    {
+      "term": "GTA",
+      "language": "en",
+      "translation": "GTA",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Grand Theft Auto oʻyinlar seriyasi"
+    },
+    {
+      "term": "Grand Theft Auto",
+      "language": "en",
+      "translation": "Grand Theft Auto",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Rockstar Games oʻyinlar seriyasi"
+    },
+    {
+      "term": "ESL",
+      "language": "en",
+      "translation": "ESL",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Kibersport turnirlari operatori"
+    },
+    {
+      "term": "IEM",
+      "language": "en",
+      "translation": "IEM",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Intel Extreme Masters kibersport turniri"
+    },
+    {
+      "term": "PGL",
+      "language": "en",
+      "translation": "PGL",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Kibersport turnirlari operatori"
+    },
+    {
+      "term": "BLAST",
+      "language": "en",
+      "translation": "BLAST",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Kibersport turnirlari operatori"
+    },
+    {
+      "term": "Selectel",
+      "language": "en",
+      "translation": "Selectel",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Bulut xizmatlari provayderi"
+    },
+    {
+      "term": "Emergence AI",
+      "language": "en",
+      "translation": "Emergence AI",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "AI kompaniyasi"
+    },
+    {
+      "term": "LANXESS",
+      "language": "en",
+      "translation": "LANXESS",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Kimyo kompaniyasi (arena nomi)"
+    },
+    {
+      "term": "LANXESS Arena",
+      "language": "en",
+      "translation": "LANXESS Arena",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Kyolndagi arena"
+    },
+    {
+      "term": "The Sanctuary",
+      "language": "en",
+      "translation": "The Sanctuary",
+      "kind": "brand",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Joy (inshoot) nomi"
+    },
+    {
+      "term": "TLS",
+      "language": "en",
+      "translation": "TLS",
+      "kind": "abbreviation",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Transport Layer Security protokoli"
+    },
+    {
+      "term": "VLA",
+      "language": "en",
+      "translation": "VLA",
+      "kind": "abbreviation",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Vision-Language-Action modeli"
+    },
+    {
+      "term": "NIST",
+      "language": "en",
+      "translation": "NIST",
+      "kind": "abbreviation",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "AQSH Milliy standartlar va texnologiyalar instituti"
+    },
+    {
+      "term": "IPP",
+      "language": "en",
+      "translation": "IPP",
+      "kind": "abbreviation",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Internet Printing Protocol"
+    },
+    {
+      "term": "USB",
+      "language": "en",
+      "translation": "USB",
+      "kind": "abbreviation",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Universal Serial Bus"
+    },
+    {
+      "term": "Administrative Templates",
+      "language": "en",
+      "translation": "Administrative Templates",
+      "kind": "term",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Windows guruh siyosati boʻlimi (asl nomi)"
+    },
+    {
+      "term": "prompt injection",
+      "language": "en",
+      "translation": "prompt injection",
+      "kind": "term",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Promptga zararli koʻrsatma kiritish hujumi"
+    },
+    {
+      "term": "double elimination",
+      "language": "en",
+      "translation": "double elimination",
+      "kind": "term",
+      "doNotTranslate": true,
+      "doNotTransliterate": true,
+      "note": "Kibersportda ikki magʻlubiyatgacha turnir formati"
     }
   ]
 }
