@@ -8,3 +8,8 @@ allowBuilds:
   esbuild: true
   sharp: true
   unrs-resolver: true
+
+# Xavfsizlik override'lari (`pnpm audit --prod --audit-level high`)
+overrides:
+  # GHSA-rfgv-xxqx-mfg5, GHSA-w293-vg96-wgc3 — tranzitiv (payload), tuzatilgan: >= 7.29.1
+  undici: ^7.29.1
