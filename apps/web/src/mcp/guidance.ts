@@ -55,10 +55,14 @@ export function compactGlossary(glossary: GlossarySnapshot = seedGlossary()): st
  */
 export function submitStep(autoPublish: boolean): string {
   return autoPublish
-    ? 'submit_for_review(postId, notesForEditor) — AVTOMATIK NASHR YOQILGAN: xatosiz post darhol ' +
-        "chop etiladi (javobda published: true va url), muharrir oldindan ko'rmaydi. Shuning uchun " +
-        "faktlarni, manbalarni va rasm litsenziyasini yuborishdan oldin qat'iy tekshiring; " +
-        'shubhali yoki tasdiqlanmagan faktli postni yubormang — release_draft qiling va hisobotda yozing.'
+    ? 'submit_for_review(postId, notesForEditor?) — AVTOMATIK NASHR YOQILGAN: xatosiz post shu ' +
+        "chaqiruvning o'zida darhol chop etiladi (javobda published: true va url), muharrir " +
+        "oldindan ko'rmaydi. Faktlarni, manbalarni va rasm litsenziyasini yuborishdan oldin qat'iy " +
+        "tekshiring. Tekshirilishi yoki tuzatilishi kerak bo'lgan joy qolsa — uni notesForEditor " +
+        'ga yozing yoki needsHumanReview: true bering: bunday post chop etilmaydi, review da ' +
+        'muharrirni kutadi (javobda heldForReview: true, reason). notesForEditor ga faqat muharrir ' +
+        "hal qilishi kerak bo'lgan narsani yozing. Yuborilgan postni qayta tuzatish — " +
+        'withdraw_from_review; chop etilganini — faqat admin kaliti.'
     : 'submit_for_review(postId, notesForEditor) — post tekshiruvga (review) tushadi, chop etishni ' +
         'muharrir bajaradi.'
 }
@@ -155,12 +159,12 @@ export function dailyBatchPrompt(
       'save_rewrite → set_seo → (list_media / search_stock_images → upload_media → set_cover) → ' +
       'submit_for_review.',
     autoPublish
-      ? `6. ${count} ta post yuborilgach — qisqa hisobot: post ID'lari, sarlavhalar, chop etilganlarning url'lari, muharrir uchun izohlar.`
+      ? `6. ${count} ta post yuborilgach — qisqa hisobot: post ID'lari, sarlavhalar, chop etilganlarning url'lari, review da qolganlari (reason) va muharrir uchun izohlar.`
       : `6. ${count} ta post review'ga yuborilgach — qisqa hisobot: post ID'lari, sarlavhalar, muharrir uchun izohlar.`,
     '',
     `Oxirgi qadam: ${submitStep(autoPublish)}`,
     autoPublish
-      ? "Shubhali yoki tasdiqlanmagan faktli yangilikni chop etmang — o'tkazib yuboring (release_draft) va hisobotda ayting."
+      ? 'Shubhali yoki tasdiqlanmagan faktli yangilik — notesForEditor (yoki needsHumanReview: true) bilan yuboring: u chop etilmaydi, review da qoladi; yoki o‘tkazib yuboring (release_draft) va hisobotda ayting.'
       : 'Shubhali yoki tasdiqlanmagan faktlar — notesForEditor ga.',
     '',
     UNTRUSTED_NOTICE,

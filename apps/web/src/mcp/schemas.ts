@@ -294,8 +294,31 @@ export const submitForReviewInput = {
     .optional()
     .describe(
       "Muharrir uchun izoh: tekshirib bo'lmagan faktlar, manbalar farqi, rasm taklifi, " +
-        'topilmagan ichki havolalar',
+        "topilmagan ichki havolalar. Bo'sh bo'lmasa — avtomatik nashr yoqilgan bo'lsa ham post " +
+        "chop etilmaydi, tekshiruvga (review) tushadi. Berilmasa — oldingi izoh saqlanadi; '' — " +
+        "oldingi izohni o'chiradi",
     ),
+  needsHumanReview: z
+    .boolean({ error: "needsHumanReview: ha/yo'q (boolean) bo'lishi kerak" })
+    .optional()
+    .describe(
+      'true — post albatta muharrir tekshiruviga (review) tushadi, avtomatik chop etilmaydi ' +
+        '(tasdiqlanmagan fakt, shubhali joy va h.k.)',
+    ),
+  autoPublish: z
+    .boolean({ error: "autoPublish: ha/yo'q (boolean) bo'lishi kerak" })
+    .optional()
+    .describe(
+      "Standart — true (sozlamaga amal qilinadi). false — avtomatik nashr yoqilgan bo'lsa ham " +
+        'post chop etilmaydi, tekshiruvga (review) yuboriladi',
+    ),
+}
+
+export const withdrawFromReviewInput = {
+  postId: postId(),
+  reason: text('reason', 1000)
+    .optional()
+    .describe('Nima uchun qaytarib olinmoqda (server logi va javob uchun; postga yozilmaydi)'),
 }
 
 // ---------------------------------------------------------------------------

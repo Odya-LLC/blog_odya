@@ -41,6 +41,7 @@ let category: Category
 let source: Source
 let editorKey: string
 let editor2Key: string
+let adminKey: string
 
 const SITE_URL = 'https://blog.odya.test'
 const ENDPOINT = `http://localhost:3000${MCP_PATH}`
@@ -246,6 +247,7 @@ describe('MCP yozish toollari (/api/mcp)', () => {
     })
     editorKey = await enableKey(users.editor)
     editor2Key = await enableKey(users.editor2)
+    adminKey = await enableKey(users.admin)
   })
 
   beforeEach(() => apiKeyRateLimiter.reset())
@@ -775,10 +777,8 @@ describe('MCP yozish toollari (/api/mcp)', () => {
       const postId = await readyPost(client)
       autoPublished.add(postId)
       const before = Date.now()
-      const submitted = await call(client, 'submit_for_review', {
-        postId,
-        notesForEditor: 'Rasm taklifi: Apple Park sahnasi.',
-      })
+      // Izohsiz (OBLOG-62: izohli post avtomatik chop etilmaydi).
+      const submitted = await call(client, 'submit_for_review', { postId })
       expect(submitted.isError).toBeFalsy()
       const json = jsonOf(submitted)
       const latin = await readPost(postId)
@@ -801,8 +801,10 @@ describe('MCP yozish toollari (/api/mcp)', () => {
         rewrittenBy: 'ai_agent',
         aiDisclosure: true,
         lockedUntil: null,
-        notesForEditor: 'Rasm taklifi: Apple Park sahnasi.',
       })
+      expect(json.heldForReview).toBe(false)
+      expect(json.reason).toBeUndefined()
+      expect(json.publishedAt).toBe(latin.publishedAt)
       const publishedAt = new Date(latin.publishedAt ?? 0).getTime()
       expect(publishedAt).toBeGreaterThanOrEqual(before - 1000)
       expect(publishedAt).toBeLessThanOrEqual(Date.now())
@@ -899,6 +901,313 @@ describe('MCP yozish toollari (/api/mcp)', () => {
       const json = jsonOf(await call(client, 'submit_for_review', { postId }))
       expect(json).toMatchObject({ ok: true, published: false, post: { workflowStatus: 'review' } })
       await client.close()
+    })
+
+    describe('ushlab qolish va agent nazorati (OBLOG-62)', () => {
+      async function expectHeld(
+        client: Client,
+        args: Record<string, unknown>,
+        reason: 'notes_for_editor' | 'needs_human_review' | 'agent_opt_out',
+      ) {
+        const result = await call(client, 'submit_for_review', args)
+        expect(result.isError).toBeFalsy()
+        const json = jsonOf(result)
+        expect(json).toMatchObject({
+          ok: true,
+          submitted: true,
+          published: false,
+          autoPublish: true,
+          heldForReview: true,
+          reason,
+          post: { workflowStatus: 'review' },
+        })
+        expect(json.url).toBeUndefined()
+        expect(json.note).toMatch(/withdraw_from_review/)
+        const postId = args.postId as number
+        expect(await readPost(postId)).toMatchObject({ workflowStatus: 'review', _status: 'draft' })
+        expect(await telegramJobs(postId)).toHaveLength(0)
+        return json
+      }
+
+      it('notesForEditor bo‘sh emas — chop etilmaydi, review da qoladi', async () => {
+        await setAutoPublish(true)
+        const client = await connect(editorKey)
+        const postId = await readyPost(client)
+        await expectHeld(
+          client,
+          { postId, notesForEditor: '  Crew-13 sanasini tekshiring.  ' },
+          'notes_for_editor',
+        )
+        expect((await readPost(postId)).notesForEditor).toBe('Crew-13 sanasini tekshiring.')
+        await client.close()
+      })
+
+      it('needsHumanReview: true va autoPublish: false — review', async () => {
+        await setAutoPublish(true)
+        const client = await connect(editorKey)
+        await expectHeld(
+          client,
+          { postId: await readyPost(client), needsHumanReview: true },
+          'needs_human_review',
+        )
+        await expectHeld(
+          client,
+          { postId: await readyPost(client), autoPublish: false },
+          'agent_opt_out',
+        )
+        // Faqat bo'shliqdan iborat izoh — izoh emas: chop etiladi.
+        const postId = await readyPost(client)
+        autoPublished.add(postId)
+        const json = jsonOf(
+          await call(client, 'submit_for_review', {
+            postId,
+            notesForEditor: '   ',
+            needsHumanReview: false,
+            autoPublish: true,
+          }),
+        )
+        expect(json).toMatchObject({ published: true, heldForReview: false })
+        await client.close()
+      })
+
+      it('o‘chiq rejimda heldForReview: false (oddiy review)', async () => {
+        await setAutoPublish(false)
+        const client = await connect(editorKey)
+        const postId = await readyPost(client)
+        const json = jsonOf(
+          await call(client, 'submit_for_review', { postId, notesForEditor: 'Izoh' }),
+        )
+        expect(json).toMatchObject({
+          ok: true,
+          published: false,
+          autoPublish: false,
+          heldForReview: false,
+          post: { workflowStatus: 'review' },
+        })
+        expect(json.reason).toBeUndefined()
+        await client.close()
+      })
+
+      it('withdraw_from_review → in_progress, tuzatib qayta yuborish → chop etiladi', async () => {
+        await setAutoPublish(true)
+        const client = await connect(editorKey)
+        const postId = await readyPost(client)
+        await expectHeld(
+          client,
+          { postId, notesForEditor: 'Narxni tekshiring.' },
+          'notes_for_editor',
+        )
+
+        // Review dagi postni tahrirlab bo'lmaydi — xato withdraw_from_review ni taklif qiladi.
+        const blocked = await call(client, 'save_rewrite', goodRewrite(postId))
+        expect(blocked.isError).toBe(true)
+        expect(textOf(blocked)).toMatch(/withdraw_from_review\(postId: \d+\)/)
+
+        // Boshqa muharrirning agenti qaytarib ololmaydi.
+        const other = await connect(editor2Key)
+        const denied = await call(other, 'withdraw_from_review', { postId })
+        expect(denied.isError).toBe(true)
+        expect(textOf(denied)).toMatch(/sizga biriktirilmagan/)
+        await other.close()
+
+        const withdrawn = await call(client, 'withdraw_from_review', {
+          postId,
+          reason: 'Narxni manbadan tekshirdim',
+        })
+        expect(withdrawn.isError).toBeFalsy()
+        expect(jsonOf(withdrawn)).toMatchObject({
+          withdrawn: true,
+          reason: 'Narxni manbadan tekshirdim',
+          post: { workflowStatus: 'in_progress', assignee: users.editor.id },
+        })
+        const back = await readPost(postId)
+        expect(back.workflowStatus).toBe('in_progress')
+        expect(back.lockedUntil).toBeTruthy()
+
+        // Endi tahrirlash mumkin.
+        expect(jsonOf(await call(client, 'save_rewrite', goodRewrite(postId))).ok).toBe(true)
+        // Izoh berilmasa — postdagi eski izoh amal qiladi (yana ushlab qolinadi).
+        await expectHeld(client, { postId }, 'notes_for_editor')
+        expect(jsonOf(await call(client, 'withdraw_from_review', { postId })).withdrawn).toBe(true)
+
+        // Izoh tozalanadi — chop etiladi.
+        autoPublished.add(postId)
+        const json = jsonOf(await call(client, 'submit_for_review', { postId, notesForEditor: '' }))
+        expect(json).toMatchObject({ published: true, heldForReview: false })
+        expect(json.url).toMatch(/^https:\/\/blog\.odya\.test\//)
+        const published = await readPost(postId)
+        expect(published).toMatchObject({ workflowStatus: 'published', _status: 'published' })
+        expect(published.notesForEditor ?? null).toBeNull()
+
+        // Chop etilgan va in_progress postlarni qaytarib bo'lmaydi.
+        const again = await call(client, 'withdraw_from_review', { postId })
+        expect(again.isError).toBe(true)
+        expect(textOf(again)).toMatch(/"published" holatida — faqat tekshiruvdagi/)
+
+        // Audit: withdraw — `mcp` kanali, tool nomi.
+        const audit = await payload.find({
+          collection: 'audit-logs',
+          where: {
+            and: [
+              { docId: { equals: String(postId) } },
+              { tool: { equals: 'withdraw_from_review' } },
+            ],
+          },
+          depth: 0,
+          pagination: false,
+        })
+        expect(audit.docs.length).toBe(2)
+        expect(audit.docs.every((entry) => entry.channel === 'mcp')).toBe(true)
+        await client.close()
+      })
+
+      it('admin kaliti: chop etilgan postni qoralama versiya sifatida tuzatadi va qayta chop etadi', async () => {
+        await setAutoPublish(true)
+        const editor = await connect(editorKey)
+        const postId = await readyPost(editor)
+        autoPublished.add(postId)
+        expect(jsonOf(await call(editor, 'submit_for_review', { postId })).published).toBe(true)
+        const live = await readPost(postId)
+        const originalTitle = live.title
+        const originalPublishedAt = live.publishedAt
+
+        // Telegram'ga yuborilgan holat (job natijasi) — tahrirlash job'i uchun.
+        await payload.update({
+          collection: 'posts',
+          id: postId,
+          data: {
+            telegram: [
+              {
+                script: 'uz-Latn',
+                chatId: '@odya_latn_test',
+                messageId: '42',
+                kind: 'text',
+                hash: 'old',
+                sentAt: new Date().toISOString(),
+              },
+            ],
+          },
+          context: { telegramStateWrite: true, skipTelegram: true, skipIndexNow: true },
+          depth: 0,
+        })
+        for (const job of await telegramJobs(postId)) {
+          await payload.delete({ collection: 'payload-jobs', id: job.id })
+        }
+        const indexNowBefore = (await indexNowJobs(live.slug)).length
+
+        // Editor kaliti — rad etiladi.
+        const denied = await call(editor, 'save_rewrite', goodRewrite(postId))
+        expect(denied.isError).toBe(true)
+        expect(textOf(denied)).toMatch(/"published" holatida/)
+        await editor.close()
+
+        const admin = await connect(adminKey)
+        const newTitle = `Apple iPhone 18 taqdimotini noyabrga koʻchirdi ${TOKEN}`
+        const saved = await call(admin, 'save_rewrite', goodRewrite(postId, { title: newTitle }))
+        expect(saved.isError).toBeFalsy()
+        const savedJson = jsonOf(saved)
+        expect(savedJson).toMatchObject({ ok: true, saved: true, revision: true })
+        expect(savedJson.warnings.map((issue: { code: string }) => issue.code)).toContain(
+          'slug_kept',
+        )
+        expect(
+          jsonOf(
+            await call(admin, 'set_seo', {
+              postId,
+              ...GOOD_SEO,
+              coverAlt: 'Yangi alt matni rasm uchun shu yerda',
+            }),
+          ).revision,
+        ).toBe(true)
+
+        // Sayt (asosiy hujjat) o'zgarmagan, qoralama versiyada — yangi sarlavha va kirill.
+        const main = await payload.findByID({ collection: 'posts', id: postId, depth: 0 })
+        expect(main).toMatchObject({ title: originalTitle, _status: 'published' })
+        const draft = await readPost(postId)
+        expect(draft).toMatchObject({
+          title: newTitle,
+          slug: live.slug,
+          _status: 'draft',
+          workflowStatus: 'published',
+        })
+        expect((await readPost(postId, 'uz-Cyrl')).title).toMatch(
+          /^Apple iPhone 18 тақдимотини ноябрга/,
+        )
+        expect(await telegramJobs(postId)).toHaveLength(0)
+
+        // Izoh bilan — chop etilmaydi, qoralama muharrirni kutadi.
+        const held = jsonOf(
+          await call(admin, 'submit_for_review', { postId, notesForEditor: 'Sanani tekshiring' }),
+        )
+        expect(held).toMatchObject({
+          ok: true,
+          published: false,
+          heldForReview: true,
+          reason: 'notes_for_editor',
+          revision: true,
+          pendingRevision: true,
+        })
+        expect((await payload.findByID({ collection: 'posts', id: postId, depth: 0 })).title).toBe(
+          originalTitle,
+        )
+
+        // Izohsiz — yangi versiya chop etiladi.
+        const result = await call(admin, 'submit_for_review', { postId, notesForEditor: '' })
+        expect(result.isError).toBeFalsy()
+        const json = jsonOf(result)
+        expect(json).toMatchObject({
+          ok: true,
+          published: true,
+          heldForReview: false,
+          revision: true,
+          url: `${SITE_URL}/${category.slug}/${live.slug}`,
+        })
+        const republished = await payload.findByID({ collection: 'posts', id: postId, depth: 0 })
+        expect(republished).toMatchObject({
+          title: newTitle,
+          slug: live.slug,
+          _status: 'published',
+          workflowStatus: 'published',
+          publishedAt: originalPublishedAt,
+          coverAlt: 'Yangi alt matni rasm uchun shu yerda',
+        })
+        const publicCyrl = await payload.findByID({
+          collection: 'posts',
+          id: postId,
+          depth: 0,
+          locale: 'uz-Cyrl',
+          ...as(null),
+        })
+        expect(publicCyrl.title).toMatch(/^Apple iPhone 18 тақдимотини ноябрга/)
+
+        // Telegram: faqat yuborilgan kanal xabari tahrirlanadi (yangi kanal yo'q); IndexNow —
+        // URL o'zgarmagani uchun yangi job yo'q.
+        const tg = await telegramJobs(postId)
+        expect(tg.map((job) => (job.input as { script: string }).script)).toEqual(['uz-Latn'])
+        expect((await indexNowJobs(live.slug)).length).toBe(indexNowBefore)
+        expect(revalidated.length).toBeGreaterThan(0)
+
+        // O'zgarishsiz qayta yuborish — xato.
+        const nothing = await call(admin, 'submit_for_review', { postId })
+        expect(nothing.isError).toBe(true)
+        expect(textOf(nothing)).toMatch(/saqlanmagan o'zgarish yo'q/)
+
+        const audit = await payload.find({
+          collection: 'audit-logs',
+          where: {
+            and: [
+              { docId: { equals: String(postId) } },
+              { user: { equals: users.admin.id } },
+              { action: { equals: 'publish' } },
+            ],
+          },
+          depth: 0,
+          pagination: false,
+        })
+        expect(audit.docs).toHaveLength(1)
+        expect(audit.docs[0]).toMatchObject({ channel: 'mcp', tool: 'submit_for_review' })
+        await admin.close()
+      })
     })
   })
 })
