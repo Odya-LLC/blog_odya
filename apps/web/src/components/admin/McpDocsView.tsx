@@ -1,5 +1,6 @@
 import type { AdminViewServerProps, PayloadRequest } from 'payload'
 
+import { isMcpAutoPublishEnabled } from '@/mcp/auto-publish'
 import { loadMcpDoc, requestOrigin } from '@/mcp/docs'
 import { getMcpRegistry } from '@/mcp/registry'
 
@@ -38,6 +39,7 @@ async function McpDocs({ req }: { req: PayloadRequest }) {
   const origin = requestOrigin(req.headers, req.payload.config.serverURL)
   const endpoint = `${origin}/api/mcp`
   const keyEnabled = await apiKeyEnabled(req)
+  const autoPublish = await isMcpAutoPublishEnabled(req.payload)
   const profileHref = req.user ? `${adminRoute}/collections/users/${req.user.id}` : adminRoute
 
   return (
@@ -68,6 +70,19 @@ async function McpDocs({ req }: { req: PayloadRequest }) {
             )}
           </div>
           <a href={profileHref}>Profil → API kalit</a>
+        </div>
+        <div>
+          <span className="editorial__muted">Avtomatik nashr (MCP)</span>
+          <div data-testid="mcp-auto-publish">
+            {autoPublish ? (
+              <span className="editorial__pill editorial__pill--agent">
+                Yoqilgan — submit_for_review darhol chop etadi
+              </span>
+            ) : (
+              <span className="editorial__pill">O‘chiq — postlar tekshiruvga tushadi</span>
+            )}
+          </div>
+          <a href={`${adminRoute}/globals/scraping-settings`}>Scraping sozlamalari</a>
         </div>
       </section>
 

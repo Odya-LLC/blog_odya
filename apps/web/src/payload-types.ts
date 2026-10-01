@@ -1921,6 +1921,10 @@ export interface ScrapingSetting {
   isEnabled?: boolean | null;
   minScore?: number | null;
   /**
+   * Yoqilgan bo‘lsa, AI agent (MCP) submit_for_review chaqirganda post tekshiruvga emas, darhol chop etiladi (validatsiya xatosiz bo‘lsa). Telegram, IndexNow va sayt keshi — oddiy chop etishdagidek. O‘chiq — post “Tekshiruvda” navbatiga tushadi.
+   */
+  mcpAutoPublish?: boolean | null;
+  /**
    * Bitta batch’dagi parallel job’lar. Logda “timeout exceeded when trying to connect” (DB pool) chiqsa — shu qiymatni kamaytiring (deploy shart emas)
    */
   jobsBatchLimit?: number | null;
@@ -2076,6 +2080,7 @@ export interface TelegramSettingsSelect<T extends boolean = true> {
 export interface ScrapingSettingsSelect<T extends boolean = true> {
   isEnabled?: T;
   minScore?: T;
+  mcpAutoPublish?: T;
   jobsBatchLimit?: T;
   jobsDeadlineSec?: T;
   maxNewItemsPerPoll?: T;
