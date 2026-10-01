@@ -36,6 +36,17 @@ export const ScrapingSettings: GlobalConfig = {
       max: 100,
     },
     {
+      // OBLOG-61: MCP agent postlari tekshiruvsiz chop etiladimi (`src/mcp/auto-publish.ts`).
+      name: 'mcpAutoPublish',
+      type: 'checkbox',
+      label: 'Avtomatik nashr (MCP)',
+      defaultValue: false,
+      admin: {
+        description:
+          'Yoqilgan bo‘lsa, AI agent (MCP) submit_for_review chaqirganda post tekshiruvga emas, darhol chop etiladi (validatsiya xatosiz bo‘lsa). Telegram, IndexNow va sayt keshi — oddiy chop etishdagidek. O‘chiq — post “Tekshiruvda” navbatiga tushadi.',
+      },
+    },
+    {
       type: 'row',
       fields: [
         {

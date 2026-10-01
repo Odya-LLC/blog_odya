@@ -5,6 +5,7 @@ import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js'
 
 import { getGlossary, seedGlossary, type GlossarySnapshot } from '@/translit/transliterator'
 
+import { isMcpAutoPublishEnabled } from './auto-publish'
 import type { McpContext } from './context'
 import { describeError } from './result'
 import { dailyBatchArgs, DEFAULT_SOURCE_TEXT_CHARS, rewriteArticleArgs } from './schemas'
@@ -48,6 +49,20 @@ export function compactGlossary(glossary: GlossarySnapshot = seedGlossary()): st
   return `Glossariy (v${glossary.version}; to'liq — ${GLOSSARY_URI} yoki get_glossary):\n${lines.join('\n')}`
 }
 
+/**
+ * Oxirgi qadam — joriy rejimga qarab (OBLOG-61, `scraping-settings.mcpAutoPublish`): o'chiq —
+ * tekshiruvga, yoqilgan — `submit_for_review` postni darhol chop etadi.
+ */
+export function submitStep(autoPublish: boolean): string {
+  return autoPublish
+    ? 'submit_for_review(postId, notesForEditor) — AVTOMATIK NASHR YOQILGAN: xatosiz post darhol ' +
+        "chop etiladi (javobda published: true va url), muharrir oldindan ko'rmaydi. Shuning uchun " +
+        "faktlarni, manbalarni va rasm litsenziyasini yuborishdan oldin qat'iy tekshiring; " +
+        'shubhali yoki tasdiqlanmagan faktli postni yubormang — release_draft qiling va hisobotda yozing.'
+    : 'submit_for_review(postId, notesForEditor) — post tekshiruvga (review) tushadi, chop etishni ' +
+        'muharrir bajaradi.'
+}
+
 const WORKFLOW_STEPS = [
   "1. Ko'rsatmalarga (stil, mualliflik, SEO, chiqish sxemasi) va glossariyga qat'iy amal qiling.",
   "2. Qoralama: create_draft(scrapedItemIds) yoki mavjudini list_drafts bilan toping, so'ng claim_draft(postId).",
@@ -56,14 +71,18 @@ const WORKFLOW_STEPS = [
   '5. Ichki havolalar uchun search_posts; kategoriya va teglar — list_categories, list_tags.',
   '6. save_rewrite, keyin set_seo. Server xato qaytarsa — tuzatib qayta yuboring.',
   '7. Rasm (copyright.md §4): list_media (press-kit, logotiplar) yoki search_stock_images → upload_media(url yoki data, alt, license, credit) → set_cover(postId, mediaId). Matn ichida — alohida qatorda ![alt](media:ID) (save_rewrite). Manba sayti, agentlik (Getty, Reuters, AP, AFP) rasmlari — taqiqlangan; legal rasm topilmasa — notesForEditor da taklif qiling.',
-  '8. submit_for_review(postId, notesForEditor). Publish qilmang — chop etishni faqat muharrir bajaradi.',
-].join('\n')
+]
+
+function workflowSteps(autoPublish: boolean): string {
+  return [...WORKFLOW_STEPS, `8. ${submitStep(autoPublish)}`].join('\n')
+}
 
 export async function rewriteArticlePrompt(
   ctx: McpContext,
   args: { scrapedItemId: string },
 ): Promise<GetPromptResult> {
   const id = Number(args.scrapedItemId)
+  const autoPublish = await isMcpAutoPublishEnabled(ctx.payload)
   const view = await loadSourceView(ctx, 'rewrite_article', {
     id,
     maxChars: DEFAULT_SOURCE_TEXT_CHARS,
@@ -77,7 +96,7 @@ export async function rewriteArticlePrompt(
         type: 'text',
         text:
           `Blog Odya uchun yig'ilgan element #${id} asosida o'zbek tilida (lotin yozuvida) yangilik ` +
-          `maqolasini qayta yozing.\n\nIsh tartibi:\n${WORKFLOW_STEPS}\n\n${UNTRUSTED_NOTICE}`,
+          `maqolasini qayta yozing.\n\nIsh tartibi:\n${workflowSteps(autoPublish)}\n\n${UNTRUSTED_NOTICE}`,
       },
     },
     ...GUIDELINE_DOCS.map((doc) => guidelineResourceMessage(doc.id)),
@@ -111,14 +130,20 @@ function boundedInt(value: string | undefined, fallback: number, max: number): n
   return Math.min(Math.max(Number(value), 0), max)
 }
 
-export function dailyBatchPrompt(args: { count?: string; minScore?: string }): GetPromptResult {
+export function dailyBatchPrompt(
+  args: { count?: string; minScore?: string },
+  autoPublish = false,
+): GetPromptResult {
   const count = Math.max(
     1,
     boundedInt(args.count, DAILY_BATCH_DEFAULT_COUNT, DAILY_BATCH_MAX_COUNT),
   )
   const minScore = boundedInt(args.minScore, DAILY_BATCH_DEFAULT_MIN_SCORE, 100)
   const text = [
-    `Bugungi yangiliklardan score ≥ ${minScore} bo'lgan ${count} tasini qayta yozib, tekshiruvga (review) yuboring.`,
+    `Bugungi yangiliklardan score ≥ ${minScore} bo'lgan ${count} tasini qayta yozib, ` +
+      (autoPublish
+        ? 'submit_for_review bilan yuboring (avtomatik nashr yoqilgan — post darhol chop etiladi).'
+        : 'tekshiruvga (review) yuboring.'),
     '',
     'Tartib:',
     `1. get_guidelines (yoki odya://guidelines/* resurslari) va get_glossary ni o'qing.`,
@@ -129,9 +154,14 @@ export function dailyBatchPrompt(args: { count?: string; minScore?: string }): G
     `5. Har bir element uchun rewrite_article ish tartibi: create_draft → claim_draft → get_source → ` +
       'save_rewrite → set_seo → (list_media / search_stock_images → upload_media → set_cover) → ' +
       'submit_for_review.',
-    `6. ${count} ta post review'ga yuborilgach — qisqa hisobot: post ID'lari, sarlavhalar, muharrir uchun izohlar.`,
+    autoPublish
+      ? `6. ${count} ta post yuborilgach — qisqa hisobot: post ID'lari, sarlavhalar, chop etilganlarning url'lari, muharrir uchun izohlar.`
+      : `6. ${count} ta post review'ga yuborilgach — qisqa hisobot: post ID'lari, sarlavhalar, muharrir uchun izohlar.`,
     '',
-    'Publish qilmang — chop etishni faqat muharrir bajaradi. Shubhali yoki tasdiqlanmagan faktlar — notesForEditor ga.',
+    `Oxirgi qadam: ${submitStep(autoPublish)}`,
+    autoPublish
+      ? "Shubhali yoki tasdiqlanmagan faktli yangilikni chop etmang — o'tkazib yuboring (release_draft) va hisobotda ayting."
+      : 'Shubhali yoki tasdiqlanmagan faktlar — notesForEditor ga.',
     '',
     UNTRUSTED_NOTICE,
   ].join('\n')
@@ -193,10 +223,11 @@ export function registerGuidance(server: McpServer, ctx: McpContext): void {
     {
       title: 'Kunlik batch',
       description:
-        `Bugungi eng yaxshi yangiliklarni qayta yozib review'ga yuborish (standart: ` +
+        `Bugungi eng yaxshi yangiliklarni qayta yozib review'ga yuborish (avtomatik nashr ` +
+        `yoqilgan bo'lsa — chop etish; standart: ` +
         `${DAILY_BATCH_DEFAULT_COUNT} ta, score ≥ ${DAILY_BATCH_DEFAULT_MIN_SCORE}).`,
       argsSchema: dailyBatchArgs,
     },
-    (args) => dailyBatchPrompt(args),
+    async (args) => dailyBatchPrompt(args, await isMcpAutoPublishEnabled(ctx.payload)),
   )
 }

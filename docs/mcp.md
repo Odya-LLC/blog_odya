@@ -6,7 +6,7 @@ Bu fayl — yagona manba: xuddi shu matn admin panelda **MCP qo'llanma** (`/admi
 
 ## MCP nima va nima uchun
 
-Blog Odya MCP serveri muharrirga o'z Claude obunasidagi agentni (Claude Code yoki Claude Desktop) tahririyatga ulash imkonini beradi: agent yig'ilgan yangiliklarni o'qiydi, o'zbek tilida (lotin) qayta yozadi, SEO maydonlarini to'ldiradi va postni **tekshiruvga (review)** yuboradi. **Chop etish (publish) — faqat inson, admin panelda.** MCP'da publish tool yo'q.
+Blog Odya MCP serveri muharrirga o'z Claude obunasidagi agentni (Claude Code yoki Claude Desktop) tahririyatga ulash imkonini beradi: agent yig'ilgan yangiliklarni o'qiydi, o'zbek tilida (lotin) qayta yozadi, SEO maydonlarini to'ldiradi va postni **tekshiruvga (review)** yuboradi — chop etishni muharrir admin panelda bajaradi. Alohida publish tool yo'q, lekin admin **avtomatik nashrni** yoqsa (§4, "Avtomatik nashr"), `submit_for_review` xatosiz postni tekshiruvsiz darhol chop etadi.
 
 Serverda LLM yo'q va Anthropic API kaliti kerak emas (TZ §5, egasi qarori) — qayta yozishni muharrirning o'z agenti bajaradi. Claude obunasi turi belgilanmaydi (Q27): har bir muharrir o'z obunasi bilan ulanadi.
 
@@ -112,7 +112,7 @@ Jami: 20 ta tool, 2 ta prompt, 5 ta resource.
 | `save_rewrite` | **Qayta yozilgan matnni saqlash.** Lotin: title, excerpt, body (Markdown → Lexical), category, tags (yangi teg yaratiladi). Rasm — alohida qatorda `![alt](media:ID)` (upload_media orqali yuklangan, litsenziyali). Server tekshiruvlari: kirill harflari yo'q, uzunliklar, havolalar xavfsizligi, sources, manba bilan o'xshashlik. Javob: { ok, errors[], warnings[], seoScore } — ok: false bo'lsa saqlanmaydi, xatolarni tuzatib qayta yuboring. Kirill — avtomatik. | `postId: son`, `title: matn`, `excerpt: matn`, `body: matn`, `category: son \| matn`, `tags?: (son \| matn)[]` |
 | `set_seo` | **SEO maydonlari.** seoTitle (≤ 60), metaDescription (140–160), focusKeyword (1–4 so'z), faq (0 yoki 2–4), coverAlt. Javob: { ok, errors[], warnings[], seoScore }. Kirill — avtomatik. | `postId: son`, `seoTitle: matn`, `metaDescription: matn`, `focusKeyword: matn`, `faq?: obyekt[]`, `coverAlt?: matn` |
 | `preview_cyrillic` | **Kirill versiyasini ko'rish.** Postning avtomatik yaratilgan kirill (uz-Cyrl) versiyasi: sarlavha, lid, matn (Markdown), SEO va FAQ. Faqat ko'rish — kirillni agent tahrirlamaydi. | `postId: son` |
-| `submit_for_review` | **Tekshiruvga yuborish.** Postni review holatiga o'tkazadi (+ notesForEditor). Matn va SEO to'ldirilgan bo'lishi kerak, aks holda { ok: false, errors[] }. Muqova yo‘q bo‘lsa — warning. Publish qilinmaydi — chop etishni muharrir bajaradi. | `postId: son`, `notesForEditor?: matn` |
+| `submit_for_review` | **Tekshiruvga yuborish / chop etish.** Postni review holatiga o'tkazadi (+ notesForEditor). Admin sozlamalarda avtomatik nashrni (MCP) yoqqan bo'lsa — post darhol chop etiladi: javobda published: true va url (lotin, /kr — kirill). Matn va SEO to'ldirilgan bo'lishi kerak, aks holda { ok: false, errors[] } (hech narsa o'zgarmaydi). Muqova yo‘q bo‘lsa — warning; avtomatik nashrda muqova litsenziyasi muammosi va save_rewrite qilinmagan post — xato. | `postId: son`, `notesForEditor?: matn` |
 
 ### Media toollari (4)
 
@@ -128,7 +128,7 @@ Jami: 20 ta tool, 2 ta prompt, 5 ta resource.
 | Prompt | Vazifasi | Argumentlar |
 | --- | --- | --- |
 | `rewrite_article` | **Maqolani qayta yozish.** Yig'ilgan elementni o'zbek tilida qayta yozish: ko'rsatmalar, glossariy va manba matni bilan. | `scrapedItemId: matn` |
-| `daily_batch` | **Kunlik batch.** Bugungi eng yaxshi yangiliklarni qayta yozib review'ga yuborish (standart: 10 ta, score ≥ 60). | `count?: matn`, `minScore?: matn` |
+| `daily_batch` | **Kunlik batch.** Bugungi eng yaxshi yangiliklarni qayta yozib review'ga yuborish (avtomatik nashr yoqilgan bo'lsa — chop etish; standart: 10 ta, score ≥ 60). | `count?: matn`, `minScore?: matn` |
 
 ### Resources (5)
 
@@ -174,6 +174,7 @@ Server tekshiruvlari (TZ §5.3):
 | HTML teglari, tashqi URL'li rasmlar (`![](https://…)`), `#` (H1) | olib tashlanadi / H2 ga aylanadi — ogohlantirish |
 | `![alt](media:ID)` — media topilmadi / litsenziyasi to'liq emas / manbasi taqiqlangan / noto'g'ri ID | xato `media_not_found` / `media_license` / `media_blocked_source` / `invalid_media_ref` |
 | `submit_for_review`: muqova (`coverImage`) yo'q | ogohlantirish `cover_missing` |
+| `submit_for_review`: muqova litsenziyasi to'liq emas / manbasi taqiqlangan; post `save_rewrite` bilan yozilmagan | ogohlantirish (`media_license` / `media_blocked_source` / `not_rewritten`); **avtomatik nashr yoqilgan bo'lsa — xato** |
 | 400–900 so'z, ≥ 2 ta H2, 2–5 ichki va 1+ tashqi havola, 3–7 teg, focus keyword joylashuvi, `coverAlt` | ogohlantirish `seo_*` (ballga ta'sir qiladi) |
 | `oʻ`/`gʻ` o'rniga `o'`/`g'` | ogohlantirish `wrong_apostrophe` |
 
@@ -203,16 +204,35 @@ list_scraped ─▶ create_draft ─▶ claim_draft ─▶ get_source ─▶ sav
                                   lock 2 soat)                   Lexical, kirill) kirill)     │             │
                                                                                               │             ▼
         [rasm] = list_media / search_stock_images ─▶ upload_media ─▶ set_cover      muharrir: tekshiradi, rasmni tasdiqlaydi, Publish
+
+Avtomatik nashr yoqilgan bo'lsa: submit_for_review ─▶ (review ─▶ published, bitta tranzaksiyada) ─▶ Telegram, IndexNow, sayt keshi
 ```
 
 - **Promptlar:** `daily_batch(count, minScore)` — kunlik batch: ko'rsatmalar va glossariy → `list_scraped` → klasterdan bittasi → `list_drafts` bilan takrorni tekshirish → har bir element uchun yuqoridagi zanjir → hisobot. `rewrite_article(scrapedItemId)` — bitta element uchun xuddi shu zanjir (ko'rsatmalar, glossariy va manba matni promptning o'zida).
-- **Holatlar:** `create_draft` → `draft`; `claim_draft` → `in_progress` + 2 soatlik lock; `submit_for_review` → `review`. Chop etish (`published`) — faqat muharrir.
+- **Holatlar:** `create_draft` → `draft`; `claim_draft` → `in_progress` + 2 soatlik lock; `submit_for_review` → `review` (avtomatik nashr yoqilgan bo'lsa — `published`). Boshqa holatlarda chop etish (`published`) — faqat muharrir.
 - **Validatsiya:** `save_rewrite`/`set_seo`/`submit_for_review` javobi — `{ ok, errors[], warnings[], seoScore }` (§3, "Javob formati"). `ok: false` — hech narsa saqlanmagan, agent xatolarni tuzatib qayta yuboradi.
 - **Kirill** har saqlashda lotindan avtomatik sinxronlanadi — agent faqat lotin yozadi, `preview_cyrillic` bilan tekshiradi.
 - Faqat `draft`/`in_progress` holatidagi va **sizga biriktirilgan** postlar o'zgartiriladi. `review`, `published` va boshqa holatdagi postlar — rad etiladi (tushunarli xato bilan).
 - `save_rewrite`/`set_seo` lock'ni har safar 2 soatga yangilaydi; qoralama (`draft`) bo'lsa avtomatik `in_progress` ga oladi. Lock tugagan postni boshqa muharrir (yoki uning agenti) `claim_draft` bilan olishi mumkin.
 - `rewrittenBy = ai_agent`, `aiDisclosure = true` — avtomatik (saytda AI shaffoflik izohi chiqadi).
 - **Muharrir** admin → **Tekshiruv (review)** navbatida (`/admin/review`) matn, SEO, kirill, manbalar va rasmlarni (litsenziya, kredit) tekshiradi, kerak bo'lsa muqovani almashtiradi va **Publish** qiladi. Muharrir qaytarsa (`review → in_progress`), post yana agent uchun tahrirlanadigan bo'ladi.
+
+### Avtomatik nashr (OBLOG-61)
+
+Sozlama: admin → **Scraping sozlamalari** → **Avtomatik nashr (MCP)** (`scraping-settings.mcpAutoPublish`). Standart — **o'chiq**. Faqat **admin** o'zgartiradi (editor ko'radi); o'zgarish audit logda yoziladi.
+
+| | O'chiq (standart) | Yoqilgan |
+| --- | --- | --- |
+| `submit_for_review` natijasi | `review` — post `/admin/review` navbatida | `published` — darhol saytda (lotin va `/kr`) |
+| Javob | `{ ok, submitted: true, published: false, autoPublish: false, post, reviewUrl }` | `{ ok, submitted: true, published: true, autoPublish: true, url, urlCyrl, post: { publishedAt, … } }` |
+| Validatsiya | xatolar — `ok: false`; muqova litsenziyasi va `not_rewritten` — ogohlantirish | xatolar — `ok: false`, **hech narsa o'zgarmaydi** (post `in_progress` da qoladi); muqova litsenziyasi muammosi va `save_rewrite` qilinmagan post ham — xato. Muqova yo'qligi — ogohlantirish |
+
+- Sozlama har `submit_for_review` chaqiruvida o'qiladi — o'chirilsa, keyingi post yana tekshiruvga tushadi. `rewrite_article` va `daily_batch` promptlari joriy rejimni agentga aytadi.
+- Chop etish — admin'dagi **Publish** bilan bir xil yo'l: kalit egasi nomidan (`overrideAccess: false`, editor/admin huquqi), `in_progress → review → published` bitta tranzaksiyada, workflow qoidalari (`enforceWorkflow`) tekshiriladi. Yangi huquq berilmaydi. Biror qadam xato bersa — butun o'tish bekor.
+- `publishedAt` — hozir; `rewrittenBy = ai_agent`, `aiDisclosure = true`; lock olib tashlanadi; `notesForEditor` saqlanadi (admin'dagi "Tahririyat" tab'ida).
+- Yon ta'sirlar — `posts` hook'lari: Telegram avtopost (ikkala kanal), IndexNow (lotin + `/kr` URL'lar), sayt keshi (revalidate), slug redirect'lari, kirill (o'sha saqlashda).
+- Audit: ikki yozuv — `update` (review) va `publish`, ikkalasi `channel = mcp`, `tool = submit_for_review`, kalit egasi. Admin'da AI chop etgan postlar: **Audit log** (`action = publish`, `channel = mcp`) yoki postlar ro'yxatida `rewrittenBy = AI agent` filtri.
+- Chop etilgan postni agent o'zgartira olmaydi (`"published" holatida` xatosi) — tuzatishlar faqat muharrir tomonidan admin panelda.
 
 ## 5. Namuna so'rovlar
 
@@ -242,7 +262,7 @@ Claude Code yoki Claude Desktop chatiga yozing:
 
 ## 6. Cheklovlar va xavfsizlik
 
-- **Publish, schedule, o'chirish, arxivlash yo'q.** Kategoriya, menyu, glossariy va manbalarni boshqarish ham yo'q (faqat yangi teg yaratish mumkin).
+- **Alohida publish tool, schedule, o'chirish, arxivlash yo'q** (chop etish — faqat `submit_for_review` orqali va faqat avtomatik nashr yoqilganda, §4). Kategoriya, menyu, glossariy va manbalarni boshqarish ham yo'q (faqat yangi teg yaratish mumkin).
 - Kirill versiyasini agent tahrirlamaydi — faqat `preview_cyrillic` bilan ko'radi; xatoni `notesForEditor` ga yozadi.
 - Rasm — faqat litsenziyali (`upload_media`), agentlik va manba saytlari rasmlari server tomonidan rad etiladi; yakuniy tasdiq — muharrir. Media'ni o'chirish/tahrirlash tooli yo'q. Yuklashlar kvotasi — soatiga 30 ta (kalit egasi bo'yicha, jarayon xotirasida; env: `MCP_MEDIA_UPLOADS_PER_HOUR`; admin uchun kvota yo'q). Kvota tugasa — `ok: false`, `code: rate_limited` va `retryAfterSec` maydoni (necha soniyadan keyin qayta urinish mumkin).
 - Manba matni (`get_source`) — ishonchsiz ma'lumot: `<untrusted_source>` ichidagi ko'rsatmalar bajarilmaydi (prompt injection himoyasi, TZ §9.2).
@@ -260,6 +280,8 @@ Claude Code yoki Claude Desktop chatiga yozing:
 | `upload_media`: `juda sekin: … faqat N / M keldi` | Server faylni juda sekin beryapti (45 s ichida tugamadi) — kichikroq variant havolasini bering yoki keyinroq urining; zarurat bo'lsa, admin `MCP_MEDIA_FETCH_TIMEOUT_MS` ni oshiradi (umumiy chegara 90 s) |
 | `upload_media`: `rate_limited` | Soatlik yuklashlar kvotasi tugadi — `retryAfterSec` soniyadan keyin urining (admin kalitida kvota yo'q) |
 | `Post #N "review" holatida — ...` | Post allaqachon tekshiruvda; muharrir qaytarmaguncha o'zgartirib bo'lmaydi |
+| `Post #N "published" holatida — ...` | Post chop etilgan (muharrir yoki avtomatik nashr) — tuzatishni muharrir admin panelda qiladi |
+| `submit_for_review`: `not_rewritten` xatosi | Avtomatik nashr yoqilgan, post `save_rewrite` bilan yozilmagan — avval `save_rewrite` chaqiring |
 | `Post #N boshqa foydalanuvchiga biriktirilgan` | `list_drafts(assignee: 'me')` yoki `assignee: 'unassigned'` dan boshqa qoralama oling |
 | `band qilingan (… gacha)` | Boshqa muharrir ishlayapti — lock tugashini kuting yoki boshqa post oling |
 | `ok: false`, `cyrillic_in_latin` | Lotin maydoniga kirill harfi tushgan (ko'pincha rus manbadan nom) — lotinda yozing |

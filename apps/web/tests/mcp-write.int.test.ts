@@ -5,11 +5,19 @@ import type { Payload } from 'payload'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { apiKeyRateLimiter } from '@/auth/rate-limit'
+import { indexNowHookDeps } from '@/collections/Posts/indexnow'
+import { telegramHookDeps } from '@/collections/Posts/telegram'
+import { ScrapingSettings } from '@/globals/ScrapingSettings'
+import { DEFAULT_TELEGRAM_TEMPLATE } from '@/globals/TelegramSettings'
+import { indexNowDeps } from '@/indexnow'
+import { INDEXNOW_SUBMIT_TASK, TELEGRAM_POST_TASK } from '@/jobs/constants'
 import { createMcpRoute, MCP_PATH } from '@/mcp/route'
 import { MEDIA_TOOL_NAMES } from '@/mcp/media-tools'
 import { READ_TOOL_NAMES } from '@/mcp/tools'
 import { WRITE_TOOL_NAMES } from '@/mcp/write-tools'
 import type { Category, Post, ScrapedItem, Source, User } from '@/payload-types'
+import { setRevalidator } from '@/site/revalidate'
+import { telegramConfigOverride } from '@/telegram/config'
 
 import {
   as,
@@ -608,5 +616,289 @@ describe('MCP yozish toollari (/api/mcp)', () => {
     })
     expect(textOf(unknownCategory)).toBe('Kategoriya topilmadi: "yoq-kategoriya"')
     await client.close()
+  })
+  describe('avtomatik nashr (OBLOG-61, scraping-settings.mcpAutoPublish)', () => {
+    let original = false
+    const originalIndexNowDeps = { ...indexNowDeps }
+    const originalTelegramRunAfter = telegramHookDeps.runAfter
+    const originalIndexNowRunAfter = indexNowHookDeps.runAfter
+    const deferred: (() => Promise<void>)[] = []
+    const revalidated: string[] = []
+    const autoPublished = new Set<number>()
+
+    const collect = (task: () => Promise<void>) => {
+      deferred.push(task)
+      return true
+    }
+
+    async function setAutoPublish(value: boolean) {
+      await payload.updateGlobal({
+        slug: 'scraping-settings',
+        data: { mcpAutoPublish: value },
+        ...as(users.admin),
+      })
+    }
+
+    /** Agent qayta yozgan va SEO to'ldirilgan post (`in_progress`, editor'ga biriktirilgan). */
+    async function readyPost(client: Client, withSeo = true): Promise<number> {
+      const post = await draftPost(users.editor)
+      expect(jsonOf(await call(client, 'save_rewrite', goodRewrite(post.id))).ok).toBe(true)
+      if (withSeo) {
+        expect(jsonOf(await call(client, 'set_seo', { postId: post.id, ...GOOD_SEO })).ok).toBe(
+          true,
+        )
+      }
+      return post.id
+    }
+
+    async function jobsFor(task: string, match: (input: unknown) => boolean) {
+      const { docs } = await payload.find({
+        collection: 'payload-jobs',
+        where: { taskSlug: { equals: task } },
+        depth: 0,
+        pagination: false,
+      })
+      return docs.filter((job) => match(job.input))
+    }
+
+    const telegramJobs = (postId: number) =>
+      jobsFor(TELEGRAM_POST_TASK, (input) => (input as { postId?: number }).postId === postId)
+
+    const indexNowJobs = (slug: string) =>
+      jobsFor(INDEXNOW_SUBMIT_TASK, (input) => JSON.stringify(input).includes(`/${slug}"`))
+
+    beforeAll(async () => {
+      const settings = await payload.findGlobal({ slug: 'scraping-settings', depth: 0 })
+      original = settings.mcpAutoPublish === true
+      telegramConfigOverride.current = {
+        token: '123456:TEST-token',
+        channels: {
+          'uz-Latn': { script: 'uz-Latn', chatId: '@odya_latn_test', source: 'settings' },
+          'uz-Cyrl': { script: 'uz-Cyrl', chatId: '@odya_cyrl_test', source: 'settings' },
+        },
+        disabled: [],
+        template: DEFAULT_TELEGRAM_TEMPLATE,
+        hashtagsCount: 3,
+      }
+      // `after()` test muhitida yo'q — vazifalar yig'iladi va bajarilmaydi (tarmoqqa chiqilmaydi).
+      telegramHookDeps.runAfter = collect
+      indexNowHookDeps.runAfter = collect
+      indexNowDeps.key = () => 'test-indexnow-key-0123456789'
+      indexNowDeps.origin = () => SITE_URL
+      indexNowDeps.indexingAllowed = () => true
+      indexNowDeps.fetch = (async () => new Response(null, { status: 200 })) as typeof fetch
+      setRevalidator((tag) => revalidated.push(tag))
+    })
+
+    afterAll(async () => {
+      // Chop etilgan postlar soxta bog'liqliklar faol paytida o'chiriladi (haqiqiy IndexNow'ga
+      // job qolmasin), keyin shu postlarning job'lari.
+      const slugs: string[] = []
+      for (const id of autoPublished) {
+        const post = await payload
+          .findByID({ collection: 'posts', id, depth: 0, disableErrors: true })
+          .catch(() => null)
+        if (post?.slug) slugs.push(post.slug)
+        await payload.delete({ collection: 'posts', id }).catch(() => undefined)
+        createdPosts.delete(id)
+        for (const job of await telegramJobs(id)) {
+          await payload.delete({ collection: 'payload-jobs', id: job.id })
+        }
+      }
+      for (const slug of slugs) {
+        for (const job of await indexNowJobs(slug)) {
+          await payload.delete({ collection: 'payload-jobs', id: job.id })
+        }
+      }
+      await setAutoPublish(original)
+      telegramConfigOverride.current = undefined
+      telegramHookDeps.runAfter = originalTelegramRunAfter
+      indexNowHookDeps.runAfter = originalIndexNowRunAfter
+      Object.assign(indexNowDeps, originalIndexNowDeps)
+      setRevalidator(null)
+    })
+
+    beforeEach(() => {
+      deferred.length = 0
+      revalidated.length = 0
+    })
+
+    it('sozlamani faqat admin o‘zgartiradi; standart — o‘chiq', async () => {
+      const field = ScrapingSettings.fields.find(
+        (item) => 'name' in item && item.name === 'mcpAutoPublish',
+      )
+      expect(field).toMatchObject({ type: 'checkbox', defaultValue: false })
+      await expect(
+        payload.updateGlobal({
+          slug: 'scraping-settings',
+          data: { mcpAutoPublish: true },
+          ...as(users.editor),
+        }),
+      ).rejects.toThrow()
+      // Editor o'qiy oladi (MCP qo'llanmasi va navbat uchun).
+      const read = await payload.findGlobal({ slug: 'scraping-settings', ...as(users.editor) })
+      expect(read.mcpAutoPublish).toBe(original)
+    })
+
+    it('o‘chiq: submit_for_review → review, published: false', async () => {
+      await setAutoPublish(false)
+      const client = await connect(editorKey)
+      const postId = await readyPost(client)
+      const json = jsonOf(await call(client, 'submit_for_review', { postId }))
+      expect(json).toMatchObject({
+        ok: true,
+        submitted: true,
+        published: false,
+        autoPublish: false,
+        post: { workflowStatus: 'review' },
+      })
+      expect(json.url).toBeUndefined()
+      expect(await readPost(postId)).toMatchObject({ workflowStatus: 'review', _status: 'draft' })
+      expect(await telegramJobs(postId)).toHaveLength(0)
+
+      const prompt = await client.getPrompt({ name: 'daily_batch', arguments: {} })
+      const text =
+        prompt.messages[0]?.content.type === 'text' ? prompt.messages[0].content.text : ''
+      expect(text).toContain('tekshiruvga (review) tushadi')
+      expect(text).not.toContain('AVTOMATIK NASHR YOQILGAN')
+      await client.close()
+    })
+
+    it('yoqilgan: submit_for_review → darhol chop etiladi, Telegram/IndexNow/kesh, audit', async () => {
+      await setAutoPublish(true)
+      const client = await connect(editorKey)
+      const prompt = await client.getPrompt({ name: 'daily_batch', arguments: {} })
+      const text =
+        prompt.messages[0]?.content.type === 'text' ? prompt.messages[0].content.text : ''
+      expect(text).toContain('AVTOMATIK NASHR YOQILGAN')
+
+      const postId = await readyPost(client)
+      autoPublished.add(postId)
+      const before = Date.now()
+      const submitted = await call(client, 'submit_for_review', {
+        postId,
+        notesForEditor: 'Rasm taklifi: Apple Park sahnasi.',
+      })
+      expect(submitted.isError).toBeFalsy()
+      const json = jsonOf(submitted)
+      const latin = await readPost(postId)
+      expect(json).toMatchObject({
+        ok: true,
+        errors: [],
+        submitted: true,
+        published: true,
+        autoPublish: true,
+        url: `${SITE_URL}/${category.slug}/${latin.slug}`,
+        urlCyrl: `${SITE_URL}/kr/${category.slug}/${latin.slug}`,
+        post: { id: postId, workflowStatus: 'published' },
+      })
+      expect(json.warnings.map((issue: { code: string }) => issue.code)).toContain('cover_missing')
+      expect(typeof json.seoScore).toBe('number')
+
+      expect(latin).toMatchObject({
+        workflowStatus: 'published',
+        _status: 'published',
+        rewrittenBy: 'ai_agent',
+        aiDisclosure: true,
+        lockedUntil: null,
+        notesForEditor: 'Rasm taklifi: Apple Park sahnasi.',
+      })
+      const publishedAt = new Date(latin.publishedAt ?? 0).getTime()
+      expect(publishedAt).toBeGreaterThanOrEqual(before - 1000)
+      expect(publishedAt).toBeLessThanOrEqual(Date.now())
+
+      // Ommaviy sayt (anonim) — ikkala yozuvda, kirill avtomatik.
+      const publicCyrl = await payload.findByID({
+        collection: 'posts',
+        id: postId,
+        depth: 0,
+        locale: 'uz-Cyrl',
+        ...as(null),
+      })
+      expect(publicCyrl.title).toMatch(/^Apple iPhone 18 тақдимотини октябрга кўчирди/)
+
+      // Yon ta'sirlar — admin'dagi Publish bilan bir xil hook'lar.
+      const tgJobs = await telegramJobs(postId)
+      expect(tgJobs.map((job) => (job.input as { script: string }).script).sort()).toEqual([
+        'uz-Cyrl',
+        'uz-Latn',
+      ])
+      const inJobs = await indexNowJobs(latin.slug)
+      expect(inJobs).toHaveLength(1)
+      expect(inJobs[0]!.input).toMatchObject({ urls: [json.url, json.urlCyrl] })
+      expect(deferred.length).toBeGreaterThanOrEqual(2)
+      expect(revalidated.length).toBeGreaterThan(0)
+
+      // Audit: review va publish — `mcp` kanali, tool nomi, kalit egasi.
+      const audit = await payload.find({
+        collection: 'audit-logs',
+        where: {
+          and: [
+            { collection: { equals: 'posts' } },
+            { docId: { equals: String(postId) } },
+            { tool: { equals: 'submit_for_review' } },
+          ],
+        },
+        pagination: false,
+        depth: 0,
+        sort: 'createdAt',
+      })
+      expect(audit.docs.map((entry) => entry.action)).toEqual(['update', 'publish'])
+      expect(audit.docs.every((entry) => entry.channel === 'mcp')).toBe(true)
+      expect(audit.docs.every((entry) => entry.user === users.editor.id)).toBe(true)
+
+      // Chop etilgan postni MCP orqali o'zgartirib bo'lmaydi.
+      for (const [tool, args] of [
+        ['save_rewrite', goodRewrite(postId)],
+        ['set_seo', { postId, ...GOOD_SEO }],
+        ['claim_draft', { postId }],
+        ['submit_for_review', { postId }],
+      ] as const) {
+        const blocked = await call(client, tool, args)
+        expect(blocked.isError, tool).toBe(true)
+        expect(textOf(blocked), tool).toMatch(/"published" holatida/)
+      }
+      await client.close()
+    })
+
+    it('yoqilgan, lekin validatsiya xatosi — chop etilmaydi, post in_progress da qoladi', async () => {
+      await setAutoPublish(true)
+      const client = await connect(editorKey)
+      const postId = await readyPost(client, false)
+      const result = await call(client, 'submit_for_review', { postId })
+      expect(result.isError).toBe(true)
+      const json = jsonOf(result)
+      expect(json).toMatchObject({ ok: false, submitted: false, published: false })
+      expect(json.errors.map((issue: { code: string }) => issue.code)).toEqual(['seo_missing'])
+      expect(await readPost(postId)).toMatchObject({
+        workflowStatus: 'in_progress',
+        _status: 'draft',
+      })
+      expect(await telegramJobs(postId)).toHaveLength(0)
+
+      // Agent qayta yozmagan (save_rewrite'siz) post avtomatik chop etilmaydi.
+      expect(jsonOf(await call(client, 'set_seo', { postId, ...GOOD_SEO })).ok).toBe(true)
+      await payload.update({
+        collection: 'posts',
+        id: postId,
+        data: { rewrittenBy: 'human' },
+        ...as(users.editor),
+      })
+      const human = jsonOf(await call(client, 'submit_for_review', { postId }))
+      expect(human.ok).toBe(false)
+      expect(human.errors.map((issue: { code: string }) => issue.code)).toEqual(['not_rewritten'])
+      expect((await readPost(postId)).workflowStatus).toBe('in_progress')
+      await client.close()
+    })
+
+    it('qayta o‘chirilsa — yana review', async () => {
+      await setAutoPublish(true)
+      await setAutoPublish(false)
+      const client = await connect(editorKey)
+      const postId = await readyPost(client)
+      const json = jsonOf(await call(client, 'submit_for_review', { postId }))
+      expect(json).toMatchObject({ ok: true, published: false, post: { workflowStatus: 'review' } })
+      await client.close()
+    })
   })
 })

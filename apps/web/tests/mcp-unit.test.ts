@@ -147,7 +147,11 @@ describe('ko‘rsatmalar va glossariy', () => {
     expect(text({})).toContain("score ≥ 60 bo'lgan 10 tasini")
     expect(text({ count: '100', minScore: '500' })).toContain("score ≥ 100 bo'lgan 30 tasini")
     expect(text({ count: '0' })).toContain("bo'lgan 1 tasini")
-    expect(text({})).toMatch(/Publish qilmang/)
+    expect(text({})).toContain('tekshiruvga (review) tushadi')
+    expect(text({})).not.toContain('AVTOMATIK NASHR')
+    expect(dailyBatchPrompt({}, true).messages[0]?.content).toMatchObject({
+      text: expect.stringContaining('AVTOMATIK NASHR YOQILGAN'),
+    })
   })
 
   it('guidelines ildizi: bundle joylashuvidan qat’i nazar topiladi', () => {
