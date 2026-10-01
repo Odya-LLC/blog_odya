@@ -266,7 +266,7 @@ describe('MCP yozish toollari (/api/mcp)', () => {
     expect(tools.some((tool) => /publish|delete|schedule/.test(tool.name))).toBe(false)
     const save = tools.find((tool) => tool.name === 'save_rewrite')
     expect(Object.keys(save?.inputSchema.properties ?? {}).sort()).toEqual(
-      ['body', 'category', 'excerpt', 'postId', 'tags', 'title'].sort(),
+      ['body', 'category', 'excerpt', 'keepLatin', 'postId', 'tags', 'title'].sort(),
     )
     expect(save?.annotations?.readOnlyHint).toBe(false)
     await client.close()
@@ -490,6 +490,75 @@ describe('MCP yozish toollari (/api/mcp)', () => {
       'too_long',
       'too_short',
     ])
+    await client.close()
+  })
+
+  it('OBLOG-67: keepLatin, brend teg va suspicious — kirillda lotinda qoladi', async () => {
+    const post = await draftPost(users.editor)
+    const client = await connect(editorKey)
+    const brandTag = `Zentrix ${TOKEN}`
+    const base = goodRewrite(post.id)
+    const body =
+      `${String(base.body)}\n\nBu haqda Kalvex nashri yozdi: Orbitron modeli va ` +
+      `${brandTag} qurilmasi sinovdan oʻtdi, GTA va ESL ham tilga olindi.`
+
+    const first = await call(client, 'save_rewrite', {
+      ...base,
+      body,
+      tags: ['Apple', brandTag],
+      keepLatin: ['Orbitron', brandTag, 'Orbitron'],
+    })
+    const firstJson = jsonOf(first)
+    expect(first.isError).toBeFalsy()
+    expect(firstJson.keepLatin).toEqual(['Orbitron', brandTag])
+    expect(firstJson.cyrillic.suspicious).toContain('Kalvex')
+    expect(firstJson.cyrillic.suspicious).not.toContain('Orbitron')
+    expect(firstJson.cyrillic.suspicious).not.toContain('GTA')
+    expect(firstJson.warnings.map((issue: { code: string }) => issue.code)).toContain(
+      'cyrillic_suspicious',
+    )
+    let cyrillic = JSON.stringify((await readPost(post.id, 'uz-Cyrl')).content)
+    expect(cyrillic).toContain('Калвех нашри')
+    expect(cyrillic).toContain('Orbitron модели')
+    expect(cyrillic).toContain(`${brandTag} қурилмаси`)
+    expect(cyrillic).toContain('GTA ва ESL')
+
+    // `keepLatin` dagi nom bilan yaratilgan teg — brend teg: kirill nomi ham lotinda.
+    const tagId = firstJson.tags.find((tag: { name: string }) => tag.name === brandTag).id
+    const tag = await payload.findByID({
+      collection: 'tags',
+      id: tagId,
+      locale: 'uz-Cyrl',
+      fallbackLocale: false,
+    })
+    expect(tag).toMatchObject({ name: brandTag, doNotTransliterate: true })
+
+    const preview = await call(client, 'preview_cyrillic', { postId: post.id })
+    expect(jsonOf(preview)).toMatchObject({ keepLatin: ['Orbitron', brandTag] })
+    expect(jsonOf(preview).suspicious).toContain('Kalvex')
+
+    // keepLatin almashtirildi: Kalvex himoyalandi, Orbitron endi o'giriladi; brend teg baribir himoyalaydi.
+    const second = jsonOf(
+      await call(client, 'save_rewrite', {
+        ...base,
+        body,
+        tags: ['Apple', brandTag],
+        keepLatin: ['Kalvex'],
+      }),
+    )
+    expect(second.ok).toBe(true)
+    expect(second.cyrillic.suspicious).not.toContain('Kalvex')
+    expect(second.cyrillic.suspicious).toContain('Orbitron')
+    cyrillic = JSON.stringify((await readPost(post.id, 'uz-Cyrl')).content)
+    expect(cyrillic).toContain('Kalvex нашри')
+    expect(cyrillic).toContain('Орбитрон модели')
+    expect(cyrillic).toContain(`${brandTag} қурилмаси`)
+
+    const invalid = jsonOf(
+      await call(client, 'save_rewrite', { ...base, body, keepLatin: ['Фигуре'] }),
+    )
+    expect(invalid.ok).toBe(false)
+    expect(invalid.errors.map((issue: { field: string }) => issue.field)).toContain('keepLatin[0]')
     await client.close()
   })
 

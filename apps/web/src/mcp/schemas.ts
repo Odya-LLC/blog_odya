@@ -211,6 +211,8 @@ export const dailyBatchArgs = {
 export const MAX_DRAFT_ITEMS = 10
 export const MAX_BODY_CHARS = 60_000
 export const MAX_TAGS_INPUT = 10
+/** `save_rewrite.keepLatin` (OBLOG-67) — `posts.keepLatin` chegarasi bilan bir xil. */
+export const MAX_KEEP_LATIN = 50
 
 const text = (field: string, max: number) =>
   z
@@ -265,6 +267,19 @@ export const saveRewriteInput = {
     .max(MAX_TAGS_INPUT, { error: `tags: ko'pi bilan ${MAX_TAGS_INPUT} ta` })
     .default([])
     .describe("3–7 ta teg: nomi (lotin) yoki ID. Mavjud bo'lmagan nom — yangi teg yaratiladi"),
+  keepLatin: z
+    .array(text('keepLatin[]', 100).trim().min(1, { error: "keepLatin[]: bo'sh bo'lmasin" }), {
+      error: "keepLatin: atamalar (matn) ro'yxati",
+    })
+    .max(MAX_KEEP_LATIN, { error: `keepLatin: ko'pi bilan ${MAX_KEEP_LATIN} ta` })
+    .optional()
+    .describe(
+      'Kirill versiyasida lotinda qoladigan atamalar (glossariyda yo‘q brend, mahsulot, nashr, ' +
+        'asl ism): ["Figure", "Game Informer", "Crew Dragon"]. Katta-kichik harf matndagidek; ' +
+        "qo'shimcha bilan ham ishlaydi (Figuredan). Berilmasa — oldingi ro'yxat saqlanadi, [] — " +
+        "tozalanadi. Shu nomdagi yangi teg ham brend teg bo'lib yaratiladi. 2–6 harfli katta " +
+        'harfli qisqartmalar (GTA, ESL) va glossariy brendlari — avtomatik',
+    ),
 }
 
 export const setSeoInput = {

@@ -1,8 +1,8 @@
 ---
 id: output-schema
 title: Chiqish sxemasi (save_rewrite / set_seo)
-version: 1.3.0
-updatedAt: 2026-10-01
+version: 1.4.0
+updatedAt: 2026-10-02
 ---
 
 # Blog Odya — chiqish sxemasi: `save_rewrite` va `set_seo`
@@ -33,14 +33,15 @@ Umumiy qoidalar:
 
 ## `save_rewrite`
 
-| Maydon     | Tip                | Majburiy | Qoida                                                                                                                                                                                  |
-| ---------- | ------------------ | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `postId`   | number             | ha       | `create_draft` / `list_drafts` / `claim_draft` qaytargan post identifikatori                                                                                                           |
-| `title`    | string             | ha       | ≤ 70 belgi; clickbait yoʻq; oxirida nuqta yoʻq; focus keyword bor (`style.md` 4, `seo.md` 1–2)                                                                                         |
-| `excerpt`  | string             | ha       | Lid: 1–2 gap, 160–300 belgi; focus keyword bor; sarlavhani takrorlamaydi                                                                                                               |
-| `body`     | string (Markdown)  | ha       | 400–900 soʻz; `##` (H2) va `###` (H3); `#` (H1) ishlatilmaydi; 2–5 ichki havola (`/{kategoriya}/{slug}`); 1+ tashqi havola (manba). Server Markdown matnini Lexical formatiga oʻgiradi |
-| `category` | string             | ha       | Bitta kategoriya slugi (`list_categories`): `suniy-intellekt`, `texnologiyalar`, `gadjetlar`, `dasturlash`, `kiberxavfsizlik`, `kibersport`, `oyinlar`, `startaplar`, `ilm-fan`        |
-| `tags`     | (string\|number)[] | ha       | 3–7 ta teg nomi (lotin) yoki ID. Avval mavjud teglar (`list_tags`); mos teg yoʻq boʻlsa yangisi yaratiladi                                                                             |
+| Maydon      | Tip                | Majburiy | Qoida                                                                                                                                                                                                                                             |
+| ----------- | ------------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `postId`    | number             | ha       | `create_draft` / `list_drafts` / `claim_draft` qaytargan post identifikatori                                                                                                                                                                      |
+| `title`     | string             | ha       | ≤ 70 belgi; clickbait yoʻq; oxirida nuqta yoʻq; focus keyword bor (`style.md` 4, `seo.md` 1–2)                                                                                                                                                    |
+| `excerpt`   | string             | ha       | Lid: 1–2 gap, 160–300 belgi; focus keyword bor; sarlavhani takrorlamaydi                                                                                                                                                                          |
+| `body`      | string (Markdown)  | ha       | 400–900 soʻz; `##` (H2) va `###` (H3); `#` (H1) ishlatilmaydi; 2–5 ichki havola (`/{kategoriya}/{slug}`); 1+ tashqi havola (manba). Server Markdown matnini Lexical formatiga oʻgiradi                                                            |
+| `category`  | string             | ha       | Bitta kategoriya slugi (`list_categories`): `suniy-intellekt`, `texnologiyalar`, `gadjetlar`, `dasturlash`, `kiberxavfsizlik`, `kibersport`, `oyinlar`, `startaplar`, `ilm-fan`                                                                   |
+| `tags`      | (string\|number)[] | ha       | 3–7 ta teg nomi (lotin) yoki ID. Avval mavjud teglar (`list_tags`); mos teg yoʻq boʻlsa yangisi yaratiladi                                                                                                                                        |
+| `keepLatin` | string[]           | yoʻq     | Kirill versiyasida lotinda qoladigan atamalar: glossariyda yoʻq brend, mahsulot, nashr, asl ism (`["Figure", "Game Informer"]`). Berilmasa — oldingi roʻyxat saqlanadi, `[]` — tozalanadi. Shu nomdagi yangi teg brend teg boʻladi (`style.md` 7) |
 
 Ruxsat etilgan Markdown: abzaslar, `##`/`###` sarlavhalar, `**qalin**`, `*kursiv*`, roʻyxatlar, havolalar, `>` iqtibos, kod (`` ` `` va ` ``` `), jadvallar. Rasm — faqat `upload_media` orqali yuklangan fayl, alohida qatorda: `![alt](media:123)` (Lexical `upload` tuguniga aylanadi; media mavjud va litsenziyasi toʻliq boʻlishi kerak, aks holda `media_not_found` / `media_license` xatosi). Saytda rasm alt matni — media'ning `alt` maydonidan. HTML teglari, tashqi URL'li rasmlar (`![](https://…)`) va skriptlar olib tashlanadi.
 
@@ -87,7 +88,7 @@ Ikkala tool bir xil tuzilmadagi javob qaytaradi:
 - `ok: false` — saqlanmadi (MCP javobida `isError: true`); `errors` dagi barcha xatolar tuzatilib, tool qayta chaqiriladi.
 - `ok: true` + `warnings` — saqlandi, lekin eʼtibor talab qilinadi.
 - `seoScore` — 0–100, maʼlumot uchun (`seo.md` 10-boʻlimdagi tekshiruv roʻyxati boʻyicha vaznli ball).
-- Muvaffaqiyatli javobda qoʻshimcha: `post` (id, slug, holat, lock muddati), `tags` (yaratilganlari belgilangan), `cyrillic` (yangilangan kirill maydonlari), `similarity`.
+- Muvaffaqiyatli javobda qoʻshimcha: `post` (id, slug, holat, lock muddati), `tags` (yaratilganlari belgilangan), `keepLatin`, `cyrillic` (yangilangan kirill maydonlari; `suspicious` — kirillga oʻgirilgan katta harfli soʻzlar, brend boʻlsa `keepLatin` ga qoʻshing), `similarity`.
 - Holat yoki egalik xatosi (masalan, post `review`, editor kaliti bilan `published` yoki boshqa muharrirga biriktirilgan) — JSON emas, oddiy matnli xato (`isError: true`).
 
 Asosiy tekshiruvlar (TZ §5.3): lotin maydonlarida kirill harflari yoʻqligi; uzunlik chegaralari; slug unikalligi (slug `slugify-uz` bilan avtomatik yaratiladi, agent yubormaydi); manba bilan n-gram oʻxshashlik; `sources` boʻsh emasligi.

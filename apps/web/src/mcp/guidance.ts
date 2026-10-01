@@ -73,7 +73,7 @@ const WORKFLOW_STEPS = [
   "3. get_source — to'liq matn va klasterdagi boshqa manbalar (faktlarni solishtiring).",
   "4. O'zbek tilida (lotin) qayta yozing: so'zma-so'z tarjima emas; faktlar saqlanadi; o'ylab topilgan faktlar taqiqlanadi, noaniq joylar — notesForEditor ga.",
   '5. Ichki havolalar uchun search_posts; kategoriya va teglar — list_categories, list_tags.',
-  '6. save_rewrite, keyin set_seo. Server xato qaytarsa — tuzatib qayta yuboring.',
+  '6. save_rewrite, keyin set_seo. Server xato qaytarsa — tuzatib qayta yuboring. Glossariyda yo‘q brend, mahsulot, nashr va asl ismlarni save_rewrite(keepLatin: [...]) ga yozing — kirill versiyasida lotinda qoladi; javobdagi cyrillic.suspicious ni tekshiring.',
   '7. Rasm (copyright.md §4): list_media (press-kit, logotiplar) yoki search_stock_images → upload_media(url yoki data, alt, license, credit) → set_cover(postId, mediaId). Matn ichida — alohida qatorda ![alt](media:ID) (save_rewrite). Manba sayti, agentlik (Getty, Reuters, AP, AFP) rasmlari — taqiqlangan; legal rasm topilmasa — notesForEditor da taklif qiling.',
 ]
 

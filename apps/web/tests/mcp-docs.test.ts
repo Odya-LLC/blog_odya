@@ -94,6 +94,7 @@ describe('MCP reestri', () => {
       ['body', true],
       ['category', true],
       ['tags', false],
+      ['keepLatin', false],
     ])
     expect(saveRewrite.args[0]).toMatchObject({ type: 'son' })
     const dailyBatch = registry.prompts.find((prompt) => prompt.name === 'daily_batch')!

@@ -2,6 +2,7 @@ import type { TransliterateLexicalOptions } from '@blog-odya/shared'
 
 import type { CyrlSyncFieldSpec, CyrlSyncPluginOptions } from './cyrlSync'
 import { faqCyrlSpec, structuredCyrlSpec } from './cyrlSync'
+import { postCyrlTerms, tagCyrlTerms } from './post-terms'
 
 /**
  * Qaysi kolleksiya/global maydonlari lotin → kirill sinxronlanadi (TZ §3.6). `cyrlSyncPlugin` ga
@@ -37,6 +38,8 @@ const menuLabel = (array: string, lockLabel: string): CyrlSyncFieldSpec => ({
 export const CYRL_SYNC: CyrlSyncPluginOptions = {
   collections: {
     posts: {
+      // OBLOG-67: `keepLatin` va brend teglar kirillda lotinda qoladi (`post-terms.ts`).
+      ...postCyrlTerms,
       fields: [
         'title',
         'excerpt',
@@ -59,6 +62,7 @@ export const CYRL_SYNC: CyrlSyncPluginOptions = {
       fields: ['name', 'description', ...seoMeta('title', 'description', 'focusKeyword')],
     },
     tags: {
+      ...tagCyrlTerms,
       fields: ['name', 'description', ...seoMeta('title', 'description', 'focusKeyword')],
     },
     authors: {

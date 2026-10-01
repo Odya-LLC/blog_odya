@@ -1,0 +1,124 @@
+# Prod: chop etilgan postlarning kirill (uz-Cyrl) versiyasini joriy transliteratsiya qoidalari va
+# lug'atlari bilan qayta yaratish (OBLOG-67) — `pnpm --filter @blog-odya/web cyrl:resync`.
+# Faqat qo'lda: `gh workflow run cyrl-resync --ref main` (standart — dry-run, hech narsa yozilmaydi),
+# hisobotni tekshirib — `-f apply=true`. Qo'lda tuzatilgan (cyrlLocked) maydonlar o'zgarmaydi,
+# chop etilmagan qoralamasi bor postlar o'tkazib yuboriladi, Telegram xabarlari tahrirlanmaydi.
+# Sahifalar ISR muddati (≤ 1 soat) ichida yangilanadi. Migratsiya (`…_oblog_67_keep_latin`) avval
+# `migrate-prod` bilan qo'llangan bo'lishi kerak.
+name: cyrl-resync
+
+on:
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: 'Yozish (o‘chiq — faqat hisobot, DB o‘zgarmaydi)'
+        type: boolean
+        default: false
+      filter:
+        description: 'all — barcha chop etilgan postlar; ai — faqat AI agent (MCP) qayta yozganlari'
+        type: choice
+        options: [all, ai]
+        default: all
+      ids:
+        description: 'Faqat shu post ID’lari, vergul bilan (masalan 220,221). Bo‘sh — filtr bo‘yicha'
+        type: string
+        default: ''
+      limit:
+        description: 'Ko‘pi bilan N ta post (bo‘sh — hammasi)'
+        type: string
+        default: ''
+
+# migrate-prod / seed-prod bilan umumiy guruh — bir vaqtda ishlamaydi.
+concurrency:
+  group: migrate-prod
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  resync:
+    name: cyrl:resync (prod)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: Production
+
+    # seed-prod bilan bir xil env (session pooler). PAYLOAD_SECRET — tasodifiy: skript shifrlangan
+    # maydon yoki foydalanuvchi bilan ishlamaydi. TELEGRAM_BOT_TOKEN berilmaydi (xabarlar
+    # tahrirlanmaydi; skript ham `skipTelegram` bilan saqlaydi).
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL_DIRECT_PROD }}
+      DATABASE_URL_DIRECT: ${{ secrets.DATABASE_URL_DIRECT_PROD }}
+      S3_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+      S3_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      S3_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      S3_BUCKET: media
+      S3_REGION: auto
+      S3_FORCE_PATH_STYLE: 'true'
+      MEDIA_PUBLIC_URL: https://media.odya.uz
+      NEXT_PUBLIC_SITE_URL: https://blog.odya.uz
+      JOBS_MODE: endpoint
+      NEXT_TELEMETRY_DISABLED: '1'
+      TURBO_TELEMETRY_DISABLED: '1'
+
+    steps:
+      - name: Check secrets
+        run: |
+          for name in DATABASE_URL_DIRECT S3_ENDPOINT S3_ACCESS_KEY_ID S3_SECRET_ACCESS_KEY; do
+            if [ -z "${!name}" ]; then
+              echo "::error::$name bo'sh — DATABASE_URL_DIRECT_PROD / R2_* secret'larini tekshiring."
+              exit 1
+            fi
+          done
+
+      - name: Generate PAYLOAD_SECRET
+        run: |
+          secret="$(openssl rand -hex 32)"
+          echo "::add-mask::$secret"
+          echo "PAYLOAD_SECRET=$secret" >> "$GITHUB_ENV"
+
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Resync (apply=${{ inputs.apply }})
+        env:
+          APPLY: ${{ inputs.apply && 'apply' || '' }}
+          FILTER: ${{ inputs.filter }}
+          IDS: ${{ inputs.ids }}
+          LIMIT: ${{ inputs.limit }}
+        run: |
+          set -o pipefail
+          args=("filter=$FILTER")
+          [ -n "$APPLY" ] && args+=("$APPLY")
+          if [ -n "$IDS" ]; then
+            case "$IDS" in
+              *[!0-9,]*) echo "::error::ids — vergul bilan ajratilgan musbat sonlar"; exit 1 ;;
+            esac
+            args+=("ids=$IDS")
+          fi
+          if [ -n "$LIMIT" ]; then
+            case "$LIMIT" in
+              *[!0-9]*) echo "::error::limit — musbat butun son bo'lishi kerak"; exit 1 ;;
+            esac
+            args+=("limit=$LIMIT")
+          fi
+          pnpm --filter @blog-odya/web cyrl:resync "${args[@]}" 2>&1 | tee "$RUNNER_TEMP/resync.log"
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "### cyrl-resync (apply=${{ inputs.apply }}, filter=${{ inputs.filter }})"
+            echo '```'
+            sed -E 's/\x1b\[[0-9;]*m//g' "$RUNNER_TEMP/resync.log" | grep -E "cyrl:resync|^.*(#[0-9]+ |  [a-z.]+: |  shubhali: )" || echo "(log yo'q)"
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"

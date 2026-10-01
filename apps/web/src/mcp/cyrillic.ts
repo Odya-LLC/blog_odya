@@ -1,7 +1,16 @@
 import { transliterateLexical, type Transliterator } from '@blog-odya/shared'
+import type { Payload } from 'payload'
 
 import type { Post } from '@/payload-types'
-import { parseCyrlLocked } from '@/translit/cyrlSync'
+import {
+  cyrillicFromLatin,
+  isEmptyCyrlValue,
+  normalizeSpecs,
+  parseCyrlLocked,
+} from '@/translit/cyrlSync'
+import { postProtectedTerms } from '@/translit/post-terms'
+import { CYRL_SYNC } from '@/translit/sync-config'
+import { getTransliterator } from '@/translit/transliterator'
 
 /**
  * Kirill (uz-Cyrl) versiyasi va MCP (TZ §3.6: "Agent faqat lotin yozadi; kirill avtomatik").
@@ -62,4 +71,42 @@ export function previewMissingCyrillic(
   }
   if (latin.content) data.content = transliterateLexical(latin.content, transliterator.toCyrillic)
   return data
+}
+
+/** Ichki maydon qiymati nuqtali yo'l bo'yicha (`meta.title`). */
+export function valueAtPath(doc: unknown, path: string): unknown {
+  let current: unknown = doc
+  for (const key of path.split('.')) {
+    if (typeof current !== 'object' || current === null) return undefined
+    current = (current as Record<string, unknown>)[key]
+  }
+  return current
+}
+
+/** Post kirill versiyasi uchun transliterator: lug'atlar + `keepLatin` + brend teglar (OBLOG-67). */
+export async function postTransliterator(
+  payload: Payload,
+  post: Pick<Post, 'keepLatin' | 'tags'>,
+): Promise<Transliterator> {
+  const terms = await postProtectedTerms(payload, { keepLatin: post.keepLatin, tags: post.tags })
+  return (await getTransliterator(payload)).withProtectedTerms(terms)
+}
+
+/**
+ * Shubhali so'zlar (OBLOG-67): postning lotin maydonlarida (sarlavha, lid, matn, SEO, FAQ, muqova
+ * alt) katta harf bilan boshlangan, glossariy/istisnolar/teglar/`keepLatin` da yo'q va odatdagi
+ * qoidalar bilan kirillga o'girilgan so'zlar — ehtimol brend yoki chet nom. Agent uchun
+ * ogohlantirish: kerak bo'lsa `save_rewrite(keepLatin)` bilan himoyalaydi.
+ */
+export function suspiciousLatinWords(
+  post: Partial<Post>,
+  transliterator: Transliterator,
+): string[] {
+  const suspicious = new Set<string>()
+  for (const spec of normalizeSpecs(CYRL_SYNC.collections?.posts ?? {})) {
+    const value = valueAtPath(post, spec.path)
+    if (isEmptyCyrlValue(value, spec.kind)) continue
+    cyrillicFromLatin(spec, value, transliterator, undefined, suspicious)
+  }
+  return [...suspicious].sort((a, b) => a.localeCompare(b, 'en'))
 }

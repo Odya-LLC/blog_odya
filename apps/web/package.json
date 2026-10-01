@@ -21,7 +21,8 @@
     "generate:importmap": "cross-env NODE_OPTIONS=--no-deprecation payload generate:importmap",
     "seed": "pnpm run migrate && cross-env NODE_OPTIONS=--no-deprecation payload run src/seed/run.ts",
     "seed:translit": "cross-env NODE_OPTIONS=--no-deprecation payload run src/scripts/seed-translit.ts",
-    "media:regenerate": "cross-env NODE_OPTIONS=--no-deprecation payload run src/scripts/regenerate-media-sizes.ts"
+    "media:regenerate": "cross-env NODE_OPTIONS=--no-deprecation payload run src/scripts/regenerate-media-sizes.ts",
+    "cyrl:resync": "cross-env NODE_OPTIONS=--no-deprecation payload run src/scripts/resync-cyrl.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.1138.0",

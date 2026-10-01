@@ -11,6 +11,7 @@ import { isAdmin, isAdminOrEditor, isAdminOrEditorUser } from '@/access'
 import { slugField } from '@/fields/slug'
 import { postRedirectHooks } from '@/hooks/contentRedirects'
 import { revalidatePostAfterChange, revalidatePostAfterDelete } from '@/site/revalidate'
+import { resyncCyrlEndpoint } from '@/translit/resync'
 
 import { applyDefaultAuthor } from './defaultAuthor'
 import { deriveFields, enforceWorkflow, syncScheduledPublish } from './hooks'
@@ -42,6 +43,22 @@ const readPosts: Access = ({ req }) => {
     and: [{ _status: { equals: 'published' } }, { workflowStatus: { not_equals: 'archived' } }],
   }
   return where
+}
+
+/** `keepLatin` ko'pi bilan shuncha atama (har biri ≤ 100 belgi). */
+export const KEEP_LATIN_MAX = 50
+
+/** `keepLatin`: bo'sh yoki satrlar ro'yxati (lotin, kirill harflarisiz). */
+export function validateKeepLatin(value: unknown): true | string {
+  if (value === null || value === undefined) return true
+  if (!Array.isArray(value)) return 'Roʻyxat boʻlishi kerak: ["Figure", "Game Informer"]'
+  if (value.length > KEEP_LATIN_MAX) return `Koʻpi bilan ${KEEP_LATIN_MAX} ta atama`
+  for (const item of value) {
+    if (typeof item !== 'string' || !item.trim()) return 'Har bir element — boʻsh boʻlmagan matn'
+    if (item.length > 100) return `"${item.slice(0, 20)}…": koʻpi bilan 100 belgi`
+    if (/[Ѐ-ӿ]/.test(item)) return `"${item}": kirill harflari boʻlmasin`
+  }
+  return true
 }
 
 /** Faqat tizim (job'lar, `overrideAccess`) yozadigan maydonlar. */
@@ -81,6 +98,8 @@ export const Posts: CollectionConfig = {
     listSearchableFields: ['title', 'slug'],
   },
   defaultSort: '-updatedAt',
+  // OBLOG-67: `POST /api/posts/resync-cyrl` — chop etilgan postlar kirillini qayta yaratish (admin).
+  endpoints: [resyncCyrlEndpoint],
   versions: {
     drafts: {
       autosave: { interval: 10_000 },
@@ -289,6 +308,17 @@ export const Posts: CollectionConfig = {
                 { name: 'sentAt', type: 'date', label: 'Yuborilgan' },
                 { name: 'error', type: 'textarea', label: 'Xato' },
               ],
+            },
+            {
+              // OBLOG-67: kirill versiyasida lotinda qoladigan atamalar (brend, mahsulot, asl ism).
+              name: 'keepLatin',
+              type: 'json',
+              label: 'Kirillda lotinda qoladigan atamalar',
+              validate: validateKeepLatin,
+              admin: {
+                description:
+                  'JSON roʻyxat, masalan ["Figure", "Game Informer"]: shu postning kirill versiyasida bu atamalar transliteratsiya qilinmaydi (katta-kichik harf farqlanadi; qoʻshimcha qoʻshilsa ham — "Figuredan"). Hamma postlar uchun — glossariy (doNotTransliterate). MCP agent save_rewrite(keepLatin) bilan yozadi.',
+              },
             },
             {
               name: 'cyrlLocked',

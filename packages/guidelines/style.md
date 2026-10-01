@@ -1,8 +1,8 @@
 ---
 id: style
 title: Stil qoʻllanma
-version: 1.0.0
-updatedAt: 2026-09-23
+version: 1.1.0
+updatedAt: 2026-10-02
 ---
 
 # Blog Odya — stil qoʻllanma
@@ -130,7 +130,7 @@ Paragraf — 2–4 gap. Roʻyxatlar texnik xususiyatlar, bosqichlar yoki taqqosl
 
 ## 7. Nomlar va atamalar
 
-- Brendlar, mahsulotlar, oʻyinlar va jamoalar nomi **asl yozilishida** qoladi va tarjima ham, transliteratsiya ham qilinmaydi: `OpenAI`, `ChatGPT`, `iPhone`, `Counter-Strike 2`, `Team Spirit`. Roʻyxat — glossariyda (`doNotTranslate`, `doNotTransliterate`).
+- Brendlar, mahsulotlar, oʻyinlar va jamoalar nomi **asl yozilishida** qoladi va tarjima ham, transliteratsiya ham qilinmaydi: `OpenAI`, `ChatGPT`, `iPhone`, `Counter-Strike 2`, `Team Spirit`. Roʻyxat — glossariyda (`doNotTranslate`, `doNotTransliterate`). Glossariyda yoʻq brend, mahsulot, nashr va asl yozilishdagi nomlar `save_rewrite` ning `keepLatin` roʻyxatiga yoziladi (`["Figure", "Game Informer", "Crew Dragon"]`) — kirill versiyasida ular lotinda qoladi. 2–6 harfli katta harfli qisqartmalar (`GTA`, `ESL`, `NIST`) avtomatik lotinda qoladi; oʻzbekcha qisqartmalar (`AQSH`, `BMT`, `XKS`) kirillga oʻgiriladi.
 - Brend nomiga qoʻshimcha apostrofsiz qoʻshiladi. Qoʻshimcha talaffuzga tushmasa, turdosh ot yordamida yoziladi: `Apple kompaniyasining`, `NAVI jamoasini`, `OpenAI kompaniyasiga`. Tabiiy oʻqiladigan hollarda qoʻshimcha toʻgʻridan-toʻgʻri qoʻshiladi: `Googlening`, `Samsungdan`, `Telegramda`. Brend va qoʻshimcha orasiga apostrof qoʻyilmaydi — aks holda kirill versiyasida ortiqcha `ъ` paydo boʻladi.
 - Kishi ismlari oʻzbek lotin yozuvida, talaffuzga koʻra: `Sem Altman` (Sam Altman), `Ilon Mask` (Elon Musk), `Jensen Xuang` (Jensen Huang). Birinchi uchrashida qavs ichida asl yozilishi beriladi: «Sem Altman (Sam Altman)».
 - Lavozim ismdan oldin, kichik harf bilan: «OpenAI bosh direktori Sem Altman».

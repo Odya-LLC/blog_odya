@@ -10,11 +10,17 @@ import { takeScrapedItems } from '@/editorial/actions'
 import { validateSlug } from '@/lib/slug'
 import type { Media, Post, ScrapedItem, Tag } from '@/payload-types'
 import { inTransaction } from '@/scraping/itemState'
-import { getTransliterator } from '@/translit/transliterator'
+import { parseKeepLatin } from '@/translit/post-terms'
 
 import { isMcpAutoPublishEnabled, publishedPostUrls } from './auto-publish'
 import type { McpContext } from './context'
-import { cyrillicReport, lockedFields, previewMissingCyrillic } from './cyrillic'
+import {
+  cyrillicReport,
+  lockedFields,
+  postTransliterator,
+  previewMissingCyrillic,
+  suspiciousLatinWords,
+} from './cyrillic'
 import {
   lexicalToMarkdown,
   markdownToLexical,
@@ -286,6 +292,22 @@ export function cyrillicWarning(skipped: string[]): Issue[] {
     : []
 }
 
+/** Shubhali so'zlar (OBLOG-67) — agent `keepLatin` bilan himoyalashi mumkin. */
+export function suspiciousWarning(suspicious: string[]): Issue[] {
+  return suspicious.length
+    ? [
+        {
+          field: 'cyrillic',
+          code: 'cyrillic_suspicious',
+          message:
+            `Kirill versiyasida transliteratsiya qilingan katta harfli so'zlar: ${suspicious.join(', ')}. ` +
+            "Brend, mahsulot, nashr yoki asl ism bo'lsa — save_rewrite(keepLatin: [...]) bilan qayta " +
+            "saqlang (o'zbekcha nom bo'lsa — e'tibor bermang).",
+        },
+      ]
+    : []
+}
+
 // ---------------------------------------------------------------------------
 // create_draft
 // ---------------------------------------------------------------------------
@@ -503,7 +525,12 @@ async function planTags(
   return plans
 }
 
-async function createTag(ctx: McpContext, req: PayloadRequest, name: string): Promise<Tag> {
+async function createTag(
+  ctx: McpContext,
+  req: PayloadRequest,
+  name: string,
+  brand = false,
+): Promise<Tag> {
   const base = slugifyUz(name, { removeStopWords: false }) || 'teg'
   const slug = await dedupeSlug(base, async (candidate) => {
     const { totalDocs } = await ctx.payload.count({
@@ -515,7 +542,8 @@ async function createTag(ctx: McpContext, req: PayloadRequest, name: string): Pr
   })
   const tag = await ctx.payload.create({
     collection: 'tags',
-    data: { name, slug },
+    // `keepLatin` dagi nom — brend teg (OBLOG-67): nomi kirillda ham lotinda qoladi.
+    data: { name, slug, ...(brand ? { doNotTransliterate: true } : {}) },
     depth: 0,
     ...op(ctx, req),
   })
@@ -618,6 +646,16 @@ export async function saveRewrite(
       message: `Kategoriya topilmadi: "${input.category}" — list_categories dan slug yoki ID oling.`,
     })
   }
+  const keepLatin = input.keepLatin ? [...new Set(input.keepLatin)] : undefined
+  for (const [index, term] of (keepLatin ?? []).entries()) {
+    if (/[Ѐ-ӿ]/.test(term)) {
+      errors.push({
+        field: `keepLatin[${index}]`,
+        code: 'cyrillic_in_latin',
+        message: `keepLatin: "${term}" — kirill harflari bo'lmasin (atama matndagidek, lotinda).`,
+      })
+    }
+  }
   const tags = await planTags(ctx, req, input.tags, errors)
   const bodyMedia = await checkBodyMedia(ctx, req, converted.media, errors)
   const noSources = sourcesError(post.sources?.length ?? 0)
@@ -669,7 +707,7 @@ export async function saveRewrite(
         tagIds.push(plan.id)
         continue
       }
-      const tag = await createTag(ctx, req, plan.name)
+      const tag = await createTag(ctx, req, plan.name, keepLatin?.includes(plan.name) ?? false)
       createdTags.push(tag)
       tagIds.push(tag.id)
     }
@@ -683,6 +721,7 @@ export async function saveRewrite(
         content: converted.state as unknown as Post['content'],
         category: categoryId as number,
         tags: tagIds,
+        ...(keepLatin !== undefined ? { keepLatin } : {}),
         slug,
         rewrittenBy: 'ai_agent',
         aiDisclosure: true,
@@ -695,7 +734,13 @@ export async function saveRewrite(
     return { updated, createdTags, tagIds, cyrillic }
   }).catch(rethrow)
 
+  // OBLOG-67: kirillga o'girilgan katta harfli so'zlar (saqlangan lotin + post atamalari bo'yicha).
+  const suspicious = suspiciousLatinWords(
+    saved.updated,
+    await postTransliterator(ctx.payload, saved.updated),
+  )
   warnings.push(...cyrillicWarning(saved.cyrillic.skipped))
+  warnings.push(...suspiciousWarning(suspicious))
   return result({
     ok: true,
     errors: [],
@@ -722,7 +767,8 @@ export async function saveRewrite(
       alt: media.alt,
       url: absoluteUrl(ctx, media.url),
     })),
-    cyrillic: saved.cyrillic,
+    keepLatin: parseKeepLatin(saved.updated.keepLatin),
+    cyrillic: { ...saved.cyrillic, suspicious },
     next:
       'set_seo (agar hali qilinmagan bo‘lsa) → muqova: upload_media / list_media → set_cover → ' +
       'preview_cyrillic (ixtiyoriy) → submit_for_review',
@@ -837,6 +883,7 @@ export async function previewCyrillic(
   const req = await mcpReq(ctx, 'preview_cyrillic')
   const latin = await loadPost(ctx, req, input.postId)
   const stored = await loadPost(ctx, req, input.postId, CYRL)
+  const transliterator = await postTransliterator(ctx.payload, latin)
   // Saqlanmagan maydonlar — lotindan hozir yaratiladi (saqlanmaydi).
   const generated = previewMissingCyrillic(
     {
@@ -844,8 +891,9 @@ export async function previewCyrillic(
       excerpt: stored.excerpt ? undefined : latin.excerpt,
       content: stored.content ? undefined : latin.content,
     },
-    await getTransliterator(ctx.payload),
+    transliterator,
   )
+  const suspicious = suspiciousLatinWords(latin, transliterator)
   const title = (generated.title as string | undefined) ?? stored.title ?? ''
   const excerpt = (generated.excerpt as string | undefined) ?? stored.excerpt ?? ''
   const content = generated.content ?? stored.content
@@ -880,9 +928,13 @@ export async function previewCyrillic(
         generatedNow: Object.keys(generated),
         cyrlLocked: [...lockedFields(latin)],
         cyrlStale: latin.cyrlStale ?? false,
+        keepLatin: parseKeepLatin(latin.keepLatin),
+        suspicious,
         note:
-          'Kirill versiyasi lotindan avtomatik yaratiladi — agent uni tahrirlamaydi. Xato ' +
-          "ko'rsangiz (masalan, brend nomi o'girilgan), notesForEditor da ko'rsating.",
+          'Kirill versiyasi lotindan avtomatik yaratiladi — agent uni tahrirlamaydi. suspicious — ' +
+          "kirillga o'girilgan katta harfli so'zlar: brend, mahsulot, nashr yoki asl ism bo'lsa, " +
+          'save_rewrite(keepLatin: [...]) bilan qayta saqlang (kirill o‘sha saqlashda yangilanadi). ' +
+          "Qulflangan (cyrlLocked) maydonlar yangilanmaydi — notesForEditor da ko'rsating.",
       },
       null,
       2,
@@ -1301,7 +1353,9 @@ export function registerWriteTools(server: McpServer, ctx: McpContext): void {
         'Rasm — alohida qatorda `![alt](media:ID)` (upload_media orqali yuklangan, litsenziyali). ' +
         "Server tekshiruvlari: kirill harflari yo'q, uzunliklar, havolalar xavfsizligi, sources, " +
         "manba bilan o'xshashlik. Javob: { ok, errors[], warnings[], seoScore } — ok: false " +
-        "bo'lsa saqlanmaydi, xatolarni tuzatib qayta yuboring. Kirill — avtomatik. Chop etilgan " +
+        "bo'lsa saqlanmaydi, xatolarni tuzatib qayta yuboring. Kirill — avtomatik; glossariyda " +
+        "yo'q brend/mahsulot/nashr/asl ismlarni keepLatin bilan bering (kirillda lotinda qoladi), " +
+        'javobdagi cyrillic.suspicious — kirillga o‘girilgan katta harfli so‘zlar. Chop etilgan ' +
         'post — faqat admin roli kaliti bilan: qoralama versiya saqlanadi (sayt o‘zgarmaydi, slug ' +
         'saqlanadi), chop etish — submit_for_review.',
       inputSchema: saveRewriteInput,
@@ -1330,7 +1384,9 @@ export function registerWriteTools(server: McpServer, ctx: McpContext): void {
       title: "Kirill versiyasini ko'rish",
       description:
         'Postning avtomatik yaratilgan kirill (uz-Cyrl) versiyasi: sarlavha, lid, matn (Markdown), ' +
-        "SEO va FAQ. Faqat ko'rish — kirillni agent tahrirlamaydi.",
+        "SEO va FAQ. Faqat ko'rish — kirillni agent tahrirlamaydi. suspicious — kirillga " +
+        "o'girilgan katta harfli lotin so'zlar (ehtimol brend yoki asl ism): kerak bo'lsa " +
+        'save_rewrite(keepLatin) bilan himoyalang.',
       inputSchema: postIdInput,
       annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false },
     },
