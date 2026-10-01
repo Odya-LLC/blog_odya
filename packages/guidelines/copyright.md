@@ -1,8 +1,8 @@
 ---
 id: copyright
 title: Mualliflik huquqi qoidalari
-version: 1.1.0
-updatedAt: 2026-09-25
+version: 1.2.0
+updatedAt: 2026-10-01
 ---
 
 # Blog Odya — mualliflik huquqi qoidalari
@@ -73,7 +73,7 @@ Qoidalar:
 
 ### Agent rasm yuklashi (MCP)
 
-Agent faqat **litsenziyasi aniq** rasmni yuklaydi va postga qoʻyadi; yakuniy tanlovni baribir muharrir tasdiqlaydi (post publishdan oldin koʻrib chiqiladi).
+Agent faqat **litsenziyasi aniq** rasmni yuklaydi va postga qoʻyadi; yakuniy tanlovni muharrir tasdiqlaydi. Avtomatik nashr yoqilgan boʻlsa, post muharrir koʻrmasdan chop etilishi mumkin (`output-schema.md`, `submit_for_review`) — shuning uchun litsenziyasi toʻliq boʻlmagan muqova bilan post chop etilmaydi, rasm boʻyicha shubha boʻlsa `notesForEditor` ga yoziladi (bunday post tekshiruvda qoladi).
 
 - Qidirish tartibi: avval `list_media` (logotiplar, press-kitlar, avval yuklangan rasmlar — qayta yuklanmaydi), keyin rasmiy press-kit/press-reliz, keyin `search_stock_images` (Pexels). Mos legal rasm topilmasa — rasm qoʻyilmaydi, `notesForEditor` da taklif yoziladi.
 - `upload_media`: `url` yoki `data` (base64) + `filename`; `alt` (majburiy, 5–15 soʻz, lotin — kirill avtomatik), `caption`, `credit`, `license` (majburiy), `licenseUrl`, `licenseNote`, `sourceUrl`.

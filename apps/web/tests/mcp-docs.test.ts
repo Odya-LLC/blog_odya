@@ -71,6 +71,7 @@ describe('MCP reestri', () => {
       'set_seo',
       'preview_cyrillic',
       'submit_for_review',
+      'withdraw_from_review',
     ])
     expect(
       registry.tools.filter((tool) => tool.group === 'media').map((tool) => tool.name),

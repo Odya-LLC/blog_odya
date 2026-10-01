@@ -4,6 +4,7 @@ import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
 import { APIError, createLocalReq, type PayloadRequest, type Where } from 'payload'
 import type { z } from 'zod'
 
+import { isAdminUser } from '@/access'
 import { CLAIM_LOCK_MS, type PostWorkflowStatus } from '@/collections/Posts/workflow'
 import { takeScrapedItems } from '@/editorial/actions'
 import { validateSlug } from '@/lib/slug'
@@ -29,6 +30,7 @@ import {
   saveRewriteInput,
   setSeoInput,
   submitForReviewInput,
+  withdrawFromReviewInput,
 } from './schemas'
 import { relationId } from './tools'
 import {
@@ -46,15 +48,18 @@ import {
 
 /**
  * MCP yozish toollari (TZ §5.1, §5.3, §6.3, M2-07): `create_draft`, `claim_draft`, `release_draft`,
- * `save_rewrite`, `set_seo`, `preview_cyrillic`, `submit_for_review`. Alohida publish tool yo'q:
- * admin `scraping-settings.mcpAutoPublish` ni yoqsa (OBLOG-61), `submit_for_review` postni
- * tekshiruvdan o'tkazib darhol chop etadi (`in_progress → review → published`, bitta tranzaksiya).
+ * `save_rewrite`, `set_seo`, `preview_cyrillic`, `submit_for_review`, `withdraw_from_review`.
+ * Alohida publish tool yo'q: admin `scraping-settings.mcpAutoPublish` ni yoqsa (OBLOG-61),
+ * `submit_for_review` postni tekshiruvdan o'tkazib darhol chop etadi (`in_progress → review →
+ * published`, bitta tranzaksiya) — agar ushlab qolish sababi bo'lmasa (OBLOG-62: `notesForEditor`,
+ * `needsHumanReview`, `autoPublish: false` → `review`).
  *
  * Qoidalar (TZ §4.1, §4.2):
  * - Barcha yozuvlar Local API orqali kalit egasi nomidan (`overrideAccess: false`), audit kanali —
  *   `mcp` + tool nomi. Workflow o'tishlari va claim qulfi — `posts` hook'lari (`enforceWorkflow`).
  * - Faqat `draft`/`in_progress` holatidagi va kalit egasiga biriktirilgan (`assignee`) postlar
- *   o'zgartiriladi; `published` va boshqa holatlar — rad etiladi.
+ *   o'zgartiriladi. Istisno (OBLOG-62): admin roli kaliti chop etilgan postni qoralama versiya
+ *   sifatida tahrirlaydi (`editModeFor`). Qolgan holatlar — rad etiladi.
  * - `save_rewrite`/`set_seo`: `rewrittenBy = ai_agent`, `aiDisclosure = true`; lock 2 soatga
  *   yangilanadi; qoralama (`draft`) bo'lsa — avtomatik `in_progress` ga olinadi (claim).
  * - Validatsiya xatolari saqlanmaydi va `{ ok, errors[], warnings[], seoScore }` bilan qaytadi.
@@ -81,6 +86,7 @@ export const WRITE_TOOL_NAMES = [
   'set_seo',
   'preview_cyrillic',
   'submit_for_review',
+  'withdraw_from_review',
 ] as const
 
 // ---------------------------------------------------------------------------
@@ -143,9 +149,11 @@ function isEditableStatus(status: string): boolean {
 function statusError(post: Post): McpToolError {
   const tail =
     post.workflowStatus === 'published'
-      ? " Chop etilgan postni faqat muharrir admin panelda o'zgartiradi."
+      ? ' Chop etilgan postni faqat admin roli kaliti (save_rewrite / set_seo → submit_for_review) ' +
+        "yoki muharrir admin panelda o'zgartiradi."
       : post.workflowStatus === 'review'
-        ? ' Post tekshiruvda — muharrir qaytarsa (in_progress), qayta tahrirlash mumkin.'
+        ? ` Post tekshiruvda — withdraw_from_review(postId: ${post.id}) bilan qaytarib oling ` +
+          '(yoki muharrir qaytaradi), so‘ng qayta tahrirlash mumkin.'
         : ''
   return new McpToolError(
     `Post #${post.id} "${post.workflowStatus}" holatida — MCP orqali faqat draft yoki ` +
@@ -168,6 +176,30 @@ export function assertEditable(post: Post, userId: number): void {
       "uni o'zgartirib bo'lmaydi. O'zingizga biriktirilgan qoralamalar: list_drafts(assignee: 'me').",
   )
 }
+
+/**
+ * Tahrirlash rejimi (OBLOG-62):
+ * - `draft` — oddiy qoralama (`draft`/`in_progress`, kalit egasiga biriktirilgan): asosiy hujjat
+ *   o'zgaradi, lock yangilanadi;
+ * - `revision` — chop etilgan post, faqat **admin** roli kaliti: o'zgarishlar Payload qoralama
+ *   versiyasi sifatida (`draft: true`) saqlanadi — saytdagi sahifa `submit_for_review` chop
+ *   etmaguncha (yoki muharrir admin'da "Publish changes" bosmaguncha) o'zgarmaydi. Admin
+ *   panelidagi autosave bilan bir xil yo'l: kesh, Telegram, IndexNow hook'lari qoralama saqlashda
+ *   ishlamaydi. Slug (URL) o'zgarmaydi.
+ * Boshqa holatlar va editor kaliti bilan chop etilgan post — rad etiladi.
+ */
+export type EditMode = 'draft' | 'revision'
+
+export function editModeFor(ctx: McpContext, post: Post): EditMode {
+  if (post.workflowStatus === 'published' && isAdminUser(ctx.user)) return 'revision'
+  assertEditable(post, ctx.user.id)
+  return 'draft'
+}
+
+const REVISION_NOTE =
+  'Chop etilgan post: o‘zgarishlar qoralama versiya sifatida saqlandi — saytdagi sahifa hali ' +
+  'o‘zgarmadi. Chop etish: submit_for_review (avtomatik nashr yoqilgan va ushlab qolish sababi ' +
+  'bo‘lmasa) yoki muharrir admin panelda "Publish changes".'
 
 /** Claim qulfi va holat: qoralama bo'lsa `in_progress` ga olinadi, lock 2 soatga yangilanadi. */
 export function lockData(userId: number): Partial<Post> {
@@ -561,7 +593,7 @@ export async function saveRewrite(
 ): Promise<CallToolResult> {
   const req = await mcpReq(ctx, 'save_rewrite')
   const post = await loadPost(ctx, req, input.postId)
-  assertEditable(post, ctx.user.id)
+  const mode = editModeFor(ctx, post)
 
   const title = input.title.trim()
   const excerpt = input.excerpt.trim()
@@ -608,7 +640,18 @@ export async function saveRewrite(
     return result({ ok: false, errors, warnings, seoScore: score, saved: false })
   }
 
-  const { slug, deduped } = await uniquePostSlug(ctx, req, post, title)
+  // Chop etilgan postning URL'i o'zgarmaydi (tashqi havolalar, Telegram, indeks).
+  const { slug, deduped } =
+    mode === 'revision'
+      ? { slug: post.slug, deduped: false }
+      : await uniquePostSlug(ctx, req, post, title)
+  if (mode === 'revision' && slugifyUz(title) !== post.slug) {
+    warnings.push({
+      field: 'slug',
+      code: 'slug_kept',
+      message: `Chop etilgan post: slug (URL) o'zgarmaydi — "${post.slug}" qoldi.`,
+    })
+  }
   if (deduped) {
     warnings.push({
       field: 'slug',
@@ -634,7 +677,7 @@ export async function saveRewrite(
       collection: 'posts',
       id: post.id,
       data: {
-        ...lockData(ctx.user.id),
+        ...(mode === 'draft' ? lockData(ctx.user.id) : {}),
         title,
         excerpt,
         content: converted.state as unknown as Post['content'],
@@ -644,6 +687,7 @@ export async function saveRewrite(
         rewrittenBy: 'ai_agent',
         aiDisclosure: true,
       },
+      ...(mode === 'revision' ? { draft: true } : {}),
       depth: 0,
       ...op(ctx, req),
     })
@@ -658,6 +702,7 @@ export async function saveRewrite(
     warnings,
     seoScore: score,
     saved: true,
+    ...(mode === 'revision' ? { revision: true, note: REVISION_NOTE } : {}),
     post: {
       ...postSummary(ctx, saved.updated),
       readingTime: saved.updated.readingTime ?? null,
@@ -694,7 +739,7 @@ export async function setSeo(
 ): Promise<CallToolResult> {
   const req = await mcpReq(ctx, 'set_seo')
   const post = await loadPost(ctx, req, input.postId)
-  assertEditable(post, ctx.user.id)
+  const mode = editModeFor(ctx, post)
 
   const seo = {
     seoTitle: input.seoTitle.trim(),
@@ -743,13 +788,14 @@ export async function setSeo(
       collection: 'posts',
       id: post.id,
       data: {
-        ...lockData(ctx.user.id),
+        ...(mode === 'draft' ? lockData(ctx.user.id) : {}),
         meta: { ...post.meta, ...meta },
         ...(seo.faq ? { faq: seo.faq } : {}),
         ...(seo.coverAlt !== undefined ? { coverAlt: seo.coverAlt } : {}),
         rewrittenBy: 'ai_agent',
         aiDisclosure: true,
       },
+      ...(mode === 'revision' ? { draft: true } : {}),
       depth: 0,
       ...op(ctx, req),
     })
@@ -771,6 +817,7 @@ export async function setSeo(
     warnings,
     seoScore: score,
     saved: true,
+    ...(mode === 'revision' ? { revision: true, note: REVISION_NOTE } : {}),
     post: postSummary(ctx, saved.updated),
     cyrillic: saved.cyrillic,
     next:
@@ -848,21 +895,72 @@ export async function previewCyrillic(
 // submit_for_review
 // ---------------------------------------------------------------------------
 
+/**
+ * Avtomatik nashrda ham postni tekshiruvda ushlab qolish sabablari (OBLOG-62), ustuvorlik
+ * tartibida: agent `autoPublish: false` bergan, `needsHumanReview: true`, `notesForEditor` bo'sh
+ * emas (muharrir tekshirishi kerak bo'lgan joy bor — yangi yoki postda saqlangan izoh).
+ */
+export const HOLD_REASONS = ['agent_opt_out', 'needs_human_review', 'notes_for_editor'] as const
+
+export type HoldReason = (typeof HOLD_REASONS)[number]
+
+export function holdReason(input: {
+  autoPublish?: boolean
+  needsHumanReview?: boolean
+  notes: string
+}): HoldReason | null {
+  if (input.autoPublish === false) return 'agent_opt_out'
+  if (input.needsHumanReview === true) return 'needs_human_review'
+  if (input.notes) return 'notes_for_editor'
+  return null
+}
+
+const HOLD_NOTES: Record<HoldReason, string> = {
+  agent_opt_out: 'autoPublish: false — avtomatik nashr yoqilgan, lekin post chop etilmadi.',
+  needs_human_review: 'needsHumanReview: true — post muharrir tekshiruvini kutadi.',
+  notes_for_editor:
+    'notesForEditor bo‘sh emas — muharrir tekshirishi kerak bo‘lgan joy bor, post avtomatik ' +
+    'chop etilmadi. Izohdagi masalani o‘zingiz hal qilgan bo‘lsangiz: withdraw_from_review → ' +
+    'tuzating → submit_for_review(notesForEditor: "").',
+}
+
 export async function submitForReview(
   ctx: McpContext,
   input: Input<typeof submitForReviewInput>,
 ): Promise<CallToolResult> {
   const req = await mcpReq(ctx, 'submit_for_review')
   const post = await loadPost(ctx, req, input.postId)
-  assertEditable(post, ctx.user.id)
+  const mode = editModeFor(ctx, post)
+  if (mode === 'revision' && post._status !== 'draft') {
+    throw new McpToolError(
+      `Post #${post.id} chop etilgan va unda saqlanmagan o'zgarish yo'q — avval save_rewrite / ` +
+        'set_seo bilan tuzating, so‘ng submit_for_review.',
+    )
+  }
   // OBLOG-61: sozlama har chaqiruvda o'qiladi — admin o'chirsa, keyingi post tekshiruvga tushadi.
   const autoPublish = await isMcpAutoPublishEnabled(ctx.payload)
+  const notes = input.notesForEditor?.trim()
+  // Izoh berilmasa — postdagi avvalgi izoh amal qiladi (u ham muharrir uchun).
+  const effectiveNotes = notes !== undefined ? notes : (post.notesForEditor ?? '').trim()
+  const hold = autoPublish
+    ? holdReason({
+        autoPublish: input.autoPublish,
+        needsHumanReview: input.needsHumanReview,
+        notes: effectiveNotes,
+      })
+    : null
+  const willPublish = autoPublish && hold === null
+  const decision = {
+    autoPublish,
+    heldForReview: hold !== null,
+    ...(hold ? { reason: hold } : {}),
+  }
 
   const body = post.content ? statsFromLexical(post.content, { siteHost: siteHost(ctx) }) : null
   const errors: Issue[] = []
   const warnings: Issue[] = []
-  // Tekshiruvda muharrir hal qiladigan muammolar: avtomatik nashrda — xato, aks holda — ogohlantirish.
-  const strict = autoPublish ? errors : warnings
+  // Tekshiruvda muharrir hal qiladigan muammolar: chop etilsa — xato, aks holda — ogohlantirish.
+  const strict = willPublish ? errors : warnings
   if (!body?.words) {
     errors.push({
       field: 'body',
@@ -903,7 +1001,7 @@ export async function submitForReview(
     strict.push({
       field: 'rewrittenBy',
       code: 'not_rewritten',
-      message: autoPublish
+      message: willPublish
         ? 'Post MCP orqali qayta yozilmagan (save_rewrite chaqirilmagan) — avtomatik chop ' +
           'etilmaydi. Avval save_rewrite chaqiring.'
         : "Post MCP orqali qayta yozilmagan (save_rewrite chaqirilmagan) — tekshirib ko'ring.",
@@ -928,7 +1026,7 @@ export async function submitForReview(
     })
     if (cover) {
       const issues = mediaUsageIssues(cover, await loadBlockedDomains(ctx, req), 'coverImage')
-      // Avtomatik nashrda litsenziyasi to'ldirilmagan yoki taqiqlangan manbadan olingan muqova
+      // Chop etishda litsenziyasi to'ldirilmagan yoki taqiqlangan manbadan olingan muqova
       // bilan chop etilmaydi (tekshiruvda buni muharrir hal qiladi).
       strict.push(...issues)
     }
@@ -944,11 +1042,78 @@ export async function submitForReview(
       seoScore: score,
       submitted: false,
       published: false,
-      autoPublish,
+      ...decision,
     })
   }
 
-  const notes = input.notesForEditor?.trim()
+  const publishData = {
+    _status: 'published' as const,
+    rewrittenBy: 'ai_agent' as const,
+    aiDisclosure: true,
+  }
+  const notesData = notes !== undefined ? { notesForEditor: notes || null } : {}
+
+  if (mode === 'revision') {
+    // Chop etilgan post (admin kaliti): qoralama versiya chop etiladi yoki muharrirga qoladi.
+    const updated = await inTransaction(req, async () => {
+      if (willPublish) {
+        return ctx.payload.update({
+          collection: 'posts',
+          id: post.id,
+          data: { ...publishData, ...notesData },
+          draft: false,
+          depth: 0,
+          ...op(ctx, req),
+        })
+      }
+      if (notes === undefined) return post
+      return ctx.payload.update({
+        collection: 'posts',
+        id: post.id,
+        data: notesData,
+        draft: true,
+        depth: 0,
+        ...op(ctx, req),
+      })
+    }).catch(rethrow)
+    if (!willPublish) {
+      return result({
+        ok: true,
+        errors: [],
+        warnings,
+        seoScore: score,
+        submitted: true,
+        published: false,
+        ...decision,
+        revision: true,
+        pendingRevision: true,
+        post: postSummary(ctx, updated),
+        note:
+          (hold ? `${HOLD_NOTES[hold]} ` : 'Avtomatik nashr o‘chiq. ') +
+          'O‘zgarishlar qoralama versiyada — saytdagi sahifa o‘zgarmadi; muharrir admin panelda ' +
+          'ko‘rib "Publish changes" qiladi.',
+      })
+    }
+    const urls = await publishedPostUrls(ctx, req, updated)
+    return result({
+      ok: true,
+      errors: [],
+      warnings,
+      seoScore: score,
+      submitted: true,
+      published: true,
+      ...decision,
+      revision: true,
+      publishedAt: updated.publishedAt ?? null,
+      url: urls?.url ?? null,
+      urlCyrl: urls?.urlCyrl ?? null,
+      post: { ...postSummary(ctx, updated), publishedAt: updated.publishedAt ?? null },
+      note:
+        'Chop etilgan postning yangi versiyasi chop etildi (sayt keshi yangilanadi; Telegram ' +
+        'xabari sarlavha/lid o‘zgargan bo‘lsa tahrirlanadi; URL o‘zgarmadi).',
+    })
+  }
+
   const updated = await inTransaction(req, async () => {
     if (post.workflowStatus === 'draft') {
       await ctx.payload.update({
@@ -962,14 +1127,11 @@ export async function submitForReview(
     const reviewed = await ctx.payload.update({
       collection: 'posts',
       id: post.id,
-      data: {
-        workflowStatus: 'review',
-        ...(notes !== undefined ? { notesForEditor: notes || null } : {}),
-      },
+      data: { workflowStatus: 'review', ...notesData },
       depth: 0,
       ...op(ctx, req),
     })
-    if (!autoPublish) return reviewed
+    if (!willPublish) return reviewed
     // Avtomatik nashr: `review → published` — admin'dagi "Publish" bilan bir xil yo'l (kalit
     // egasi nomidan, `overrideAccess: false`; `enforceWorkflow` o'tish va rolni tekshiradi).
     // Telegram, IndexNow, sayt keshi, redirect va kirill — `posts` hook'lari. Biror qadam xato
@@ -977,19 +1139,14 @@ export async function submitForReview(
     return ctx.payload.update({
       collection: 'posts',
       id: post.id,
-      data: {
-        _status: 'published',
-        publishedAt: new Date().toISOString(),
-        rewrittenBy: 'ai_agent',
-        aiDisclosure: true,
-      },
+      data: { ...publishData, publishedAt: new Date().toISOString() },
       draft: false,
       depth: 0,
       ...op(ctx, req),
     })
   }).catch(rethrow)
 
-  if (!autoPublish) {
+  if (!willPublish) {
     return result({
       ok: true,
       errors: [],
@@ -997,10 +1154,13 @@ export async function submitForReview(
       seoScore: score,
       submitted: true,
       published: false,
-      autoPublish,
+      ...decision,
       post: postSummary(ctx, updated),
       reviewUrl: new URL('/admin/review', ctx.siteUrl).toString(),
-      note: 'Post tekshiruvga yuborildi. Chop etishni muharrir bajaradi (avtomatik nashr o‘chiq).',
+      note: hold
+        ? `${HOLD_NOTES[hold]} Post tekshiruvda (review), chop etishni muharrir bajaradi. ` +
+          `Qaytarib olish — withdraw_from_review(postId: ${post.id}).`
+        : 'Post tekshiruvga yuborildi. Chop etishni muharrir bajaradi (avtomatik nashr o‘chiq).',
     })
   }
   const urls = await publishedPostUrls(ctx, req, updated)
@@ -1011,13 +1171,77 @@ export async function submitForReview(
     seoScore: score,
     submitted: true,
     published: true,
-    autoPublish,
+    ...decision,
+    publishedAt: updated.publishedAt ?? null,
     url: urls?.url ?? null,
     urlCyrl: urls?.urlCyrl ?? null,
     post: { ...postSummary(ctx, updated), publishedAt: updated.publishedAt ?? null },
     note:
-      'Avtomatik nashr yoqilgan — post chop etildi (Telegram va IndexNow navbatga qo‘yildi). ' +
-      'Endi uni faqat muharrir admin panelda o‘zgartiradi.',
+      'Avtomatik nashr yoqilgan — post shu chaqiruvda chop etildi (Telegram va IndexNow ' +
+      'navbatga qo‘yildi). Keyingi tuzatishlar — faqat admin kaliti yoki muharrir orqali.',
+  })
+}
+
+// ---------------------------------------------------------------------------
+// withdraw_from_review
+// ---------------------------------------------------------------------------
+
+/**
+ * Tekshiruvdagi postni qaytarib olish (OBLOG-62): `review → in_progress` (TZ §4.1 dagi mavjud
+ * o'tish), post yana kalit egasiga 2 soatga biriktiriladi. Faqat o'zi yuborgan (`assignee` =
+ * kalit egasi) post; admin kaliti — har qanday tekshiruvdagi post.
+ */
+export async function withdrawFromReview(
+  ctx: McpContext,
+  input: Input<typeof withdrawFromReviewInput>,
+): Promise<CallToolResult> {
+  const req = await mcpReq(ctx, 'withdraw_from_review')
+  const post = await loadPost(ctx, req, input.postId)
+  if (post.workflowStatus !== 'review') {
+    throw new McpToolError(
+      `Post #${post.id} "${post.workflowStatus}" holatida — faqat tekshiruvdagi (review) postni ` +
+        'qaytarib olish mumkin.' +
+        (post.workflowStatus === 'published'
+          ? ' Chop etilgan postni faqat admin roli kaliti tuzatadi (save_rewrite / set_seo → ' +
+            'submit_for_review) yoki muharrir admin panelda.'
+          : isEditableStatus(post.workflowStatus)
+            ? ' Post allaqachon tahrirlanadi — save_rewrite / set_seo.'
+            : ''),
+    )
+  }
+  const assignee = relationId(post.assignee)
+  if (assignee !== ctx.user.id && !isAdminUser(ctx.user)) {
+    throw new McpToolError(
+      `Post #${post.id} sizga biriktirilmagan` +
+        (assignee === null ? '' : ` (user #${assignee})`) +
+        ' — faqat o‘zingiz yuborgan postni qaytarib olasiz.',
+    )
+  }
+  const updated = await ctx.payload
+    .update({
+      collection: 'posts',
+      id: post.id,
+      data: lockData(ctx.user.id),
+      depth: 0,
+      ...op(ctx, req),
+    })
+    .catch(rethrow)
+  const reason = input.reason?.trim() || null
+  ctx.payload.logger.info({
+    postId: post.id,
+    userId: ctx.user.id,
+    reason,
+    msg: 'MCP: post tekshiruvdan qaytarib olindi (withdraw_from_review)',
+  })
+  return jsonResult({
+    withdrawn: true,
+    reason,
+    post: postSummary(ctx, updated),
+    note:
+      'Post in_progress holatiga qaytdi va sizga 2 soatga biriktirildi — tuzating va qayta ' +
+      'yuboring. notesForEditor dagi eski izoh saqlanadi: muammo hal bo‘lsa, ' +
+      'submit_for_review(notesForEditor: "") bilan tozalang.',
+    next: 'save_rewrite / set_seo → submit_for_review',
   })
 }
 
@@ -1077,7 +1301,9 @@ export function registerWriteTools(server: McpServer, ctx: McpContext): void {
         'Rasm — alohida qatorda `![alt](media:ID)` (upload_media orqali yuklangan, litsenziyali). ' +
         "Server tekshiruvlari: kirill harflari yo'q, uzunliklar, havolalar xavfsizligi, sources, " +
         "manba bilan o'xshashlik. Javob: { ok, errors[], warnings[], seoScore } — ok: false " +
-        "bo'lsa saqlanmaydi, xatolarni tuzatib qayta yuboring. Kirill — avtomatik.",
+        "bo'lsa saqlanmaydi, xatolarni tuzatib qayta yuboring. Kirill — avtomatik. Chop etilgan " +
+        'post — faqat admin roli kaliti bilan: qoralama versiya saqlanadi (sayt o‘zgarmaydi, slug ' +
+        'saqlanadi), chop etish — submit_for_review.',
       inputSchema: saveRewriteInput,
       annotations: { ...WRITE, idempotentHint: true },
     },
@@ -1090,7 +1316,8 @@ export function registerWriteTools(server: McpServer, ctx: McpContext): void {
       title: 'SEO maydonlari',
       description:
         "seoTitle (≤ 60), metaDescription (140–160), focusKeyword (1–4 so'z), faq (0 yoki 2–4), " +
-        'coverAlt. Javob: { ok, errors[], warnings[], seoScore }. Kirill — avtomatik.',
+        'coverAlt. Javob: { ok, errors[], warnings[], seoScore }. Kirill — avtomatik. Chop ' +
+        'etilgan post — faqat admin kaliti, qoralama versiya sifatida (save_rewrite kabi).',
       inputSchema: setSeoInput,
       annotations: { ...WRITE, idempotentHint: true },
     },
@@ -1115,14 +1342,33 @@ export function registerWriteTools(server: McpServer, ctx: McpContext): void {
     {
       title: 'Tekshiruvga yuborish / chop etish',
       description:
-        "Postni review holatiga o'tkazadi (+ notesForEditor). Admin sozlamalarda avtomatik nashrni " +
-        "(MCP) yoqqan bo'lsa — post darhol chop etiladi: javobda published: true va url (lotin, " +
-        "/kr — kirill). Matn va SEO to'ldirilgan bo'lishi kerak, aks holda { ok: false, errors[] } " +
-        "(hech narsa o'zgarmaydi). Muqova yo‘q bo‘lsa — warning; avtomatik nashrda muqova " +
-        'litsenziyasi muammosi va save_rewrite qilinmagan post — xato.',
+        'Avtomatik nashr (admin sozlamasi) O‘CHIQ — post review holatiga o‘tadi, chop etishni ' +
+        'muharrir bajaradi. YOQILGAN — post SHU CHAQIRUVNING O‘ZIDA (kechikishsiz, bitta ' +
+        'tranzaksiyada) chop etiladi va saytda ko‘rinadi; istisno — post review da qoladi: ' +
+        "notesForEditor bo'sh emas (yoki postda avvalgi izoh bor), needsHumanReview: true yoki " +
+        'autoPublish: false. Javob: { ok, submitted, published, autoPublish, heldForReview, ' +
+        'reason? (agent_opt_out | needs_human_review | notes_for_editor), publishedAt?, url?, ' +
+        'urlCyrl?, errors[], warnings[], seoScore }. Matn va SEO to‘ldirilgan bo‘lishi kerak, ' +
+        "aks holda ok: false (hech narsa o'zgarmaydi). Chop etishda muqova litsenziyasi muammosi " +
+        "va save_rewrite qilinmagan post — xato. Chop etilgan postning qoralama o'zgarishlari " +
+        '(faqat admin kaliti) — xuddi shu qoidalar bilan yangi versiya chop etiladi.',
       inputSchema: submitForReviewInput,
       annotations: { ...WRITE, idempotentHint: false },
     },
     safeTool('submit_for_review', (input) => submitForReview(ctx, input)),
+  )
+
+  server.registerTool(
+    'withdraw_from_review',
+    {
+      title: 'Tekshiruvdan qaytarib olish',
+      description:
+        'O‘zingiz yuborgan review holatidagi postni in_progress ga qaytaradi (sizga 2 soatga ' +
+        'biriktiriladi) — tuzatib, qayta submit_for_review qilish uchun. Chop etilgan postga ' +
+        "ishlamaydi. reason — ixtiyoriy izoh (log'ga yoziladi).",
+      inputSchema: withdrawFromReviewInput,
+      annotations: { ...WRITE, idempotentHint: true },
+    },
+    safeTool('withdraw_from_review', (input) => withdrawFromReview(ctx, input)),
   )
 }

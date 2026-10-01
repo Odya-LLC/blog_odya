@@ -1,8 +1,8 @@
 ---
 id: output-schema
 title: Chiqish sxemasi (save_rewrite / set_seo)
-version: 1.2.0
-updatedAt: 2026-09-25
+version: 1.3.0
+updatedAt: 2026-10-01
 ---
 
 # Blog Odya — chiqish sxemasi: `save_rewrite` va `set_seo`
@@ -13,7 +13,12 @@ Umumiy qoidalar:
 
 - Barcha matn maydonlari — **oʻzbek tilida, lotin yozuvida** (`style.md`). Kirill harflari boʻlsa server xato qaytaradi. Kirill versiyasi avtomatik yaratiladi — uni `preview_cyrillic` bilan koʻrish mumkin.
 - Belgilar soni boʻshliqlar bilan birga, Unicode belgilari boʻyicha hisoblanadi (`ʻ` va `ʼ` — bittadan belgi).
-- Faqat `draft` yoki `in_progress` holatidagi va agentga biriktirilgan (`claim_draft`) postlarni oʻzgartirish mumkin. Publish qilish uchun tool yoʻq — chop etishni faqat inson bajaradi.
+- Faqat `draft` yoki `in_progress` holatidagi va agentga biriktirilgan (`claim_draft`) postlarni oʻzgartirish mumkin. Istisno — chop etilgan post: uni faqat **admin** roli kaliti tuzatadi (pastda, «Chop etilgan postni tuzatish»).
+- Alohida publish tool yoʻq. Chop etish rejimi admin sozlamasiga bogʻliq (**avtomatik nashr**, `scraping-settings.mcpAutoPublish`):
+  - **oʻchiq** (standart) — `submit_for_review` postni tekshiruvga (`review`) yuboradi, chop etishni muharrir bajaradi;
+  - **yoqilgan** — `submit_for_review` xatosiz postni **shu chaqiruvning oʻzida, kechikishsiz** chop etadi (saytda darhol koʻrinadi, muharrir oldindan koʻrmaydi). Istisno: `notesForEditor` boʻsh emas, `needsHumanReview: true` yoki `autoPublish: false` — post `review` da qoladi.
+  - Joriy rejim — `rewrite_article` / `daily_batch` promptlarida va `submit_for_review` javobidagi `autoPublish` maydonida.
+- Server postlarni oʻzi (fon vazifasida, kechiktirib) chop etmaydi: `review` dagi post faqat muharrir «Publish» qilganda yoki rejalashtirilgan vaqtida (`scheduled`, muharrir belgilaydi) chop etiladi.
 
 ## Ish tartibi
 
@@ -23,7 +28,8 @@ Umumiy qoidalar:
 4. `set_seo` → SEO maydonlari.
 5. Rasm (ixtiyoriy, `copyright.md` 4): `list_media` / `search_stock_images` → `upload_media` → `set_cover`; matn ichidagi rasm — `save_rewrite` da `![alt](media:ID)`.
 6. Server `errors` qaytarsa — tuzatib, qayta chaqiriladi. `warnings` — imkon qadar tuzatiladi yoki `notesForEditor` da izohlanadi.
-7. `submit_for_review(postId, notesForEditor)` → post `review` holatiga oʻtadi (muqova boʻlmasa — `cover_missing` ogohlantirishi).
+7. `submit_for_review(postId, notesForEditor?)` → avtomatik nashr oʻchiq boʻlsa — `review`; yoqilgan boʻlsa — darhol `published` (ushlab qolish sababi boʻlmasa). Muqova boʻlmasa — `cover_missing` ogohlantirishi.
+8. Kerak boʻlsa: `withdraw_from_review(postId)` → oʻz `review` postingiz yana `in_progress` (tuzatib, qayta yuborish uchun).
 
 ## `save_rewrite`
 
@@ -82,7 +88,7 @@ Ikkala tool bir xil tuzilmadagi javob qaytaradi:
 - `ok: true` + `warnings` — saqlandi, lekin eʼtibor talab qilinadi.
 - `seoScore` — 0–100, maʼlumot uchun (`seo.md` 10-boʻlimdagi tekshiruv roʻyxati boʻyicha vaznli ball).
 - Muvaffaqiyatli javobda qoʻshimcha: `post` (id, slug, holat, lock muddati), `tags` (yaratilganlari belgilangan), `cyrillic` (yangilangan kirill maydonlari), `similarity`.
-- Holat yoki egalik xatosi (masalan, post `published` yoki boshqa muharrirga biriktirilgan) — JSON emas, oddiy matnli xato (`isError: true`).
+- Holat yoki egalik xatosi (masalan, post `review`, editor kaliti bilan `published` yoki boshqa muharrirga biriktirilgan) — JSON emas, oddiy matnli xato (`isError: true`).
 
 Asosiy tekshiruvlar (TZ §5.3): lotin maydonlarida kirill harflari yoʻqligi; uzunlik chegaralari; slug unikalligi (slug `slugify-uz` bilan avtomatik yaratiladi, agent yubormaydi); manba bilan n-gram oʻxshashlik; `sources` boʻsh emasligi.
 
@@ -118,6 +124,60 @@ Javob: `{ ok, errors[], warnings[], saved, post: { …, coverImage, coverAlt, me
 | ---------------- | ------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `postId`         | number | ha       | Post identifikatori                                                                                                                                                                                           |
 | `notesForEditor` | string | yoʻq     | Muharrir uchun izoh: tekshirib boʻlmagan faktlar, manbalar orasidagi farqlar, mos rasm taklifi, topilmagan ichki havolalar, «Oʻzbekiston uchun ahamiyati» uchun tekshirilishi kerak boʻlgan mahalliy maʼlumot |
+
+Qoʻshimcha maydonlar (ixtiyoriy):
+
+| Maydon             | Tip     | Qoida                                                                                                    |
+| ------------------ | ------- | -------------------------------------------------------------------------------------------------------- |
+| `needsHumanReview` | boolean | `true` — post albatta muharrir tekshiruviga tushadi (avtomatik nashr yoqilgan boʻlsa ham chop etilmaydi) |
+| `autoPublish`      | boolean | Standart `true` (sozlamaga amal qilinadi). `false` — avtomatik nashr yoqilgan boʻlsa ham `review` ga     |
+
+`notesForEditor` qoidasi (avtomatik nashrda muhim):
+
+- Izoh **boʻsh boʻlmasa, post avtomatik chop etilmaydi** — `review` da muharrirni kutadi. Shuning uchun izohga faqat muharrir hal qilishi kerak boʻlgan narsani yozing; tekshirilmagan faktli matnni «izoh bilan» chop etib boʻlmaydi.
+- Izoh berilmasa — postda avval saqlangan izoh amal qiladi (u ham ushlab qoladi). Muammo hal boʻlgan boʻlsa — `notesForEditor: ""` bilan yuboring (izoh oʻchiriladi).
+
+Javob:
+
+```json
+{
+  "ok": true,
+  "errors": [],
+  "warnings": [],
+  "seoScore": 84,
+  "submitted": true,
+  "published": false,
+  "autoPublish": true,
+  "heldForReview": true,
+  "reason": "notes_for_editor",
+  "post": { "id": 123, "workflowStatus": "review" }
+}
+```
+
+| Maydon           | Maʼnosi                                                                                                     |
+| ---------------- | ----------------------------------------------------------------------------------------------------------- |
+| `submitted`      | Post yuborildi (`review` yoki `published`)                                                                  |
+| `published`      | `true` — shu chaqiruvda chop etildi (saytda koʻrinadi)                                                      |
+| `autoPublish`    | Admin sozlamasi: avtomatik nashr yoqilganmi                                                                 |
+| `heldForReview`  | `true` — avtomatik nashr yoqilgan, lekin post `review` da qoldi                                             |
+| `reason`         | Nima uchun ushlab qolindi: `agent_opt_out` (`autoPublish: false`), `needs_human_review`, `notes_for_editor` |
+| `publishedAt`    | Chop etilgan vaqt (ISO), faqat `published: true` da                                                         |
+| `url`, `urlCyrl` | Sahifa manzillari (lotin va `/kr` — kirill), faqat `published: true` da                                     |
+
+## `withdraw_from_review`
+
+| Maydon   | Tip    | Majburiy | Qoida                                                         |
+| -------- | ------ | -------- | ------------------------------------------------------------- |
+| `postId` | number | ha       | Oʻzingiz yuborgan (`assignee` — siz) `review` holatidagi post |
+| `reason` | string | yoʻq     | Sabab (server logiga yoziladi)                                |
+
+Post `in_progress` ga qaytadi va sizga 2 soatga biriktiriladi — `save_rewrite` / `set_seo` bilan tuzatib, qayta `submit_for_review`. Chop etilgan postga ishlamaydi.
+
+## Chop etilgan postni tuzatish (faqat admin kaliti)
+
+- Editor kaliti bilan chop etilgan post oʻzgartirilmaydi (`"published" holatida` xatosi) — tuzatish muharrir tomonidan admin panelda.
+- **Admin** roli kaliti: `save_rewrite` / `set_seo` chop etilgan postda **qoralama versiya** saqlaydi (javobda `revision: true`) — saytdagi sahifa oʻzgarmaydi, slug (URL) saqlanadi.
+- Soʻng `submit_for_review`: avtomatik nashr yoqilgan va ushlab qolish sababi boʻlmasa — yangi versiya chop etiladi (sayt keshi, Telegram xabarini tahrirlash, IndexNow — odatdagidek); aks holda qoralama kutib turadi (`pendingRevision: true`), muharrir admin panelda «Publish changes» qiladi.
 
 ## Toʻliq namuna
 
