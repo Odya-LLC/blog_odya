@@ -109,6 +109,7 @@ Oraliqda (1–2 qadam orasida) chaqiruvlar `401` oladi — keyingi tick'da tikla
   element `fetchMeta.classify` da. Aniqlik testi: `apps/web/tests/classify-accuracy.test.ts` (60 ta real namuna).
 - **`maintenance.cleanup`** (kuniga 1 marta): 30 kundan eski, qoralamaga aylanmagan elementlarning `extractedText` i;
   30 kun oldin rad etilgan elementlar (≤ 500/kun); chop etilganiga 30 kun bo'lgan postlarning versiyalari 3 tagacha;
+  90 kundan eski kunlik ko'rishlar (`post_views_daily`, OBLOG-69; jami `post_views_total` saqlanadi);
   `pg_database_size` va R2 hajmi (media + arxiv bucket, `ListObjectsV2`, ≤ 12 s) → Scraping sozlamalari → Statistika.
 - **Ogohlantirishlar** — Telegram: `TELEGRAM_BOT_TOKEN` + chat (`telegram-settings.alertChatId`, bo'lmasa
   `TELEGRAM_ALERT_CHAT_ID`); sozlanmagan bo'lsa faqat log (`ALERT: ...`). Shartlar: manba feed'i ketma-ket ≥ 3 xato;

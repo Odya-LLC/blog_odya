@@ -19,6 +19,8 @@ import {
   type SeedCover,
   seedCoverUrl,
 } from './data'
+import { localDate } from '../editorial/queue'
+import { insertViews, shiftDate } from '../pageviews/store'
 import { CYRL_CONTEXT_DISABLE } from '../translit/cyrlSync'
 
 import { DEMO_RICH_MARKDOWN, demoRichNodes } from './rich'
@@ -453,10 +455,37 @@ async function seedDemoContent(
     summary.posts.created++
   }
   log(`Postlar: +${summary.posts.created}, mavjud ${summary.posts.existing}`)
+  await seedDemoViews(payload, log)
   log(
     `Demo muqovalar: +${summary.media.created}, mavjud ${summary.media.existing}` +
       (summary.media.failed ? `, xato ${summary.media.failed}` : ''),
   )
+}
+
+/**
+ * Demo ko'rishlar (OBLOG-69): "Ko'p o'qilgan" bloki demo saytda (va e2e/Lighthouse'da) ko'rinsin.
+ * So'nggi 7 kun, har post uchun har xil — mavjud qatorlarga tegmaydi (qayta seed xavfsiz).
+ */
+const DEMO_DAILY_VIEWS = [180, 64, 23] as const
+
+async function seedDemoViews(payload: Payload, log: (message: string) => void): Promise<void> {
+  const today = localDate()
+  const entries: Array<{ postId: number; day: string; views: number }> = []
+  for (const [index, post] of SEED_POSTS.entries()) {
+    const id = await findIdBySlug(payload, 'posts', post.slug)
+    const perDay = DEMO_DAILY_VIEWS[index % DEMO_DAILY_VIEWS.length] ?? 10
+    if (id === null) continue
+    for (let day = 0; day < 7; day++) {
+      entries.push({ postId: Number(id), day: shiftDate(today, day), views: perDay + day * 3 })
+    }
+  }
+  try {
+    const inserted = await insertViews(payload, entries)
+    log(`Demo koʻrishlar: +${inserted} kunlik qator`)
+  } catch (error) {
+    // Migratsiya qo'llanmagan eski DB — demo ko'rishlarsiz davom etamiz.
+    log(`Diqqat: demo koʻrishlar yozilmadi: ${(error as Error).message}`)
+  }
 }
 
 /** `site-settings`, `header`, `footer` — faqat kategoriya va huquqiy sahifalarga havola qiladi. */

@@ -9,6 +9,7 @@ import type { Access, Block, CollectionConfig, FieldAccess, Where } from 'payloa
 
 import { isAdmin, isAdminOrEditor, isAdminOrEditorUser } from '@/access'
 import { postRevisionEndpoints } from '@/editorial/endpoints'
+import { viewsTotalField } from '@/pageviews/field'
 import { slugField } from '@/fields/slug'
 import { postRedirectHooks } from '@/hooks/contentRedirects'
 import { revalidatePostAfterChange, revalidatePostAfterDelete } from '@/site/revalidate'
@@ -96,7 +97,15 @@ export const Posts: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'title',
-    defaultColumns: ['title', 'workflowStatus', 'category', 'assignee', 'publishedAt', 'updatedAt'],
+    defaultColumns: [
+      'title',
+      'workflowStatus',
+      'category',
+      'assignee',
+      'publishedAt',
+      'viewsTotal',
+      'updatedAt',
+    ],
     listSearchableFields: ['title', 'slug'],
   },
   defaultSort: '-updatedAt',
@@ -388,6 +397,7 @@ export const Posts: CollectionConfig = {
       })),
       admin: { position: 'sidebar' },
     },
+    viewsTotalField,
     {
       name: 'category',
       type: 'relationship',

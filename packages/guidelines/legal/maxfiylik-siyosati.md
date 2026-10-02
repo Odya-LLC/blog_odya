@@ -2,8 +2,8 @@
 id: legal-privacy-policy
 title: Maxfiylik siyosati
 slug: maxfiylik-siyosati
-version: 1.1.0
-updatedAt: 2026-09-29
+version: 1.2.0
+updatedAt: 2026-10-02
 ---
 
 # Maxfiylik siyosati
@@ -19,18 +19,21 @@ Biz Oʻzbekiston Respublikasining «Shaxsga doir maʼlumotlar toʻgʻrisida»gi 
 Saytdan foydalanganingizda quyidagi texnik maʼlumotlar avtomatik qayd etilishi mumkin:
 
 - **Analitika maʼlumotlari** (anonim statistika): koʻrilgan sahifalar, saytga qanday kelganingiz (masalan, qidiruv tizimi yoki Telegram orqali), qurilma va brauzer turi, taxminiy joylashuv (mamlakat, shahar darajasida), sessiya davomiyligi.
+- **Maqolalar koʻrishlari hisobi** (Saytning oʻz hisoblagichi): maqola ochilganda faqat uning raqami yuboriladi va umumiy kunlik koʻrishlar soni bittaga oshiriladi. IP manzil, User-Agent yoki boshqa sizni aniqlaydigan maʼlumot bu hisobda saqlanmaydi; natija faqat umumlashtirilgan raqam (masalan, «Koʻp oʻqilgan» bloki uchun).
 - **Server jurnallari** — IP manzil, soʻrov vaqti, soʻralgan sahifa, brauzer maʼlumoti (User-Agent). Ular Saytning xavfsizligi va barqaror ishlashi uchun qisqa muddat saqlanadi.
 
 ## 2. Cookie fayllari
 
 Sayt quyidagi turdagi cookie fayllaridan foydalanadi:
 
-| Tur       | Maqsadi                                                                                              | Rozilik                                               |
-| --------- | ---------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
-| Zarur     | Tanlangan yozuv (lotin yoki kirill), yorugʻ yoki qorongʻi rejim                                      | Soʻralmaydi — ularsiz Sayt toʻgʻri ishlamaydi         |
-| Analitika | Google Analytics 4 va Yandex Metrica orqali tashriflar boʻyicha anonim (umumlashtirilgan) statistika | Soʻralmaydi — Saytga kirganingizda avtomatik yoqiladi |
+| Tur       | Maqsadi                                                                                                                             | Rozilik                                               |
+| --------- | ----------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| Zarur     | Tanlangan yozuv (lotin yoki kirill), yorugʻ yoki qorongʻi rejim; koʻrishlar hisobida bir maqola 30 daqiqa ichida qayta sanalmasligi | Soʻralmaydi — ularsiz Sayt toʻgʻri ishlamaydi         |
+| Analitika | Google Analytics 4 va Yandex Metrica orqali tashriflar boʻyicha anonim (umumlashtirilgan) statistika                                | Soʻralmaydi — Saytga kirganingizda avtomatik yoqiladi |
 
 Sayt Google Analytics 4 va Yandex Metrica cookie fayllaridan anonim statistika uchun alohida rozilik soʻramasdan foydalanadi. Bu maʼlumotlar orqali biz sizni shaxsan aniqlamaymiz va ulardan faqat Saytni yaxshilash uchun foydalanamiz.
+
+Koʻrishlar hisobi uchun «bo_pv» cookie fayli faqat soʻnggi 30 daqiqada ochilgan maqolalar raqamlarini saqlaydi (shu maqola qayta sanalmasligi uchun), 30 daqiqadan keyin oʻchadi va faqat hisoblagich manziliga yuboriladi. Unda sizni aniqlaydigan maʼlumot yoʻq.
 
 Analitika cookie fayllarini istalgan vaqtda oʻchirib qoʻyishingiz mumkin:
 
@@ -64,6 +67,7 @@ Ushbu xizmatlarning ayrimlari maʼlumotlarni Oʻzbekiston hududidan tashqarida q
 ## 5. Saqlash muddati
 
 - Server jurnallari — 30 kungacha.
+- Koʻrishlar hisobi — kunlik umumiy raqamlar 90 kun, maqolaning jami koʻrishlar soni maqola oʻchirilguncha (ikkalasi ham shaxsga doir maʼlumot emas).
 - Analitika maʼlumotlari — tegishli xizmat (Google Analytics, Yandex Metrica) sozlamalarida belgilangan muddatda.
 
 ## 6. Bizga xat yozsangiz

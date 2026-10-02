@@ -279,6 +279,10 @@ export interface Post {
    */
   slug: string;
   workflowStatus: 'draft' | 'in_progress' | 'review' | 'scheduled' | 'published' | 'rejected' | 'archived';
+  /**
+   * Saytdagi anonim koʻrishlar (botlarsiz, 30 daqiqada bir marta) — avtomatik.
+   */
+  viewsTotal?: number | null;
   category: number | Category;
   tags?: (number | Tag)[] | null;
   authors?: (number | Author)[] | null;
@@ -1235,6 +1239,7 @@ export interface PostsSelect<T extends boolean = true> {
       };
   slug?: T;
   workflowStatus?: T;
+  viewsTotal?: T;
   category?: T;
   tags?: T;
   authors?: T;
@@ -2231,6 +2236,7 @@ export interface TaskMaintenanceCleanup {
     clearedText?: number | null;
     deletedRejected?: number | null;
     trimmedVersions?: number | null;
+    deletedViewDays?: number | null;
     dbBytes?: number | null;
     r2Bytes?: number | null;
     r2Complete?: boolean | null;
