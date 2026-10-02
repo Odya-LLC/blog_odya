@@ -173,9 +173,10 @@ for (const script of SCRIPTS) {
       'href',
       new RegExp(`^https?://[^/]+${script.prefix}/yangiliklar$`),
     )
-    // Bosh sahifadagi "Barcha yangiliklar" havolasi arxivga olib boradi.
+    // Bosh sahifadagi "Barcha yangiliklar" havolasi (doim — postlar ≤ 5 bo'lib lenta bo'lmasa ham)
+    // arxivga olib boradi.
     await page.goto(`${script.prefix}/`)
-    await page.getByTestId('home-feed').getByRole('link').last().click()
+    await page.getByTestId('home-archive-link').click()
     await expect(page).toHaveURL(`${script.prefix}/yangiliklar`)
   })
 }

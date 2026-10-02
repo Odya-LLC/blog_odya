@@ -68,6 +68,7 @@ export async function HomeView({ locale }: { locale: Locale }) {
           {home.lead ? (
             <Link
               href={archiveHref}
+              data-testid="home-archive-link"
               className="inline-flex shrink-0 items-center gap-0.5 text-sm font-semibold text-accent hover:text-accent-hover"
             >
               {t.allNews}
