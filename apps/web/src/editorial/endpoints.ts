@@ -1,6 +1,7 @@
 import { APIError, type Endpoint, type PayloadRequest } from 'payload'
 
 import { rejectScrapedItem, takeScrapedItem } from './actions'
+import { discardRevision, publishRevision } from './revisions'
 
 /**
  * `scraped-items` custom endpoint'lari (admin "Yangiliklar navbati" chaqiradi):
@@ -48,7 +49,7 @@ function withItemId(
         return Response.json({ errors: [{ message: 'Tizimga kiring.' }] }, { status: 401 })
       const id = parseId(req.routeParams?.id)
       if (id === null) {
-        return Response.json({ errors: [{ message: 'Noto‘g‘ri element ID.' }] }, { status: 400 })
+        return Response.json({ errors: [{ message: 'Noto‘g‘ri ID.' }] }, { status: 400 })
       }
       return Response.json(await run(req, id, await readBody(req)))
     } catch (error) {
@@ -83,5 +84,28 @@ export const scrapedItemEndpoints: Endpoint[] = [
     path: '/:id/reject',
     method: 'post',
     handler: withItemId((req, id, body) => rejectScrapedItem(req, { id, reason: body.reason })),
+  },
+]
+
+/**
+ * `posts` custom endpoint'lari — chop etilgan postlardagi kutilayotgan o'zgarishlar (OBLOG-64,
+ * admin "Tekshiruv navbati" chaqiradi):
+ *
+ * - `POST /api/posts/:id/publish-revision`              → `200 { post }`
+ * - `POST /api/posts/:id/discard-revision` body: `{ reason: string }`
+ *   → `200 { post, restoredVersion }`
+ *
+ * Faqat admin/editor; kutilayotgan o'zgarish bo'lmasa — 409.
+ */
+export const postRevisionEndpoints: Endpoint[] = [
+  {
+    path: '/:id/publish-revision',
+    method: 'post',
+    handler: withItemId((req, id) => publishRevision(req, { id })),
+  },
+  {
+    path: '/:id/discard-revision',
+    method: 'post',
+    handler: withItemId((req, id, body) => discardRevision(req, { id, reason: body.reason })),
   },
 ]

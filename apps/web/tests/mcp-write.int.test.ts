@@ -1,13 +1,16 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js'
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
-import type { Payload } from 'payload'
+import { createLocalReq, type Payload } from 'payload'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { apiKeyRateLimiter } from '@/auth/rate-limit'
 import { indexNowHookDeps } from '@/collections/Posts/indexnow'
 import { telegramHookDeps } from '@/collections/Posts/telegram'
 import { ScrapingSettings } from '@/globals/ScrapingSettings'
+import { postRevisionEndpoints } from '@/editorial/endpoints'
+import { listPendingRevisions } from '@/editorial/revisions'
+import { getEditorialStats } from '@/editorial/stats'
 import { DEFAULT_TELEGRAM_TEMPLATE } from '@/globals/TelegramSettings'
 import { indexNowDeps } from '@/indexnow'
 import { INDEXNOW_SUBMIT_TASK, TELEGRAM_POST_TASK } from '@/jobs/constants'
@@ -28,7 +31,7 @@ import {
   testSlug,
   type TestUsers,
 } from './helpers/content'
-import { deleteTestUsers, initTestPayload } from './helpers/payload'
+import { asUser, deleteTestUsers, initTestPayload } from './helpers/payload'
 
 /**
  * MCP yozish toollari (M2-07, TZ §5.1, §5.3, §6.3) — SDK mijozi bilan `/api/mcp` route handler'i
@@ -1276,6 +1279,262 @@ describe('MCP yozish toollari (/api/mcp)', () => {
         expect(audit.docs).toHaveLength(1)
         expect(audit.docs[0]).toMatchObject({ channel: 'mcp', tool: 'submit_for_review' })
         await admin.close()
+      })
+    })
+
+    describe('chop etilgan postlardagi o‘zgarishlar navbati (OBLOG-64)', () => {
+      type Action = 'publish-revision' | 'discard-revision'
+
+      async function callRevision(action: Action, id: number, body: unknown, user: User | null) {
+        const endpoint = postRevisionEndpoints.find((e) => e.path === `/:id/${action}`)!
+        const req = await createLocalReq(user ? { user: asUser(user) } : {}, payload)
+        req.routeParams = { id: String(id) }
+        req.json = async () => body
+        const response = await endpoint.handler(req)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- JSON javobini testda erkin tekshiramiz
+        return { status: response.status, body: (await response.json()) as Record<string, any> }
+      }
+
+      async function pendingIds(user: User = users.editor): Promise<number[]> {
+        const req = await createLocalReq({ user: asUser(user) }, payload)
+        return (await listPendingRevisions(req)).rows.map((row) => row.id)
+      }
+
+      /** Chop etilgan post (Telegram'ga yuborilgan holat bilan) — `uz-Latn` kanali. */
+      async function publishedPost(): Promise<Post> {
+        await setAutoPublish(true)
+        const editor = await connect(editorKey)
+        const postId = await readyPost(editor)
+        autoPublished.add(postId)
+        expect(jsonOf(await call(editor, 'submit_for_review', { postId })).published).toBe(true)
+        await editor.close()
+        await payload.update({
+          collection: 'posts',
+          id: postId,
+          data: {
+            telegram: [
+              {
+                script: 'uz-Latn',
+                chatId: '@odya_latn_test',
+                messageId: '43',
+                kind: 'text',
+                hash: 'old',
+                sentAt: new Date().toISOString(),
+              },
+            ],
+          },
+          context: { telegramStateWrite: true, skipTelegram: true, skipIndexNow: true },
+          depth: 0,
+        })
+        for (const job of await telegramJobs(postId)) {
+          await payload.delete({ collection: 'payload-jobs', id: job.id })
+        }
+        await setAutoPublish(false)
+        return readPost(postId)
+      }
+
+      /** Admin kaliti chop etilgan postni tuzatib, tekshiruvga yuboradi (avtomatik nashr o'chiq). */
+      async function submitRevision(postId: number, title: string, notes?: string) {
+        const admin = await connect(adminKey)
+        expect(jsonOf(await call(admin, 'save_rewrite', goodRewrite(postId, { title }))).ok).toBe(
+          true,
+        )
+        const json = jsonOf(
+          await call(admin, 'submit_for_review', {
+            postId,
+            ...(notes === undefined ? {} : { notesForEditor: notes }),
+          }),
+        )
+        await admin.close()
+        expect(json).toMatchObject({
+          ok: true,
+          published: false,
+          autoPublish: false,
+          revision: true,
+          pendingRevision: true,
+          reviewUrl: `${SITE_URL}/admin/review#revisions`,
+        })
+        return json
+      }
+
+      it('navbatda ko‘rinadi; muharrir autosave belgini saqlaydi; chop etish — sayt yangilanadi, belgi o‘chadi, Telegram tahriri', async () => {
+        const live = await publishedPost()
+        const statsBefore = await getEditorialStats(payload, asUser(users.editor))
+        // Oddiy admin qoralamasi (MCP yubormagan) — navbatga tushmaydi.
+        await payload.update({
+          collection: 'posts',
+          id: live.id,
+          data: { excerpt: `${live.excerpt} Qoʻshimcha.` },
+          draft: true,
+          depth: 0,
+          ...as(users.editor),
+        })
+        expect(await pendingIds()).not.toContain(live.id)
+
+        const newTitle = `Apple iPhone 18 taqdimotini dekabrga koʻchirdi ${TOKEN}`
+        await submitRevision(live.id, newTitle, 'Sanani tekshiring')
+        const draft = await readPost(live.id)
+        expect(draft).toMatchObject({
+          _status: 'draft',
+          workflowStatus: 'published',
+          revisionSubmittedBy: users.admin.id,
+          notesForEditor: 'Sanani tekshiring',
+        })
+        expect(draft.revisionSubmittedAt).toBeTruthy()
+        // Asosiy hujjat (sayt) — belgisiz va eski sarlavha.
+        const main = await payload.findByID({ collection: 'posts', id: live.id, depth: 0 })
+        expect(main).toMatchObject({ title: live.title, revisionSubmittedAt: null })
+
+        const req = await createLocalReq({ user: asUser(users.editor) }, payload)
+        const { rows } = await listPendingRevisions(req)
+        const row = rows.find((item) => item.id === live.id)
+        expect(row).toMatchObject({
+          title: newTitle,
+          liveTitle: live.title,
+          notesForEditor: 'Sanani tekshiring',
+          submittedBy: { id: users.admin.id, name: users.admin.name },
+        })
+        expect(row?.changes.map((change) => change.field)).toContain('title')
+        expect(row?.changes.find((change) => change.field === 'title')).toMatchObject({
+          from: live.title,
+          to: newTitle,
+        })
+        expect((await getEditorialStats(payload, asUser(users.editor))).revisions).toBe(
+          statsBefore.revisions + 1,
+        )
+
+        // Muharrir admin'da tahrirlab autosave qiladi — belgi saqlanadi (mijoz qiymati e'tiborsiz).
+        await payload.update({
+          collection: 'posts',
+          id: live.id,
+          data: { coverAlt: 'Muharrir tuzatgan alt matni shu yerda', revisionSubmittedAt: null },
+          draft: true,
+          depth: 0,
+          ...as(users.editor),
+        })
+        expect((await readPost(live.id)).revisionSubmittedAt).toBe(draft.revisionSubmittedAt)
+        expect(await pendingIds()).toContain(live.id)
+
+        expect((await callRevision('publish-revision', live.id, {}, null)).status).toBe(401)
+        const published = await callRevision('publish-revision', live.id, {}, users.editor)
+        expect(published.status).toBe(200)
+        expect(published.body.post).toMatchObject({ id: live.id, _status: 'published' })
+
+        const after = await payload.findByID({ collection: 'posts', id: live.id, depth: 0 })
+        expect(after).toMatchObject({
+          title: newTitle,
+          coverAlt: 'Muharrir tuzatgan alt matni shu yerda',
+          _status: 'published',
+          workflowStatus: 'published',
+          publishedAt: live.publishedAt,
+          revisionSubmittedAt: null,
+          revisionSubmittedBy: null,
+        })
+        expect((await readPost(live.id)).revisionSubmittedAt ?? null).toBeNull()
+        expect(await pendingIds()).not.toContain(live.id)
+        const tg = await telegramJobs(live.id)
+        expect(tg.map((job) => (job.input as { script: string }).script)).toEqual(['uz-Latn'])
+        expect(revalidated.length).toBeGreaterThan(0)
+
+        // Qayta chop etish — kutilayotgan o'zgarish yo'q.
+        const again = await callRevision('publish-revision', live.id, {}, users.editor)
+        expect(again.status).toBe(409)
+
+        const audit = await payload.find({
+          collection: 'audit-logs',
+          where: {
+            and: [
+              { docId: { equals: String(live.id) } },
+              { user: { equals: users.editor.id } },
+              { action: { equals: 'publish' } },
+              { channel: { equals: 'admin' } },
+            ],
+          },
+          depth: 0,
+          pagination: false,
+        })
+        expect(audit.docs).toHaveLength(1)
+      })
+
+      it('rad etish: sabab majburiy, saytdagi versiya tiklanadi, belgi o‘chadi, audit yoziladi', async () => {
+        const live = await publishedPost()
+        const liveCyrl = await readPost(live.id, 'uz-Cyrl')
+        await submitRevision(live.id, `Apple iPhone 18 taqdimoti bekor qilindi ${TOKEN}`)
+        expect((await readPost(live.id, 'uz-Cyrl')).title).not.toBe(liveCyrl.title)
+        expect(await pendingIds()).toContain(live.id)
+
+        const noReason = await callRevision('discard-revision', live.id, {}, users.editor)
+        expect(noReason.status).toBe(400)
+        expect(noReason.body.errors[0].message).toMatch(/sababi majburiy/)
+
+        const discarded = await callRevision(
+          'discard-revision',
+          live.id,
+          { reason: 'Faktlar tasdiqlanmagan' },
+          users.editor,
+        )
+        expect(discarded.status).toBe(200)
+        expect(discarded.body.restoredVersion).toBeTruthy()
+
+        const main = await payload.findByID({ collection: 'posts', id: live.id, depth: 0 })
+        expect(main).toMatchObject({
+          title: live.title,
+          _status: 'published',
+          workflowStatus: 'published',
+          publishedAt: live.publishedAt,
+        })
+        // Oxirgi versiya ham — saytdagi holat (admin'da "Changed" yo'q).
+        const latest = await readPost(live.id)
+        expect(latest).toMatchObject({ title: live.title, _status: 'published' })
+        expect(latest.revisionSubmittedAt ?? null).toBeNull()
+        expect((await readPost(live.id, 'uz-Cyrl')).title).toBe(liveCyrl.title)
+        expect(await pendingIds()).not.toContain(live.id)
+        // Telegram xabari o'zgarmaydi: matn bir xil — job bo'lsa ham hash bo'yicha hech narsa qilmaydi.
+
+        const audit = await payload.find({
+          collection: 'audit-logs',
+          where: {
+            and: [
+              { docId: { equals: String(live.id) } },
+              { user: { equals: users.editor.id } },
+              { action: { equals: 'update' } },
+            ],
+          },
+          depth: 0,
+          pagination: false,
+        })
+        const entry = audit.docs.find(
+          (doc) => (doc.diff as Record<string, unknown> | null)?.pendingRevision,
+        )
+        expect(entry).toBeTruthy()
+        expect(
+          (entry!.diff as { pendingRevision: { to: Record<string, unknown> } }).pendingRevision.to,
+        ).toMatchObject({ discarded: true, reason: 'Faktlar tasdiqlanmagan' })
+        expect(entry!.channel).toBe('admin')
+
+        expect(
+          (await callRevision('discard-revision', live.id, { reason: 'x' }, users.editor)).status,
+        ).toBe(409)
+      })
+
+      it('admin\'dagi oddiy "Publish changes" ham belgini o‘chiradi', async () => {
+        const live = await publishedPost()
+        const newTitle = `Apple iPhone 18 taqdimoti yanvarga koʻchdi ${TOKEN}`
+        await submitRevision(live.id, newTitle)
+        expect(await pendingIds()).toContain(live.id)
+
+        await payload.update({
+          collection: 'posts',
+          id: live.id,
+          data: { _status: 'published' },
+          depth: 0,
+          locale: 'uz-Latn',
+          ...as(users.editor),
+        })
+        const main = await payload.findByID({ collection: 'posts', id: live.id, depth: 0 })
+        expect(main).toMatchObject({ title: newTitle, revisionSubmittedAt: null })
+        expect((await readPost(live.id)).revisionSubmittedAt ?? null).toBeNull()
+        expect(await pendingIds()).not.toContain(live.id)
       })
     })
   })

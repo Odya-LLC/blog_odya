@@ -7,7 +7,8 @@ import './editorial.css'
 
 /**
  * Dashboard vidjeti (TASKS M2-04, `admin.components.beforeDashboard`): bugun yig'ilgan /
- * qoralama / tekshiruvda / chop etilgan — har biri tegishli ro'yxatga havola.
+ * qoralama / tekshiruvda / chop etilganlardagi o‘zgarishlar (OBLOG-64) / chop etilgan — har biri
+ * tegishli ro'yxatga havola.
  */
 export async function EditorialStats({ payload, user }: ServerProps) {
   if (!isAdminOrEditorUser(user)) return null
@@ -23,6 +24,12 @@ export async function EditorialStats({ payload, user }: ServerProps) {
       href: `${posts}?where[workflowStatus][in][0]=draft&where[workflowStatus][in][1]=in_progress`,
     },
     { key: 'review', label: 'Tekshiruvda', value: stats.review, href: `${admin}/review` },
+    {
+      key: 'revisions',
+      label: 'Chop etilganlarda o‘zgarish',
+      value: stats.revisions,
+      href: `${admin}/review#revisions`,
+    },
     {
       key: 'published',
       label: 'Bugun chop etilgan',

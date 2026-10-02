@@ -254,6 +254,45 @@
   white-space: pre-wrap;
 }
 
+/* Chop etilgan postlardagi kutilayotgan o'zgarishlar (OBLOG-64) */
+.editorial__section {
+  margin-top: calc(var(--base) * 2);
+  scroll-margin-top: calc(var(--base) * 4);
+}
+
+.editorial__section .editorial__header h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.editorial__pill--revision {
+  background: var(--theme-warning-100, #fef3c7);
+  color: var(--theme-warning-750, #78350f);
+}
+
+.editorial__changes {
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 13px;
+}
+
+.editorial__changes li {
+  overflow-wrap: anywhere;
+}
+
+.editorial__changes del {
+  color: var(--theme-elevation-500);
+}
+
+.editorial__changes ins {
+  text-decoration: none;
+  font-weight: 500;
+}
+
 /* Dashboard vidjeti */
 .editorial-stats {
   margin-bottom: calc(var(--base) * 1.5);
@@ -266,7 +305,7 @@
 
 .editorial-stats__grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: calc(var(--base) / 2);
 }
 

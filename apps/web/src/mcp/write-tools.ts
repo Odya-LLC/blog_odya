@@ -6,6 +6,7 @@ import type { z } from 'zod'
 
 import { isAdminUser } from '@/access'
 import { CLAIM_LOCK_MS, type PostWorkflowStatus } from '@/collections/Posts/workflow'
+import type { RevisionMarker, RevisionMarkerContext } from '@/collections/Posts/revisionMarker'
 import { takeScrapedItems } from '@/editorial/actions'
 import { validateSlug } from '@/lib/slug'
 import type { Media, Post, ScrapedItem, Tag } from '@/payload-types'
@@ -205,7 +206,8 @@ export function editModeFor(ctx: McpContext, post: Post): EditMode {
 const REVISION_NOTE =
   'Chop etilgan post: o‘zgarishlar qoralama versiya sifatida saqlandi — saytdagi sahifa hali ' +
   'o‘zgarmadi. Chop etish: submit_for_review (avtomatik nashr yoqilgan va ushlab qolish sababi ' +
-  'bo‘lmasa) yoki muharrir admin panelda "Publish changes".'
+  'bo‘lmasa); aks holda submit_for_review o‘zgarishni tekshiruv navbatiga yuboradi — muharrir ' +
+  'chop etadi yoki rad etadi.'
 
 /** Claim qulfi va holat: qoralama bo'lsa `in_progress` ga olinadi, lock 2 soatga yangilanadi. */
 export function lockData(userId: number): Partial<Post> {
@@ -1118,15 +1120,25 @@ export async function submitForReview(
           ...op(ctx, req),
         })
       }
-      if (notes === undefined) return post
-      return ctx.payload.update({
-        collection: 'posts',
-        id: post.id,
-        data: notesData,
-        draft: true,
-        depth: 0,
-        ...op(ctx, req),
-      })
+      // OBLOG-64: qoralama versiyaga belgi — post `/admin/review` dagi "Chop etilgan postlardagi
+      // o'zgarishlar" bo'limiga tushadi (chop etilganda yoki rad etilganda belgi o'chadi).
+      const marker: RevisionMarker = {
+        revisionSubmittedAt: new Date().toISOString(),
+        revisionSubmittedBy: ctx.user.id,
+      }
+      ;(req.context as RevisionMarkerContext).revisionMarker = marker
+      try {
+        return await ctx.payload.update({
+          collection: 'posts',
+          id: post.id,
+          data: notesData,
+          draft: true,
+          depth: 0,
+          ...op(ctx, req),
+        })
+      } finally {
+        delete (req.context as RevisionMarkerContext).revisionMarker
+      }
     }).catch(rethrow)
     if (!willPublish) {
       return result({
@@ -1140,10 +1152,12 @@ export async function submitForReview(
         revision: true,
         pendingRevision: true,
         post: postSummary(ctx, updated),
+        reviewUrl: new URL('/admin/review#revisions', ctx.siteUrl).toString(),
         note:
           (hold ? `${HOLD_NOTES[hold]} ` : 'Avtomatik nashr o‘chiq. ') +
-          'O‘zgarishlar qoralama versiyada — saytdagi sahifa o‘zgarmadi; muharrir admin panelda ' +
-          'ko‘rib "Publish changes" qiladi.',
+          'O‘zgarishlar qoralama versiyada — saytdagi sahifa o‘zgarmadi. Muharrir ularni ' +
+          'tekshiruv navbatidagi "Chop etilgan postlardagi o‘zgarishlar" bo‘limida ko‘rib, chop ' +
+          'etadi yoki rad etadi.',
       })
     }
     const urls = await publishedPostUrls(ctx, req, updated)

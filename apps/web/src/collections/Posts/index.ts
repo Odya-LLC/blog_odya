@@ -8,6 +8,7 @@ import {
 import type { Access, Block, CollectionConfig, FieldAccess, Where } from 'payload'
 
 import { isAdmin, isAdminOrEditor, isAdminOrEditorUser } from '@/access'
+import { postRevisionEndpoints } from '@/editorial/endpoints'
 import { slugField } from '@/fields/slug'
 import { postRedirectHooks } from '@/hooks/contentRedirects'
 import { revalidatePostAfterChange, revalidatePostAfterDelete } from '@/site/revalidate'
@@ -20,6 +21,7 @@ import {
   queueIndexNowAfterDelete,
   rememberIndexNowState,
 } from './indexnow'
+import { keepRevisionMarker } from './revisionMarker'
 import { preserveTelegramState, queueTelegramAfterChange } from './telegram'
 import { POST_WORKFLOW_STATUSES, WORKFLOW_STATUS_LABELS } from './workflow'
 
@@ -99,7 +101,8 @@ export const Posts: CollectionConfig = {
   },
   defaultSort: '-updatedAt',
   // OBLOG-67: `POST /api/posts/resync-cyrl` — chop etilgan postlar kirillini qayta yaratish (admin).
-  endpoints: [resyncCyrlEndpoint],
+  // OBLOG-64: `/:id/publish-revision`, `/:id/discard-revision` — /admin/review navbati.
+  endpoints: [resyncCyrlEndpoint, ...postRevisionEndpoints],
   versions: {
     drafts: {
       autosave: { interval: 10_000 },
@@ -241,6 +244,34 @@ export const Posts: CollectionConfig = {
               name: 'notesForEditor',
               type: 'textarea',
               label: 'Muharrir uchun izoh (agent)',
+            },
+            {
+              // OBLOG-64: chop etilgan postdagi o'zgarish tekshiruvga yuborilgan (MCP
+              // `submit_for_review`) — `/admin/review` dagi "Chop etilgan postlardagi o'zgarishlar".
+              // Faqat qoralama versiyada; har qanday chop etish o'chiradi (`revisionMarker.ts`).
+              type: 'row',
+              admin: { condition: (data) => Boolean(data?.revisionSubmittedAt) },
+              fields: [
+                {
+                  name: 'revisionSubmittedAt',
+                  type: 'date',
+                  label: 'O‘zgarishlar tekshiruvga yuborilgan',
+                  hooks: { beforeChange: [keepRevisionMarker('revisionSubmittedAt')] },
+                  admin: {
+                    readOnly: true,
+                    width: '50%',
+                    date: { pickerAppearance: 'dayAndTime' },
+                  },
+                },
+                {
+                  name: 'revisionSubmittedBy',
+                  type: 'relationship',
+                  label: 'Kim yuborgan',
+                  relationTo: 'users',
+                  hooks: { beforeChange: [keepRevisionMarker('revisionSubmittedBy')] },
+                  admin: { readOnly: true, width: '50%' },
+                },
+              ],
             },
             {
               name: 'reviewNotes',
