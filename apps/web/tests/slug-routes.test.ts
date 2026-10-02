@@ -41,6 +41,7 @@ describe('ildiz darajasidagi slug to‘qnashuvlari', () => {
       'feeds',
       'sitemaps',
       'page',
+      'yangiliklar',
     ]) {
       expect(validateRouteSlug(slug), slug).not.toBe(true)
     }
@@ -61,7 +62,7 @@ describe('ildiz darajasidagi slug to‘qnashuvlari', () => {
       if (!SLUG_PATTERN.test(slug)) continue
       // Bu slug'li kategoriya/sahifa bo'lganida `resolveSiteRoute` uni kategoriya deb hal qilmasligi
       // kerak bo'lgan holatlar: `bot`, `tag`, `author` — maxsus marshrutlar.
-      if (['bot', 'tag', 'author'].includes(slug)) {
+      if (['bot', 'tag', 'author', 'yangiliklar'].includes(slug)) {
         expect(resolveSiteRoute([slug]).kind, slug).not.toBe('category')
       }
     }

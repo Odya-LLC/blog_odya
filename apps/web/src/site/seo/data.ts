@@ -14,7 +14,7 @@ import type { Author, Category, Media, Post } from '@/payload-types'
 import { CACHE_TAGS, categoryTag } from '../cache-tags'
 import { cached, hasDatabase, payloadClient } from '../data'
 import { populated } from '../mappers'
-import { postPath } from '../paths'
+import { archivePath, postPath } from '../paths'
 import { monthKey, monthRange, newsWindowStart } from './sitemap'
 
 // Sitemap'da faqat ochiq (`meta.noindex` bo'lmagan) sahifalar.
@@ -146,8 +146,8 @@ export const getSitemapCategories = (): Promise<SitemapPath[]> =>
   cached(loadSitemapCategories, ['seo', 'sitemap-categories'], [CACHE_TAGS.posts, CACHE_TAGS.nav])
 
 /**
- * Bosh sahifa + statik sahifalar (`pages`, chop etilgan) + faol mualliflar (`/author/{slug}`,
- * E-E-A-T — TZ §8.3). Teg sahifalari kiritilmaydi (< 3 postda `noindex`, M1-07).
+ * Bosh sahifa + barcha yangiliklar arxivi (OBLOG-68) + statik sahifalar (`pages`, chop etilgan) +
+ * faol mualliflar (`/author/{slug}`, E-E-A-T — TZ §8.3). Teg sahifalari kiritilmaydi (< 3 postda `noindex`, M1-07).
  */
 export async function loadSitemapPages(): Promise<SitemapPath[]> {
   if (!hasDatabase()) return []
@@ -180,14 +180,19 @@ export async function loadSitemapPages(): Promise<SitemapPath[]> {
       select: { slug: true, updatedAt: true },
     }),
   ])
-  const home: SitemapPath = { path: '/', lastmod: latestPost.docs[0]?.publishedAt ?? null }
+  const lastPost = latestPost.docs[0]?.publishedAt ?? null
+  const home: SitemapPath = { path: '/', lastmod: lastPost }
+  // Barcha yangiliklar arxivi (OBLOG-68) — faqat 1-sahifa (kategoriyalar kabi).
+  const archive: SitemapPath[] = lastPost
+    ? [{ path: archivePath('uz-Latn'), lastmod: lastPost }]
+    : []
   const staticPages = (pages.docs as Array<{ slug?: string | null; updatedAt: string } & WithMeta>)
     .filter((page) => page.slug && isIndexable(page))
     .map((page) => ({ path: `/${page.slug}`, lastmod: page.updatedAt }))
   const authorPages = authors.docs
     .filter((author) => author.slug)
     .map((author) => ({ path: `/author/${author.slug}`, lastmod: author.updatedAt }))
-  return [home, ...staticPages, ...authorPages]
+  return [home, ...archive, ...staticPages, ...authorPages]
 }
 
 export const getSitemapPages = (): Promise<SitemapPath[]> =>

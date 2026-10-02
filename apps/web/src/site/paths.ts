@@ -26,6 +26,19 @@ export function postPath(locale: Locale, categorySlug: string, slug: string): st
   return withLocalePrefix(locale, `/${categorySlug}/${slug}`)
 }
 
+/**
+ * Barcha yangiliklar arxivi (OBLOG-68): `/yangiliklar`, `/yangiliklar/page/{n}` — barcha postlar,
+ * eng yangisi birinchi. Ikkala yozuvda slug bir xil (`/kr/yangiliklar`); `ROUTE_RESERVED_SLUGS`
+ * da band — bunday kategoriya yoki sahifa bo'lmaydi.
+ */
+export const ARCHIVE_SEGMENT = 'yangiliklar'
+
+/** `/yangiliklar` yoki `/yangiliklar/page/{n}` (n ≥ 2). */
+export function archivePath(locale: Locale, page = 1): string {
+  const base = `/${ARCHIVE_SEGMENT}`
+  return withLocalePrefix(locale, page > 1 ? `${base}/${PAGE_SEGMENT}/${page}` : base)
+}
+
 /** `/tag/{slug}` yoki `/tag/{slug}/page/{n}` (n ≥ 2). */
 export function tagPath(locale: Locale, slug: string, page = 1): string {
   const base = `/tag/${slug}`

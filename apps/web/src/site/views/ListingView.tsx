@@ -25,6 +25,8 @@ type ListingBodyProps = {
   /** Boshqa sahifalash sxemasi (qidiruv: `?q=…&page=n`). */
   hrefForPage?: (page: number) => string
   latest?: PostSummary[]
+  /** Yon panelga qo'shimcha (masalan, mavzular) — "So'nggi yangiliklar"dan keyin. */
+  aside?: ReactNode
   testId?: string
 }
 
@@ -42,6 +44,7 @@ export function ListingBody({
   basePath = '/',
   hrefForPage,
   latest = [],
+  aside,
   testId,
 }: ListingBodyProps) {
   const t = getSiteStrings(locale)
@@ -78,6 +81,7 @@ export function ListingBody({
       </div>
       <aside className="flex flex-col gap-8 lg:col-span-4">
         {latest.length > 0 ? <LatestFeed locale={locale} posts={latest} /> : null}
+        {aside}
         <AdSlot locale={locale} position="sidebar" />
       </aside>
     </Container>

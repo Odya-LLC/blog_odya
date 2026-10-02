@@ -7,8 +7,11 @@ import { cn } from '@/lib/utils'
 type SectionHeadingProps = {
   id?: string
   children: ReactNode
-  /** "Barchasi →" havolasi. */
-  action?: { label: string; href: string }
+  /**
+   * "Barchasi →" havolasi. `context` — ekran o'quvchilar uchun qo'shimcha (masalan, kategoriya
+   * nomi): bir sahifada bir nechta "Barchasi" havolasi bo'lsa, ular farqlansin.
+   */
+  action?: { label: string; href: string; context?: string }
   as?: 'h2' | 'h3'
   /** Chiziq rangi (masalan, kategoriya rangi); standart — aksent. */
   barStyle?: CSSProperties
@@ -41,6 +44,7 @@ export function SectionHeading({
           className="inline-flex shrink-0 items-center gap-0.5 text-sm font-semibold text-accent hover:text-accent-hover"
         >
           {action.label}
+          {action.context ? <span className="sr-only"> — {action.context}</span> : null}
           <ChevronRightIcon className="size-4" aria-hidden />
         </Link>
       ) : null}

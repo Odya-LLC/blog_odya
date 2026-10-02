@@ -110,6 +110,11 @@ const KEEP = [
   '/kr/tag/cs2',
   '/author/tahririyat',
   '/author/tahririyat/page/2',
+  // Barcha yangiliklar arxivi (OBLOG-68)
+  '/yangiliklar',
+  '/yangiliklar/page/2',
+  '/kr/yangiliklar',
+  '/kr/yangiliklar/page/3',
   '/search',
   '/search?q=ai',
   '/search?q=ai&page=2',

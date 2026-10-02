@@ -18,7 +18,7 @@ import {
   withBrand,
   withoutBrand,
 } from '@/site/seo/metadata'
-import { categorySeo, homeSeo, rootLayoutMetadata } from '@/site/seo/pages'
+import { archiveSeo, categorySeo, homeSeo, rootLayoutMetadata } from '@/site/seo/pages'
 
 const ORIGIN = 'https://blog.odya.uz'
 
@@ -266,6 +266,49 @@ describe('OpenGraph va Twitter Card', () => {
     expect(metadata.openGraph?.images).toEqual([
       expect.objectContaining({ url: `${ORIGIN}/og/latn`, width: 1200, height: 630 }),
     ])
+  })
+
+  it('bosh sahifa: so‘nggi maqolalar — ItemList (OBLOG-68), max-image-preview:large saqlanadi', () => {
+    const { metadata, jsonLd } = homeSeo(
+      'uz-Cyrl',
+      { latest: [{ name: 'Янги', path: '/kr/kibersport/yangi' }] },
+      { origin: ORIGIN, indexingAllowed: true },
+    )
+    expect(jsonLd.map((item) => item['@type'])).toEqual([
+      'NewsMediaOrganization',
+      'WebSite',
+      'ItemList',
+    ])
+    expect(jsonLd[2]).toMatchObject({
+      numberOfItems: 1,
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, url: `${ORIGIN}/kr/kibersport/yangi`, name: 'Янги' },
+      ],
+    })
+    expect(metadata.robots).toMatchObject({ index: true, 'max-image-preview': 'large' })
+  })
+
+  it('barcha yangiliklar arxivi: canonical o‘ziga, hreflang, breadcrumb + ItemList (OBLOG-68)', () => {
+    const first = archiveSeo('uz-Latn', 1, [], { origin: ORIGIN, indexingAllowed: true })
+    expect(first.metadata.alternates?.canonical).toBe(`${ORIGIN}/yangiliklar`)
+    expect(first.metadata.title).toEqual({ absolute: 'Barcha yangiliklar — Blog Odya' })
+    expect(first.jsonLd.map((item) => item['@type'])).toEqual(['BreadcrumbList'])
+
+    const second = archiveSeo('uz-Cyrl', 2, [{ name: 'A', path: '/kr/ilm-fan/a' }], {
+      origin: ORIGIN,
+      indexingAllowed: true,
+    })
+    expect(second.metadata.alternates?.canonical).toBe(`${ORIGIN}/kr/yangiliklar/page/2`)
+    expect(second.metadata.alternates?.languages).toMatchObject({
+      'uz-Latn': `${ORIGIN}/yangiliklar/page/2`,
+      'uz-Cyrl': `${ORIGIN}/kr/yangiliklar/page/2`,
+      'x-default': `${ORIGIN}/yangiliklar/page/2`,
+    })
+    expect(second.metadata.title).toEqual({
+      absolute: 'Барча янгиликлар (2-саҳифа) — Блог Одя',
+    })
+    expect(second.jsonLd.map((item) => item['@type'])).toEqual(['BreadcrumbList', 'ItemList'])
+    expect(second.metadata.robots).toMatchObject({ index: true })
   })
 })
 

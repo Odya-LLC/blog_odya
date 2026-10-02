@@ -27,7 +27,16 @@ import type {
 } from '@/components/blog/types'
 import { DEFAULT_AUTHOR_SLUG } from '@/collections/Posts/defaultAuthor'
 import { env, PHASE_PRODUCTION_BUILD } from '@/env'
-import type { Author, Category, Media, Page, Post, Redirect, SiteSetting } from '@/payload-types'
+import type {
+  Author,
+  Category,
+  Media,
+  Page,
+  Post,
+  Redirect,
+  SiteSetting,
+  Tag,
+} from '@/payload-types'
 
 import {
   type AnalyticsConfig,
@@ -36,6 +45,16 @@ import {
   toSiteVerification,
 } from './analytics'
 import { CACHE_TAGS, categoryTag, postTag } from './cache-tags'
+import {
+  buildHomeSections,
+  HOME_FEED_COUNT,
+  HOME_SECTION_CANDIDATES,
+  HOME_TOP_COUNT,
+  type HomeSection,
+  type HomeTop,
+  splitLatest,
+  trendingTags,
+} from './home'
 import {
   populated,
   toCategoryRef,
@@ -51,6 +70,7 @@ import { authorPath } from './paths'
 import { rankRelated, RELATED_LIMIT } from './related'
 import type { SearchQuery } from './search/normalize'
 import { searchPostIds } from './search/query'
+import { TAG_INDEX_MIN_POSTS } from './seo/config'
 
 /** Sahifalar keshining zaxira muddati (soniya) — teg bo'yicha yangilanmay qolgan holatlar uchun. */
 export const REVALIDATE_SECONDS = 3600
@@ -65,10 +85,12 @@ const CACHE_VERSION =
 /** Kategoriya sahifasidagi postlar soni. */
 export const CATEGORY_PAGE_SIZE = 12
 
-/** Bosh sahifadagi kategoriya bloklari soni va har biridagi postlar. */
-const HOME_CATEGORY_BLOCKS = 4
-const HOME_BLOCK_POSTS = 5
-const HOME_LATEST = 10
+/** Barcha yangiliklar arxivi sahifasidagi postlar (OBLOG-68). */
+export const ARCHIVE_PAGE_SIZE = 20
+
+/** Trend teglar: shuncha so'nggi postdan hisoblanadi, ko'pi bilan shuncha teg ko'rsatiladi. */
+const TRENDING_WINDOW = 60
+const TRENDING_LIMIT = 12
 
 /**
  * DB'ga murojaat qilinmaydigan holatlar (OBLOG-31):
@@ -235,56 +257,157 @@ export async function getSiteVerification(): Promise<SiteVerification> {
 // Bosh sahifa
 // ---------------------------------------------------------------------------
 
-export type HomeData = {
-  main: PostSummary | null
-  secondary: PostSummary[]
-  latest: PostSummary[]
-  blocks: Array<{ category: CategoryRef; posts: PostSummary[] }>
+export type HomeData = HomeTop & {
+  sections: HomeSection[]
+  /** So'nggi postlarda ko'p uchragan (indekslanadigan) teglar. */
+  trendingTags: TagRef[]
 }
 
-export async function loadHomeData(locale: Locale): Promise<HomeData> {
-  if (!hasDatabase()) return { main: null, secondary: [], latest: [], blocks: [] }
+const EMPTY_HOME = (): HomeData => ({
+  lead: null,
+  top: [],
+  feed: [],
+  sections: [],
+  trendingTags: [],
+})
+
+async function loadTrendingTags(locale: Locale): Promise<TagRef[]> {
   const payload = await payloadClient()
-  const [latestResult, featuredResult, categories] = await Promise.all([
-    findPosts(locale, undefined, HOME_LATEST),
-    findPosts(locale, { isFeatured: { equals: true } }, 1),
+  const result = await payload.find({
+    collection: 'posts',
+    locale,
+    sort: '-publishedAt',
+    limit: TRENDING_WINDOW,
+    depth: 1,
+    overrideAccess: false,
+    select: { tags: true },
+    populate: { tags: { name: true, slug: true } },
+  })
+  const postTags = (result.docs as Post[]).map((post) =>
+    (post.tags ?? []).flatMap((tag) => {
+      const doc = populated<Tag>(tag)
+      return doc?.slug && doc.name ? [toTagRef(doc, locale)] : []
+    }),
+  )
+  return trendingTags(postTags, TAG_INDEX_MIN_POSTS, TRENDING_LIMIT)
+}
+
+/**
+ * Bosh sahifa (OBLOG-68): eng so'nggi postlar (katta + 4 + lenta), har bir kategoriyaning so'nggi
+ * postlari (bo'limlar — `site/home.ts`), trend teglar. `isFeatured` bosh sahifa tartibiga
+ * ta'sir qilmaydi — birinchi doim eng oxirgi chop etilgan yangilik.
+ */
+export async function loadHomeData(locale: Locale): Promise<HomeData> {
+  if (!hasDatabase()) return EMPTY_HOME()
+  const payload = await payloadClient()
+  const [latestResult, categories, tags] = await Promise.all([
+    findPosts(locale, undefined, HOME_TOP_COUNT + HOME_FEED_COUNT),
     payload.find({
       collection: 'categories',
       locale,
-      where: { isInMenu: { equals: true } },
       sort: 'order',
-      limit: HOME_CATEGORY_BLOCKS * 2,
+      limit: 100,
       depth: 0,
       overrideAccess: false,
       pagination: false,
     }),
+    loadTrendingTags(locale),
   ])
-  const latest = toPostSummaries(latestResult.docs, locale)
-  const featured = toPostSummaries(featuredResult.docs, locale)[0] ?? null
-  const main = featured ?? latest[0] ?? null
-  const secondary = latest.filter((post) => post.id !== main?.id).slice(0, 4)
-
-  const blockResults = await Promise.all(
+  const top = splitLatest(toPostSummaries(latestResult.docs, locale))
+  const candidates = await Promise.all(
     categories.docs.map(async (category) => ({
-      category,
-      posts: await findPosts(locale, { category: { equals: category.id } }, HOME_BLOCK_POSTS),
+      category: toCategoryRef(category, locale),
+      posts: toPostSummaries(
+        (await findPosts(locale, { category: { equals: category.id } }, HOME_SECTION_CANDIDATES))
+          .docs,
+        locale,
+      ),
     })),
   )
-  const blocks = blockResults
-    .filter(({ posts }) => posts.docs.length > 0)
-    .slice(0, HOME_CATEGORY_BLOCKS)
-    .map(({ category, posts }) => ({
-      category: toCategoryRef(category, locale),
-      posts: toPostSummaries(posts.docs, locale),
-    }))
-
-  return { main, secondary, latest, blocks }
+  return { ...top, sections: buildHomeSections(candidates, top), trendingTags: tags }
 }
 
 export const getHomeData = (locale: Locale): Promise<HomeData> =>
   cached(
     () => loadHomeData(locale),
     ['home', locale],
+    [CACHE_TAGS.home, CACHE_TAGS.posts, CACHE_TAGS.nav],
+  )
+
+// ---------------------------------------------------------------------------
+// Mavzular (kategoriyalar + postlar soni) — bosh sahifa va arxiv yon paneli
+// ---------------------------------------------------------------------------
+
+export type CategoryTopic = CategoryRef & { count: number }
+
+/** Kamida bitta chop etilgan posti bor kategoriyalar, tahririyat tartibida. */
+export async function loadCategoryTopics(locale: Locale): Promise<CategoryTopic[]> {
+  if (!hasDatabase()) return []
+  const payload = await payloadClient()
+  const categories = await payload.find({
+    collection: 'categories',
+    locale,
+    sort: 'order',
+    limit: 100,
+    depth: 0,
+    overrideAccess: false,
+    pagination: false,
+  })
+  const topics = await Promise.all(
+    categories.docs.map(async (category) => {
+      const { totalDocs } = await payload.count({
+        collection: 'posts',
+        where: { category: { equals: category.id } },
+        overrideAccess: false,
+      })
+      return { ...toCategoryRef(category, locale), count: totalDocs }
+    }),
+  )
+  return topics.filter((topic) => topic.count > 0)
+}
+
+export const getCategoryTopics = (locale: Locale): Promise<CategoryTopic[]> =>
+  cached(
+    () => loadCategoryTopics(locale),
+    ['topics', locale],
+    [CACHE_TAGS.home, CACHE_TAGS.posts, CACHE_TAGS.nav],
+  )
+
+// ---------------------------------------------------------------------------
+// Barcha yangiliklar arxivi (OBLOG-68): `/yangiliklar`, `/yangiliklar/page/{n}`
+// ---------------------------------------------------------------------------
+
+export type ArchivePageData = {
+  posts: PostSummary[]
+  page: number
+  totalPages: number
+  totalDocs: number
+  /** Eng yangi post sanasi (sitemap `lastmod`, sahifa yangilangan vaqti). */
+  latestAt: string | null
+}
+
+/** `page` > oxirgi sahifa — `null` (404); 1-sahifa bo'sh bo'lsa ham ko'rsatiladi. */
+export async function loadArchivePage(
+  locale: Locale,
+  page: number,
+): Promise<ArchivePageData | null> {
+  if (!hasDatabase()) return null
+  const list = await findPosts(locale, undefined, ARCHIVE_PAGE_SIZE, page)
+  if (page > 1 && page > list.totalPages) return null
+  const posts = toPostSummaries(list.docs, locale)
+  return {
+    posts,
+    page,
+    totalPages: Math.max(1, list.totalPages),
+    totalDocs: list.totalDocs,
+    latestAt: page === 1 ? (posts[0]?.publishedAt ?? null) : null,
+  }
+}
+
+export const getArchivePage = (locale: Locale, page: number) =>
+  cached(
+    () => loadArchivePage(locale, page),
+    ['archive', locale, String(page)],
     [CACHE_TAGS.home, CACHE_TAGS.posts, CACHE_TAGS.nav],
   )
 

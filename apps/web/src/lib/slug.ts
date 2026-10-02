@@ -24,6 +24,8 @@ export const ROUTE_RESERVED_SLUGS = [
   'author',
   'search',
   'bot',
+  // Barcha yangiliklar arxivi (OBLOG-68, `site/paths.ts` `ARCHIVE_SEGMENT`).
+  'yangiliklar',
   'page',
   'og',
   'feeds',
