@@ -217,6 +217,8 @@ export interface Post {
     | null;
   relatedPosts?: (number | Post)[] | null;
   notesForEditor?: string | null;
+  revisionSubmittedAt?: string | null;
+  revisionSubmittedBy?: (number | null) | User;
   reviewNotes?:
     | {
         user?: (number | null) | User;
@@ -1197,6 +1199,8 @@ export interface PostsSelect<T extends boolean = true> {
       };
   relatedPosts?: T;
   notesForEditor?: T;
+  revisionSubmittedAt?: T;
+  revisionSubmittedBy?: T;
   reviewNotes?:
     | T
     | {

@@ -1,6 +1,7 @@
 import type { Payload, TypedUser, Where } from 'payload'
 
 import { dayRange, localDate } from './queue'
+import { PENDING_REVISION_WHERE } from './revisions'
 
 /**
  * Dashboard vidjeti (TASKS M2-04): bugungi (Toshkent vaqti) tahririyat raqamlari.
@@ -8,6 +9,7 @@ import { dayRange, localDate } from './queue'
  * - `scraped`   — bugun yig'ilgan `scraped-items` (`createdAt`);
  * - `drafts`    — bugun yaratilgan postlar, hozir `draft` / `in_progress` holatida;
  * - `review`    — hozir tekshiruvda turgan postlar (sanadan qat'i nazar — bu navbat);
+ * - `revisions` — chop etilgan postlardagi tekshiruvni kutayotgan o'zgarishlar (OBLOG-64);
  * - `published` — bugun chop etilgan postlar (`publishedAt`).
  */
 export interface EditorialStats {
@@ -15,6 +17,7 @@ export interface EditorialStats {
   scraped: number
   drafts: number
   review: number
+  revisions: number
   published: number
 }
 
@@ -31,7 +34,7 @@ export async function getEditorialStats(
   const countPosts = async (where: Where) =>
     (await payload.find({ collection: 'posts', where, draft: true, limit: 1, depth: 0, ...access }))
       .totalDocs
-  const [scraped, drafts, review, published] = await Promise.all([
+  const [scraped, drafts, review, published, revisions] = await Promise.all([
     payload.count({
       collection: 'scraped-items',
       where: {
@@ -54,6 +57,7 @@ export async function getEditorialStats(
         { publishedAt: { less_than: to } },
       ],
     }),
+    countPosts(PENDING_REVISION_WHERE),
   ])
-  return { date, scraped: scraped.totalDocs, drafts, review, published }
+  return { date, scraped: scraped.totalDocs, drafts, review, revisions, published }
 }

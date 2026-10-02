@@ -27,7 +27,7 @@ export interface CollectionAuditOptions {
 
 type Id = number | string
 
-interface AuditEntry {
+export interface AuditEntry {
   action: AuditAction
   collection?: string
   global?: string
@@ -60,7 +60,7 @@ function isAutosave(req: PayloadRequest): boolean {
  * bo'lsa, yozuv ham qolmaydi). Audit yozuvi yaratilmasa, amal ham xato bilan tugaydi: izsiz
  * o'zgarish bo'lmasligi kerak.
  */
-async function writeAuditLog(req: PayloadRequest, entry: AuditEntry): Promise<void> {
+export async function writeAuditLog(req: PayloadRequest, entry: AuditEntry): Promise<void> {
   const context = (req.context ?? {}) as AuditRequestContext
   const user = req.user?.collection === 'users' ? req.user : null
   await req.payload.create({
