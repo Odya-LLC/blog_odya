@@ -17,6 +17,7 @@ import type { Author, Category, Media, Page, Post, Tag } from '@/payload-types'
 
 import { populated, postDate, toSourceRefs } from '../mappers'
 import {
+  archivePath,
   authorPath,
   categoryPath,
   homePath,
@@ -37,6 +38,8 @@ import {
   breadcrumbJsonLd,
   type FaqItem,
   faqPageJsonLd,
+  type ItemListEntry,
+  itemListJsonLd,
   type JsonLdObject,
   newsArticleJsonLd,
   organizationJsonLd,
@@ -280,6 +283,8 @@ export type HomeSeoInput = {
   description?: string | null
   sameAs?: string[]
   defaultOgImage?: Media | null
+  /** Sahifadagi eng so'nggi maqolalar (yangisi birinchi) → `ItemList` (OBLOG-68). */
+  latest?: ItemListEntry[]
 }
 
 export function homeSeo(locale: Locale, input: HomeSeoInput = {}, options: Options = {}): PageSeo {
@@ -304,7 +309,45 @@ export function homeSeo(locale: Locale, input: HomeSeoInput = {}, options: Optio
   const jsonLd = [
     organizationJsonLd(locale, { sameAs: input.sameAs, origin }),
     websiteJsonLd(locale, { description, origin }),
-  ]
+    itemListJsonLd(input.latest ?? [], { name: t.latestNews, origin }),
+  ].filter((item): item is JsonLdObject => item !== null)
+  return { metadata, jsonLd }
+}
+
+// ---------------------------------------------------------------------------
+// Barcha yangiliklar arxivi (OBLOG-68): canonical — o'ziga (sahifalash bilan)
+// ---------------------------------------------------------------------------
+
+export function archiveSeo(
+  locale: Locale,
+  page: number,
+  items: ItemListEntry[] = [],
+  options: Options = {},
+): PageSeo {
+  const origin = options.origin ?? siteOrigin()
+  const t = getSiteStrings(locale)
+  const path = archivePath(locale, page)
+  const metadata = buildPageMetadata({
+    locale,
+    path,
+    title: page > 1 ? `${t.allNews} (${t.page(page)})` : t.allNews,
+    description: t.archiveDescription,
+    image: generatedOgImage(locale, { kind: 'site' }, t.allNews, undefined, origin),
+    feed: feedFor(locale),
+    origin,
+    indexingAllowed: options.indexingAllowed,
+  })
+  const jsonLd = [
+    breadcrumbJsonLd(
+      [
+        { name: t.home, path: homePath(locale) },
+        { name: t.allNews, path: archivePath(locale) },
+        ...(page > 1 ? [{ name: t.page(page), path }] : []),
+      ],
+      origin,
+    ),
+    itemListJsonLd(items, { name: t.allNews, origin }),
+  ].filter((item): item is JsonLdObject => item !== null)
   return { metadata, jsonLd }
 }
 

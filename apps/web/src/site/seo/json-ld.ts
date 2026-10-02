@@ -1,6 +1,7 @@
 /**
  * JSON-LD (schema.org) quruvchilari (TZ §8.2): `NewsArticle` (`inLanguage`, `isBasedOn`),
- * `BreadcrumbList`, `Organization` + `WebSite` (`SearchAction`), `Person`, `FAQPage`.
+ * `BreadcrumbList`, `Organization` + `WebSite` (`SearchAction`), `Person`, `FAQPage`, `ItemList`
+ * (bosh sahifa va arxivdagi so'nggi maqolalar — OBLOG-68).
  *
  * Google Search talablari (developers.google.com/search/docs/appearance/structured-data):
  * Article — `headline`, `image` (to'liq URL), `datePublished`/`dateModified` (ISO 8601, vaqt
@@ -120,6 +121,33 @@ export function breadcrumbJsonLd(
       position: index + 1,
       name: item.name,
       item: absoluteUrl(item.path, origin),
+    })),
+  }
+}
+
+export type ItemListEntry = { name: string; path: string }
+
+/**
+ * `ItemList` — maqolalar ro'yxati sahifasi ("summary page", Google: faqat `ListItem.position` +
+ * `url`, barcha URL'lar shu saytda). Bo'sh ro'yxat — `null`.
+ */
+export function itemListJsonLd(
+  items: ItemListEntry[],
+  options: { name?: string; origin?: string } = {},
+): JsonLdObject | null {
+  if (items.length === 0) return null
+  const origin = options.origin ?? siteOrigin()
+  return {
+    '@context': CONTEXT,
+    '@type': 'ItemList',
+    ...(options.name ? { name: options.name } : {}),
+    itemListOrder: 'https://schema.org/ItemListOrderDescending',
+    numberOfItems: items.length,
+    itemListElement: items.map((item, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      url: absoluteUrl(item.path, origin),
+      name: item.name,
     })),
   }
 }

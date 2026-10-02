@@ -9,8 +9,9 @@
  * - `['tag', slug]`, `['tag', slug, 'page', n]`       → teg sahifasi
  * - `['author', slug]`, `['author', slug, 'page', n]` → muallif sahifasi
  * - `['bot']`                   → OdyaBlogBot haqida (User-Agent havolasi, M2-02)
+ * - `['yangiliklar']`, `['yangiliklar', 'page', n]` → barcha yangiliklar arxivi (OBLOG-68)
  *
- * `tag`, `author`, `bot`, `search` … — band qilingan slug'lar (`ROUTE_RESERVED_SLUGS`), shuning
+ * `tag`, `author`, `bot`, `yangiliklar`, `search` … — band qilingan slug'lar (`ROUTE_RESERVED_SLUGS`), shuning
  * uchun bunday kategoriya yoki sahifa bo'lmaydi. `/search` — alohida papka (`searchParams`
  * o'qiydi, dinamik; catch-all ISR'da qoladi).
  *
@@ -18,7 +19,7 @@
  * birinchi so'rovda chiziladi va ISR'da keshlanadi (`generateStaticParams` → `[]`).
  * Yon ta'sirsiz — unit testlanadi.
  */
-import { PAGE_SEGMENT, parsePageParam } from './paths'
+import { ARCHIVE_SEGMENT, PAGE_SEGMENT, parsePageParam } from './paths'
 
 /** Sahifalanadigan taksonomiya ro'yxatlari: `/{kind}/{slug}` (`/page/{n}` bilan). */
 export type ListingKind = 'tag' | 'author'
@@ -31,6 +32,8 @@ export type SiteRoute =
   | { kind: ListingKind; slug: string; page: number }
   | { kind: 'listing-first-page'; listing: ListingKind; slug: string }
   | { kind: 'bot' }
+  | { kind: 'archive'; page: number }
+  | { kind: 'archive-first-page' }
   | { kind: 'not-found' }
 
 /** Slug segmenti: kichik lotin harflari, raqamlar, `-` (bot so'rovlari DB'ga yetib bormaydi). */
@@ -50,12 +53,23 @@ function resolveListing(listing: ListingKind, rest: readonly string[]): SiteRout
   return page === 1 ? { kind: 'listing-first-page', listing, slug } : { kind: listing, slug, page }
 }
 
+/** `/yangiliklar` (`/page/{n}` bilan); boshqa har qanday davomi — 404. */
+function resolveArchive(rest: readonly string[]): SiteRoute {
+  if (rest.length === 0) return { kind: 'archive', page: 1 }
+  const [pageSegment, pageValue] = rest
+  if (rest.length !== 2 || pageSegment !== PAGE_SEGMENT || !pageValue) return NOT_FOUND
+  const page = parsePageParam(pageValue)
+  if (page === null) return NOT_FOUND
+  return page === 1 ? { kind: 'archive-first-page' } : { kind: 'archive', page }
+}
+
 export function resolveSiteRoute(segments: readonly string[] | undefined): SiteRoute {
   const parts = segments ?? []
   if (parts.length === 0) return { kind: 'home' }
   const [category, second, third] = parts
   if (!category || !SEGMENT.test(category) || parts.length > 4) return NOT_FOUND
   if (LISTINGS.includes(category)) return resolveListing(category as ListingKind, parts.slice(1))
+  if (category === ARCHIVE_SEGMENT) return resolveArchive(parts.slice(1))
   if (parts.length > 3) return NOT_FOUND
   // Statik sahifalar kategoriya slug'idan ustun (bunday kategoriya yaratilmasligi kerak).
   if (parts.length === 1 && category === 'bot') return { kind: 'bot' }

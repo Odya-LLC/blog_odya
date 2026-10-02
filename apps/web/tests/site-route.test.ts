@@ -27,6 +27,10 @@ describe('sayt marshrutlari ([[...path]], TZ §8.1)', () => {
       ['author', 'tahririyat', 'page', '1'],
       { kind: 'listing-first-page', listing: 'author', slug: 'tahririyat' },
     ],
+    // OBLOG-68: barcha yangiliklar arxivi.
+    [['yangiliklar'], { kind: 'archive', page: 1 }],
+    [['yangiliklar', 'page', '2'], { kind: 'archive', page: 2 }],
+    [['yangiliklar', 'page', '1'], { kind: 'archive-first-page' }],
     // Statik sahifa ham `/{slug}` — kategoriya sifatida hal qilinadi (topilmasa — `pages`).
     [['aloqa'], { kind: 'category', category: 'aloqa', page: 1 }],
   ] as const)('%j', (segments, expected) => {
@@ -51,6 +55,10 @@ describe('sayt marshrutlari ([[...path]], TZ §8.1)', () => {
     [['tag', 'cs2', 'extra']],
     [['author', 'x', 'page', '2', 'extra']],
     [['kibersport', 'page', '2', 'extra']],
+    [['yangiliklar', 'biror-maqola']],
+    [['yangiliklar', 'page']],
+    [['yangiliklar', 'page', '0']],
+    [['yangiliklar', 'page', '2', 'extra']],
   ])('404: %j', (segments) => {
     expect(resolveSiteRoute(segments)).toEqual({ kind: 'not-found' })
   })

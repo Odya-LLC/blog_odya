@@ -43,9 +43,15 @@ for (const script of SCRIPTS) {
       const home = await page.goto(`${script.prefix}/`)
       expect(home?.status()).toBe(200)
       await expect(page.locator('html')).toHaveAttribute('lang', script.locale)
-      await expect(
-        page.getByRole('heading', { level: 2, name: featured.title[script.locale] }),
-      ).toBeVisible()
+      // OBLOG-68: birinchi — eng so'nggi yangilik (katta kartochka, `h2`), keyin lenta.
+      await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1)
+      const lead = page.getByTestId('home-lead')
+      await expect(lead.getByRole('heading', { level: 2 })).toBeVisible()
+      const times = await page
+        .locator('[data-testid="home-lead"] time, [data-testid="home-feed"] time')
+        .evaluateAll((nodes) => nodes.map((node) => Date.parse(node.getAttribute('datetime')!)))
+      expect(times.length).toBeGreaterThan(0)
+      expect(times).toEqual([...times].sort((a, b) => b - a))
 
       // Header menyusi → kategoriya.
       await page
@@ -147,6 +153,39 @@ for (const script of SCRIPTS) {
     })
   })
 }
+
+for (const script of SCRIPTS) {
+  test(`${script.locale}: barcha yangiliklar arxivi (OBLOG-68)`, async ({ page }) => {
+    const response = await page.goto(`${script.prefix}/yangiliklar`)
+    expect(response?.status()).toBe(200)
+    await expect(page.locator('html')).toHaveAttribute('lang', script.locale)
+    await expect(page.getByRole('heading', { level: 1 })).toContainText(
+      script.locale === 'uz-Latn' ? 'Barcha yangiliklar' : 'Барча янгиликлар',
+    )
+    const posts = page.getByTestId('archive-posts').locator('article')
+    expect(await posts.count()).toBeGreaterThanOrEqual(SEED_POSTS.length)
+    const times = await page
+      .getByTestId('archive-posts')
+      .locator('time')
+      .evaluateAll((nodes) => nodes.map((node) => Date.parse(node.getAttribute('datetime')!)))
+    expect(times).toEqual([...times].sort((a, b) => b - a))
+    await expect(page.locator('head link[rel="canonical"]')).toHaveAttribute(
+      'href',
+      new RegExp(`^https?://[^/]+${script.prefix}/yangiliklar$`),
+    )
+    // Bosh sahifadagi "Barcha yangiliklar" havolasi arxivga olib boradi.
+    await page.goto(`${script.prefix}/`)
+    await page.getByTestId('home-feed').getByRole('link').last().click()
+    await expect(page).toHaveURL(`${script.prefix}/yangiliklar`)
+  })
+}
+
+test('/yangiliklar/page/1 → kanonik arxiv URL; mavjud bo‘lmagan sahifa — 404', async ({ page }) => {
+  await page.goto('/kr/yangiliklar/page/1')
+  await expect(page).toHaveURL('/kr/yangiliklar')
+  const missing = await page.goto('/yangiliklar/page/999')
+  expect(missing?.status()).toBe(404)
+})
 
 test('/…/page/1 → kanonik kategoriya URL; mavjud bo‘lmagan sahifa — 404', async ({ page }) => {
   await page.goto('/kr/kibersport/page/1')

@@ -84,13 +84,20 @@ describe('sayt ma’lumotlari (Local API)', () => {
     }
   })
 
-  it('bosh sahifa: asosiy yangilik (isFeatured) kirillda, /kr URL bilan', async () => {
+  it('bosh sahifa: birinchi — eng so‘nggi yangilik, kirillda, /kr URL bilan (OBLOG-68)', async () => {
     const home = await loadHomeData('uz-Cyrl')
-    expect(home.main?.title).toBe(featured.title['uz-Cyrl'])
-    expect(home.main?.href).toBe(`/kr/${featured.category}/${featured.slug}`)
-    expect(home.latest.length).toBeGreaterThanOrEqual(SEED_POSTS.length)
-    expect(home.blocks.length).toBeGreaterThan(0)
-    expect(home.secondary.some((post) => post.id === home.main?.id)).toBe(false)
+    const listed = [home.lead!, ...home.top, ...home.feed]
+    expect(home.lead).not.toBeNull()
+    expect(listed.length).toBeGreaterThanOrEqual(SEED_POSTS.length)
+    const times = listed.map((post) => Date.parse(post.publishedAt))
+    expect(times).toEqual([...times].sort((a, b) => b - a))
+    const seeded = listed.find((post) => post.title === featured.title['uz-Cyrl'])
+    expect(seeded?.href).toBe(`/kr/${featured.category}/${featured.slug}`)
+    // Yuqori blokdagi postlar kategoriya bo'limlarida takrorlanmaydi.
+    const topIds = new Set([home.lead!.id, ...home.top.map((post) => post.id)])
+    for (const section of home.sections) {
+      expect(section.posts.some((post) => topIds.has(post.id))).toBe(false)
+    }
   })
 
   it('karkas: menyu kategoriyalari va footer havolalari joriy yozuvda', async () => {

@@ -3,8 +3,9 @@ import type { Metadata } from 'next'
 import { notFound, permanentRedirect } from 'next/navigation'
 
 import { getCategoryPage, getStaticPage } from '../data'
-import { authorPath, categoryPath, tagPath } from '../paths'
+import { archivePath, authorPath, categoryPath, tagPath } from '../paths'
 import { resolveSiteRoute } from '../route'
+import { archiveMetadata, ArchiveView } from './ArchiveView'
 import { ArticleView, articleMetadata } from './ArticleView'
 import { AuthorView, authorMetadata } from './AuthorView'
 import { botMetadata, BotView } from './BotView'
@@ -50,6 +51,11 @@ export async function SiteRoutePage({ locale, path }: { locale: Locale; path: Se
       )
     case 'bot':
       return <BotView locale={locale} />
+    case 'archive':
+      return <ArchiveView locale={locale} page={route.page} />
+    case 'archive-first-page':
+      // `/yangiliklar/page/1` — kanonik `/yangiliklar`.
+      permanentRedirect(archivePath(locale))
     case 'not-found':
       notFound()
   }
@@ -73,6 +79,8 @@ export async function siteRouteMetadata(locale: Locale, path: Segments): Promise
       return homeMetadata(locale)
     case 'bot':
       return botMetadata(locale)
+    case 'archive':
+      return archiveMetadata({ locale, page: route.page })
     default:
       // Redirect / 404 — layout (va not-found) metadata'si.
       return {}
