@@ -36,6 +36,8 @@ export const IGNORED_DIFF_FIELDS: ReadonlySet<string> = new Set([
   '_locked',
   '_lockedByUser',
   'globalType',
+  // Virtual, faqat o'qish (OBLOG-69: `posts.viewsTotal` — ko'rishlar jadvalidan)
+  'viewsTotal',
 ])
 
 export interface OmittedValue {

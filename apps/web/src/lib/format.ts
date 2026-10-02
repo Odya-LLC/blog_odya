@@ -39,3 +39,25 @@ export function formatFeedTime(iso: string, locale: Locale, now: Date = new Date
   if (day.format(new Date(iso)) === day.format(now)) return time
   return `${formatShortDate(iso, locale)}, ${time}`
 }
+
+const COMPACT_UNITS: Record<Locale, { thousand: string; million: string }> = {
+  'uz-Latn': { thousand: 'ming', million: 'mln' },
+  'uz-Cyrl': { thousand: 'минг', million: 'млн' },
+}
+
+function compactPart(n: number, unit: number): string {
+  // 1–9,9 — bir kasr xonasi ("1,2"), 10+ — butun. Pastga yaxlitlanadi (butun sonlarda — suzuvchi
+  // nuqta xatosiz): 999 999 → "999 ming", 1 950 → "1,9 ming".
+  const tenths = Math.floor(n / (unit / 10))
+  if (tenths >= 100) return String(Math.floor(tenths / 10))
+  return tenths % 10 === 0 ? String(tenths / 10) : `${Math.floor(tenths / 10)},${tenths % 10}`
+}
+
+/** Ko'rishlar soni (OBLOG-69): "845", "1,2 ming", "12 ming", "3,4 mln" / "1,2 минг". */
+export function formatCompactCount(value: number, locale: Locale): string {
+  const n = Math.max(0, Math.floor(value))
+  const units = COMPACT_UNITS[locale]
+  if (n < 1000) return String(n)
+  if (n < 1_000_000) return `${compactPart(n, 1000)} ${units.thousand}`
+  return `${compactPart(n, 1_000_000)} ${units.million}`
+}

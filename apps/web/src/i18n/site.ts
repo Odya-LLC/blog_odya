@@ -36,6 +36,10 @@ export const siteStrings = {
       'Blog Odyaʼdagi barcha yangiliklar va maqolalar — eng soʻnggisidan boshlab: sunʼiy intellekt, IT, texnologiya, gadjetlar va kibersport.',
     topics: 'Mavzular',
     trendingTags: 'Ommabop teglar',
+    mostRead: 'Koʻp oʻqilgan',
+    popularWindow: { week: 'Soʻnggi 7 kun', month: 'Soʻnggi 30 kun', all: 'Barcha vaqt' },
+    /** Koʻrishlar soni yonidagi ekran oʻquvchi matni: "1,2 ming" + " marta oʻqilgan". */
+    timesRead: 'marta oʻqilgan',
     viewAll: 'Barchasi',
     breaking: 'Muhim',
     readingTime: (min: number) => `${min} daqiqa`,
@@ -122,6 +126,10 @@ export const siteStrings = {
       'Блог Одядаги барча янгиликлар ва мақолалар — энг сўнггисидан бошлаб: сунъий интеллект, IT, технология, гаджетлар ва киберспорт.',
     topics: 'Мавзулар',
     trendingTags: 'Оммабоп теглар',
+    mostRead: 'Кўп ўқилган',
+    popularWindow: { week: 'Сўнгги 7 кун', month: 'Сўнгги 30 кун', all: 'Барча вақт' },
+    /** Кўришлар сони ёнидаги экран ўқувчи матни. */
+    timesRead: 'марта ўқилган',
     viewAll: 'Барчаси',
     breaking: 'Муҳим',
     readingTime: (min: number) => `${min} дақиқа`,

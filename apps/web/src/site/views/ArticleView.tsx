@@ -4,6 +4,7 @@ import { notFound, permanentRedirect } from 'next/navigation'
 
 import { ArticleBody } from '@/components/blog/ArticleBody'
 import { ArticleHeader } from '@/components/blog/ArticleHeader'
+import { PopularPosts } from '@/components/blog/PopularPosts'
 import { RelatedPosts } from '@/components/blog/RelatedPosts'
 import { ShareButtons } from '@/components/blog/ShareButtons'
 import { Container } from '@/components/blog/SiteShell'
@@ -11,9 +12,10 @@ import { SourceBox } from '@/components/blog/SourceBox'
 import { TagList } from '@/components/blog/TagList'
 import { TelegramCTA } from '@/components/blog/TelegramCTA'
 import { RichText } from '@/components/richtext/RichText'
+import { resolvePopular } from '@/pageviews/popular'
 import type { Author, Media, Tag } from '@/payload-types'
 
-import { getArticle, getSiteChrome } from '../data'
+import { getArticle, getPopularData, getSiteChrome } from '../data'
 import {
   populated,
   postDate,
@@ -59,11 +61,15 @@ export async function articleMetadata(props: ArticleViewProps): Promise<Metadata
 /**
  * Maqola (TZ §12.3; maket — `/styleguide/layouts/article`): kategoriya → sarlavha → lid →
  * muallif, sana, o'qish vaqti → muqova → matn (Lexical) → manba bloki + AI izohi → teglar →
- * ulashish → o'xshash maqolalar → Telegram CTA.
+ * ulashish → o'xshash maqolalar → "Ko'p o'qilgan" (OBLOG-69, joriy maqolasiz) → Telegram CTA.
  */
 export async function ArticleView(props: ArticleViewProps) {
   const { locale } = props
-  const [data, chrome] = await Promise.all([loadOrRedirect(props), getSiteChrome(locale)])
+  const [data, chrome, popular] = await Promise.all([
+    loadOrRedirect(props),
+    getSiteChrome(locale),
+    getPopularData(locale),
+  ])
   const { post, category } = data
   const path = postPath(locale, category.slug, post.slug)
   const cover = populated<Media>(post.coverImage)
@@ -82,7 +88,8 @@ export async function ArticleView(props: ArticleViewProps) {
     <SitePage locale={locale} pathname={path} activeCategorySlug={category.slug}>
       <JsonLd data={jsonLd} />
       <Container className="flex flex-col gap-10 py-6 lg:py-10">
-        <article className="flex flex-col gap-8" data-testid="article">
+        {/* `data-pv` — ko'rishlar mayog'i shu post ID'sini yuboradi (`pageviews/beacon.ts`). */}
+        <article className="flex flex-col gap-8" data-testid="article" data-pv={post.id}>
           <ArticleHeader
             locale={locale}
             category={toCategoryRef(category, locale)}
@@ -116,6 +123,11 @@ export async function ArticleView(props: ArticleViewProps) {
           </div>
         </article>
         <RelatedPosts locale={locale} posts={data.related} />
+        <PopularPosts
+          locale={locale}
+          list={resolvePopular(popular.rows, popular.posts, { exclude: post.id })}
+          variant="wide"
+        />
         <TelegramCTA
           locale={locale}
           href={telegramHref}

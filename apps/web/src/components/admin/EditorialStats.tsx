@@ -7,8 +7,8 @@ import './editorial.css'
 
 /**
  * Dashboard vidjeti (TASKS M2-04, `admin.components.beforeDashboard`): bugun yig'ilgan /
- * qoralama / tekshiruvda / chop etilganlardagi o‘zgarishlar (OBLOG-64) / chop etilgan — har biri
- * tegishli ro'yxatga havola.
+ * qoralama / tekshiruvda / chop etilganlardagi o‘zgarishlar (OBLOG-64) / chop etilgan / saytdagi
+ * ko'rishlar (OBLOG-69) — har biri tegishli ro'yxatga havola.
  */
 export async function EditorialStats({ payload, user }: ServerProps) {
   if (!isAdminOrEditorUser(user)) return null
@@ -36,6 +36,8 @@ export async function EditorialStats({ payload, user }: ServerProps) {
       value: stats.published,
       href: `${posts}?where[workflowStatus][equals]=published`,
     },
+    // OBLOG-69: saytdagi anonim ko'rishlar (botlarsiz); postlar bo'yicha — `viewsTotal` ustuni.
+    { key: 'views', label: 'Bugungi koʻrishlar', value: stats.views, href: posts },
   ]
   return (
     <section

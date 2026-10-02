@@ -2,6 +2,7 @@ import { sql, type PostgresAdapter } from '@payloadcms/db-postgres'
 import type { Payload, TaskConfig } from 'payload'
 
 import { env } from '@/env'
+import { deleteOldDailyViews, VIEWS_DAILY_RETENTION_DAYS } from '@/pageviews/store'
 
 import {
   CLEANUP_DELETE_LIMIT,
@@ -30,7 +31,9 @@ import {
  *    to'liq o'chiriladi (bir chaqiruvda ≤ 500; bog'liq jadvallar FK cascade / set null).
  * 3. Chop etilganiga 30 kundan oshgan postlarning versiyalari 3 tagacha kesiladi (eng yangilari
  *    va `latest` versiya saqlanadi).
- * 4. `pg_database_size` va R2 hajmi (`storageSize.ts`) o'lchanib, `scraping-settings.stats` ga
+ * 4. Ko'rishlarning kunlik agregatidan (`post_views_daily`, OBLOG-69) 90 kundan eskilari
+ *    o'chiriladi — jami (`post_views_total`) saqlanadi.
+ * 5. `pg_database_size` va R2 hajmi (`storageSize.ts`) o'lchanib, `scraping-settings.stats` ga
  *    yoziladi — ogohlantirishlar (`alerts.ts`) shu qiymatlarni o'qiydi.
  *
  * `scraping-settings.isEnabled = false` faqat yig'ishni to'xtatadi — tozalash va o'lchov baribir
@@ -53,6 +56,7 @@ export interface CleanupOutput {
   clearedText: number
   deletedRejected: number
   trimmedVersions: number
+  deletedViewDays: number
   dbBytes: number
   r2Bytes: number | null
   r2Complete: boolean | null
@@ -181,6 +185,10 @@ export async function runCleanup(
     afterDays: VERSION_TRIM_AFTER_DAYS,
     keep: VERSIONS_TO_KEEP,
   })
+  const deletedViewDays = await deleteOldDailyViews(payload, {
+    now,
+    retentionDays: VIEWS_DAILY_RETENTION_DAYS,
+  })
   const dbBytes = await measureDatabaseSize(payload)
   const r2 = await measureR2(deps)
 
@@ -188,6 +196,7 @@ export async function runCleanup(
     clearedText,
     deletedRejected,
     trimmedVersions,
+    deletedViewDays,
     dbBytes,
     r2Bytes: r2 && !r2.error ? r2.bytes : null,
     r2Complete: r2 && !r2.error ? r2.complete : null,
@@ -198,7 +207,7 @@ export async function runCleanup(
     cleanup: {
       ...stats.cleanup,
       lastRunAt: iso(now),
-      lastResult: { clearedText, deletedRejected, trimmedVersions, retentionDays },
+      lastResult: { clearedText, deletedRejected, trimmedVersions, deletedViewDays, retentionDays },
     },
   })
   payload.logger.info({ msg: 'maintenance.cleanup', ...output })
@@ -215,6 +224,7 @@ export const maintenanceCleanupTask: TaskConfig<'maintenance.cleanup'> = {
     { name: 'clearedText', type: 'number' },
     { name: 'deletedRejected', type: 'number' },
     { name: 'trimmedVersions', type: 'number' },
+    { name: 'deletedViewDays', type: 'number' },
     { name: 'dbBytes', type: 'number' },
     { name: 'r2Bytes', type: 'number' },
     { name: 'r2Complete', type: 'checkbox' },

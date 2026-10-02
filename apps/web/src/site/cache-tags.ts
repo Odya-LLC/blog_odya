@@ -8,7 +8,9 @@
  * - `category:{slug}` — kategoriya sahifasi (nomi, tavsifi);
  * - `nav`          — header/footer: kategoriyalar menyusi, globals;
  * - `redirects`    — plugin-redirects yozuvlari (eski slug → yangi URL);
- * - `pages`        — statik sahifalar ro'yxati (sitemap, M1-06).
+ * - `pages`        — statik sahifalar ro'yxati (sitemap, M1-06);
+ * - `popular`      — "Ko'p o'qilgan" bloki (OBLOG-69): ko'rishlarda emas, muddat bo'yicha yangilanadi
+ *   (`POPULAR_REVALIDATE_SECONDS`); post publish/unpublish'da — `posts` tegi bilan birga.
  *
  * Yon ta'sirsiz modul (testlanadi).
  */
@@ -18,6 +20,7 @@ export const CACHE_TAGS = {
   nav: 'nav',
   redirects: 'redirects',
   pages: 'pages',
+  popular: 'popular',
 } as const
 
 export function postTag(slug: string): string {

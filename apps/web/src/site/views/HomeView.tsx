@@ -11,12 +11,14 @@ import {
   TopicList,
   TrendingTags,
 } from '@/components/blog/HomeBlocks'
+import { PopularPosts } from '@/components/blog/PopularPosts'
 import { Container } from '@/components/blog/SiteShell'
 import { TelegramCTA } from '@/components/blog/TelegramCTA'
 import { getSiteStrings } from '@/i18n/site'
 import { cn } from '@/lib/utils'
+import { resolvePopular } from '@/pageviews/popular'
 
-import { getCategoryTopics, getHomeData, getSiteChrome } from '../data'
+import { getCategoryTopics, getHomeData, getPopularData, getSiteChrome } from '../data'
 import { groupSectionRows } from '../home'
 import { telegramHandle } from '../mappers'
 import { archivePath, homePath } from '../paths'
@@ -35,17 +37,20 @@ const ITEM_LIST_LIMIT = 10
 
 /**
  * Bosh sahifa (OBLOG-68): (1) eng so'nggi yangilik + keyingi 4 tasi, (2) "So'nggi yangiliklar"
- * lentasi (yonida — Telegram, mavzular, ommabop teglar), (3) kategoriya bo'limlari har xil
- * ko'rinishda (`site/home.ts`), (4) Telegram banneri. Hammasi server komponent.
+ * lentasi (yonida — "Ko'p o'qilgan" (OBLOG-69), Telegram, mavzular, ommabop teglar),
+ * (3) kategoriya bo'limlari har xil ko'rinishda (`site/home.ts`), (4) Telegram banneri. Hammasi
+ * server komponent.
  */
 export async function HomeView({ locale }: { locale: Locale }) {
   const t = getSiteStrings(locale)
-  const [home, topics, chrome, siteSeo] = await Promise.all([
+  const [home, topics, chrome, siteSeo, popular] = await Promise.all([
     getHomeData(locale),
     getCategoryTopics(locale),
     getSiteChrome(locale),
     getSiteSeo(locale),
+    getPopularData(locale),
   ])
+  const popularList = resolvePopular(popular.rows, popular.posts)
   const telegramHref = chrome.telegram[locale]
   const channelName = telegramHandle(telegramHref)
   const listed = [...(home.lead ? [home.lead] : []), ...home.top, ...home.feed]
@@ -94,6 +99,7 @@ export async function HomeView({ locale }: { locale: Locale }) {
                   home.feed.length === 0 && 'lg:col-start-9',
                 )}
               >
+                <PopularPosts locale={locale} list={popularList} />
                 <TelegramCTA
                   locale={locale}
                   href={telegramHref}

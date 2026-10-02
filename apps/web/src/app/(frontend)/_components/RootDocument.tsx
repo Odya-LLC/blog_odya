@@ -5,6 +5,7 @@ import { preconnect } from 'react-dom'
 import { Analytics } from '@/components/analytics/Analytics'
 import { env } from '@/env'
 import { themeInitScript } from '@/lib/preferences'
+import { viewBeaconScript } from '@/pageviews/beacon'
 
 import { inter } from '../fonts'
 import '../styles.css'
@@ -28,6 +29,8 @@ export function RootDocument({ locale, children }: { locale: Locale; children: R
       </head>
       <body>
         {children}
+        {/* Maqola ko'rishlari hisoblagichi (OBLOG-69): ~330 bayt, faqat `[data-pv]` sahifalarda yuboradi. */}
+        <script dangerouslySetInnerHTML={{ __html: viewBeaconScript }} />
         {/* GA4 / Metrica — har bir tashrifchida, bannersiz (TZ §9.5; OBLOG-23, OBLOG-60). */}
         <Analytics locale={locale} />
       </body>

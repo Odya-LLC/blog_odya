@@ -27,6 +27,8 @@ import type {
 } from '@/components/blog/types'
 import { DEFAULT_AUTHOR_SLUG } from '@/collections/Posts/defaultAuthor'
 import { env, PHASE_PRODUCTION_BUILD } from '@/env'
+import type { PopularRow } from '@/pageviews/popular'
+import { loadPopularRows } from '@/pageviews/store'
 import type {
   Author,
   Category,
@@ -107,12 +109,14 @@ export function hasDatabase(): boolean {
  * `unstable_cache` o'rami: kalit deploy versiyasi bilan, teglar bilan. DB'siz holatdagi (build,
  * sirlarsiz muhit) bo'sh natija keshlanmaydi — aks holda u runtime'da ham qaytarilardi.
  */
-export function cached<T>(load: () => Promise<T>, keyParts: string[], tags: string[]): Promise<T> {
+export function cached<T>(
+  load: () => Promise<T>,
+  keyParts: string[],
+  tags: string[],
+  revalidate: number = REVALIDATE_SECONDS,
+): Promise<T> {
   if (!hasDatabase()) return load()
-  return unstable_cache(load, [CACHE_VERSION, ...keyParts], {
-    tags,
-    revalidate: REVALIDATE_SECONDS,
-  })()
+  return unstable_cache(load, [CACHE_VERSION, ...keyParts], { tags, revalidate })()
 }
 
 export const payloadClient = cache(async () => getPayload({ config }))
@@ -333,6 +337,61 @@ export const getHomeData = (locale: Locale): Promise<HomeData> =>
     ['home', locale],
     [CACHE_TAGS.home, CACHE_TAGS.posts, CACHE_TAGS.nav],
   )
+
+// ---------------------------------------------------------------------------
+// "Ko'p o'qilgan" (OBLOG-69): bosh sahifa va maqola — `pageviews/`
+// ---------------------------------------------------------------------------
+
+/**
+ * Reyting ko'rishlarda emas, shu muddatda yangilanadi (soniya). Sahifa ISR muddati ham shunga
+ * tushadi (`unstable_cache` eng qisqa `revalidate` ni sahifaga beradi): bosh sahifa va maqolalar
+ * ko'pi bilan 30 daqiqada bir qayta chiziladi.
+ */
+export const POPULAR_REVALIDATE_SECONDS = 1800
+
+export type PopularData = {
+  /** Oynalar bo'yicha nomzodlar — tanlash sahifada (`resolvePopular`, joriy maqolasiz). */
+  rows: PopularRow[]
+  posts: PostSummary[]
+}
+
+export async function loadPopularData(locale: Locale): Promise<PopularData> {
+  if (!hasDatabase()) return { rows: [], posts: [] }
+  const payload = await payloadClient()
+  const rows = await loadPopularRows(payload)
+  const ids = [...new Set(rows.map((row) => row.id))]
+  if (ids.length === 0) return { rows: [], posts: [] }
+  const result = await payload.find({
+    collection: 'posts',
+    locale,
+    where: { id: { in: ids } },
+    limit: ids.length,
+    depth: 1,
+    overrideAccess: false,
+    select: POST_CARD_SELECT,
+    populate: { categories: { name: true, slug: true } },
+  })
+  const posts = toPostSummaries(result.docs as Post[], locale)
+  const visible = new Set(posts.map((post) => Number(post.id)))
+  return { rows: rows.filter((row) => visible.has(row.id)), posts }
+}
+
+/**
+ * Ixtiyoriy blok — xato (masalan, migratsiya hali qo'llanmagan) sahifani yiqitmasin: bo'sh
+ * natija (keshlanmaydi, keyingi so'rov qayta urinadi).
+ */
+export async function getPopularData(locale: Locale): Promise<PopularData> {
+  try {
+    return await cached(
+      () => loadPopularData(locale),
+      ['popular', locale],
+      [CACHE_TAGS.popular, CACHE_TAGS.posts, CACHE_TAGS.nav],
+      POPULAR_REVALIDATE_SECONDS,
+    )
+  } catch {
+    return { rows: [], posts: [] }
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Mavzular (kategoriyalar + postlar soni) — bosh sahifa va arxiv yon paneli
