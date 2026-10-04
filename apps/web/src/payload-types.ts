@@ -2237,6 +2237,7 @@ export interface TaskMaintenanceCleanup {
     deletedRejected?: number | null;
     trimmedVersions?: number | null;
     deletedViewDays?: number | null;
+    deletedViewLimits?: number | null;
     dbBytes?: number | null;
     r2Bytes?: number | null;
     r2Complete?: boolean | null;

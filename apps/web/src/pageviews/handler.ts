@@ -1,21 +1,40 @@
+import type { PageviewLimits } from '@/env.schema'
+
 import { markSeen, parseSeen, serializeSeen, wasSeen } from './dedupe'
 import { skipReason, type SkipReason } from './filter'
+import { buildViewGuard, VIEW_LIMITS_PRUNE_PROBABILITY, type ViewGuard } from './ratelimit'
+import type { RecordViewResult } from './store'
 
 /**
  * `POST /api/views` (OBLOG-69) mantiqi — DB'siz, testlanadi (`deps.record` — `store.recordView`).
  *
  * Tana: post ID — oddiy matn (`navigator.sendBeacon('/api/views', '123')`) yoki JSON
  * `{"id":123}` / `{"postId":123}`. Javob doim `204` + `Cache-Control: no-store`: post bormi,
- * hisoblandimi — tashqariga bildirilmaydi (chop etilmagan post ID'larini aniqlab bo'lmaydi).
+ * hisoblandimi, limit tugadimi — tashqariga bildirilmaydi (chop etilmagan post ID'larini
+ * aniqlab bo'lmaydi, skript limitga yetganini bilmaydi).
+ *
+ * Tartib: filtr (bot, prefetch, begona sayt) → tana → cookie dedupe (DB'siz) → `record` — IP
+ * guard bilan (OBLOG-71, `ratelimit.ts`; `deps.rateLimit` berilgan va IP topilgan bo'lsa) —
+ * bitta SQL so'rov. Ba'zan (`VIEW_LIMITS_PRUNE_PROBABILITY`) undan keyin muddati o'tgan limit
+ * qatorlari tozalanadi (`deps.prune`).
  */
 
 export const MAX_BODY_LENGTH = 64
 
-export type ViewOutcome = 'counted' | 'duplicate' | 'unknown' | 'invalid' | 'error' | SkipReason
+export type ViewOutcome =
+  'counted' | 'duplicate' | 'limited' | 'unknown' | 'invalid' | 'error' | SkipReason
 
 export interface ViewRequestDeps {
-  /** Hisoblaydi; post yo'q / ommaga ko'rinmaydi — `false`. */
-  record: (postId: number) => Promise<boolean>
+  /**
+   * Hisoblaydi (`store.recordView`). `boolean` ham qabul qilinadi: `true` — hisoblandi,
+   * `false` — post yo'q / ommaga ko'rinmaydi.
+   */
+  record: (postId: number, guard: ViewGuard | null) => Promise<RecordViewResult | boolean>
+  /** IP bo'yicha himoya (OBLOG-71): kunlik HMAC uchun sir va limitlar. Bo'lmasa — o'chiq. */
+  rateLimit?: { secret: string; limits: PageviewLimits }
+  /** Muddati o'tgan limit qatorlarini tozalash (ba'zi so'rovlarda). */
+  prune?: () => Promise<unknown>
+  random?: () => number
   now?: () => number
   onError?: (error: unknown) => void
 }
@@ -66,21 +85,31 @@ export async function handleViewRequest(
   const postId = parsePostId(await readBody(request).catch(() => ''))
   if (postId === null) return done('invalid')
 
-  const nowSec = Math.floor((deps.now?.() ?? Date.now()) / 1000)
+  const nowMs = deps.now?.() ?? Date.now()
+  const nowSec = Math.floor(nowMs / 1000)
   const seen = parseSeen(request.headers.get('cookie'), nowSec)
   if (wasSeen(seen, postId)) return done('duplicate')
 
-  let counted: boolean
+  const guard = deps.rateLimit
+    ? buildViewGuard({ headers: request.headers, postId, nowMs, ...deps.rateLimit })
+    : null
+  let result: RecordViewResult
   try {
-    counted = await deps.record(postId)
+    const raw = await deps.record(postId, guard)
+    result = raw === true ? 'counted' : raw === false ? 'unknown' : raw
   } catch (error) {
     deps.onError?.(error)
     return done('error')
   }
-  if (!counted) return done('unknown')
-  headers.append(
-    'Set-Cookie',
-    serializeSeen(markSeen(seen, postId, nowSec), nowSec, isSecure(request)),
-  )
-  return done('counted')
+  if (guard && deps.prune && (deps.random ?? Math.random)() < VIEW_LIMITS_PRUNE_PROBABILITY) {
+    await deps.prune().catch((error: unknown) => deps.onError?.(error))
+  }
+  // Takror (IP + UA) bo'lsa ham cookie qo'yiladi — keyingi qayta yuklashlar DB'ga bormaydi.
+  if (result === 'counted' || result === 'duplicate') {
+    headers.append(
+      'Set-Cookie',
+      serializeSeen(markSeen(seen, postId, nowSec), nowSec, isSecure(request)),
+    )
+  }
+  return done(result)
 }

@@ -38,6 +38,13 @@ export const DEFAULT_MCP_MEDIA_UPLOADS_PER_HOUR = 30
 /** `upload_media(url)` timeout'lari (OBLOG-46), ms: tanani o'qish va ulanish + birinchi javob. */
 export const DEFAULT_MCP_MEDIA_FETCH_TIMEOUT_MS = 45_000
 export const DEFAULT_MCP_MEDIA_CONNECT_TIMEOUT_MS = 10_000
+/**
+ * `POST /api/views` IP limitlari (OBLOG-71, `src/pageviews/ratelimit.ts`). Bitta IP ortida (ofis,
+ * mobil operator NAT) ko'p real o'quvchi bo'lishi mumkin — shuning uchun saxiy.
+ */
+export const DEFAULT_PAGEVIEW_RATE_PER_HOUR = 300
+export const DEFAULT_PAGEVIEW_RATE_PER_DAY = 1500
+export const DEFAULT_PAGEVIEW_RATE_PER_POST_HOUR = 30
 
 /**
  * Limit uchun musbat butun son. Berilmagan, bo'sh yoki `0` — standart qiymat (limitni env orqali
@@ -116,6 +123,14 @@ export const envSchema = z.object({
   /** MCP `upload_media(url)`: DNS + ulanish + javob sarlavhalari (har redirect uchun), ms. Standart — 10000. */
   MCP_MEDIA_CONNECT_TIMEOUT_MS: positiveLimit(DEFAULT_MCP_MEDIA_CONNECT_TIMEOUT_MS),
 
+  // --- Ko'rishlar hisoblagichi IP limitlari (OBLOG-71; README → "Ko'rishlar hisoblagichi") ---
+  /** Bitta IP (IPv6 — /64) dan soatiga ko'rish urinishlari (barcha postlar). Standart — 300. */
+  PAGEVIEW_RATE_PER_HOUR: positiveLimit(DEFAULT_PAGEVIEW_RATE_PER_HOUR),
+  /** Xuddi shu, sutkada (Toshkent sanasi). Standart — 1500. */
+  PAGEVIEW_RATE_PER_DAY: positiveLimit(DEFAULT_PAGEVIEW_RATE_PER_DAY),
+  /** Bitta IP dan bitta postga soatiga (User-Agent'dan qat'i nazar). Standart — 30. */
+  PAGEVIEW_RATE_PER_POST_HOUR: positiveLimit(DEFAULT_PAGEVIEW_RATE_PER_POST_HOUR),
+
   // --- IndexNow (ixtiyoriy: bo'lmasa yuborilmaydi, faqat warning; OBLOG-57) ---
   /**
    * IndexNow kaliti (Bing, Yandex, Seznam, Naver): 8–128 belgi, `a-z A-Z 0-9 -`
@@ -165,6 +180,16 @@ export function limitsFromEnv(source: RawEnv = process.env): ApiLimits {
       DEFAULT_MCP_MEDIA_CONNECT_TIMEOUT_MS,
     ),
   }
+}
+
+/** `POST /api/views` IP limitlari (OBLOG-71) — `env.PAGEVIEW_RATE_*` dan. */
+export interface PageviewLimits {
+  /** Bitta IP dan soatiga (barcha postlar). */
+  perHour: number
+  /** Bitta IP dan sutkada (barcha postlar). */
+  perDay: number
+  /** Bitta IP dan bitta postga soatiga. */
+  perPostHour: number
 }
 
 type RawEnv = Record<string, string | undefined>

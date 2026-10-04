@@ -136,6 +136,17 @@ To'xtatish: `Ctrl+C`, keyin `docker compose -f infra/docker-compose.dev.yml down
   - `sources` va `scraped-items` dagi job (foydalanuvchisiz) yozuvlari audit qilinmaydi — feed/pipeline texnik holati DB hajmini to'ldirmasligi uchun (Supabase Free 500 MB).
   - Saqlash muddati (1 yil) tozalovi hali yo'q; kelajakdagi job `context: { auditRetention: true }` bilan o'chiradi.
 
+### Ko'rishlar hisoblagichi (OBLOG-69, OBLOG-71)
+
+- `POST /api/views` (`src/pageviews/`): maqola ~5 s ko'ringach brauzer post ID'sini yuboradi; javob doim **204** `no-store`. Botlar (UA), prefetch, begona saytlar hisoblanmaydi; cookie `bo_pv` — bir postni 30 daqiqada bir marta. Jadvallar: `post_views_daily` (90 kun) va `post_views_total`.
+- **IP himoyasi (OBLOG-71, `src/pageviews/ratelimit.ts`)** — cookie'siz skriptga qarshi, bitta SQL so'rov ichida (beacon uchun DB'ga **1 so'rov**; ~2% beacon'dan keyin yana bitta — muddati o'tgan qatorlarni tozalash):
+  - IP + User-Agent + Accept-Language + post — **30 daqiqada bir marta**;
+  - bitta IP → bitta post: soatiga `PAGEVIEW_RATE_PER_POST_HOUR` (standart 30, UA'ni aylantirishga qarshi);
+  - bitta IP → barcha postlar: soatiga `PAGEVIEW_RATE_PER_HOUR` (300) va sutkada `PAGEVIEW_RATE_PER_DAY` (1500, Toshkent sanasi). Limitlar urinishlarni sanaydi; oshsa — 204, lekin hisoblanmaydi.
+  - IPv6 — /64 tarmoq bo'yicha. IP: `x-vercel-forwarded-for` → `x-real-ip` → `x-forwarded-for` (birinchi qiymat). Vercel'dan tashqarida (Contabo) reverse proxy `X-Real-IP $remote_addr` ni o'rnatishi shart — aks holda mijoz XFF'ni soxtalashtirib limitni chetlab o'tadi. IP topilmasa — faqat cookie dedupe.
+  - **NAT:** O'zbekistonda mobil operatorlar va ofislar bitta IP'ni ko'p foydalanuvchiga beradi. Shuning uchun takror kaliti UA'ni ham oladi va limitlar saxiy. Narxi: bir NAT ortida bir xil brauzer versiyasidagi ikki o'quvchi bir maqolani 30 daqiqa ichida o'qisa — bitta deb sanaladi (kam sanash tomoniga). Katta NAT'dan soatiga 300+ real o'quvchi kelsa — limitni oshiring.
+  - **Maxfiylik:** IP saqlanmaydi. `post_view_limits` (UNLOGGED) da faqat `HMAC(HMAC(PAYLOAD_SECRET, sana), …)` ning 16 bayti, urinishlar soni va muddati (≤ 24 soat). Kunlik kalit tufayli kunlar o'rtasida bog'lab bo'lmaydi; muddati o'tgan qatorlar beacon'lar va `maintenance.cleanup` da o'chiriladi (kechi bilan ~48 soat — maxfiylik siyosatida shunday yozilgan). `PAYLOAD_SECRET` almashtirilsa — faqat joriy oynalar nollanadi.
+
 ### MCP server (M2-06)
 
 - **Manzil:** `/api/mcp` (`app/api/mcp/route.ts`, mantiq — `src/mcp/`): `mcp-handler` + `@modelcontextprotocol/sdk`, Streamable HTTP, stateless (SSE o'chiq). Ulanish: `claude mcp add --transport http odya https://blog.odya.uz/api/mcp --header "Authorization: Bearer <API kalit>"`.
