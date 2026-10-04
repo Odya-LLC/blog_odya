@@ -154,7 +154,7 @@ describe('ko‘rishlar hisoblagichi (Postgres)', () => {
       id: archived.id,
       data: { workflowStatus: 'archived' },
     })
-    expect(await recordView(payload, archived.id)).toBe(false)
+    expect(await recordView(payload, archived.id)).toBe('unknown')
   })
 
   it('reyting: 7 kun, 30 kun va butun davr oynalari, tartib to‘g‘ri', async () => {

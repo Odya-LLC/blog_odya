@@ -179,7 +179,7 @@ describe('POST /api/views handler', () => {
       now: () => 1_800_000_000_000,
     })
     expect(outcome).toBe('counted')
-    expect(record).toHaveBeenCalledWith(15)
+    expect(record).toHaveBeenCalledWith(15, null)
     expect(response.status).toBe(204)
     expect(response.headers.get('cache-control')).toBe('no-store')
     expect(response.headers.get('set-cookie')).toContain(`${VIEW_COOKIE}=15-`)

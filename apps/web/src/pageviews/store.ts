@@ -9,6 +9,7 @@ import {
   type PopularRow,
   type PopularWindow,
 } from './popular'
+import type { ViewGuard } from './ratelimit'
 
 /**
  * Ko'rishlar jadvallari (OBLOG-69, migratsiya `oblog_69_post_views`) — to'g'ridan-to'g'ri SQL:
@@ -36,34 +37,121 @@ export function shiftDate(date: string, days: number): string {
 }
 
 /**
- * Bitta ko'rish: kunlik va jami hisoblagich bitta so'rovda (upsert). Post topilmasa yoki ommaga
- * ko'rinmasa — hech narsa yozilmaydi, `false`.
+ * `recordView` natijasi: `counted` — hisoblandi; `unknown` — post yo'q yoki ommaga ko'rinmaydi
+ * (hech narsa yozilmaydi); `duplicate` — shu IP + UA 30 daqiqada bu postni allaqachon
+ * hisoblatgan; `limited` — IP limiti tugagan (OBLOG-71, `ratelimit.ts`).
+ */
+export type RecordViewResult = 'counted' | 'unknown' | 'duplicate' | 'limited'
+
+/**
+ * Bitta ko'rish — **bitta SQL so'rov** (CTE zanjiri): post tekshiruvi → (guard bo'lsa) IP
+ * hisoblagichlari upsert + limit tekshiruvi → 30 daqiqalik takror kaliti → kunlik va jami
+ * hisoblagich upsert. Guard'siz (IP noma'lum) — faqat post tekshiruvi va hisoblagichlar.
+ *
+ * `post_view_limits` (UNLOGGED, migratsiya `oblog_71_pageview_ratelimit`): `key` — 16 baytli
+ * HMAC (IP o'zi emas), `hits`, `expires_at`. Hisoblagich kalitlari oyna raqamini o'z ichiga
+ * oladi (har oynada yangi qator), takror kaliti esa muddati o'tganda qayta "yangilanadi".
  */
 export async function recordView(
   payload: Payload,
   postId: number,
-  now: Date = new Date(),
-): Promise<boolean> {
+  options: { now?: Date; guard?: ViewGuard | null } = {},
+): Promise<RecordViewResult> {
+  const guard = options.guard ?? null
+  const now = guard?.at ?? options.now ?? new Date()
   const day = localDate(now)
-  const result = (await drizzle(payload).execute(sql`
-    WITH target AS (
-      SELECT "id" FROM "posts"
-      WHERE "id" = ${postId}
-        AND "_status" = 'published'
-        AND "workflow_status" IS DISTINCT FROM 'archived'
-    ), daily AS (
+  const target = sql`
+    SELECT "id" FROM "posts"
+    WHERE "id" = ${postId}
+      AND "_status" = 'published'
+      AND "workflow_status" IS DISTINCT FROM 'archived'`
+  const increment = (source: string) => sql`
+    daily AS (
       INSERT INTO "post_views_daily" ("post_id", "day", "views")
-      SELECT "id", ${day}::date, 1 FROM target
+      SELECT "id", ${day}::date, 1 FROM ${sql.identifier(source)}
       ON CONFLICT ("post_id", "day") DO UPDATE SET "views" = "post_views_daily"."views" + 1
       RETURNING "post_id"
-    )
-    INSERT INTO "post_views_total" ("post_id", "views", "last_viewed_at")
-    SELECT "post_id", 1, now() FROM daily
-    ON CONFLICT ("post_id") DO UPDATE
-      SET "views" = "post_views_total"."views" + 1, "last_viewed_at" = now()
-    RETURNING "post_id"
-  `)) as unknown as Rows<{ post_id: number }>
-  return result.rows.length > 0
+    ), total AS (
+      INSERT INTO "post_views_total" ("post_id", "views", "last_viewed_at")
+      SELECT "post_id", 1, now() FROM daily
+      ON CONFLICT ("post_id") DO UPDATE
+        SET "views" = "post_views_total"."views" + 1, "last_viewed_at" = now()
+      RETURNING "post_id"
+    )`
+
+  if (!guard) {
+    const result = (await drizzle(payload).execute(sql`
+      WITH target AS (${target}), ${increment('target')}
+      SELECT (SELECT count(*) FROM target)::int AS "known",
+        (SELECT count(*) FROM total)::int AS "counted"
+    `)) as unknown as Rows<{ known: number; counted: number }>
+    return Number(result.rows[0]?.counted) > 0 ? 'counted' : 'unknown'
+  }
+
+  const at = guard.at.toISOString()
+  const limits = sql.join(
+    guard.counters.map(
+      (counter) =>
+        sql`(decode(${counter.key}, 'hex'), ${counter.expiresAt.toISOString()}::timestamptz, ${counter.max}::int)`,
+    ),
+    sql`, `,
+  )
+  const result = (await drizzle(payload).execute(sql`
+    WITH target AS (${target}),
+    limits ("key", "expires_at", "max_hits") AS (VALUES ${limits}),
+    counters AS (
+      INSERT INTO "post_view_limits" ("key", "hits", "expires_at")
+      SELECT l."key", 1, l."expires_at" FROM limits l CROSS JOIN target
+      ON CONFLICT ("key") DO UPDATE SET "hits" = "post_view_limits"."hits" + 1
+      RETURNING "key", "hits"
+    ), allowed AS (
+      SELECT "id" FROM target WHERE NOT EXISTS (
+        SELECT 1 FROM counters c JOIN limits l ON l."key" = c."key" WHERE c."hits" > l."max_hits"
+      )
+    ), fresh AS (
+      INSERT INTO "post_view_limits" ("key", "hits", "expires_at")
+      SELECT decode(${guard.dedupe.key}, 'hex'), 1, ${guard.dedupe.expiresAt.toISOString()}::timestamptz
+      FROM allowed
+      ON CONFLICT ("key") DO UPDATE SET "hits" = 1, "expires_at" = EXCLUDED."expires_at"
+        WHERE "post_view_limits"."expires_at" <= ${at}::timestamptz
+      RETURNING "key"
+    ), counted AS (
+      SELECT "id" FROM allowed WHERE EXISTS (SELECT 1 FROM fresh)
+    ), ${increment('counted')}
+    SELECT (SELECT count(*) FROM target)::int AS "known",
+      (SELECT count(*) FROM allowed)::int AS "allowed",
+      (SELECT count(*) FROM total)::int AS "counted"
+  `)) as unknown as Rows<{ known: number; allowed: number; counted: number }>
+  const row = result.rows[0]
+  if (!Number(row?.known)) return 'unknown'
+  if (!Number(row?.allowed)) return 'limited'
+  return Number(row?.counted) > 0 ? 'counted' : 'duplicate'
+}
+
+/**
+ * Muddati o'tgan `post_view_limits` qatorlari. `limit` bilan — bitta partiya (beacon'dan keyingi
+ * tasodifiy tozalash), `limit`siz — hammasi (`maintenance.cleanup`). O'chirilganlar soni.
+ */
+export async function deleteExpiredViewLimits(
+  payload: Payload,
+  options: { now?: Date; limit?: number } = {},
+): Promise<number> {
+  const now = (options.now ?? new Date()).toISOString()
+  const result = (await drizzle(payload).execute(
+    options.limit
+      ? sql`
+        WITH gone AS (
+          DELETE FROM "post_view_limits" WHERE "key" IN (
+            SELECT "key" FROM "post_view_limits" WHERE "expires_at" <= ${now}::timestamptz
+            LIMIT ${options.limit}
+          ) RETURNING 1
+        ) SELECT count(*)::int AS "deleted" FROM gone`
+      : sql`
+        WITH gone AS (
+          DELETE FROM "post_view_limits" WHERE "expires_at" <= ${now}::timestamptz RETURNING 1
+        ) SELECT count(*)::int AS "deleted" FROM gone`,
+  )) as unknown as Rows<{ deleted: number }>
+  return Number(result.rows[0]?.deleted ?? 0)
 }
 
 /**
