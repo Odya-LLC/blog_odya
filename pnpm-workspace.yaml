@@ -13,3 +13,16 @@ allowBuilds:
 overrides:
   # GHSA-rfgv-xxqx-mfg5, GHSA-w293-vg96-wgc3 — tranzitiv (payload), tuzatilgan: >= 7.29.1
   undici: ^7.29.1
+
+# `pnpm audit` uchun aniq advisory'larni e'tiborsiz qoldirish (faqat ID bo'yicha, tor).
+auditConfig:
+  ignoreGhsas:
+    # GHSA-vfj7-8cjw-p6xm — braces <= 3.0.3, chuqur ichma-ich pattern'lar orqali
+    # stack-exhaustion DoS (high, 2026-09-18). https://github.com/advisories/GHSA-vfj7-8cjw-p6xm
+    # Tuzatilgan reliz YO'Q (npm latest = 3.0.3, first_patched_version: null) — override qilib bo'lmaydi.
+    # Xavf past: braces faqat build/file-watching tooling orqali keladi
+    # (next / @payloadcms/next > sass > chokidar; @payloadcms/plugin-cloud-storage >
+    # find-node-modules > findup-sync > micromatch) — so'rov ma'lumotlari brace pattern'larga yetmaydi.
+    # Qo'shilgan: 2026-10-04 (OBLOG-74). TODO: braces >= 3.0.4 chiqqach shu ignore'ni olib tashlang
+    # va yuqoridagi `overrides`ga `braces: ^3.0.4` qo'shing.
+    - GHSA-vfj7-8cjw-p6xm
