@@ -256,6 +256,23 @@ export async function loadTotalViews(
   return Number(result.rows[0]?.views ?? 0)
 }
 
+/**
+ * Ommaviy `GET /api/views?id=` (OBLOG-72): ommaga ko'rinadigan postning jami ko'rishlari (hali
+ * ko'rilmagan — `0`); post yo'q, chop etilmagan yoki arxivlangan — `null`. Bitta SQL so'rov.
+ */
+export async function loadPublicViews(payload: Payload, postId: number): Promise<number | null> {
+  const result = (await drizzle(payload).execute(sql`
+    SELECT COALESCE(t."views", 0) AS "views"
+    FROM "posts" p
+    LEFT JOIN "post_views_total" t ON t."post_id" = p."id"
+    WHERE p."id" = ${postId}
+      AND p."_status" = 'published'
+      AND p."workflow_status" IS DISTINCT FROM 'archived'
+  `)) as unknown as Rows<{ views: string | number }>
+  const row = result.rows[0]
+  return row ? Number(row.views) : null
+}
+
 /** Dashboard: bugungi (Toshkent sanasi) jami ko'rishlar. */
 export async function loadViewsOnDay(payload: Payload, now: Date = new Date()): Promise<number> {
   const result = (await drizzle(payload).execute(

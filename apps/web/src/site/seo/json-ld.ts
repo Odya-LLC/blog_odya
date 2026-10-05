@@ -217,6 +217,11 @@ export type NewsArticleInput = {
   keywords?: string[]
   /** Manba URL'lari (TZ §2.3 atributsiya) → `isBasedOn`. */
   sources?: string[]
+  /**
+   * Jami o'qishlar (OBLOG-72) → `interactionStatistic` (`InteractionCounter`, `ReadAction`).
+   * Sahifadagi raqam bilan bir xil server qiymati; bo'lmasa — maydon yo'q.
+   */
+  readCount?: number | null
   origin?: string
 }
 
@@ -272,5 +277,14 @@ export function newsArticleJsonLd(input: NewsArticleInput): JsonLdObject {
     ...(sources.length > 1 ? { isBasedOn: sources } : {}),
     isAccessibleForFree: true,
     isPartOf: { '@id': websiteId(input.locale, origin) },
+    ...(input.readCount && input.readCount > 0
+      ? {
+          interactionStatistic: {
+            '@type': 'InteractionCounter',
+            interactionType: { '@type': 'ReadAction' },
+            userInteractionCount: Math.floor(input.readCount),
+          },
+        }
+      : {}),
   }
 }

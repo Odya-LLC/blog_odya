@@ -52,7 +52,7 @@ test('maqola: ~5 s ko‘ringach /api/views ga post ID yuboriladi (bir marta), ja
   expect(postId).toMatch(/^\d+$/)
 
   const response = await page.waitForResponse(
-    (res) => new URL(res.url()).pathname === '/api/views',
+    (res) => res.request().method() === 'POST' && new URL(res.url()).pathname === '/api/views',
     { timeout: 15_000 },
   )
   expect(response.status()).toBe(204)
@@ -72,7 +72,7 @@ test('maqola: ~5 s ko‘ringach /api/views ga post ID yuboriladi (bir marta), ja
   expect(beacons).toHaveLength(1)
 })
 
-test('maqola bo‘lmagan sahifa (kategoriya) — mayoq yuborilmaydi', async ({ page }) => {
+test('maqola bo‘lmagan sahifa (kategoriya) — mayoq va GET yuborilmaydi', async ({ page }) => {
   let sent = 0
   page.on('request', (request) => {
     if (new URL(request.url()).pathname === '/api/views') sent++
@@ -82,7 +82,7 @@ test('maqola bo‘lmagan sahifa (kategoriya) — mayoq yuborilmaydi', async ({ p
   expect(sent).toBe(0)
 })
 
-test('/api/views: bot va GET — hisoblanmaydi / ruxsat yo‘q', async ({ request }) => {
+test('/api/views: bot hisoblanmaydi; ID’siz GET — 400 (OBLOG-72)', async ({ request }) => {
   const bot = await request.post('/api/views', {
     data: '1',
     headers: { 'user-agent': 'Googlebot/2.1', 'content-type': 'text/plain' },
@@ -90,5 +90,5 @@ test('/api/views: bot va GET — hisoblanmaydi / ruxsat yo‘q', async ({ reques
   expect(bot.status()).toBe(204)
   expect(bot.headers()['set-cookie']).toBeUndefined()
   const get = await request.get('/api/views')
-  expect(get.status()).toBe(405)
+  expect(get.status()).toBe(400)
 })

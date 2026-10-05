@@ -15,7 +15,7 @@ import { RichText } from '@/components/richtext/RichText'
 import { resolvePopular } from '@/pageviews/popular'
 import type { Author, Media, Tag } from '@/payload-types'
 
-import { getArticle, getPopularData, getSiteChrome } from '../data'
+import { getArticle, getArticleViews, getPopularData, getSiteChrome } from '../data'
 import {
   populated,
   postDate,
@@ -60,7 +60,7 @@ export async function articleMetadata(props: ArticleViewProps): Promise<Metadata
 
 /**
  * Maqola (TZ §12.3; maket — `/styleguide/layouts/article`): kategoriya → sarlavha → lid →
- * muallif, sana, o'qish vaqti → muqova → matn (Lexical) → manba bloki + AI izohi → teglar →
+ * muallif, sana, o'qish vaqti, ko'rishlar soni (OBLOG-72) → muqova → matn (Lexical) → manba bloki + AI izohi → teglar →
  * ulashish → o'xshash maqolalar → "Ko'p o'qilgan" (OBLOG-69, joriy maqolasiz) → Telegram CTA.
  */
 export async function ArticleView(props: ArticleViewProps) {
@@ -71,6 +71,8 @@ export async function ArticleView(props: ArticleViewProps) {
     getPopularData(locale),
   ])
   const { post, category } = data
+  // Ko'rishlar soni — alohida kesh (`views:{id}`, OBLOG-72); brauzer yangirog'ini o'zi oladi.
+  const views = await getArticleViews(Number(post.id))
   const path = postPath(locale, category.slug, post.slug)
   const cover = populated<Media>(post.coverImage)
   const authors = (post.authors ?? []).flatMap((author) => {
@@ -82,7 +84,7 @@ export async function ArticleView(props: ArticleViewProps) {
     return doc ? [toTagRef(doc, locale)] : []
   })
   const telegramHref = chrome.telegram[locale]
-  const { jsonLd } = articleSeo(locale, data)
+  const { jsonLd } = articleSeo(locale, { ...data, views })
 
   return (
     <SitePage locale={locale} pathname={path} activeCategorySlug={category.slug}>
@@ -99,6 +101,7 @@ export async function ArticleView(props: ArticleViewProps) {
             publishedAt={postDate(post)}
             updatedAt={post.updatedAt}
             readingTime={postReadingTime(post)}
+            views={views ?? 0}
             cover={toImageRef(cover)}
             coverCaption={cover ? cover.caption || cover.credit : null}
             isBreaking={Boolean(post.isBreaking)}

@@ -335,8 +335,8 @@ describe('formatlash va mayoq', () => {
     expect(shiftDate('2026-03-01', 1)).toBe('2026-02-28')
   })
 
-  it('mayoq skripti: ≤ 400 bayt, sintaksis to‘g‘ri, 5 s ko‘ringach bir marta yuboradi', () => {
-    expect(new TextEncoder().encode(viewBeaconScript).length).toBeLessThanOrEqual(400)
+  it('mayoq skripti (+ ko‘rishlar soni, OBLOG-72): ≤ 1 KB, sintaksis to‘g‘ri, 5 s ko‘ringach bir marta yuboradi', () => {
+    expect(new TextEncoder().encode(viewBeaconScript).length).toBeLessThanOrEqual(1024)
     expect(VIEW_BEACON_DELAY_SECONDS).toBe(5)
 
     const timers: Array<() => void> = []

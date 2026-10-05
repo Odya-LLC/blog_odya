@@ -13,6 +13,7 @@ import { DEFAULT_AUTHOR } from '@/collections/Posts/defaultAuthor'
 import { getSiteStrings } from '@/i18n/site'
 import { lexicalToPlainText } from '@/lib/lexical'
 import { NEWS_IMAGE_SIZES } from '@/lib/media-image'
+import { showViewCount } from '@/pageviews/beacon'
 import type { Author, Category, Media, Page, Post, Tag } from '@/payload-types'
 
 import { populated, postDate, toSourceRefs } from '../mappers'
@@ -74,7 +75,12 @@ function feedFor(locale: Locale, categorySlug?: string, categoryName?: string) {
 // Maqola
 // ---------------------------------------------------------------------------
 
-export type ArticleSeoInput = { post: Post; category: Category }
+export type ArticleSeoInput = {
+  post: Post
+  category: Category
+  /** Jami ko'rishlar (OBLOG-72, sahifa bilan bir xil ISR qiymati) → `interactionStatistic`. */
+  views?: number | null
+}
 
 /**
  * JSON-LD mualliflari. Muallif bo'lmasa (eski postlar, standart muallif hujjati hali yo'q) —
@@ -156,7 +162,7 @@ export function articleImages(
 
 export function articleSeo(
   locale: Locale,
-  { post, category }: ArticleSeoInput,
+  { post, category, views }: ArticleSeoInput,
   options: Options = {},
 ): PageSeo {
   const origin = options.origin ?? siteOrigin()
@@ -205,6 +211,7 @@ export function articleSeo(
       section: category.name,
       keywords: tags,
       sources: toSourceRefs(post.sources).map((source) => source.url),
+      readCount: showViewCount(views) ? views : null,
       origin,
     }),
     breadcrumbJsonLd(

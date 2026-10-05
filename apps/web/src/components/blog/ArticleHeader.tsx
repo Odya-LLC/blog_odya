@@ -1,9 +1,11 @@
+import { EyeIcon } from 'lucide-react'
 import Link from 'next/link'
 
 import { Badge } from '@/components/ui/badge'
 import { getSiteStrings } from '@/i18n/site'
-import { formatDate, formatTime } from '@/lib/format'
+import { formatCompactCount, formatDate, formatTime } from '@/lib/format'
 import { cn } from '@/lib/utils'
+import { showViewCount } from '@/pageviews/beacon'
 
 import { CategoryChip } from './CategoryChip'
 import { CoverImage } from './CoverImage'
@@ -19,6 +21,12 @@ type ArticleHeaderProps = {
   publishedAt: string
   updatedAt?: string | null
   readingTime?: number | null
+  /**
+   * Jami ko'rishlar (OBLOG-72). `undefined` — qator umuman chizilmaydi (maket); son — server
+   * qiymati: `VIEW_COUNT_MIN` dan kam bo'lsa yashirin chiziladi, brauzer skripti
+   * (`pageviews/beacon.ts`) yangi qiymatni yozadi va ochadi.
+   */
+  views?: number | null
   cover?: ImageRef | null
   /** `media.caption` / `media.credit` */
   coverCaption?: string | null
@@ -27,7 +35,8 @@ type ArticleHeaderProps = {
 }
 
 /**
- * Maqola boshi (TZ §12.3): kategoriya → sarlavha → lid → muallif, sana, o'qish vaqti → muqova 16:9.
+ * Maqola boshi (TZ §12.3): kategoriya → sarlavha → lid → muallif, sana, o'qish vaqti, ko'rishlar
+ * soni → muqova 16:9.
  * Matn kengligi ≤ 680 px, muqova esa biroz kengroq (≤ 880 px) — The Verge/Habr uslubi.
  */
 export function ArticleHeader({
@@ -39,6 +48,7 @@ export function ArticleHeader({
   publishedAt,
   updatedAt,
   readingTime,
+  views,
   cover,
   coverCaption,
   isBreaking,
@@ -95,6 +105,24 @@ export function ArticleHeader({
             <p className="text-subtle">
               <span className="sr-only">{t.readingTimeLabel}: </span>
               {t.readingTime(readingTime)}
+            </p>
+          ) : null}
+          {views !== undefined ? (
+            // Skript (hydration'dan oldin ham bo'lishi mumkin) `hidden`, `data-views` va raqamni
+            // yangilaydi — farq kutilgan (`suppressHydrationWarning`).
+            <p
+              data-views={views ?? 0}
+              data-testid="article-views"
+              hidden={!showViewCount(views)}
+              suppressHydrationWarning
+              className="inline-flex items-center gap-1 text-subtle tabular-nums"
+            >
+              <EyeIcon className="size-4" aria-hidden />
+              <span data-views-n="" suppressHydrationWarning>
+                {formatCompactCount(views ?? 0, locale)}
+              </span>{' '}
+              {/* Bo'shliq — matn va ekran o'quvchi uchun ("1,2 ming marta…"); flex'da ko'rinmaydi. */}
+              <span>{t.readCount}</span>
             </p>
           ) : null}
         </div>

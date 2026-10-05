@@ -40,7 +40,7 @@ export function formatFeedTime(iso: string, locale: Locale, now: Date = new Date
   return `${formatShortDate(iso, locale)}, ${time}`
 }
 
-const COMPACT_UNITS: Record<Locale, { thousand: string; million: string }> = {
+export const COMPACT_UNITS: Record<Locale, { thousand: string; million: string }> = {
   'uz-Latn': { thousand: 'ming', million: 'mln' },
   'uz-Cyrl': { thousand: 'минг', million: 'млн' },
 }
