@@ -62,7 +62,7 @@ for (const [path, label, unit] of [
   test(`${path}: meta qatorida "N ${label}" — skript yangi qiymatni yozadi, CLS yo‘q`, async ({
     page,
   }) => {
-    // Server (ISR) qiymati demo ko'rishlar; brauzer olgan yangisi — 1234.
+    // Server (keshlangan) qiymati demo ko'rishlar; brauzer olgan yangisi — 1234.
     await mockCount(page, 1234)
     const counted = page.waitForResponse((res) => /\/api\/views\?id=\d+$/.test(res.url()))
     await page.goto(path)

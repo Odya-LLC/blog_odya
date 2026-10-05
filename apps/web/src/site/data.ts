@@ -1,7 +1,8 @@
 /**
- * Ommaviy sayt ma'lumotlari — Payload Local API (RSC ichida, HTTP'siz), ISR keshi bilan
- * (TZ §3.1, §8.4). Har bir so'rov `unstable_cache` bilan `cache-tags.ts` teglari ostida
- * keshlanadi; Payload hook'lari publish/unpublish'da shu teglarni yangilaydi (`revalidate.ts`).
+ * Ommaviy sayt ma'lumotlari — Payload Local API (RSC ichida, HTTP'siz).
+ * Bosh sahifa va kategoriya yangiliklari har bir so'rovda DB'dan olinadi (OBLOG-81).
+ * Qolgan ma'lumotlar `unstable_cache` bilan `cache-tags.ts` teglari ostida keshlanadi;
+ * Payload hook'lari publish/unpublish'da shu teglarni yangilaydi (`revalidate.ts`).
  *
  * Kirish huquqi: `overrideAccess: false` + foydalanuvchisiz — kolleksiya `read` qoidalari
  * qo'llanadi (postlar: faqat chop etilgan va arxivlanmagan, TZ §4.1). Qoralamalar ko'rinmaydi.
@@ -46,7 +47,7 @@ import {
   toAnalyticsConfig,
   toSiteVerification,
 } from './analytics'
-import { CACHE_TAGS, categoryTag, postTag, viewsTag } from './cache-tags'
+import { CACHE_TAGS, postTag, viewsTag } from './cache-tags'
 import {
   buildHomeSections,
   HOME_FEED_COUNT,
@@ -74,7 +75,7 @@ import type { SearchQuery } from './search/normalize'
 import { searchPostIds } from './search/query'
 import { TAG_INDEX_MIN_POSTS } from './seo/config'
 
-/** Sahifalar keshining zaxira muddati (soniya) — teg bo'yicha yangilanmay qolgan holatlar uchun. */
+/** Ma'lumot keshining zaxira muddati (soniya) — teg bo'yicha yangilanmay qolgan holatlar uchun. */
 export const REVALIDATE_SECONDS = 3600
 
 /**
@@ -331,21 +332,16 @@ export async function loadHomeData(locale: Locale): Promise<HomeData> {
   return { ...top, sections: buildHomeSections(candidates, top), trendingTags: tags }
 }
 
-export const getHomeData = (locale: Locale): Promise<HomeData> =>
-  cached(
-    () => loadHomeData(locale),
-    ['home', locale],
-    [CACHE_TAGS.home, CACHE_TAGS.posts, CACHE_TAGS.nav],
-  )
+/** Faqat joriy render ichida takroriy o'qishlar birlashtiriladi — persistent Data Cache yo'q. */
+export const getHomeData = cache(loadHomeData)
 
 // ---------------------------------------------------------------------------
 // "Ko'p o'qilgan" (OBLOG-69): bosh sahifa va maqola — `pageviews/`
 // ---------------------------------------------------------------------------
 
 /**
- * Reyting ko'rishlarda emas, shu muddatda yangilanadi (soniya). Sahifa ISR muddati ham shunga
- * tushadi (`unstable_cache` eng qisqa `revalidate` ni sahifaga beradi): bosh sahifa va maqolalar
- * ko'pi bilan 30 daqiqada bir qayta chiziladi.
+ * Maqoladagi reyting ma'lumotlari ko'rishlarda emas, shu muddatda yangilanadi (soniya).
+ * Bosh sahifa reytingni ham har bir so'rovda o'qiydi.
  */
 export const POPULAR_REVALIDATE_SECONDS = 1800
 
@@ -380,8 +376,12 @@ export async function loadPopularData(locale: Locale): Promise<PopularData> {
  * Ixtiyoriy blok — xato (masalan, migratsiya hali qo'llanmagan) sahifani yiqitmasin: bo'sh
  * natija (keshlanmaydi, keyingi so'rov qayta urinadi).
  */
-export async function getPopularData(locale: Locale): Promise<PopularData> {
+export async function getPopularData(
+  locale: Locale,
+  { fresh = false }: { fresh?: boolean } = {},
+): Promise<PopularData> {
   try {
+    if (fresh) return await loadPopularData(locale)
     return await cached(
       () => loadPopularData(locale),
       ['popular', locale],
@@ -395,9 +395,9 @@ export async function getPopularData(locale: Locale): Promise<PopularData> {
 
 /**
  * Maqola meta qatoridagi ko'rishlar soni (OBLOG-72) — maqola keshidan (`post:{slug}`) alohida
- * yozuv, `views:{id}` tegi bilan. Muddat ataylab "Ko'p o'qilgan" bilan bir xil (30 daqiqa):
- * `unstable_cache` eng qisqa `revalidate` ni sahifaga beradi, qisqaroq muddat maqolani tez-tez
- * qayta chizdirardi. Yangiroq qiymatni brauzer o'zi oladi (`GET /api/views?id=`, CDN keshi —
+ * yozuv, `views:{id}` tegi bilan, muddati "Ko'p o'qilgan" bilan bir xil (30 daqiqa). OBLOG-81 dan
+ * beri maqola HTML'i har so'rovda chiziladi (`revalidate = 0`) — shu kesh DB'ni har so'rovda
+ * urishdan saqlaydi. Yangiroq qiymatni brauzer o'zi oladi (`GET /api/views?id=`, CDN keshi —
  * `pageviews/beacon.ts`). Xato — `null` (sahifa yiqilmaydi, raqam ko'rsatilmaydi).
  */
 export async function getArticleViews(postId: number): Promise<number | null> {
@@ -510,11 +510,8 @@ export type CategoryPageData = {
   latest: PostSummary[]
 }
 
-export async function loadCategoryPage(
-  locale: Locale,
-  slug: string,
-  page: number,
-): Promise<CategoryPageData | null> {
+/** Route aniqlashda yangiliklarni o'qimasdan kategoriya/statik sahifani ajratish. */
+export const getCategoryBySlug = cache(async (locale: Locale, slug: string) => {
   if (!hasDatabase()) return null
   const payload = await payloadClient()
   const { docs } = await payload.find({
@@ -525,7 +522,15 @@ export async function loadCategoryPage(
     depth: 0,
     overrideAccess: false,
   })
-  const category = docs[0]
+  return docs[0] ?? null
+})
+
+export async function loadCategoryPage(
+  locale: Locale,
+  slug: string,
+  page: number,
+): Promise<CategoryPageData | null> {
+  const category = await getCategoryBySlug(locale, slug)
   if (!category) return null
   const [list, latest] = await Promise.all([
     findPosts(locale, { category: { equals: category.id } }, CATEGORY_PAGE_SIZE, page),
@@ -549,16 +554,8 @@ export async function loadCategoryPage(
   }
 }
 
-export const getCategoryPage = (
-  locale: Locale,
-  slug: string,
-  page: number,
-): Promise<CategoryPageData | null> =>
-  cached(
-    () => loadCategoryPage(locale, slug, page),
-    ['category', locale, slug, String(page)],
-    [categoryTag(slug), CACHE_TAGS.posts, CACHE_TAGS.nav],
-  )
+/** Metadata va sahifa bir renderda bir xil natija oladi; keyingi so'rov DB'ni qayta o'qiydi. */
+export const getCategoryPage = cache(loadCategoryPage)
 
 // ---------------------------------------------------------------------------
 // Teg va muallif sahifalari (TZ §8.1: `/tag/{slug}`, `/author/{slug}`, sahifalash bilan)

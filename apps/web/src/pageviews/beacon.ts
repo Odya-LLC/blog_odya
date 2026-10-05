@@ -10,8 +10,8 @@ import { COMPACT_UNITS } from '@/lib/format'
  *   `navigator.sendBeacon('/api/views', id)`. Bir sahifa yuklanishida har post bir marta;
  * - yangi post aniqlanganda (birinchi tekshiruvda yoki client navigatsiyada) — bir marta
  *   `GET /api/views?id=` (CDN keshi, `VIEW_COUNT_CACHE_CONTROL`) va javobdagi jami ko'rishlar
- *   maqola meta qatoridagi `[data-views]` ga yoziladi (`ArticleHeader`). Server allaqachon ISR
- *   bilan (≤ 30 daqiqa eski) qiymat chizgan — skript faqat kattaroq va `VIEW_COUNT_MIN` dan kam
+ *   maqola meta qatoridagi `[data-views]` ga yoziladi (`ArticleHeader`). Server allaqachon keshdan
+ *   (`views:{id}`, ≤ 30 daqiqa eski) qiymat chizgan — skript faqat kattaroq va `VIEW_COUNT_MIN` dan kam
  *   bo'lmagan qiymatni yozadi (joy oldindan band — CLS yo'q).
  * Client navigatsiya (Link) ham qamraladi: skript layout bilan bir marta ishga tushadi, React
  * keyin chizgan inline skriptlarni bajarmaydi — shuning uchun maqolaning o'zida emas.

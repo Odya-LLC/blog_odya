@@ -78,7 +78,7 @@ function feedFor(locale: Locale, categorySlug?: string, categoryName?: string) {
 export type ArticleSeoInput = {
   post: Post
   category: Category
-  /** Jami ko'rishlar (OBLOG-72, sahifa bilan bir xil ISR qiymati) → `interactionStatistic`. */
+  /** Jami ko'rishlar (OBLOG-72, sahifadagi bilan bir xil keshlangan qiymat) → `interactionStatistic`. */
   views?: number | null
 }
 

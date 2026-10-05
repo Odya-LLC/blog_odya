@@ -2,7 +2,7 @@ import type { Locale } from '@blog-odya/shared'
 import type { Metadata } from 'next'
 import { notFound, permanentRedirect } from 'next/navigation'
 
-import { getCategoryPage, getStaticPage } from '../data'
+import { getCategoryBySlug, getStaticPage } from '../data'
 import { archivePath, authorPath, categoryPath, tagPath } from '../paths'
 import { resolveSiteRoute } from '../route'
 import { archiveMetadata, ArchiveView } from './ArchiveView'
@@ -21,7 +21,7 @@ type Segments = string[] | undefined
  * (`slugField({ uniqueAcross })`); ikkalasi ham bo'lmasa — `CategoryView` (redirect yoki 404).
  */
 async function staticPageFor(locale: Locale, slug: string) {
-  if (await getCategoryPage(locale, slug, 1)) return null
+  if (await getCategoryBySlug(locale, slug)) return null
   return getStaticPage(locale, slug)
 }
 

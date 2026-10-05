@@ -126,7 +126,7 @@ export interface ViewCountRequestDeps {
 /**
  * `GET /api/views?id=` (OBLOG-72) — maqola meta qatoridagi ko'rishlar soni uchun (`beacon.ts`
  * skripti). Javob: `200 {"views":N}` — CDN'da keshlanadi (`VIEW_COUNT_CACHE_CONTROL`), maqola
- * sahifasining ISR'iga tegmaydi. Chop etilmagan / noma'lum post — `404` (u ham keshlanadi: tasodifiy
+ * sahifasining `views:{id}` keshiga tegmaydi. Chop etilmagan / noma'lum post — `404` (u ham keshlanadi: tasodifiy
  * ID'lar bilan DB'ni urib bo'lmaydi). Noto'g'ri ID — `400`, DB xatosi — `503` (keshlanmaydi).
  * Cookie o'qilmaydi va qo'yilmaydi, hisoblagich va limitlarga yozilmaydi.
  */

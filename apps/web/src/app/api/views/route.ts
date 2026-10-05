@@ -16,7 +16,7 @@ import { deleteExpiredViewLimits, loadPublicViews, recordView } from '@/pageview
  * `src/pageviews/handler.ts`. `/api/…` proxy matcher'iga kirmaydi (410 yo'q), `robots.txt` da yopiq.
  *
  * `GET /api/views?id=` — chop etilgan postning jami ko'rishlari `{"views":N}` (OBLOG-72): maqola
- * meta qatori uchun, CDN'da 5 daqiqa keshlanadi — maqola sahifasining o'z ISR keshidan alohida.
+ * meta qatori uchun, CDN'da 5 daqiqa keshlanadi — maqola sahifasidagi `views:{id}` keshidan alohida.
  */
 export const dynamic = 'force-dynamic'
 
