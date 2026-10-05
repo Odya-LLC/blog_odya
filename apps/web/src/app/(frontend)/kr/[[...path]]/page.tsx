@@ -4,16 +4,12 @@ import { SiteRoutePage, siteRouteMetadata } from '@/site/views/SiteRoute'
 
 type Props = { params: Promise<{ path?: string[] }> }
 
-/** ISR: publish/unpublish'da teg bo'yicha yangilanadi (`src/site/revalidate.ts`), zaxira — 1 soat. */
-export const revalidate = 3600
-
 /**
- * Build'da hech bir sahifa (bosh sahifa ham) oldindan chizilmaydi — `next build` DB'ga ulanmaydi
- * (OBLOG-31). Birinchi so'rovda chiziladi, keyin ISR keshidan beriladi.
+ * OBLOG-81: umumiy catch-all har bir so'rovda chiziladi (build DB'ga ulanmaydi).
+ * Bosh/kategoriya yangiliklari to'g'ridan-to'g'ri DB'dan; boshqa ma'lumotlar o'zining
+ * `unstable_cache` keshini saqlaydi. Umumiy marshrut HTML/RSC natijasini keshlamaydi.
  */
-export function generateStaticParams() {
-  return []
-}
+export const revalidate = 0
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { path } = await params
