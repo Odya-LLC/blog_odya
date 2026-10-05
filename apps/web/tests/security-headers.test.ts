@@ -118,6 +118,16 @@ describe('security headers', () => {
     expect(csp.has('upgrade-insecure-requests')).toBe(true)
   })
 
+  it('sayt CSP: TopSayt.uz hisoblagichi — skript, hit va nishon (OBLOG-80)', () => {
+    const csp = directives(buildSiteCsp(PROD_ENV))
+    for (const name of ['script-src', 'connect-src', 'img-src']) {
+      expect(csp.get(name)).toContain('https://topsayt.uz')
+    }
+    expect(directives(buildAdminCsp(PROD_ENV)).get('script-src')).not.toContain(
+      'https://topsayt.uz',
+    )
+  })
+
   it('admin CSP: bucket’ga yuklash, blob, Monaco', () => {
     const csp = directives(buildAdminCsp(PROD_ENV))
     expect(csp.get('frame-ancestors')).toEqual(["'self'"])

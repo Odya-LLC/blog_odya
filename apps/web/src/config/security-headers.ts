@@ -5,7 +5,7 @@
  * - **sayt** (barcha yo'llar): Next.js inline skriptlari (RSC payload, tema skripti) nonce'siz
  *   — shuning uchun `script-src 'unsafe-inline'` (nonce sahifalarni dinamik qilib, ISR keshini
  *   buzardi). Ruxsat etilgan tashqi manbalar: media domeni (`MEDIA_PUBLIC_URL`), GA4, Yandex
- *   Metrica, YouTube (nocookie), X (Twitter) va Telegram embed'lari, Sentry, Vercel preview.
+ *   Metrica, TopSayt.uz, YouTube (nocookie), X (Twitter) va Telegram embed'lari, Sentry, Vercel preview.
  * - **admin** (`/admin`, GraphQL playground): Payload admin'i inline stil/skript, `blob:`/`data:`,
  *   Monaco (code/JSON maydonlari — jsDelivr CDN) va bucket'ga to'g'ridan-to'g'ri yuklash
  *   (`clientUploads` → `S3_ENDPOINT`, R2) kerak. Admin o'zini iframe qilishi mumkin
@@ -79,6 +79,12 @@ const METRICA = {
   img: ['https://mc.yandex.ru', 'https://mc.yandex.com'],
   frame: ['https://mc.yandex.ru', 'https://mc.yandex.com'],
 }
+
+/**
+ * TopSayt.uz hisoblagichi (OBLOG-80): `counter/35.js`, hit (`sendBeacon`/`fetch` →
+ * `/counter/35/hit/`) va nishon rasmi (`counter/35.svg`).
+ */
+const TOPSAYT = 'https://topsayt.uz'
 
 /** Lexical embed'lari (`src/components/richtext`): YouTube facade, X widgets.js, Telegram widget. */
 const EMBEDS = {
@@ -168,6 +174,7 @@ export function buildSiteCsp(env: RawEnv, options: SecurityHeadersOptions = {}):
       dev && "'unsafe-eval'",
       ...GA4.script,
       ...METRICA.script,
+      TOPSAYT,
       ...EMBEDS.script,
       ...preview,
     ],
@@ -179,6 +186,7 @@ export function buildSiteCsp(env: RawEnv, options: SecurityHeadersOptions = {}):
       ...media,
       ...GA4.img,
       ...METRICA.img,
+      TOPSAYT,
       ...EMBEDS.img,
       ...preview,
     ],
@@ -188,6 +196,7 @@ export function buildSiteCsp(env: RawEnv, options: SecurityHeadersOptions = {}):
       ...media,
       ...GA4.connect,
       ...METRICA.connect,
+      TOPSAYT,
       ...EMBEDS.connect,
       ...sentry,
       ...preview,

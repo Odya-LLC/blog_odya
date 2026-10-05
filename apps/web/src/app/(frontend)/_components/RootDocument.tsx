@@ -6,6 +6,7 @@ import { Analytics } from '@/components/analytics/Analytics'
 import { env } from '@/env'
 import { themeInitScript } from '@/lib/preferences'
 import { viewBeaconScript } from '@/pageviews/beacon'
+import { topsaytCounterScript } from '@/site/analytics'
 
 import { inter } from '../fonts'
 import '../styles.css'
@@ -33,6 +34,8 @@ export function RootDocument({ locale, children }: { locale: Locale; children: R
         <script dangerouslySetInnerHTML={{ __html: viewBeaconScript }} />
         {/* GA4 / Metrica — har bir tashrifchida, bannersiz (TZ §9.5; OBLOG-23, OBLOG-60). */}
         <Analytics locale={locale} />
+        {/* TopSayt.uz hisoblagichi (OBLOG-80) — katalog va reyting uchun, `</body>` oldida. */}
+        <script dangerouslySetInnerHTML={{ __html: topsaytCounterScript }} />
       </body>
     </html>
   )

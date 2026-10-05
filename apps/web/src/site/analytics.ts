@@ -74,7 +74,21 @@ export const GA4_SRC = (id: string) =>
   `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(id)}`
 export const METRICA_SRC = 'https://mc.yandex.ru/metrika/tag.js'
 
-type Queue = ((...args: unknown[]) => void) & { a?: unknown[]; l?: number }
+/**
+ * TopSayt.uz hisoblagichi (OBLOG-80): katalog/reytingda ko'rinish uchun har sahifada, `</body>`
+ * oldida `<script async src>`. JSX'dagi `<script async src>` ni React `<head>` ga ko'taradi,
+ * skript esa nishonni (`counter/35.svg`) o'zidan keyin qo'yadi — shuning uchun uni `<body>`
+ * oxiriga kichik inline yuklovchi qo'shadi (yangi JS chunk yo'q, JS byudjeti ≤ 150 KB).
+ * CSP: `script-src`, `connect-src` (hit — `sendBeacon`), `img-src` (nishon) — `topsayt.uz`.
+ * Faqat to'liq sahifa yuklanishlari hisoblanadi (client navigatsiyada skript qayta ishlamaydi).
+ */
+export const TOPSAYT_COUNTER_SRC = 'https://topsayt.uz/counter/35.js'
+
+export const topsaytCounterScript =
+  `(function(d){var s=d.createElement('script');s.async=true;` +
+  `s.src='${TOPSAYT_COUNTER_SRC}';d.body.appendChild(s)})(document)`
+
+type Queue =((...args: unknown[]) => void) & { a?: unknown[]; l?: number }
 
 /** gtag.js / Metrica `tag.js` global'lari (navbat stub'lari). */
 export interface AnalyticsWindow {
