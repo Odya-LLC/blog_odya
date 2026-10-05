@@ -30,6 +30,7 @@ Supabase Dashboard'da loyiha holati (Paused → *Restore*), keyin Vercel Logs.
 
 ## 2. Sentry
 
+Production'da yoqilgan va tekshirilgan — [Production holati](#production-holati-2026-10-05-oblog-58).
 Yoqish — Vercel Environment Variables (Production; xohlasangiz Preview):
 
 | O'zgaruvchi | Qayerda | Nima uchun |
@@ -65,6 +66,31 @@ curl -H "Authorization: Bearer $JOBS_SECRET" "https://blog.odya.uz/api/health?se
 
 `401` — token noto'g'ri; `503` — `JOBS_SECRET` yoki `SENTRY_DSN` sozlanmagan.
 Brauzer sinovi: sayt konsolida `setTimeout(() => { throw new Error('test') })` → bir necha soniyada Issues'da.
+
+### Production holati (2026-10-05, OBLOG-58)
+
+Sozlash (egasi): Sentry loyihasi yaratildi, region — DE (ingest `o4508244671463424.ingest.de.sentry.io`,
+CSP `connect-src` da). Vercel Environment Variables — **Production + Preview**: `SENTRY_DSN`,
+`SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT` (qiymatlar faqat Vercel'da). O'zgaruvchilardan keyin
+qayta deploy qilindi (CSP va brauzer DSN'i build vaqtida hisoblanadi).
+
+| # | Tekshiruv | Natija | Kim |
+|---|---|---|---|
+| 1 | Server xatosi: `GET /api/health?sentry-test=1` + `Authorization: Bearer $JOBS_SECRET` | event Sentry → Issues'da; kalitsiz — `401` | egasi |
+| 2 | Brauzer xatosi: jonli saytda sun'iy xato (headless Chromium) | ingest'ga envelope — `200`, event id `ee7f7830a6e64ac88e2deb0da8c3b822`, CSP buzilishlari — 0 | agent |
+| 3 | Source map'lar | stack trace'da asl `.ts`/`.tsx` fayllar | egasi |
+| 4 | Alert rule "A new issue is created" | email + Telegram | egasi |
+| 5 | Job xatolari (teglar `job_task`, `job_queue`) | OBLOG-23 unit/integration testlari bilan qoplangan; prod'da ataylab chaqirilmadi | — |
+
+- **Sampling:** server va brauzerda `tracesSampleRate: 0` — faqat xatolar, performance trace'lar yo'q
+  (Free plan kvotasiga mos); `sendDefaultPii: false`.
+- **JS byudjeti:** brauzer SDK birinchi xatoda lazy yuklanadi — first-load JS'ga ta'sir yo'q (146 KB,
+  OBLOG-69/68 da DSN'siz o'lchangan; DSN bilan ham SDK faqat xatoda yuklanadi).
+- **Qayta sinash:** yuqoridagi "Qabul sinovi" (server — `curl`, brauzer — konsolda `throw`).
+- **Source map'lar ishlamay qolsa** (stack trace'da minifikatsiyalangan `chunks/*.js`): Vercel build
+  log'ida Sentry source map yuklash qadamini tekshiring (xato/ogohlantirish); `SENTRY_AUTH_TOKEN`
+  muddati va scope'lari — `project:releases`, `org:read`; `SENTRY_ORG`/`SENTRY_PROJECT` slug'lari
+  Sentry'dagi bilan bir xilmi. Tuzatgandan keyin — qayta deploy.
 
 ## 3. Security headers
 
