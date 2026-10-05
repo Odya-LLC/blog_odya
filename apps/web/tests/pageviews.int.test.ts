@@ -6,12 +6,14 @@ import { localDate } from '@/editorial/queue'
 import { getEditorialStats } from '@/editorial/stats'
 import { runCleanup } from '@/jobs/tasks/maintenanceCleanup'
 import { VIEW_COOKIE } from '@/pageviews/dedupe'
-import { handleViewRequest } from '@/pageviews/handler'
+import { VIEW_COUNT_CACHE_CONTROL } from '@/pageviews/beacon'
+import { handleViewCountRequest, handleViewRequest } from '@/pageviews/handler'
 import { resolvePopular } from '@/pageviews/popular'
 import {
   deleteOldDailyViews,
   insertViews,
   loadPopularRows,
+  loadPublicViews,
   loadTotalViews,
   recordView,
   shiftDate,
@@ -155,6 +157,38 @@ describe('ko‘rishlar hisoblagichi (Postgres)', () => {
       data: { workflowStatus: 'archived' },
     })
     expect(await recordView(payload, archived.id)).toBe('unknown')
+  })
+
+  it('GET /api/views?id= (OBLOG-72): chop etilgan — {views}, CDN keshi; qolganlari — 404', async () => {
+    const get = (id: number) =>
+      handleViewCountRequest(new Request(`http://localhost:3100/api/views?id=${id}`), {
+        load: (postId) => loadPublicViews(payload, postId),
+      })
+    const total = await loadTotalViews(payload, published.id)
+    expect(total).toBeGreaterThan(0)
+    const ok = await get(published.id)
+    expect(ok.response.status).toBe(200)
+    expect(ok.response.headers.get('cache-control')).toBe(VIEW_COUNT_CACHE_CONTROL)
+    expect(ok.response.headers.get('set-cookie')).toBeNull()
+    expect(await ok.response.json()).toEqual({ views: total })
+    // GET hech narsa yozmaydi.
+    expect(await loadTotalViews(payload, published.id)).toBe(total)
+
+    const fresh = await createPost('count-fresh', true)
+    expect(await (await get(fresh.id)).response.json()).toEqual({ views: 0 })
+
+    expect((await get(draft.id)).response.status).toBe(404)
+    expect((await get(2_000_000_000)).response.status).toBe(404)
+    const archived = await createPost('count-archived', true)
+    await insertViews(payload, [{ postId: archived.id, day: localDate(), views: 50 }])
+    expect(await loadPublicViews(payload, archived.id)).toBe(50)
+    await payload.update({
+      collection: 'posts',
+      id: archived.id,
+      data: { workflowStatus: 'archived' },
+    })
+    expect(await loadPublicViews(payload, archived.id)).toBeNull()
+    expect((await get(archived.id)).response.status).toBe(404)
   })
 
   it('reyting: 7 kun, 30 kun va butun davr oynalari, tartib to‘g‘ri', async () => {

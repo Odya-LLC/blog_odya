@@ -29,7 +29,7 @@ import type {
 import { DEFAULT_AUTHOR_SLUG } from '@/collections/Posts/defaultAuthor'
 import { env, PHASE_PRODUCTION_BUILD } from '@/env'
 import type { PopularRow } from '@/pageviews/popular'
-import { loadPopularRows } from '@/pageviews/store'
+import { loadPopularRows, loadPublicViews } from '@/pageviews/store'
 import type {
   Author,
   Category,
@@ -47,7 +47,7 @@ import {
   toAnalyticsConfig,
   toSiteVerification,
 } from './analytics'
-import { CACHE_TAGS, postTag } from './cache-tags'
+import { CACHE_TAGS, postTag, viewsTag } from './cache-tags'
 import {
   buildHomeSections,
   HOME_FEED_COUNT,
@@ -390,6 +390,27 @@ export async function getPopularData(
     )
   } catch {
     return { rows: [], posts: [] }
+  }
+}
+
+/**
+ * Maqola meta qatoridagi ko'rishlar soni (OBLOG-72) — maqola keshidan (`post:{slug}`) alohida
+ * yozuv, `views:{id}` tegi bilan, muddati "Ko'p o'qilgan" bilan bir xil (30 daqiqa). OBLOG-81 dan
+ * beri maqola HTML'i har so'rovda chiziladi (`revalidate = 0`) — shu kesh DB'ni har so'rovda
+ * urishdan saqlaydi. Yangiroq qiymatni brauzer o'zi oladi (`GET /api/views?id=`, CDN keshi —
+ * `pageviews/beacon.ts`). Xato — `null` (sahifa yiqilmaydi, raqam ko'rsatilmaydi).
+ */
+export async function getArticleViews(postId: number): Promise<number | null> {
+  if (!hasDatabase()) return null
+  try {
+    return await cached(
+      async () => loadPublicViews(await payloadClient(), postId),
+      ['views', String(postId)],
+      [viewsTag(postId)],
+      POPULAR_REVALIDATE_SECONDS,
+    )
+  } catch {
+    return null
   }
 }
 

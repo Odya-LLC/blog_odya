@@ -1,5 +1,6 @@
 import type { PageviewLimits } from '@/env.schema'
 
+import { VIEW_COUNT_CACHE_CONTROL } from './beacon'
 import { markSeen, parseSeen, serializeSeen, wasSeen } from './dedupe'
 import { skipReason, type SkipReason } from './filter'
 import { buildViewGuard, VIEW_LIMITS_PRUNE_PROBABILITY, type ViewGuard } from './ratelimit'
@@ -112,4 +113,41 @@ export async function handleViewRequest(
     )
   }
   return done(result)
+}
+
+export type ViewCountOutcome = 'ok' | 'invalid' | 'unknown' | 'error'
+
+export interface ViewCountRequestDeps {
+  /** Ommaga ko'rinadigan postning jami ko'rishlari; post yo'q / chop etilmagan — `null`. */
+  load: (postId: number) => Promise<number | null>
+  onError?: (error: unknown) => void
+}
+
+/**
+ * `GET /api/views?id=` (OBLOG-72) — maqola meta qatoridagi ko'rishlar soni uchun (`beacon.ts`
+ * skripti). Javob: `200 {"views":N}` — CDN'da keshlanadi (`VIEW_COUNT_CACHE_CONTROL`), maqola
+ * sahifasining `views:{id}` keshiga tegmaydi. Chop etilmagan / noma'lum post — `404` (u ham keshlanadi: tasodifiy
+ * ID'lar bilan DB'ni urib bo'lmaydi). Noto'g'ri ID — `400`, DB xatosi — `503` (keshlanmaydi).
+ * Cookie o'qilmaydi va qo'yilmaydi, hisoblagich va limitlarga yozilmaydi.
+ */
+export async function handleViewCountRequest(
+  request: Request,
+  deps: ViewCountRequestDeps,
+): Promise<{ response: Response; outcome: ViewCountOutcome }> {
+  const reply = (outcome: ViewCountOutcome, status: number, body: unknown, cache: string) => ({
+    response: Response.json(body, { status, headers: { 'Cache-Control': cache } }),
+    outcome,
+  })
+  const raw = new URL(request.url).searchParams.get('id') ?? ''
+  const postId = raw.length > MAX_BODY_LENGTH ? null : parsePostId(raw)
+  if (postId === null) return reply('invalid', 400, { error: 'invalid id' }, 'no-store')
+  let views: number | null
+  try {
+    views = await deps.load(postId)
+  } catch (error) {
+    deps.onError?.(error)
+    return reply('error', 503, { error: 'unavailable' }, 'no-store')
+  }
+  if (views === null) return reply('unknown', 404, { error: 'not found' }, VIEW_COUNT_CACHE_CONTROL)
+  return reply('ok', 200, { views }, VIEW_COUNT_CACHE_CONTROL)
 }

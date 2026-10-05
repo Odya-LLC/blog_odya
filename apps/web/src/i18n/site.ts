@@ -40,6 +40,8 @@ export const siteStrings = {
     popularWindow: { week: 'Soʻnggi 7 kun', month: 'Soʻnggi 30 kun', all: 'Barcha vaqt' },
     /** Koʻrishlar soni yonidagi ekran oʻquvchi matni: "1,2 ming" + " marta oʻqilgan". */
     timesRead: 'marta oʻqilgan',
+    /** Maqola meta qatori (OBLOG-72): "1,2 ming" + " marta oʻqildi". */
+    readCount: 'marta oʻqildi',
     viewAll: 'Barchasi',
     breaking: 'Muhim',
     readingTime: (min: number) => `${min} daqiqa`,
@@ -130,6 +132,7 @@ export const siteStrings = {
     popularWindow: { week: 'Сўнгги 7 кун', month: 'Сўнгги 30 кун', all: 'Барча вақт' },
     /** Кўришлар сони ёнидаги экран ўқувчи матни. */
     timesRead: 'марта ўқилган',
+    readCount: 'марта ўқилди',
     viewAll: 'Барчаси',
     breaking: 'Муҳим',
     readingTime: (min: number) => `${min} дақиқа`,

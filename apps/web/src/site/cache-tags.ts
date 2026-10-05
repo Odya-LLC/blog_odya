@@ -10,7 +10,8 @@
  * - `redirects`    — plugin-redirects yozuvlari (eski slug → yangi URL);
  * - `pages`        — statik sahifalar ro'yxati (sitemap, M1-06);
  * - `popular`      — "Ko'p o'qilgan" bloki (OBLOG-69): ko'rishlarda emas, muddat bo'yicha yangilanadi
- *   (`POPULAR_REVALIDATE_SECONDS`); post publish/unpublish'da — `posts` tegi bilan birga.
+ *   (`POPULAR_REVALIDATE_SECONDS`); post publish/unpublish'da — `posts` tegi bilan birga;
+ * - `views:{id}`   — maqoladagi ko'rishlar soni (OBLOG-72), maqola keshidan alohida.
  *
  * Yon ta'sirsiz modul (testlanadi).
  */
@@ -25,6 +26,14 @@ export const CACHE_TAGS = {
 
 export function postTag(slug: string): string {
   return `post:${slug}`
+}
+
+/**
+ * Maqoladagi ko'rishlar soni (OBLOG-72, `getArticleViews`): muddat bo'yicha yangilanadi; teg —
+ * qo'lda tozalash uchun (maqola keshi `post:{slug}` ga tegmaydi).
+ */
+export function viewsTag(postId: number | string): string {
+  return `views:${postId}`
 }
 
 export function categoryTag(slug: string): string {
