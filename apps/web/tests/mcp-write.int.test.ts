@@ -2,6 +2,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js'
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js'
 import { createLocalReq, type Payload } from 'payload'
+import sharp from 'sharp'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { apiKeyRateLimiter } from '@/auth/rate-limit'
@@ -32,6 +33,7 @@ import {
   type TestUsers,
 } from './helpers/content'
 import { asUser, deleteTestUsers, initTestPayload } from './helpers/payload'
+import { createTestS3Client, ensureBucket } from './helpers/s3'
 
 /**
  * MCP yozish toollari (M2-07, TZ §5.1, §5.3, §6.3) — SDK mijozi bilan `/api/mcp` route handler'i
@@ -56,6 +58,7 @@ const route = createMcpRoute({ getPayload: async () => payload, siteUrl: SITE_UR
 /** Test davomida yaratilgan (slug'i prefiksiz bo'lib qoladigan) postlar va teglar — tozalash uchun. */
 const createdPosts = new Set<number>()
 const createdTags = new Set<number>()
+const createdMedia = new Set<number>()
 
 function routeFetch() {
   return async (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
@@ -222,6 +225,9 @@ async function cleanup() {
   }
   for (const id of createdTags) {
     await payload.delete({ collection: 'tags', id }).catch(() => undefined)
+  }
+  for (const id of createdMedia) {
+    await payload.delete({ collection: 'media', id }).catch(() => undefined)
   }
   await payload.delete({ collection: 'tags', where: { name: { like: TOKEN } } })
   await payload.delete({ collection: 'scraped-items', where: { url: { like: URL_PREFIX } } })
@@ -1356,6 +1362,111 @@ describe('MCP yozish toollari (/api/mcp)', () => {
         })
         return json
       }
+
+      async function uploadCover(client: Client): Promise<number> {
+        await ensureBucket(createTestS3Client())
+        const image = await sharp({
+          create: { width: 1200, height: 630, channels: 3, background: '#3366cc' },
+        }).jpeg().toBuffer()
+        const upload = jsonOf(await call(client, 'upload_media', {
+          data: image.toString('base64'),
+          filename: `live-cover-${crypto.randomUUID()}.jpg`,
+          alt: `Apple iPhone 18 taqdimoti uchun yangi muqova ${TOKEN}`,
+          license: 'own',
+        }))
+        createdMedia.add(upload.mediaId)
+        return upload.mediaId
+      }
+
+      it('admin set_cover chop etilgan postni qoralamasiz darhol yangilaydi', async () => {
+        const live = await publishedPost()
+        const admin = await connect(adminKey)
+        const mediaId = await uploadCover(admin)
+        const changed = jsonOf(await call(admin, 'set_cover', {
+          postId: live.id,
+          mediaId,
+          alt: `Apple iPhone 18 taqdimoti uchun yangi muqova ${TOKEN}`,
+        }))
+        expect(changed).toMatchObject({
+          ok: true,
+          saved: true,
+          published: true,
+          metaImageUpdated: true,
+          post: { id: live.id, coverImage: mediaId, metaImage: mediaId },
+        })
+        const main = await payload.findByID({ collection: 'posts', id: live.id, depth: 0 })
+        expect(main).toMatchObject({ title: live.title, coverImage: mediaId, _status: 'published' })
+        expect(main.meta?.image).toBe(mediaId)
+        expect((await readPost(live.id))._status).toBe('published')
+        await admin.close()
+      })
+
+      it('admin set_cover live muqovani almashtiradi va kutilayotgan matn/SEO qoralamasini saqlaydi', async () => {
+        const live = await publishedPost()
+        const admin = await connect(adminKey)
+        const editor = await connect(editorKey)
+        const title = `Apple iPhone 18 taqdimotini qishga koʻchirdi ${TOKEN}`
+        expect(jsonOf(await call(admin, 'save_rewrite', goodRewrite(live.id, { title }))).ok).toBe(true)
+        expect(jsonOf(await call(admin, 'set_seo', {
+          postId: live.id,
+          ...GOOD_SEO,
+          seoTitle: `${GOOD_SEO.seoTitle} ${TOKEN}`,
+        })).ok).toBe(true)
+        expect(jsonOf(await call(admin, 'submit_for_review', {
+          postId: live.id,
+          notesForEditor: 'Sarlavhani tekshiring',
+        })).pendingRevision).toBe(true)
+        const pendingBefore = await readPost(live.id)
+        const mediaId = await uploadCover(admin)
+        const denied = await call(editor, 'set_cover', { postId: live.id, mediaId })
+        expect(denied.isError).toBe(true)
+        const changed = jsonOf(await call(admin, 'set_cover', {
+          postId: live.id,
+          mediaId,
+          alt: `Apple iPhone 18 taqdimoti uchun yangi muqova ${TOKEN}`,
+        }))
+        expect(changed).toMatchObject({
+          ok: true,
+          saved: true,
+          published: true,
+          metaImageUpdated: true,
+          post: { id: live.id, coverImage: mediaId, metaImage: mediaId },
+        })
+        expect(changed.next).not.toMatch(/submit_for_review/)
+        const main = await payload.findByID({ collection: 'posts', id: live.id, depth: 0 })
+        expect(main).toMatchObject({
+          title: live.title,
+          content: live.content,
+          coverImage: mediaId,
+          _status: 'published',
+          revisionSubmittedAt: null,
+        })
+        expect(main.meta?.title).toBe(live.meta?.title)
+        expect(main.meta?.image).toBe(mediaId)
+        const cyrl = await payload.findByID({
+          collection: 'posts', id: live.id, locale: 'uz-Cyrl', depth: 0,
+        })
+        expect(cyrl.meta?.image).toBe(mediaId)
+        expect(cyrl.coverAlt).toMatch(/[Ѐ-ӿ]/)
+        const pendingAfter = await readPost(live.id)
+        expect(pendingAfter).toMatchObject({
+          title,
+          content: pendingBefore.content,
+          revisionSubmittedAt: pendingBefore.revisionSubmittedAt,
+          revisionSubmittedBy: pendingBefore.revisionSubmittedBy,
+          coverImage: mediaId,
+          _status: 'draft',
+        })
+        expect(pendingAfter.meta?.title).toBe(pendingBefore.meta?.title)
+        expect(pendingAfter.meta?.description).toBe(pendingBefore.meta?.description)
+        const pendingCyrl = await readPost(live.id, 'uz-Cyrl')
+        expect(pendingCyrl.title).toMatch(/^Apple iPhone 18 тақдимотини қишга/)
+        expect(pendingCyrl.meta?.title).toMatch(/[Ѐ-ӿ]/)
+        expect(pendingCyrl.meta?.image).toBe(mediaId)
+        expect(await pendingIds()).toContain(live.id)
+        await admin.close()
+        await editor.close()
+      })
 
       it('navbatda ko‘rinadi; muharrir autosave belgini saqlaydi; chop etish — sayt yangilanadi, belgi o‘chadi, Telegram tahriri', async () => {
         const live = await publishedPost()

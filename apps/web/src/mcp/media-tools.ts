@@ -9,6 +9,7 @@ import { createRateLimiter, type RateLimiter } from '@/auth/rate-limit'
 import { limitsFromEnv } from '@/env.schema'
 import type { Media, Post } from '@/payload-types'
 import { inTransaction } from '@/scraping/itemState'
+import { lockPostRow } from '@/telegram/autopost'
 
 import type { McpContext } from './context'
 import { cyrillicReport, lockedFields } from './cyrillic'
@@ -30,8 +31,8 @@ import { listMediaInput, searchStockImagesInput, setCoverInput, uploadMediaInput
 import { searchPexels } from './stock'
 import type { Issue } from './validation'
 import {
-  assertEditable,
   cyrillicWarning,
+  editModeFor,
   loadPost,
   lockData,
   mcpReq,
@@ -273,7 +274,7 @@ export async function setCover(
 ): Promise<CallToolResult> {
   const req = await mcpReq(ctx, 'set_cover')
   const post = await loadPost(ctx, req, input.postId)
-  assertEditable(post, ctx.user.id)
+  const published = editModeFor(ctx, post) === 'revision'
 
   const errors: Issue[] = []
   const warnings: Issue[] = []
@@ -313,24 +314,93 @@ export async function setCover(
   if (errors.length) return result({ ok: false, errors, warnings, saved: false })
 
   // coverAlt — postga xos alt taklifi; berilmasa va bo'sh bo'lsa — media alt.
-  const coverAlt = alt ?? (post.coverAlt ? undefined : media.alt)
   const saved = await inTransaction(req, async () => {
+    if (published) await lockPostRow(ctx.payload, post.id, req)
+    const previous = published
+      ? await ctx.payload.findByID({
+          collection: 'posts', id: post.id, draft: false, depth: 0, ...op(ctx, req),
+        })
+      : post
+    if (!previous) throw new McpToolError(`Post topilmadi: id=${post.id}`)
+    const coverAlt = alt ?? (previous.coverAlt ? undefined : media.alt)
+    // A live update creates a published Payload version. If a draft was already pending, put it
+    // back on top afterwards and apply the new cover through normal hooks (including Cyrillic).
+    const pending = published
+      ? (
+          await ctx.payload.db.findVersions<Post>({
+            collection: 'posts',
+            where: { parent: { equals: post.id } },
+            sort: '-updatedAt',
+            limit: 1,
+            pagination: false,
+            locale: 'all',
+            req,
+          })
+        ).docs[0]
+      : null
+    const pendingDraft = pending?.version?._status === 'draft' ? pending.version : null
+    if (pendingDraft) {
+      // Payload updateByID always uses the latest version as its base, even with draft: false.
+      // Put a snapshot of the *live* row on top before publishing the cover, or pending copy
+      // would silently publish the draft title, body, and SEO fields too.
+      const live = await ctx.payload.db.findOne<Post>({
+        collection: 'posts',
+        where: { id: { equals: post.id } },
+        locale: 'all',
+        req,
+      })
+      if (!live) throw new McpToolError(`Post topilmadi: id=${post.id}`)
+      const now = new Date().toISOString()
+      await ctx.payload.db.createVersion({
+        collectionSlug: 'posts',
+        parent: post.id,
+        versionData: live,
+        createdAt: now,
+        updatedAt: now,
+        autosave: false,
+        req,
+      })
+    }
     const updated = await ctx.payload.update({
       collection: 'posts',
       id: post.id,
       data: {
-        ...lockData(ctx.user.id),
+        ...(published ? {} : lockData(ctx.user.id)),
         coverImage: media.id,
         ...(coverAlt !== undefined ? { coverAlt } : {}),
       } as Partial<Post>,
+      ...(published ? { draft: false } : {}),
       depth: 0,
       ...op(ctx, req),
     })
+    if (pendingDraft) {
+      const now = new Date().toISOString()
+      await ctx.payload.db.createVersion({
+        collectionSlug: 'posts',
+        parent: post.id,
+        versionData: pendingDraft,
+        createdAt: now,
+        updatedAt: now,
+        autosave: false,
+        req,
+      })
+      await ctx.payload.update({
+        collection: 'posts',
+        id: post.id,
+        data: {
+          coverImage: media.id,
+          coverAlt: updated.coverAlt ?? null,
+        },
+        draft: true,
+        depth: 0,
+        ...op(ctx, req),
+      })
+    }
     const cyrillic = cyrillicReport(
       coverAlt !== undefined ? (['coverAlt'] as const) : [],
-      lockedFields(post),
+      lockedFields(previous),
     )
-    return { updated, cyrillic }
+    return { updated, cyrillic, previous }
   }).catch(rethrow)
   // `meta.image` bo'sh (yoki eski muqova) bo'lsa, posts hook'i uni muqovaga tenglaydi (OBLOG-47).
   const metaImageOf = (doc: Post): unknown => {
@@ -339,7 +409,7 @@ export async function setCover(
   }
   const metaImageUpdated =
     String(metaImageOf(saved.updated)) === String(media.id) &&
-    String(metaImageOf(post)) !== String(media.id)
+    String(metaImageOf(saved.previous)) !== String(media.id)
 
   warnings.push(...cyrillicWarning(saved.cyrillic.skipped))
   return result({
@@ -347,6 +417,7 @@ export async function setCover(
     errors: [],
     warnings,
     saved: true,
+    ...(published ? { published: true } : {}),
     post: {
       ...postSummary(ctx, saved.updated),
       coverImage: media.id,
@@ -356,7 +427,9 @@ export async function setCover(
     metaImageUpdated,
     media: mediaSummary(ctx, media),
     cyrillic: saved.cyrillic,
-    next: 'submit_for_review(postId, notesForEditor)',
+    next: published
+      ? 'Muqova saytda yangilandi; kutilayotgan matn/SEO qoralamasi alohida ko‘rib chiqiladi.'
+      : 'submit_for_review(postId, notesForEditor)',
   })
 }
 
@@ -467,7 +540,8 @@ export function registerMediaTools(server: McpServer, ctx: McpContext): void {
       description:
         'Postga muqova (coverImage) qo‘yadi: postId, mediaId (+ alt — postning coverAlt). ' +
         'SEO rasmi (meta.image) bo‘sh yoki eski muqova bo‘lsa — u ham shu muqovaga tenglanadi (metaImageUpdated). ' +
-        'Faqat sizga biriktirilgan draft/in_progress postlar; media litsenziyasi to‘liq bo‘lishi kerak.',
+        'Editor: faqat biriktirilgan draft/in_progress postlar. Admin: chop etilgan post muqovasi ' +
+        'darhol saytda yangilanadi, kutilayotgan matn/SEO qoralamasi saqlanadi. Media litsenziyasi to‘liq bo‘lishi kerak.',
       inputSchema: setCoverInput,
       annotations: {
         readOnlyHint: false,
