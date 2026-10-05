@@ -2,13 +2,18 @@ import type { Payload } from 'payload'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
 import { decodeMediaSrc, encodeMediaSrc } from '@/lib/media-image'
+import { recordView } from '@/pageviews/store'
 import type { Category, Media, Post } from '@/payload-types'
 import { seed } from '@/seed'
 import { SEED_POSTS } from '@/seed/data'
 import { postTag } from '@/site/cache-tags'
 import {
+  getCategoryPage,
+  getHomeData,
+  getPopularData,
   loadArticle,
   loadCategoryPage,
+  loadCategoryTopics,
   loadHomeData,
   loadRedirect,
   loadSiteChrome,
@@ -29,7 +34,7 @@ import { createTestS3Client, ensureBucket } from './helpers/s3'
 /**
  * Ommaviy sayt ma'lumot qatlami (M1-05): Payload Local API, faqat chop etilgan postlar,
  * lotin/kirill, redirect'lar va publish/unpublish'da `revalidateTag` teglari.
- * (`unstable_cache` o'ramlari Next.js ichida ishlaydi — bu yerda `load*` funksiyalari.)
+ * ISR ma'lumotlari `load*` orqali; bosh/kategoriya `get*`lari ham Next.js Data Cache'siz ishlaydi.
  */
 let payload: Payload
 let users: TestUsers
@@ -38,11 +43,11 @@ const revalidated: string[] = []
 
 const [featured, esports] = SEED_POSTS as [(typeof SEED_POSTS)[0], (typeof SEED_POSTS)[1]]
 
-async function publishedTestPost(title: string): Promise<Post> {
+async function publishedTestPost(title: string, categoryId = category.id): Promise<Post> {
   const editor = as(users.editor)
   const post = await payload.create({
     collection: 'posts',
-    data: { title, slug: testSlug('site'), category: category.id, workflowStatus: 'draft' },
+    data: { title, slug: testSlug('site'), category: categoryId, workflowStatus: 'draft' },
     ...editor,
   })
   await payload.update({
@@ -146,6 +151,59 @@ describe('sayt ma’lumotlari (Local API)', () => {
       },
     })
     expect(await loadArticle('uz-Latn', draft.slug)).toBeNull()
+  })
+
+  it('keyingi o‘qish publish/arxivlashni darhol ko‘radi: ikkala yozuv, sahifalash va yon panel', async () => {
+    const otherCategory = await createTestCategory(payload)
+    // Birinchi o'qishlarni isitish. Revalidator yuqorida faqat teglarni yozib oladi:
+    // Next.js cache invalidation yoki vaqt o'tishini kutishga tayanmaymiz.
+    for (const locale of ['uz-Latn', 'uz-Cyrl'] as const) {
+      await getHomeData(locale)
+      await getPopularData(locale, { fresh: true })
+      expect((await getCategoryPage(locale, category.slug, 1))?.posts).toEqual([])
+      expect(await getCategoryPage(locale, category.slug, 2)).toBeNull()
+    }
+    const posts: Post[] = []
+    for (let index = 0; index < 13; index++) {
+      posts.push(await publishedTestPost(`Fresh news ${index}`))
+    }
+    const latest = await publishedTestPost('Sidebar fresh news', otherCategory.id)
+    await recordView(payload, latest.id)
+
+    for (const locale of ['uz-Latn', 'uz-Cyrl'] as const) {
+      const home = await getHomeData(locale)
+      expect(home.lead?.id).toBe(latest.id)
+      expect((await getPopularData(locale, { fresh: true })).posts.map((post) => post.id))
+        .toContain(latest.id)
+      const first = await getCategoryPage(locale, category.slug, 1)
+      const second = await getCategoryPage(locale, category.slug, 2)
+      expect(first?.posts).toHaveLength(12)
+      expect(first?.totalPages).toBe(2)
+      expect(first?.latest[0]?.id).toBe(latest.id)
+      expect(second?.posts).toHaveLength(1)
+      expect([...first!.posts, ...second!.posts].map((post) => post.id).sort()).toEqual(
+        posts.map((post) => post.id).sort(),
+      )
+      expect(home.sections.find((section) => section.category.slug === category.slug)).toBeDefined()
+      expect((await loadCategoryTopics(locale)).find((topic) => topic.slug === category.slug)?.count)
+        .toBe(13)
+    }
+
+    await payload.update({
+      collection: 'posts',
+      id: latest.id,
+      data: { _status: 'published', workflowStatus: 'archived' },
+      ...as(users.admin),
+    })
+    for (const locale of ['uz-Latn', 'uz-Cyrl'] as const) {
+      expect((await getHomeData(locale)).lead?.id).not.toBe(latest.id)
+      expect((await getPopularData(locale, { fresh: true })).posts.map((post) => post.id))
+        .not.toContain(latest.id)
+      expect((await getCategoryPage(locale, category.slug, 1))?.latest.map((post) => post.id))
+        .not.toContain(latest.id)
+      expect((await loadCategoryTopics(locale)).find((topic) => topic.slug === otherCategory.slug))
+        .toBeUndefined()
+    }
   })
 
   it('publish/arxivlash → revalidateTag; qoralama saqlash — yo‘q', async () => {

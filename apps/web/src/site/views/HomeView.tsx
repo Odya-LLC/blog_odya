@@ -18,7 +18,7 @@ import { getSiteStrings } from '@/i18n/site'
 import { cn } from '@/lib/utils'
 import { resolvePopular } from '@/pageviews/popular'
 
-import { getCategoryTopics, getHomeData, getPopularData, getSiteChrome } from '../data'
+import { getHomeData, getPopularData, getSiteChrome, loadCategoryTopics } from '../data'
 import { groupSectionRows } from '../home'
 import { telegramHandle } from '../mappers'
 import { archivePath, homePath } from '../paths'
@@ -45,10 +45,10 @@ export async function HomeView({ locale }: { locale: Locale }) {
   const t = getSiteStrings(locale)
   const [home, topics, chrome, siteSeo, popular] = await Promise.all([
     getHomeData(locale),
-    getCategoryTopics(locale),
+    loadCategoryTopics(locale),
     getSiteChrome(locale),
     getSiteSeo(locale),
-    getPopularData(locale),
+    getPopularData(locale, { fresh: true }),
   ])
   const popularList = resolvePopular(popular.rows, popular.posts)
   const telegramHref = chrome.telegram[locale]
