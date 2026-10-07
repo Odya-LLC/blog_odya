@@ -88,7 +88,7 @@ export const topsaytCounterScript =
   `(function(d){var s=d.createElement('script');s.async=true;` +
   `s.src='${TOPSAYT_COUNTER_SRC}';d.body.appendChild(s)})(document)`
 
-type Queue =((...args: unknown[]) => void) & { a?: unknown[]; l?: number }
+type Queue = ((...args: unknown[]) => void) & { a?: unknown[]; l?: number }
 
 /** gtag.js / Metrica `tag.js` global'lari (navbat stub'lari). */
 export interface AnalyticsWindow {

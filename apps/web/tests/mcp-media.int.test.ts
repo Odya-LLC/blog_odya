@@ -456,10 +456,13 @@ describe('MCP media toollari (/api/mcp)', () => {
     const gif = Buffer.from('R0lGODlhAQABAAAAACw=', 'base64')
     const gifResult = await call(client, 'upload_media', { ...base, data: gif.toString('base64') })
     expect(textOf(gifResult)).toMatch(/JPEG, PNG yoki WebP emas/)
+    // 10 MB+ base64 (~14 MB JSON) toolgacha yetib bormaydi: `@modelcontextprotocol/sdk` >= 1.31
+    // transporti so'rov tanasini 4 MiB bilan cheklaydi (413 / -32000). Prod'da baribir Vercel
+    // so'rov tanasi limiti (4.5 MB) amal qiladi — katta rasmlar `url` orqali yuklanadi (OBLOG-95).
     const big = Buffer.alloc(MAX_MEDIA_BYTES + 3, 1)
-    const bigResult = await call(client, 'upload_media', { ...base, data: big.toString('base64') })
-    expect(bigResult.isError).toBe(true)
-    expect(textOf(bigResult)).toMatch(/10 MB/)
+    await expect(
+      call(client, 'upload_media', { ...base, data: big.toString('base64') }),
+    ).rejects.toThrow(/Payload Too Large/)
   })
 
   it('set_cover: muqova va coverAlt; egalik, holat, noma’lum va litsenziyasiz media', async () => {

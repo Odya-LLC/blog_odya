@@ -13,6 +13,19 @@ allowBuilds:
 overrides:
   # GHSA-rfgv-xxqx-mfg5, GHSA-w293-vg96-wgc3 — tranzitiv (payload), tuzatilgan: >= 7.29.1
   undici: ^7.29.1
+  # GHSA-68fv-2mgg-jv7q — source-map-js event-loop DoS (high), tranzitiv
+  # (next / @payloadcms/next > postcss, sass), tuzatilgan: >= 1.2.2 (OBLOG-95)
+  source-map-js: ^1.2.2
+  # GHSA-wq5f-xc86-pv6w — sharp (librsvg) (high), tranzitiv (next > sharp), tuzatilgan: >= 0.35.5 (OBLOG-95)
+  sharp: ^0.35.5
+
+# mcp-handler@1.1.0 peer'i `@modelcontextprotocol/sdk` ni aniq 1.26.0 ga qadaydi, lekin u
+# GHSA-6qxp-vccf-f47h (high, >=1.12.0 <1.31.0) ga zaif. mcp-handler 2.x esa boshqa paketga
+# (`@modelcontextprotocol/server` v2) o'tgan — katta migratsiya. SDK 1.x ichida (semver-minor) yangilandi,
+# mcp-handler ishlatadigan API (McpServer, Streamable HTTP transport) o'zgarmagan (OBLOG-95).
+peerDependencyRules:
+  allowedVersions:
+    'mcp-handler>@modelcontextprotocol/sdk': ^1.31.0
 
 # `pnpm audit` uchun aniq advisory'larni e'tiborsiz qoldirish (faqat ID bo'yicha, tor).
 auditConfig:

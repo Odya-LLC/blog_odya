@@ -17,6 +17,7 @@ import {
 } from '@/social/make/deliver'
 import type { MakePayload } from '@/social/make/payload'
 import { signMakeBody } from '@/social/make/payload'
+import { socialImageDeps } from '@/social/image'
 import { telegramConfigOverride } from '@/telegram/config'
 
 import {
@@ -64,6 +65,9 @@ let users: TestUsers
 let category: Category
 let tag: Tag
 let cover: Media | null = null
+/** Muqova baytlari — JPEG route testida `socialImageDeps.fetch` shularni qaytaradi (sayt ishlamaydi). */
+let coverBytes: Buffer | null = null
+const originalSocialImageFetch = socialImageDeps.fetch
 const created: number[] = []
 const calls: Call[] = []
 /** Make javoblari navbati (bo'sh — 200 "Accepted"). */
@@ -160,6 +164,7 @@ describe('Make avtopost (make.webhook)', () => {
         data: { alt: 'Muqova', license: 'own' },
         file: { data, mimetype: 'image/webp', name: 'make-muqova.webp', size: data.length },
       })
+      coverBytes = data
     } catch (error) {
       console.warn('MinIO yo‘q — muqovasiz davom etiladi', error)
     }
@@ -189,6 +194,7 @@ describe('Make avtopost (make.webhook)', () => {
 
   afterAll(async () => {
     Object.assign(makeDeps, originalDeps)
+    socialImageDeps.fetch = originalSocialImageFetch
     makeHookDeps.runAfter = originalRunAfter
     makeConfigOverride.current = undefined
     telegramConfigOverride.current = undefined
@@ -370,9 +376,17 @@ describe('Make avtopost (make.webhook)', () => {
   })
 
   it('JPEG route: muqova bo‘yicha kesilgan JPEG (1080×1350), qoralama — 404', async () => {
-    if (!cover) return
+    if (!cover || !coverBytes) return
     const { GET } = await import('@/app/(seo)/og/[script]/social/[id]/[file]/route')
     makeConfigOverride.current = { ...CONFIG, enabled: false }
+    // Muqova URL'i sayt origin'iga (`/api/media/file/...`) ishora qiladi — testda sayt ishlamaydi,
+    // shuning uchun muqova baytlari soxta `fetch` orqali beriladi.
+    const coverFetches: string[] = []
+    const bytes = coverBytes
+    socialImageDeps.fetch = async (input) => {
+      coverFetches.push(String(input instanceof Request ? input.url : input))
+      return new Response(new Uint8Array(bytes), { headers: { 'content-type': 'image/webp' } })
+    }
     const post = await postInReview({ coverImage: cover.id })
     const draftResponse = await GET(new Request('http://x'), {
       params: Promise.resolve({ script: 'latn', id: String(post.id), file: 'square.jpg' }),
@@ -386,6 +400,8 @@ describe('Make avtopost (make.webhook)', () => {
     expect(response.status).toBe(200)
     expect(response.headers.get('content-type')).toBe('image/jpeg')
     expect(response.headers.get('x-odya-image-source')).toBe('cover')
+    expect(coverFetches).toEqual([expect.stringContaining(cover.filename!)])
+    socialImageDeps.fetch = originalSocialImageFetch
     const meta = await sharp(Buffer.from(await response.arrayBuffer())).metadata()
     expect(meta).toMatchObject({ format: 'jpeg', width: 1080, height: 1350 })
 
