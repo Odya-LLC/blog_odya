@@ -318,7 +318,11 @@ export async function setCover(
     if (published) await lockPostRow(ctx.payload, post.id, req)
     const previous = published
       ? await ctx.payload.findByID({
-          collection: 'posts', id: post.id, draft: false, depth: 0, ...op(ctx, req),
+          collection: 'posts',
+          id: post.id,
+          draft: false,
+          depth: 0,
+          ...op(ctx, req),
         })
       : post
     if (!previous) throw new McpToolError(`Post topilmadi: id=${post.id}`)

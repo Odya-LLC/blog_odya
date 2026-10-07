@@ -173,8 +173,9 @@ describe('sayt ma’lumotlari (Local API)', () => {
     for (const locale of ['uz-Latn', 'uz-Cyrl'] as const) {
       const home = await getHomeData(locale)
       expect(home.lead?.id).toBe(latest.id)
-      expect((await getPopularData(locale, { fresh: true })).posts.map((post) => post.id))
-        .toContain(latest.id)
+      expect(
+        (await getPopularData(locale, { fresh: true })).posts.map((post) => post.id),
+      ).toContain(latest.id)
       const first = await getCategoryPage(locale, category.slug, 1)
       const second = await getCategoryPage(locale, category.slug, 2)
       expect(first?.posts).toHaveLength(12)
@@ -185,8 +186,9 @@ describe('sayt ma’lumotlari (Local API)', () => {
         posts.map((post) => post.id).sort(),
       )
       expect(home.sections.find((section) => section.category.slug === category.slug)).toBeDefined()
-      expect((await loadCategoryTopics(locale)).find((topic) => topic.slug === category.slug)?.count)
-        .toBe(13)
+      expect(
+        (await loadCategoryTopics(locale)).find((topic) => topic.slug === category.slug)?.count,
+      ).toBe(13)
     }
 
     await payload.update({
@@ -197,12 +199,15 @@ describe('sayt ma’lumotlari (Local API)', () => {
     })
     for (const locale of ['uz-Latn', 'uz-Cyrl'] as const) {
       expect((await getHomeData(locale)).lead?.id).not.toBe(latest.id)
-      expect((await getPopularData(locale, { fresh: true })).posts.map((post) => post.id))
-        .not.toContain(latest.id)
-      expect((await getCategoryPage(locale, category.slug, 1))?.latest.map((post) => post.id))
-        .not.toContain(latest.id)
-      expect((await loadCategoryTopics(locale)).find((topic) => topic.slug === otherCategory.slug))
-        .toBeUndefined()
+      expect(
+        (await getPopularData(locale, { fresh: true })).posts.map((post) => post.id),
+      ).not.toContain(latest.id)
+      expect(
+        (await getCategoryPage(locale, category.slug, 1))?.latest.map((post) => post.id),
+      ).not.toContain(latest.id)
+      expect(
+        (await loadCategoryTopics(locale)).find((topic) => topic.slug === otherCategory.slug),
+      ).toBeUndefined()
     }
   })
 
