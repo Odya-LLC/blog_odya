@@ -178,7 +178,7 @@ Yoqilishidan oldin chop etilgan postni yuborish kerak bo'lsa — post panelidagi
 | Holat | Post yon paneli "Instagram / Make": yuborilgan (vaqt), navbatda, qayta urinish (xato matni), xato. Admin uchun tugmalar: **Sinov yuborish** (`test: true`, holat yozilmaydi, Make o'chiq bo'lsa ham ishlaydi), **Make'ga yuborish**. |
 | O'chirish | Global'da "yoqilgan" belgisi (standart o'chiq), post'da **"Ijtimoiy tarmoqlarga (Make) yubormaslik"** (`socialSkip`). |
 | Sozlamalar | Global `social-settings` ("Ijtimoiy tarmoqlar (Make)", faqat admin): yoqish, webhook URL (bo'sh — env `MAKE_WEBHOOK_URL`), yozuvlar (lotin/kirill), Instagram rasmi (1:1 / 4:5), heshteglar soni (≤ 15), brend heshtegi, chaqiruv qatori. Imzo siri — faqat env `MAKE_WEBHOOK_SECRET`. |
-| Rasm | `GET /og/{latn\|cyrl}/social/{postId}/{square\|portrait\|landscape}.jpg?v=…` — **JPEG** 1080×1080, 1080×1350, 1200×630. Muqova bor — `sharp` bilan focal point bo'yicha kesiladi (muqovaning focal point'ini admin'da to'g'rilang); muqova yo'q — avtomatik brend kartochkasi (OG maketi, yozuvga mos). Faqat chop etilgan post (aks holda 404), CDN'da 24 soat keshlanadi, `robots.txt` da ochiq (Meta oladi). |
+| Rasm | `GET /og/{latn\|cyrl}/social/{postId}/{square\|portrait\|landscape}.jpg?v=…` — **JPEG** 1080×1080, 1080×1350, 1200×630. Shablon (OBLOG-94): fon — muqova (`sharp`, focal point bo'yicha kesilgan; focal point'ni admin'da to'g'rilang) yoki muqovasiz brend foni; pastda qorong'i gradient ustida **qisqa sarlavha** (2–4 qator, o'lchami avtomatik, sig'masa «…»), yuqorida kategoriya chipi va «Blog Odya» wordmark'i, pastda domen. Qisqa sarlavha — postning «Rasm uchun qisqa sarlavha» (`socialTitle`, ≤ 70, MCP `save_rewrite`/`set_seo` ham yozadi; kirill — avtomatik), bo'sh bo'lsa sarlavha / SEO sarlavhadan qisqartiriladi. Sozlamalar: «Rasm ustida sarlavha» (o'chiq — muqovaning oddiy kesimi) va «Rasm rang sxemasi» (qorong'i / brend). `?v=` — qisqa sarlavha, muqova (id, vaqt, focal point), kategoriya va shablon sozlamalari xeshi: ulardan biri o'zgarsa URL yangilanadi. Faqat chop etilgan post (aks holda 404), CDN'da 24 soat keshlanadi, `robots.txt` da ochiq (Meta oladi). Post panelidagi «Instagram / Make» blokida — 1:1 va 4:5 oldindan ko'rinishi (`?preview=1`, faqat admin/muharrir sessiyasi, qoralama ham). |
 
 **Sarlavhalar:** `Content-Type: application/json`, `X-Odya-Event: post.published`, `X-Odya-Delivery: <uuid>`, `X-Odya-Timestamp: <unix soniya>`, `X-Odya-Signature: sha256=<HMAC-SHA256(tana, MAKE_WEBHOOK_SECRET) hex>` (sir sozlangan bo'lsa).
 
@@ -196,6 +196,7 @@ Yoqilishidan oldin chop etilgan postni yuborish kerak bo'lsa — post panelidagi
     "id": 42,
     "slug": "namuna-smartfon-sharhi-uchun-andoza",
     "title": "Namuna: smartfon sharhi uchun andoza",
+    "socialTitle": "Smartfon sharhi uchun andoza",
     "excerpt": "Demo maqola: yangi qurilma sharhida qaysi boʻlimlar boʻlishi kerak.",
     "lead": "Demo maqola: yangi qurilma sharhida qaysi boʻlimlar boʻlishi kerak.",
     "url": "https://blog.odya.uz/gadjetlar/namuna-smartfon-sharhi-uchun-andoza",
@@ -211,9 +212,9 @@ Yoqilishidan oldin chop etilgan postni yuborish kerak bo'lsa — post panelidagi
   },
   "hashtags": ["#iPhone", "#Gadjetlar", "#BlogOdya"],
   "images": {
-    "square": "https://blog.odya.uz/og/latn/social/42/square.jpg?v=1790882435",
-    "portrait": "https://blog.odya.uz/og/latn/social/42/portrait.jpg?v=1790882435",
-    "landscape": "https://blog.odya.uz/og/latn/social/42/landscape.jpg?v=1790882435",
+    "square": "https://blog.odya.uz/og/latn/social/42/square.jpg?v=3f9c2a71b0de",
+    "portrait": "https://blog.odya.uz/og/latn/social/42/portrait.jpg?v=3f9c2a71b0de",
+    "landscape": "https://blog.odya.uz/og/latn/social/42/landscape.jpg?v=3f9c2a71b0de",
     "alt": "Smartfon mavzusidagi abstrakt tasvir (namuna)",
     "fromCover": true,
     "width": { "square": 1080, "portrait": 1080, "landscape": 1200 },
@@ -221,18 +222,18 @@ Yoqilishidan oldin chop etilgan postni yuborish kerak bo'lsa — post panelidagi
   },
   "instagram": {
     "caption": "Namuna: smartfon sharhi uchun andoza\n\nDemo maqola: yangi qurilma sharhida qaysi boʻlimlar boʻlishi kerak.\n\nTo‘liq maqola — profildagi havolada.\n\n#iPhone #Gadjetlar #BlogOdya",
-    "imageUrl": "https://blog.odya.uz/og/latn/social/42/square.jpg?v=1790882435",
+    "imageUrl": "https://blog.odya.uz/og/latn/social/42/square.jpg?v=3f9c2a71b0de",
     "altText": "Smartfon mavzusidagi abstrakt tasvir (namuna)"
   },
   "facebook": {
     "message": "Namuna: smartfon sharhi uchun andoza\n\nDemo maqola: yangi qurilma sharhida qaysi boʻlimlar boʻlishi kerak.\n\n#iPhone #Gadjetlar #BlogOdya",
     "link": "https://blog.odya.uz/gadjetlar/namuna-smartfon-sharhi-uchun-andoza?utm_source=facebook&utm_medium=social&utm_campaign=latn",
-    "imageUrl": "https://blog.odya.uz/og/latn/social/42/landscape.jpg?v=1790882435"
+    "imageUrl": "https://blog.odya.uz/og/latn/social/42/landscape.jpg?v=3f9c2a71b0de"
   },
   "threads": {
     "text": "Namuna: smartfon sharhi uchun andoza\n\nDemo maqola: …\n\nhttps://blog.odya.uz/gadjetlar/namuna-smartfon-sharhi-uchun-andoza?utm_source=threads&utm_medium=social&utm_campaign=latn",
     "link": "https://blog.odya.uz/gadjetlar/namuna-smartfon-sharhi-uchun-andoza?utm_source=threads&utm_medium=social&utm_campaign=latn",
-    "imageUrl": "https://blog.odya.uz/og/latn/social/42/square.jpg?v=1790882435"
+    "imageUrl": "https://blog.odya.uz/og/latn/social/42/square.jpg?v=3f9c2a71b0de"
   },
   "x": {
     "text": "Namuna: smartfon sharhi uchun andoza\n\nhttps://blog.odya.uz/gadjetlar/namuna-smartfon-sharhi-uchun-andoza?utm_source=x&utm_medium=social&utm_campaign=latn"
@@ -240,7 +241,7 @@ Yoqilishidan oldin chop etilgan postni yuborish kerak bo'lsa — post panelidagi
   "linkedin": {
     "text": "Namuna: smartfon sharhi uchun andoza\n\nDemo maqola: …\n\n#iPhone #Gadjetlar #BlogOdya",
     "link": "https://blog.odya.uz/gadjetlar/namuna-smartfon-sharhi-uchun-andoza?utm_source=linkedin&utm_medium=social&utm_campaign=latn",
-    "imageUrl": "https://blog.odya.uz/og/latn/social/42/landscape.jpg?v=1790882435"
+    "imageUrl": "https://blog.odya.uz/og/latn/social/42/landscape.jpg?v=3f9c2a71b0de"
   }
 }
 ```

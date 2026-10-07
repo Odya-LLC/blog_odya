@@ -7,6 +7,7 @@ import { classifyMakeStatus, makeDeliveryKey } from '@/social/make/deliver'
 import {
   buildMakePayload,
   charLength,
+  DEFAULT_SOCIAL_IMAGE_STYLE,
   INSTAGRAM_CAPTION_LIMIT,
   instagramCaption,
   leadText,
@@ -16,6 +17,7 @@ import {
   signMakeBody,
   socialHashtags,
   socialImageUrl,
+  socialImageVersion,
   socialPostUrl,
   THREADS_TEXT_LIMIT,
   threadsText,
@@ -236,6 +238,28 @@ describe('buildMakePayload', () => {
     )
     expect(payload.facebook.link).toContain('utm_campaign=cyrl')
   })
+
+  it('OBLOG-94: ?v= — rasm kaliti va shablon sozlamalari xeshi; socialTitle maydoni', () => {
+    const withKey = { ...POST, imageKey: '["uz-Latn","GPT-6 chiqdi"]', socialTitle: 'GPT-6 chiqdi' }
+    const payload = buildMakePayload(withKey, OPTIONS)
+    const version = new URL(payload.instagram.imageUrl).searchParams.get('v')
+    expect(version).toBe(socialImageVersion(withKey.imageKey, DEFAULT_SOCIAL_IMAGE_STYLE))
+    expect(version).toMatch(/^[0-9a-f]{12}$/)
+    expect(payload.post.socialTitle).toBe('GPT-6 chiqdi')
+    // updatedAt o'zgarishi rasm URL'iga ta'sir qilmaydi; sarlavha va sozlama — ta'sir qiladi.
+    expect(
+      buildMakePayload({ ...withKey, updatedAt: '2030-01-01T00:00:00Z' }, OPTIONS).images,
+    ).toEqual(payload.images)
+    expect(buildMakePayload({ ...withKey, imageKey: 'boshqa' }, OPTIONS).images.square).not.toBe(
+      payload.images.square,
+    )
+    expect(
+      buildMakePayload(withKey, { ...OPTIONS, imageStyle: { overlay: false, scheme: 'dark' } })
+        .images.square,
+    ).not.toBe(payload.images.square)
+    // socialTitle yo'q — sarlavha.
+    expect(buildMakePayload(POST, OPTIONS).post.socialTitle).toBe(POST.title)
+  })
 })
 
 describe('imzo va sozlamalar', () => {
@@ -266,6 +290,13 @@ describe('imzo va sozlamalar', () => {
       hashtagsCount: 8,
       brandHashtag: '#BlogOdya',
       instagramImage: 'square',
+      // OBLOG-94: standart — rasm ustida sarlavha, qorong'i sxema.
+      imageOverlay: true,
+      imageScheme: 'dark',
+    })
+    expect(resolveMakeConfig({ imageOverlay: false, imageScheme: 'brand' }, {})).toMatchObject({
+      imageOverlay: false,
+      imageScheme: 'brand',
     })
     const env = {
       MAKE_WEBHOOK_URL: 'https://hook.eu2.make.com/env',

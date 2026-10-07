@@ -123,5 +123,36 @@ export const SocialSettings: GlobalConfig = {
         },
       ],
     },
+    // OBLOG-94: rasm shabloni (`/og/{yozuv}/social/{id}/*.jpg`).
+    {
+      type: 'row',
+      fields: [
+        {
+          name: 'imageOverlay',
+          type: 'checkbox',
+          label: 'Rasm ustida sarlavha',
+          defaultValue: true,
+          admin: {
+            width: '50%',
+            description:
+              'Muqova ustida qisqa sarlavha, kategoriya va “Blog Odya” brendi. O‘chiq — muqovaning oddiy kesimi (muqovasiz post — baribir brend kartochkasi).',
+          },
+        },
+        {
+          name: 'imageScheme',
+          type: 'select',
+          label: 'Rasm rang sxemasi',
+          defaultValue: 'dark',
+          options: [
+            { label: 'Qorong‘i (qora gradient)', value: 'dark' },
+            { label: 'Brend (ko‘k gradient)', value: 'brand' },
+          ],
+          admin: {
+            width: '50%',
+            description: 'Sarlavha ostidagi gradient rangi.',
+          },
+        },
+      ],
+    },
   ],
 }

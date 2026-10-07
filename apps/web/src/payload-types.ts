@@ -258,7 +258,7 @@ export interface Post {
     | boolean
     | null;
   /**
-   * { title, excerpt, content, meta, faq, coverAlt } — kirill qoʻlda tuzatilganda avtomatik qulflanadi; "Kirillni qayta generatsiya qilish" qulfni oladi
+   * { title, excerpt, content, meta, faq, coverAlt, socialTitle } — kirill qoʻlda tuzatilganda avtomatik qulflanadi; "Kirillni qayta generatsiya qilish" qulfni oladi
    */
   cyrlLocked?:
     | {
@@ -307,6 +307,10 @@ export interface Post {
   isBreaking?: boolean | null;
   telegramSkip?: boolean | null;
   socialSkip?: boolean | null;
+  /**
+   * Instagram rasmi ustida yoziladi (≤ 70 belgi, 3–8 so‘z). Bo‘sh — sarlavha yoki SEO sarlavhadan avtomatik qisqartiriladi. Kirill avtomatik.
+   */
+  socialTitle?: string | null;
   /**
    * Lotin o‘zgargan, lekin qulflangan kirill maydonlari yangilanmadi. Tekshirib, belgini oling yoki kirillni qayta generatsiya qiling.
    */
@@ -1287,6 +1291,7 @@ export interface PostsSelect<T extends boolean = true> {
   isBreaking?: T;
   telegramSkip?: T;
   socialSkip?: T;
+  socialTitle?: T;
   cyrlStale?: T;
   readingTime?: T;
   views?: T;
@@ -2023,6 +2028,14 @@ export interface SocialSetting {
    * Instagram caption’dagi havola bosilmaydi — o‘quvchini bio’dagi havolaga yo‘naltiring. Kirill uchun avtomatik o‘giriladi.
    */
   instagramCta?: string | null;
+  /**
+   * Muqova ustida qisqa sarlavha, kategoriya va “Blog Odya” brendi. O‘chiq — muqovaning oddiy kesimi (muqovasiz post — baribir brend kartochkasi).
+   */
+  imageOverlay?: boolean | null;
+  /**
+   * Sarlavha ostidagi gradient rangi.
+   */
+  imageScheme?: ('dark' | 'brand') | null;
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -2199,6 +2212,8 @@ export interface SocialSettingsSelect<T extends boolean = true> {
   hashtagsCount?: T;
   brandHashtag?: T;
   instagramCta?: T;
+  imageOverlay?: T;
+  imageScheme?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

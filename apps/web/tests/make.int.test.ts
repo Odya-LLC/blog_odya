@@ -8,6 +8,7 @@ import { runWithDeadline } from '@/jobs/context'
 import type { Category, Media, Post, Tag } from '@/payload-types'
 import { type MakeConfig, makeConfigOverride } from '@/social/make/config'
 import {
+  buildMakePayloadFor,
   findMakeDelivery,
   makeDeliveryKey,
   makeDeps,
@@ -23,6 +24,7 @@ import {
   createTestCategory,
   createTestUsers,
   deleteTestContent,
+  TEST_PASSWORD,
   testSlug,
   type TestUsers,
 } from './helpers/content'
@@ -47,6 +49,8 @@ const CONFIG: MakeConfig = {
   brandHashtag: '#BlogOdya',
   instagramCta: 'To‘liq maqola — profildagi havolada.',
   instagramImage: 'square',
+  imageOverlay: true,
+  imageScheme: 'dark',
 }
 
 interface Call {
@@ -239,7 +243,7 @@ describe('Make avtopost (make.webhook)', () => {
       'Yangi model taqdim etildi\n\nKompaniya yangi sun’iy intellekt modelini e’lon qildi. U ikki baravar tez.\n\nTo‘liq maqola — profildagi havolada.\n\n#SuniyIntellekt #TestKategoriya #BlogOdya',
     )
     expect(latn.instagram.imageUrl).toMatch(
-      new RegExp(`^${ORIGIN}/og/latn/social/${post.id}/square\\.jpg\\?v=\\d+$`),
+      new RegExp(`^${ORIGIN}/og/latn/social/${post.id}/square\\.jpg\\?v=[0-9a-f]{12}$`),
     )
     // Kirill: kirill matn, /kr havola, CTA kirillda, heshteglar lotinda.
     expect(cyrl.post.title).toMatch(/^Янги модел/)
@@ -404,5 +408,69 @@ describe('Make avtopost (make.webhook)', () => {
     expect(response.headers.get('cache-control')).toContain('s-maxage=86400')
     const meta = await sharp(Buffer.from(await response.arrayBuffer())).metadata()
     expect(meta).toMatchObject({ format: 'jpeg', width: 1080, height: 1080 })
+  })
+
+  it('socialTitle (OBLOG-94): payload, kirill translit, ?v= o‘zgaradi', async () => {
+    const post = await postInReview({ socialTitle: 'Yangi model: ikki baravar tez' })
+    await publish(post.id)
+    const build = async (script: 'uz-Latn' | 'uz-Cyrl') => {
+      const result = await buildMakePayloadFor(payload, {
+        postId: post.id,
+        script,
+        config: CONFIG,
+        test: true,
+        deliveryId: 'd-1',
+      })
+      if (!result.ok) throw new Error(result.reason)
+      return result.payload
+    }
+    const latn = await build('uz-Latn')
+    expect(latn.post.socialTitle).toBe('Yangi model: ikki baravar tez')
+    const cyrl = await build('uz-Cyrl')
+    expect(cyrl.post.socialTitle).toMatch(/^Янги модель?: икки баравар тез$/)
+
+    const before = new URL(latn.instagram.imageUrl).searchParams.get('v')
+    await update(post.id, { socialTitle: 'Model ikki baravar tezlashdi' })
+    const after = new URL((await build('uz-Latn')).instagram.imageUrl).searchParams.get('v')
+    expect(after).toMatch(/^[0-9a-f]{12}$/)
+    expect(after).not.toBe(before)
+    // Faqat matn (lid) o'zgarsa — rasm o'zgarmaydi, URL ham.
+    await update(post.id, { excerpt: 'Yangi lid matni — rasmga ta’sir qilmaydi, faqat caption.' })
+    const same = new URL((await build('uz-Latn')).instagram.imageUrl).searchParams.get('v')
+    expect(same).toBe(after)
+    // Sozlama (sxema) o'zgarsa — yangi URL.
+    const brand = await buildMakePayloadFor(payload, {
+      postId: post.id,
+      script: 'uz-Latn',
+      config: { ...CONFIG, imageScheme: 'brand' },
+      test: true,
+      deliveryId: 'd-2',
+    })
+    expect(brand.ok && new URL(brand.payload.instagram.imageUrl).searchParams.get('v')).not.toBe(
+      after,
+    )
+  })
+
+  it('JPEG route ?preview=1: faqat admin/muharrir, qoralama ham, keshlanmaydi', async () => {
+    const { GET } = await import('@/app/(seo)/og/[script]/social/[id]/[file]/route')
+    makeConfigOverride.current = { ...CONFIG, enabled: false }
+    const post = await postInReview({ socialTitle: 'Oldindan ko‘rish' })
+    const params = { script: 'latn', id: String(post.id), file: 'portrait.jpg' }
+    const url = 'http://x/og/latn/social/1/portrait.jpg?preview=1'
+
+    const anonymous = await GET(new Request(url), { params: Promise.resolve(params) })
+    expect(anonymous.status).toBe(404)
+
+    const { token } = await payload.login({
+      collection: 'users',
+      data: { email: users.editor.email, password: TEST_PASSWORD },
+    })
+    const response = await GET(new Request(url, { headers: { Authorization: `JWT ${token}` } }), {
+      params: Promise.resolve(params),
+    })
+    expect(response.status).toBe(200)
+    expect(response.headers.get('cache-control')).toBe('private, no-store')
+    const meta = await sharp(Buffer.from(await response.arrayBuffer())).metadata()
+    expect(meta).toMatchObject({ format: 'jpeg', width: 1080, height: 1350 })
   })
 })

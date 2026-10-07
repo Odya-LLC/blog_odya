@@ -165,6 +165,7 @@ export async function buildMakePayloadFor(
       brandHashtag: options.config.brandHashtag,
       instagramCta: cta,
       instagramImage: options.config.instagramImage,
+      imageStyle: { overlay: options.config.imageOverlay, scheme: options.config.imageScheme },
     }),
   }
 }

@@ -173,6 +173,33 @@ describe('lotin maydonlari va uzunliklar (TZ §5.3)', () => {
     expect(cyr.errors.map((issue) => issue.code)).toEqual(['cyrillic_in_latin'])
   })
 
+  it('socialTitle (OBLOG-94): ≤ 70 belgi, lotin; bo‘sh — tekshirilmaydi', () => {
+    const state = goodState()
+    const seo = {
+      seoTitle: state.seoTitle,
+      metaDescription: state.metaDescription,
+      focusKeyword: state.focusKeyword,
+    }
+    expect(checkSeoFields({ ...seo, socialTitle: 'iPhone 18 kechikadi' })).toEqual({
+      errors: [],
+      warnings: [],
+    })
+    expect(checkSeoFields({ ...seo, socialTitle: '' }).errors).toEqual([])
+    const long = checkSeoFields({ ...seo, socialTitle: 'soʻz '.repeat(20).trim() })
+    expect(long.errors.map((issue) => `${issue.field}:${issue.code}`)).toEqual([
+      'socialTitle:too_long',
+    ])
+    expect(long.warnings.map((issue) => `${issue.field}:${issue.code}`)).toEqual([
+      'socialTitle:length',
+    ])
+    const cyr = checkSeoFields({ ...seo, socialTitle: 'Айфон 18 кечикади' })
+    expect(cyr.errors.map((issue) => `${issue.field}:${issue.code}`)).toEqual([
+      'socialTitle:cyrillic_in_latin',
+    ])
+    expect(Object.keys(saveRewriteInput)).toContain('socialTitle')
+    expect(Object.keys(setSeoInput)).toContain('socialTitle')
+  })
+
   it('sources bo‘sh — xato', () => {
     expect(sourcesError(0)?.code).toBe('sources_empty')
     expect(sourcesError(2)).toBeNull()

@@ -20,6 +20,7 @@ export type RevisionField =
   | 'content'
   | 'coverImage'
   | 'coverAlt'
+  | 'socialTitle'
   | 'faq'
   | 'tags'
   | 'category'
@@ -34,6 +35,7 @@ export const REVISION_FIELD_LABELS: Record<RevisionField, string> = {
   content: 'Matn',
   coverImage: 'Muqova',
   coverAlt: 'Muqova alt matni',
+  socialTitle: 'Rasm uchun qisqa sarlavha',
   faq: 'FAQ',
   tags: 'Teglar',
   category: 'Kategoriya',
@@ -54,6 +56,7 @@ export type RevisionSide = Pick<
   Post,
   'title' | 'excerpt' | 'meta' | 'content' | 'coverImage' | 'coverAlt' | 'faq' | 'tags'
 > &
+  Partial<Pick<Post, 'socialTitle'>> &
   Partial<Pick<Post, 'category' | 'sources'>>
 
 function text(value: unknown): string {
@@ -121,6 +124,7 @@ export function summarizeRevision(live: RevisionSide, draft: RevisionSide): Revi
 
   flag('coverImage', relKey(live.coverImage) !== relKey(draft.coverImage))
   textField('coverAlt', live.coverAlt, draft.coverAlt)
+  textField('socialTitle', live.socialTitle, draft.socialTitle)
   flag('faq', faqKey(live.faq) !== faqKey(draft.faq))
   flag('tags', relKeys(live.tags) !== relKeys(draft.tags))
   if (live.category !== undefined || draft.category !== undefined) {

@@ -44,6 +44,8 @@ export const CYRL_SYNC: CyrlSyncPluginOptions = {
         'title',
         'excerpt',
         'coverAlt',
+        // OBLOG-94: Instagram rasmi ustidagi qisqa sarlavha.
+        'socialTitle',
         faqCyrlSpec('faq'),
         ...seoMeta('title', 'description', 'focusKeyword'),
       ],

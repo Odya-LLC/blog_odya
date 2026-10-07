@@ -275,7 +275,7 @@ describe('MCP yozish toollari (/api/mcp)', () => {
     expect(tools.some((tool) => /publish|delete|schedule/.test(tool.name))).toBe(false)
     const save = tools.find((tool) => tool.name === 'save_rewrite')
     expect(Object.keys(save?.inputSchema.properties ?? {}).sort()).toEqual(
-      ['body', 'category', 'excerpt', 'keepLatin', 'postId', 'tags', 'title'].sort(),
+      ['body', 'category', 'excerpt', 'keepLatin', 'postId', 'socialTitle', 'tags', 'title'].sort(),
     )
     expect(save?.annotations?.readOnlyHint).toBe(false)
     await client.close()
@@ -340,11 +340,17 @@ describe('MCP yozish toollari (/api/mcp)', () => {
     expect(savedJson.similarity.containment).toBe(0)
     expect(savedJson.cyrillic.updated.sort()).toEqual(['content', 'excerpt', 'title'])
 
-    const seo = await call(client, 'set_seo', { postId, ...GOOD_SEO })
+    // OBLOG-94: socialTitle — Instagram rasmi ustidagi qisqa sarlavha.
+    const seo = await call(client, 'set_seo', {
+      postId,
+      ...GOOD_SEO,
+      socialTitle: 'iPhone 18 taqdimoti kechikadi',
+    })
     const seoJson = jsonOf(seo)
     expect(seo.isError).toBeFalsy()
     expect(seoJson).toMatchObject({ ok: true, errors: [], saved: true })
-    expect(seoJson.cyrillic.updated.sort()).toEqual(['coverAlt', 'faq', 'meta'])
+    expect(seoJson.post.socialTitle).toBe('iPhone 18 taqdimoti kechikadi')
+    expect(seoJson.cyrillic.updated.sort()).toEqual(['coverAlt', 'faq', 'meta', 'socialTitle'])
 
     const preview = await call(client, 'preview_cyrillic', { postId })
     expect(jsonOf(preview)).toMatchObject({ postId, locale: 'uz-Cyrl', generatedNow: [] })
@@ -378,6 +384,7 @@ describe('MCP yozish toollari (/api/mcp)', () => {
       title: `Apple iPhone 18 taqdimotini oktabrga koʻchirdi ${TOKEN}`,
       meta: { title: GOOD_SEO.seoTitle, focusKeyword: 'iPhone 18 taqdimoti' },
       coverAlt: GOOD_SEO.coverAlt,
+      socialTitle: 'iPhone 18 taqdimoti kechikadi',
       _status: 'draft',
     })
     expect(latin.readingTime).toBeGreaterThanOrEqual(1)
@@ -388,6 +395,7 @@ describe('MCP yozish toollari (/api/mcp)', () => {
     expect(cyrillic.meta?.description).toContain('тақдимоти')
     expect(cyrillic.faq?.[0]?.question).toBe('iPhone 18 қачон тақдим этилади?')
     expect(cyrillic.coverAlt).toBe('Apple логотипи туширилган саҳна ва тақдимот зали')
+    expect(cyrillic.socialTitle).toBe('iPhone 18 тақдимоти кечикади')
     expect(JSON.stringify(cyrillic.content)).toContain('Ўзбекистон учун аҳамияти')
 
     // Yangi teg kirill nomi bilan yaratildi.
@@ -1367,13 +1375,17 @@ describe('MCP yozish toollari (/api/mcp)', () => {
         await ensureBucket(createTestS3Client())
         const image = await sharp({
           create: { width: 1200, height: 630, channels: 3, background: '#3366cc' },
-        }).jpeg().toBuffer()
-        const upload = jsonOf(await call(client, 'upload_media', {
-          data: image.toString('base64'),
-          filename: `live-cover-${crypto.randomUUID()}.jpg`,
-          alt: `Apple iPhone 18 taqdimoti uchun yangi muqova ${TOKEN}`,
-          license: 'own',
-        }))
+        })
+          .jpeg()
+          .toBuffer()
+        const upload = jsonOf(
+          await call(client, 'upload_media', {
+            data: image.toString('base64'),
+            filename: `live-cover-${crypto.randomUUID()}.jpg`,
+            alt: `Apple iPhone 18 taqdimoti uchun yangi muqova ${TOKEN}`,
+            license: 'own',
+          }),
+        )
         createdMedia.add(upload.mediaId)
         return upload.mediaId
       }
@@ -1382,11 +1394,13 @@ describe('MCP yozish toollari (/api/mcp)', () => {
         const live = await publishedPost()
         const admin = await connect(adminKey)
         const mediaId = await uploadCover(admin)
-        const changed = jsonOf(await call(admin, 'set_cover', {
-          postId: live.id,
-          mediaId,
-          alt: `Apple iPhone 18 taqdimoti uchun yangi muqova ${TOKEN}`,
-        }))
+        const changed = jsonOf(
+          await call(admin, 'set_cover', {
+            postId: live.id,
+            mediaId,
+            alt: `Apple iPhone 18 taqdimoti uchun yangi muqova ${TOKEN}`,
+          }),
+        )
         expect(changed).toMatchObject({
           ok: true,
           saved: true,
@@ -1406,25 +1420,37 @@ describe('MCP yozish toollari (/api/mcp)', () => {
         const admin = await connect(adminKey)
         const editor = await connect(editorKey)
         const title = `Apple iPhone 18 taqdimotini qishga koʻchirdi ${TOKEN}`
-        expect(jsonOf(await call(admin, 'save_rewrite', goodRewrite(live.id, { title }))).ok).toBe(true)
-        expect(jsonOf(await call(admin, 'set_seo', {
-          postId: live.id,
-          ...GOOD_SEO,
-          seoTitle: `${GOOD_SEO.seoTitle} ${TOKEN}`,
-        })).ok).toBe(true)
-        expect(jsonOf(await call(admin, 'submit_for_review', {
-          postId: live.id,
-          notesForEditor: 'Sarlavhani tekshiring',
-        })).pendingRevision).toBe(true)
+        expect(jsonOf(await call(admin, 'save_rewrite', goodRewrite(live.id, { title }))).ok).toBe(
+          true,
+        )
+        expect(
+          jsonOf(
+            await call(admin, 'set_seo', {
+              postId: live.id,
+              ...GOOD_SEO,
+              seoTitle: `${GOOD_SEO.seoTitle} ${TOKEN}`,
+            }),
+          ).ok,
+        ).toBe(true)
+        expect(
+          jsonOf(
+            await call(admin, 'submit_for_review', {
+              postId: live.id,
+              notesForEditor: 'Sarlavhani tekshiring',
+            }),
+          ).pendingRevision,
+        ).toBe(true)
         const pendingBefore = await readPost(live.id)
         const mediaId = await uploadCover(admin)
         const denied = await call(editor, 'set_cover', { postId: live.id, mediaId })
         expect(denied.isError).toBe(true)
-        const changed = jsonOf(await call(admin, 'set_cover', {
-          postId: live.id,
-          mediaId,
-          alt: `Apple iPhone 18 taqdimoti uchun yangi muqova ${TOKEN}`,
-        }))
+        const changed = jsonOf(
+          await call(admin, 'set_cover', {
+            postId: live.id,
+            mediaId,
+            alt: `Apple iPhone 18 taqdimoti uchun yangi muqova ${TOKEN}`,
+          }),
+        )
         expect(changed).toMatchObject({
           ok: true,
           saved: true,
@@ -1444,7 +1470,10 @@ describe('MCP yozish toollari (/api/mcp)', () => {
         expect(main.meta?.title).toBe(live.meta?.title)
         expect(main.meta?.image).toBe(mediaId)
         const cyrl = await payload.findByID({
-          collection: 'posts', id: live.id, locale: 'uz-Cyrl', depth: 0,
+          collection: 'posts',
+          id: live.id,
+          locale: 'uz-Cyrl',
+          depth: 0,
         })
         expect(cyrl.meta?.image).toBe(mediaId)
         expect(cyrl.coverAlt).toMatch(/[Ѐ-ӿ]/)

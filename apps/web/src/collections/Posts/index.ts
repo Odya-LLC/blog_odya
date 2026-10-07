@@ -66,6 +66,19 @@ export function validateKeepLatin(value: unknown): true | string {
   return true
 }
 
+/** Ijtimoiy rasm ustidagi qisqa sarlavha chegarasi (OBLOG-94; `src/social/title.ts` bilan bir xil). */
+export const SOCIAL_TITLE_MAX = 70
+
+/** `socialTitle`: bo'sh yoki ≤ 70 belgi (Unicode belgilari bo'yicha — ʻ ʼ bittadan). */
+export function validateSocialTitle(value: unknown): true | string {
+  if (value === null || value === undefined || value === '') return true
+  if (typeof value !== 'string') return 'Matn bo‘lishi kerak'
+  const length = [...value.trim()].length
+  return length <= SOCIAL_TITLE_MAX
+    ? true
+    : `Ko‘pi bilan ${SOCIAL_TITLE_MAX} belgi (hozir ${length})`
+}
+
 /** Faqat tizim (job'lar, `overrideAccess`) yozadigan maydonlar. */
 const systemOnly: FieldAccess = () => false
 
@@ -371,7 +384,7 @@ export const Posts: CollectionConfig = {
               admin: {
                 readOnly: true,
                 description:
-                  '{ title, excerpt, content, meta, faq, coverAlt } — kirill qoʻlda tuzatilganda avtomatik qulflanadi; "Kirillni qayta generatsiya qilish" qulfni oladi',
+                  '{ title, excerpt, content, meta, faq, coverAlt, socialTitle } — kirill qoʻlda tuzatilganda avtomatik qulflanadi; "Kirillni qayta generatsiya qilish" qulfni oladi',
               },
             },
           ],
@@ -515,6 +528,19 @@ export const Posts: CollectionConfig = {
       label: 'Ijtimoiy tarmoqlarga (Make) yubormaslik',
       defaultValue: false,
       admin: { position: 'sidebar' },
+    },
+    {
+      // OBLOG-94: Instagram/Make rasmi ustidagi qisqa sarlavha. Kirill — avtomatik translit.
+      name: 'socialTitle',
+      type: 'text',
+      label: 'Rasm uchun qisqa sarlavha',
+      localized: true,
+      validate: validateSocialTitle,
+      admin: {
+        position: 'sidebar',
+        description:
+          'Instagram rasmi ustida yoziladi (≤ 70 belgi, 3–8 so‘z). Bo‘sh — sarlavha yoki SEO sarlavhadan avtomatik qisqartiriladi. Kirill avtomatik.',
+      },
     },
     // Make holati (yozuv bo'yicha: yuborilgan / navbatda / xato) + sinov tugmasi (OBLOG-91).
     {
