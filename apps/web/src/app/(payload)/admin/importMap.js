@@ -34,6 +34,7 @@ import { MetaImageComponent as MetaImageComponent_a8a977ebc872c5d5ea7ee689724c08
 import { PreviewComponent as PreviewComponent_a8a977ebc872c5d5ea7ee689724c0860 } from '@payloadcms/plugin-seo/client'
 import { SourcePanel as SourcePanel_e697dd7c357ed0647e57c7670abed832 } from '@/components/admin/SourcePanel'
 import { TelegramPanel as TelegramPanel_20c391eb8802bb3ab76c62754086c6d8 } from '@/components/admin/TelegramPanel'
+import { MakePanel as MakePanel_21fc957981e9b80c25543140b5b51898 } from '@/components/admin/MakePanel'
 import { CyrlSyncPanel as CyrlSyncPanel_4eef73d2e5280a89a41a17db41eee449 } from '../../../components/cyrl/CyrlSyncPanel'
 import { EditorialStats as EditorialStats_0f051e64f942452e9fce2678e0c4d5ce } from '@/components/admin/EditorialStats'
 import { EditorialNavLinks as EditorialNavLinks_60680023464659b414314bf8361bc3a3 } from '@/components/admin/EditorialNavLinks'
@@ -81,6 +82,7 @@ export const importMap = {
   "@payloadcms/plugin-seo/client#PreviewComponent": PreviewComponent_a8a977ebc872c5d5ea7ee689724c0860,
   "@/components/admin/SourcePanel#SourcePanel": SourcePanel_e697dd7c357ed0647e57c7670abed832,
   "@/components/admin/TelegramPanel#TelegramPanel": TelegramPanel_20c391eb8802bb3ab76c62754086c6d8,
+  "@/components/admin/MakePanel#MakePanel": MakePanel_21fc957981e9b80c25543140b5b51898,
   "/components/cyrl/CyrlSyncPanel#CyrlSyncPanel": CyrlSyncPanel_4eef73d2e5280a89a41a17db41eee449,
   "@/components/admin/EditorialStats#EditorialStats": EditorialStats_0f051e64f942452e9fce2678e0c4d5ce,
   "@/components/admin/EditorialNavLinks#EditorialNavLinks": EditorialNavLinks_60680023464659b414314bf8361bc3a3,

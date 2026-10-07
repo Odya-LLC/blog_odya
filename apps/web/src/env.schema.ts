@@ -106,6 +106,18 @@ export const envSchema = z.object({
   TELEGRAM_CHANNEL_CYRL: nonEmpty.optional(),
   TELEGRAM_ALERT_CHAT_ID: nonEmpty.optional(),
 
+  // --- Make.com avtopost (ixtiyoriy: bo'lmasa webhook yuborilmaydi; OBLOG-91) ---
+  /**
+   * Make "Custom webhook" URL'i (https://hook.<region>.make.com/...). Admin'dagi
+   * `social-settings.webhookUrl` ustun turadi. docs/runbooks/social-autopost-options.md
+   */
+  MAKE_WEBHOOK_URL: z.url().optional(),
+  /**
+   * Webhook tanasining HMAC-SHA256 imzosi uchun sir (`X-Odya-Signature`), kamida 16 belgi
+   * (`openssl rand -hex 32`). Bo'lmasa imzo sarlavhasi yuborilmaydi.
+   */
+  MAKE_WEBHOOK_SECRET: z.string().min(16, 'kamida 16 belgi bo‘lishi kerak').optional(),
+
   // --- Stok rasmlar (ixtiyoriy: bo'lmasa MCP `search_stock_images` "sozlanmagan" deydi) ---
   /** Pexels API kaliti (https://www.pexels.com/api/) — MCP orqali legal rasm qidirish (OBLOG-44). */
   PEXELS_API_KEY: nonEmpty.optional(),

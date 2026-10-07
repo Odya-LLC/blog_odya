@@ -2,7 +2,7 @@
 
 **Tekshirilgan sana:** 2026-10-07
 
-**Holat:** tadqiqot va qaror hujjati; integratsiya qilinmagan, hech bir hisob ulanmagan.
+**Holat:** tadqiqot va qaror hujjati. **2026-10-07: owner Make.com'ni tanladi (OBLOG-91)** — tizim tomoni tayyor (chop etilganda Make webhook'iga JSON + Instagram uchun JPEG rasm), hisoblar hali ulanmagan. Ishga tushirish: [Tanlov: Make — ishga tushirish rejasi](#tanlov-make--ishga-tushirish-rejasi).
 
 **Manba tekshiruvi:** Meta Developer sahifalari tadqiqot paytida avtomatik o'qishda `429` qaytardi. Shu sababli endpoint, scope va request/response dalillari Meta'ning tasdiqlangan, o'qiladigan rasmiy Postman workspace'laridan tekshirildi; Developer havolalari kanonik reference sifatida berildi. Hisobga bog'liq quota, access va token muddati productionda API javobidan qayta tekshiriladi. Live API chaqiruvi qilinmadi.
 
@@ -131,3 +131,155 @@ Implementatsiya vazifasi berilishidan oldin quyidagilar yozma tanlansin:
 - Meta/X app, verification/review va production tokenlar tayyorligi.
 
 Rollout: avtopost default o'chiq → test hisoblarida 5 ta qo'lda tasdiqlangan post → format, link, UTM, external ID va dublikat tekshiruvi → bitta platformani productionda yoqish → qolganlarini ketma-ket qo'shish. Sirlar faqat server secret storage'da bo'ladi; log va Payload hujjatlariga access token yozilmaydi.
+
+## Tanlov: Make — ishga tushirish rejasi
+
+**Qaror (2026-10-07, OBLOG-91):** avtopost Make.com orqali. Bo'linish:
+
+- **Blog Odya (tizim)** — post chop etilganda Make'ga bitta HTTP so'rov (JSON) yuboradi: tayyor Instagram caption, heshteglar, JPEG rasm havolasi, boshqa tarmoqlar uchun qisqa matnlar va havolalar. Qayta urinish, dublikatdan himoya, imzo va admin'dagi holat — bizda.
+- **Make (ssenariy)** — JSON'ni qabul qiladi va Instagram (keyin xohlasangiz Facebook Page, Threads, LinkedIn) modullari bilan post qiladi. Meta hisoblari, tokenlar va App Review — Make'ning tayyor ulanishi orqali; biz Meta API bilan bevosita ishlamaymiz.
+
+**OBLOG-88 bilan munosabat:** OBLOG-88 faqat ushbu tadqiqot hujjati edi (kod yo'q) — Instagram'ga bevosita yuboradigan ikkinchi yo'l yo'q, dublikat xavfi yo'q. Make — Instagram/Facebook/Threads/LinkedIn uchun **yagona** transport. Telegram avtoposti (M3-01) avvalgidek bevosita Bot API orqali ishlaydi va Make'dan mustaqil — Make ssenariysiga Telegram modulini **qo'shmang** (aks holda kanalga ikki marta tushadi).
+
+### Egasi tomonidan (qadamma-qadam)
+
+1. **Make hisobi va reja.** [make.com](https://www.make.com/en/pricing) da hisob oching. Har ishga tushish = webhook trigger + har modul ≈ 1 operatsiya/kredit (filtr va router odatda hisoblanmaydi — joriy qoidani pricing sahifasidan tekshiring). Taxmin: faqat Instagram ≈ 2 kredit/post, Instagram + Facebook ≈ 3, + imzo tekshiruvi (Parse JSON) ≈ +1. Kuniga 10 post × 30 kun × 3 ≈ 900 kredit/oy — Free (1 000) chegarada, sinovlar va xatolar bilan oshib ketadi; production uchun eng kichik pullik reja (Core) tavsiya etiladi. Webhook — "instant" trigger, Free'dagi 15 daqiqalik interval unga taalluqli emas.
+2. **Instagram hisobi.** Instagram → Sozlamalar → hisob turi **Business** (yoki Creator). Uni Odya'ning **Facebook Page**'iga bog'lang (Meta Business Suite → Sozlamalar → Hisoblar → Instagram). Make'ning "Instagram for Business" ulanishi Page orqali ishlaydi. Ulanadigan Facebook foydalanuvchisi Page'da to'liq boshqaruv huquqiga ega bo'lsin.
+3. **Make'da Meta ulanishi.** Make → Connections → Add → "Instagram for Business" (Facebook login) → Odya Page va Instagram hisobini belgilang, so'ralgan barcha ruxsatlarni bering. Facebook'ga ham post qilinsa — "Facebook Pages" ulanishi.
+4. **Ssenariy yaratish** (Create a new scenario):
+   1. **Webhooks → Custom webhook** → Add → nom: `blog-odya-publish` → **Copy address** (masalan `https://hook.eu2.make.com/abc…`). Bu URL — sir: uni bilgan har kim ssenariyni ishga tushira oladi.
+   2. *(ixtiyoriy, tavsiya)* imzo tekshiruvi — pastdagi "Imzoni tekshirish" bo'limi.
+   3. Webhook'dan keyingi **filtr** (modullar orasidagi bog'lanishni bosing → Set up a filter): `test` **Equal to** `false` (Boolean operator). **Majburiy:** admin'dagi "Sinov yuborish" `test: true` yuboradi — filtr bo'lmasa sinov ham Instagram'ga chiqib ketadi.
+   4. *(ikkala yozuv yuborilsa)* filtr: `script` = `uz-Latn` — bitta Instagram hisobiga faqat lotin.
+   5. **Instagram for Business → Create a Photo Post:** Photo URL ← `instagram.imageUrl`, Caption ← `instagram.caption`. (Alt matn maydoni bo'lsa ← `instagram.altText`.)
+   6. *(ixtiyoriy)* **Router** orqali parallel: Facebook Pages → Create a Post (Message ← `facebook.message`, Link ← `facebook.link`) yoki Upload a Photo (`facebook.imageUrl`); Threads → `threads.text`; LinkedIn → `linkedin.text` + `linkedin.link`. X uchun Make'ning X ilovasi 2025da yopilgan — X kerak bo'lsa alohida qaror (pullik API, o'z kalitlari bilan HTTP moduli) — `x.text` tayyor.
+   7. **Xatolar:** Instagram moduli → o'ng tugma → *Add error handler* → **Break** (Make o'zi qayta urinadi; scenario settings → "Allow storing of incomplete executions" yoqilsin). Ssenariy egasiga Make xato xatlari keladi (Profile → Notifications).
+   8. Scenario settings: **Sequential processing** yoqilsin (postlar tartib bilan, parallel emas).
+5. **Webhook URL va sirni tizimga berish.** Ikki yo'l (biri yetarli):
+   - Admin → **Ijtimoiy tarmoqlar (Make)** → "Make webhook URL" maydoniga yopishtiring (darhol ishlaydi, redeploy kerak emas); yoki
+   - Vercel → Project → Settings → Environment Variables (**Production**): `MAKE_WEBHOOK_URL`.
+   - Imzo uchun (tavsiya): `MAKE_WEBHOOK_SECRET` = `openssl rand -hex 32` natijasi — **faqat Vercel env**'da (admin'da saqlanmaydi), qo'shilgach redeploy.
+6. **Maydonlarni xaritalash (post chop etmasdan).** Make'da webhook modulini oching → **Redetermine data structure** (tinglash rejimi) → Odya admin'ida istalgan **chop etilgan** postni oching → yon panel "Instagram / Make" → **Sinov yuborish**. Make "Successfully determined" deydi — endi 4-qadamdagi modullarda maydonlar ro'yxatdan tanlanadi. Admin'da natija (HTTP 200) toast'da ko'rinadi.
+7. **Sinov ishga tushirish.** Make'da **Run once** → admin'da yana "Sinov yuborish" → ssenariy oqimini ko'ring: filtr `test=true` ni to'xtatishi kerak (Instagram'ga hech narsa chiqmaydi). Haqiqiy postni tekshirish uchun filtrni vaqtincha o'chirib, test Instagram hisobida sinab ko'rish mumkin.
+8. **Yoqish.** Make'da ssenariy **ON** (Scheduling: Immediately). Admin → Ijtimoiy tarmoqlar (Make) → **Make'ga yuborish yoqilgan** ✓, "Qaysi yozuv(lar)" — odatda faqat Lotin; Instagram rasmi — kvadrat (1:1) yoki vertikal (4:5); heshteglar soni (brend bilan, ≤ 15); brend heshtegi `#BlogOdya`; chaqiruv qatori.
+9. **Birinchi haqiqiy post.** Yangi postni chop eting → 5–30 soniyada post yon panelida "Make'ga yuborilgan · vaqt" → Make'da History → Instagram'da post. Muammo bo'lsa — pastdagi jadval.
+10. **Instagram bio havolasi.** Caption'dagi havola Instagram'da bosilmaydi, shuning uchun caption "To'liq maqola — profildagi havolada." bilan tugaydi. Bio'ga `https://blog.odya.uz` (yoki link-in-bio sahifasi) qo'ying.
+
+Yoqilishidan oldin chop etilgan postni yuborish kerak bo'lsa — post panelidagi **Make'ga yuborish** (faqat admin; har post/yozuv bir marta).
+
+### Tizim tomonidan (OBLOG-91 da qilingan)
+
+| Qism | Qanday ishlaydi |
+| --- | --- |
+| Trigger | Post **birinchi marta** `published` bo'lganda — publish tugmasi, rejalashtirilgan publish va MCP auto-publish (bitta `afterChange` hook, `collections/Posts/make.ts`). Chop etilgan postni tahrirlash, qoralama/autosave — trigger emas (Instagram postini tahrirlab bo'lmaydi). |
+| Job | `make.webhook` (Payload Jobs, `default` navbat): `after()` bilan javobdan keyin darhol (≤ bir necha soniya), zaxira — pg_cron scheduler (10 daqiqa). Mantiq — `src/social/make/deliver.ts`. |
+| Idempotentlik | `social-deliveries` kolleksiyasi, `key = make:{postId}:post.published:{script}` UNIQUE. `sent` bo'lsa qayta yuborilmaydi; tugallanmagan job bo'lsa yangisi qo'yilmaydi. `X-Odya-Delivery` (UUID) qayta urinishlarda o'zgarmaydi. Qayta yuborish kerak bo'lsa — admin "Ijtimoiy yuborishlar" (Tizim) dan qatorni o'chirib, panelda "Make'ga yuborish". |
+| Qayta urinish | 429 / 5xx / tarmoq / timeout (15 s) → 1, 5, 15 daqiqadan keyin; 404/410 (webhook o'chirilgan) va boshqa 4xx → darhol xato. Yakuniy xato → Telegram `alertChatId` ga ogohlantirish (webhook URL xabarga yozilmaydi). |
+| Holat | Post yon paneli "Instagram / Make": yuborilgan (vaqt), navbatda, qayta urinish (xato matni), xato. Admin uchun tugmalar: **Sinov yuborish** (`test: true`, holat yozilmaydi, Make o'chiq bo'lsa ham ishlaydi), **Make'ga yuborish**. |
+| O'chirish | Global'da "yoqilgan" belgisi (standart o'chiq), post'da **"Ijtimoiy tarmoqlarga (Make) yubormaslik"** (`socialSkip`). |
+| Sozlamalar | Global `social-settings` ("Ijtimoiy tarmoqlar (Make)", faqat admin): yoqish, webhook URL (bo'sh — env `MAKE_WEBHOOK_URL`), yozuvlar (lotin/kirill), Instagram rasmi (1:1 / 4:5), heshteglar soni (≤ 15), brend heshtegi, chaqiruv qatori. Imzo siri — faqat env `MAKE_WEBHOOK_SECRET`. |
+| Rasm | `GET /og/{latn\|cyrl}/social/{postId}/{square\|portrait\|landscape}.jpg?v=…` — **JPEG** 1080×1080, 1080×1350, 1200×630. Muqova bor — `sharp` bilan focal point bo'yicha kesiladi (muqovaning focal point'ini admin'da to'g'rilang); muqova yo'q — avtomatik brend kartochkasi (OG maketi, yozuvga mos). Faqat chop etilgan post (aks holda 404), CDN'da 24 soat keshlanadi, `robots.txt` da ochiq (Meta oladi). |
+
+**Sarlavhalar:** `Content-Type: application/json`, `X-Odya-Event: post.published`, `X-Odya-Delivery: <uuid>`, `X-Odya-Timestamp: <unix soniya>`, `X-Odya-Signature: sha256=<HMAC-SHA256(tana, MAKE_WEBHOOK_SECRET) hex>` (sir sozlangan bo'lsa).
+
+**JSON (misol, lotin, haqiqiy sinovdan; domen production'ga almashtirilgan):**
+
+```json
+{
+  "version": 1,
+  "event": "post.published",
+  "test": false,
+  "deliveryId": "d37c7ef4-df2e-4427-9f4c-44217651ffb8",
+  "sentAt": "2026-10-07T08:51:56.214Z",
+  "script": "uz-Latn",
+  "post": {
+    "id": 42,
+    "slug": "namuna-smartfon-sharhi-uchun-andoza",
+    "title": "Namuna: smartfon sharhi uchun andoza",
+    "excerpt": "Demo maqola: yangi qurilma sharhida qaysi boʻlimlar boʻlishi kerak.",
+    "lead": "Demo maqola: yangi qurilma sharhida qaysi boʻlimlar boʻlishi kerak.",
+    "url": "https://blog.odya.uz/gadjetlar/namuna-smartfon-sharhi-uchun-andoza",
+    "urls": {
+      "uz-Latn": "https://blog.odya.uz/gadjetlar/namuna-smartfon-sharhi-uchun-andoza",
+      "uz-Cyrl": "https://blog.odya.uz/kr/gadjetlar/namuna-smartfon-sharhi-uchun-andoza"
+    },
+    "publishedAt": "2026-09-24T09:52:08.209Z",
+    "updatedAt": "2026-10-01T19:20:35.555Z",
+    "isBreaking": false,
+    "category": { "slug": "gadjetlar", "name": "Gadjetlar" },
+    "tags": [{ "slug": "iphone", "name": "iPhone" }]
+  },
+  "hashtags": ["#iPhone", "#Gadjetlar", "#BlogOdya"],
+  "images": {
+    "square": "https://blog.odya.uz/og/latn/social/42/square.jpg?v=1790882435",
+    "portrait": "https://blog.odya.uz/og/latn/social/42/portrait.jpg?v=1790882435",
+    "landscape": "https://blog.odya.uz/og/latn/social/42/landscape.jpg?v=1790882435",
+    "alt": "Smartfon mavzusidagi abstrakt tasvir (namuna)",
+    "fromCover": true,
+    "width": { "square": 1080, "portrait": 1080, "landscape": 1200 },
+    "height": { "square": 1080, "portrait": 1350, "landscape": 630 }
+  },
+  "instagram": {
+    "caption": "Namuna: smartfon sharhi uchun andoza\n\nDemo maqola: yangi qurilma sharhida qaysi boʻlimlar boʻlishi kerak.\n\nTo‘liq maqola — profildagi havolada.\n\n#iPhone #Gadjetlar #BlogOdya",
+    "imageUrl": "https://blog.odya.uz/og/latn/social/42/square.jpg?v=1790882435",
+    "altText": "Smartfon mavzusidagi abstrakt tasvir (namuna)"
+  },
+  "facebook": {
+    "message": "Namuna: smartfon sharhi uchun andoza\n\nDemo maqola: yangi qurilma sharhida qaysi boʻlimlar boʻlishi kerak.\n\n#iPhone #Gadjetlar #BlogOdya",
+    "link": "https://blog.odya.uz/gadjetlar/namuna-smartfon-sharhi-uchun-andoza?utm_source=facebook&utm_medium=social&utm_campaign=latn",
+    "imageUrl": "https://blog.odya.uz/og/latn/social/42/landscape.jpg?v=1790882435"
+  },
+  "threads": {
+    "text": "Namuna: smartfon sharhi uchun andoza\n\nDemo maqola: …\n\nhttps://blog.odya.uz/gadjetlar/namuna-smartfon-sharhi-uchun-andoza?utm_source=threads&utm_medium=social&utm_campaign=latn",
+    "link": "https://blog.odya.uz/gadjetlar/namuna-smartfon-sharhi-uchun-andoza?utm_source=threads&utm_medium=social&utm_campaign=latn",
+    "imageUrl": "https://blog.odya.uz/og/latn/social/42/square.jpg?v=1790882435"
+  },
+  "x": {
+    "text": "Namuna: smartfon sharhi uchun andoza\n\nhttps://blog.odya.uz/gadjetlar/namuna-smartfon-sharhi-uchun-andoza?utm_source=x&utm_medium=social&utm_campaign=latn"
+  },
+  "linkedin": {
+    "text": "Namuna: smartfon sharhi uchun andoza\n\nDemo maqola: …\n\n#iPhone #Gadjetlar #BlogOdya",
+    "link": "https://blog.odya.uz/gadjetlar/namuna-smartfon-sharhi-uchun-andoza?utm_source=linkedin&utm_medium=social&utm_campaign=latn",
+    "imageUrl": "https://blog.odya.uz/og/latn/social/42/landscape.jpg?v=1790882435"
+  }
+}
+```
+
+**Instagram caption qoidasi** (`instagram.caption`): 1-qator — sarlavha (feed'da ko'rinadigan "hook"); bo'sh qator; lid'dan 1–3 qisqa gap (≤ 400 belgi); chaqiruv qatori; heshteglar. Jami ≤ 2 200 belgi (oshsa — avval lid, keyin sarlavha qisqartiriladi). To'liq matn sig'maydi va kerak ham emas — maqolaga trafik bio'dagi havola orqali.
+
+**Heshteglar** (`hashtags`): teglar (post tartibida) → kategoriya → brend (`#BlogOdya`, oxirida). Faqat lotin harf/raqam: bo'shliq va tinish belgilari olib tashlanadi, so'zlar bosh harf bilan qo'shiladi, o'zbek apostroflari (`ʻ ' ‘ ’`) olib tashlanadi: `Sun'iy intellekt` → `#SuniyIntellekt`, `O‘yinlar` → `#Oyinlar`. Kirill yozuvda ham heshteglar lotin (Instagram qidiruvi va brend izchilligi). Soni — sozlamada (standart 8, ko'pi bilan 15; Instagram ruxsati 30, lekin 3–10 ta yaxshiroq ishlaydi).
+
+**Kirill:** "Qaysi yozuv(lar)" da Kirill belgilansa — alohida so'rov (`script: "uz-Cyrl"`): kirill sarlavha/lid, `/kr/…` havolalar, kirill chaqiruv qatori, kirill brend kartochkasi. Bitta Instagram hisobi uchun ikkalasini yoqmang (bir post ikki marta chiqadi) — yoki Make'da `script` bo'yicha filtr/router bilan alohida hisoblarga yo'naltiring.
+
+**Platforma cheklovlari:**
+
+- Instagram: rasm — ommaviy URL, **JPEG**, nisbat 4:5 … 1.91:1, ≤ 8 MB (bizniki 1080 px, ~100–300 KB); caption ≤ 2 200 belgi, ≤ 30 heshteg; caption'dagi havola bosilmaydi; Content Publishing API — 24 soatda 50 ta post atrofida (aniq qiymat hisobga bog'liq — `content_publishing_limit`; Odya hajmi uchun yetarli).
+- Threads: matn ≤ 500 belgi (`threads.text` shunga moslangan). Facebook: havola preview'ni `link` dan oladi. X: 280 "og'irlikdagi" belgi, URL = 23 (`x.text` moslangan).
+
+### Imzoni tekshirish (Make'da, ixtiyoriy)
+
+**Variant A — oddiy:** faqat webhook URL'ini sir saqlash (Make URL'i uzun tasodifiy satr). Kamchiligi: URL sizib chiqsa, soxta JSON bilan Instagram'ga post qilish mumkin. Shuning uchun URL'ni chat/hujjatlarga yozmang; sizib chiqsa — Make'da webhook'ni o'chirib, yangisini yarating va admin/env'ni yangilang.
+
+**Variant B — imzo (tavsiya):** `MAKE_WEBHOOK_SECRET` env'ga qo'yiladi va har so'rovda `X-Odya-Signature` keladi.
+
+1. Custom webhook → *Show advanced settings*: **Get request headers** = Yes, **JSON pass-through** = Yes (tana o'zgarishsiz `value` sifatida keladi).
+2. Keyin **JSON → Parse JSON** moduli: JSON string ← webhook `value` (Data structure — "Sinov yuborish" bilan aniqlangan namunadan).
+3. Webhook va Parse JSON orasidagi filtr: `sha256(1.value; "hex"; "<MAKE_WEBHOOK_SECRET>")` **Equal to** `replace(<X-Odya-Signature sarlavhasi>; "sha256="; "")`. Make'ning `sha256(matn; [encoding]; [kalit])` funksiyasi kalit berilganda HMAC hisoblaydi — Make funksiya yordamida (ⓘ) imzosini tekshiring. Kalit Make'da ssenariy ichida saqlanadi (faqat ssenariy egalari ko'radi).
+4. Xohlasangiz: `X-Odya-Timestamp` 10 daqiqadan eski bo'lsa — rad etish (takroriy yuborishga qarshi).
+
+Keyingi modullarda maydonlar Parse JSON chiqishidan olinadi. Bu variant +1 kredit/post.
+
+### Muammolar va yechimlar
+
+| Belgi | Sabab / yechim |
+| --- | --- |
+| Panelda "Make o'chiq" yoki "Webhook URL sozlanmagan" | Admin → Ijtimoiy tarmoqlar (Make): yoqing va URL'ni kiriting (yoki Vercel `MAKE_WEBHOOK_URL` + redeploy). |
+| "Xato: Make: webhook topilmadi (410/404)" | Make'da webhook o'chirilgan yoki URL eskirgan → yangi URL'ni kiriting, so'ng panelda "Make'ga yuborish". |
+| "Qayta urinish kutilmoqda … 429/5xx" | Make vaqtincha band — tizim 1/5/15 daqiqada o'zi qayta urinadi; oxirida Telegram'ga ogohlantirish. |
+| Make'ga keldi, lekin Instagram'da yo'q | Make → History'dagi xato: token muddati tugagan (Connections → Reauthorize), Instagram Business emas, Page bog'lanmagan, rasm URL'i ochilmayapti (`instagram.imageUrl` ni brauzerda oching — JPEG ko'rinishi kerak), 24 soatlik limit. |
+| Sinov Instagram'ga chiqib ketdi | `test = false` filtri yo'q yoki noto'g'ri (Boolean emas, matn sifatida solishtirilgan). |
+| Post ikki marta chiqdi | Ikkala yozuv bitta hisobga yuborilmoqda (`script` filtri) yoki ssenariy ikki marta nusxalangan. Bizning tomonda (post, yozuv) bir marta — `social-deliveries`. |
+| Rasm noto'g'ri kesilgan | Media'da muqovaning focal point'ini to'g'rilang; yoki "Instagram rasmi" ni o'zgartiring. Allaqachon chiqqan post — Instagram'da qo'lda. |
+| Muqovasiz post — brend kartochkasi | Kutilgan xulq (`images.fromCover: false`). Instagram uchun muqovali post afzal. |
+
+**Xarajat eslatmasi:** Make kreditlari har ishga tushishda sarflanadi (trigger + modullar); "Sinov yuborish" va filtrda to'xtagan ishga tushishlar ham triggerni sarflaydi. Oyiga taxminiy: `postlar soni × (1 + modullar soni)`. Make → Organization → Usage'da kuzating; limit tugasa webhook'lar navbatda kutadi yoki rad etiladi — tizim 429/5xx'da qayta urinadi, 4xx'da ogohlantiradi.

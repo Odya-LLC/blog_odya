@@ -20,6 +20,7 @@ import { Pages } from './collections/Pages'
 import { Posts } from './collections/Posts'
 import { postMetaImagePlugin } from './collections/Posts/metaImage'
 import { ScrapedItems } from './collections/ScrapedItems'
+import { SocialDeliveries } from './collections/SocialDeliveries'
 import { Sources } from './collections/Sources'
 import { Tags } from './collections/Tags'
 import { TranslitExceptions } from './collections/TranslitExceptions'
@@ -32,6 +33,7 @@ import { Footer } from './globals/Footer'
 import { Header } from './globals/Header'
 import { ScrapingSettings } from './globals/ScrapingSettings'
 import { SiteSettings } from './globals/SiteSettings'
+import { SocialSettings } from './globals/SocialSettings'
 import { TelegramSettings } from './globals/TelegramSettings'
 import { uzPluginTranslations } from './i18n/plugins'
 import { buildJobsConfig } from './jobs'
@@ -114,8 +116,9 @@ export default buildConfig({
     ScrapedItems,
     Glossary,
     TranslitExceptions,
+    SocialDeliveries,
   ],
-  globals: [SiteSettings, Header, Footer, TelegramSettings, ScrapingSettings],
+  globals: [SiteSettings, Header, Footer, TelegramSettings, SocialSettings, ScrapingSettings],
   editor: lexicalEditor(),
   // Payload REST/GraphQL 5xx xatolari → Sentry (OBLOG-23; `SENTRY_DSN` bo'lmasa o'chiq).
   hooks: {

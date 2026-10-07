@@ -16,6 +16,7 @@ import { itemDedupeTask } from './tasks/itemDedupe'
 import { itemExtractTask } from './tasks/itemExtract'
 import { itemFetchTask } from './tasks/itemFetch'
 import { maintenanceCleanupTask } from './tasks/maintenanceCleanup'
+import { makeWebhookTask } from './tasks/makeWebhook'
 import { telegramPostTask } from './tasks/telegramPost'
 import { scrapeItemWorkflow } from './workflows/scrapeItem'
 
@@ -32,7 +33,8 @@ import { scrapeItemWorkflow } from './workflows/scrapeItem'
  * Task'lar: `feed.poll` (M2-01), `item.fetch` + `item.extract` (`scrapeItem` workflow, M2-02),
  * `item.dedupe` + `item.classify` (workflow davomi) va `maintenance.cleanup` (kuniga 1 marta),
  * ogohlantirishlar — har scheduler chaqiruvida (M2-03), `telegram.post` — post chop etilganda
- * (`default` navbati, M3-01), `indexnow.submit` — publish/unpublish/slug o'zgarishida (OBLOG-57).
+ * (`default` navbati, M3-01), `indexnow.submit` — publish/unpublish/slug o'zgarishida (OBLOG-57),
+ * `make.webhook` — birinchi chop etishda Make.com webhook'iga (OBLOG-91).
  * Task xatolari Sentry'ga ham yuboriladi (`./sentry.ts`, OBLOG-23).
  */
 export function buildJobsConfig(mode: Env['JOBS_MODE'] = 'endpoint'): JobsConfig {
@@ -49,6 +51,7 @@ export function buildJobsConfig(mode: Env['JOBS_MODE'] = 'endpoint'): JobsConfig
       maintenanceCleanupTask,
       telegramPostTask,
       indexNowSubmitTask,
+      makeWebhookTask,
     ].map(withErrorCapture),
     workflows: [scrapeItemWorkflow],
     // Supabase Free 500 MB: muvaffaqiyatli job'lar saqlanmaydi (natija — manba `stats` da).
