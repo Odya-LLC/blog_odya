@@ -7,6 +7,7 @@ import type { SocialDelivery } from '@/payload-types'
 import { loadMakeConfig } from '@/social/make/config'
 
 import { MakeActions } from './MakeActions'
+import { SocialImagePreview } from './SocialImagePreview'
 import { formatAdminDate } from './utils'
 
 import './editorial.css'
@@ -38,6 +39,7 @@ function statusOf(
 /**
  * Post yon panelidagi Make.com avtopost holati (OBLOG-91): yozuv bo'yicha — yuborilgan, navbatda,
  * xato. Admin uchun — "Sinov yuborish" (test: true) va "Make'ga yuborish" (yuborilmaganlar).
+ * Admin/muharrir uchun — Instagram rasmining oldindan ko'rinishi (OBLOG-94, 1:1 va 4:5).
  */
 export async function MakePanel({ data, req }: UIFieldServerProps) {
   if (!isAdminOrEditorUser(req.user)) return null
@@ -121,6 +123,10 @@ export async function MakePanel({ data, req }: UIFieldServerProps) {
             }
           />
         ) : null}
+        <SocialImagePreview
+          postId={Number(id)}
+          scripts={config.scripts.length ? config.scripts : ['uz-Latn']}
+        />
       </div>
     </details>
   )

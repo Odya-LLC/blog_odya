@@ -1,24 +1,36 @@
 /**
- * Ijtimoiy tarmoqlar uchun JPEG rasm (OBLOG-91): Instagram API faqat **JPEG** qabul qiladi
- * (bizning media variantlari — WebP), nisbat 4:5 … 1.91:1.
+ * Ijtimoiy tarmoqlar uchun JPEG rasm (OBLOG-91, shablon — OBLOG-94). Instagram API faqat
+ * **JPEG** qabul qiladi (bizning media variantlari — WebP), nisbat 4:5 … 1.91:1.
  *
- * - Muqova bor — asl rasm (yoki `full` 1920 WebP) yuklab olinadi va `sharp` bilan focal point
- *   bo'yicha kesiladi (`cover`), JPEG (sifat 85, progressive, mozjpeg).
- * - Muqova yo'q yoki yuklab bo'lmadi — avtomatik brend kartochkasi (`OgCard`, `next/og`) shu
- *   o'lchamda, PNG → JPEG.
+ * Shablon (`SocialCard`): fon — muqova (focal point bo'yicha kesilgan) yoki muqovasiz brend foni;
+ * pastki ~55% qismida qorong'i gradient; pastda **qisqa sarlavha** (Inter Display 800, 2–4
+ * qator, o'lchami avtomatik, sig'masa "…"), uning tepasida aksent chiziq, ostida domen; yuqorida —
+ * kategoriya chipi (chapda) va "Blog Odya" wordmark'i (o'ngda).
+ *
+ * - Muqova bor — `sharp` bilan kesiladi, ustiga `next/og` (satori) chizgan shaffof qatlam
+ *   (gradient + matn) qo'yiladi → JPEG (sifat 85, progressive, mozjpeg).
+ * - Muqova yo'q yoki yuklab bo'lmadi — butun kartochka `next/og` da (brend foni), PNG → JPEG.
+ * - `overlay: false` (sozlama "Rasm ustida sarlavha" o'chiq) — muqova oddiy kesim (OBLOG-91 kabi).
+ *
+ * Qatorlar satori'dan oldin o'zimiz bo'linadi (`fitTitle`, shrift glif kengliklari bo'yicha) —
+ * shunda 4 qatordan oshmaydi va "…" aniq joyda turadi.
  */
 import type { Locale } from '@blog-odya/shared/locales'
 import { ImageResponse } from 'next/og'
-import sharp from 'sharp'
+import sharp, { type Metadata, type Sharp } from 'sharp'
 
-import { loadOgFonts, OgCard } from '@/site/seo/og'
+import { BRAND_NAME } from '@/site/seo/config'
+import { categoryChipColor, loadOgFonts, ogDomain } from '@/site/seo/og'
 
-import { SOCIAL_IMAGE_SIZES, type SocialImageVariant } from './make/payload'
+import { type FontMetrics, parseFontMetrics } from './font-metrics'
+import { SOCIAL_IMAGE_SIZES, type SocialImageScheme, type SocialImageVariant } from './make/payload'
+import { type FittedTitle, fitTitle } from './title'
 
 export const SOCIAL_JPEG_QUALITY = 85
 /** Muqova manbasini yuklab olish chegarasi. */
 export const SOCIAL_SOURCE_TIMEOUT_MS = 10_000
 export const SOCIAL_SOURCE_MAX_BYTES = 25 * 1024 * 1024
+export type { SocialImageScheme }
 
 export interface SocialImageCover {
   url: string
@@ -30,9 +42,16 @@ export interface SocialImageCover {
 export interface SocialImageInput {
   variant: SocialImageVariant
   locale: Locale
+  /** Rasm ustidagi qisqa sarlavha (`resolveSocialTitle`). */
   title: string
   category?: { name: string; slug?: string | null; color?: string | null } | null
   cover?: SocialImageCover | null
+  /** Muqova ustida sarlavha/brend qatlami (standart — ha). */
+  overlay?: boolean
+  /** Gradient rangi: `dark` — qora, `brand` — brend ko'k (standart — `dark`). */
+  scheme?: SocialImageScheme
+  /** Domen yozuvi (standart — `ogDomain(locale)`). */
+  domain?: string
 }
 
 export interface SocialImageDeps {
@@ -41,18 +60,314 @@ export interface SocialImageDeps {
 
 export const socialImageDeps: SocialImageDeps = { fetch: (...args) => fetch(...args) }
 
+/** Brend tokenlari (design/brand/tokens.json, `activeAccent: blue`). */
+const COLORS = {
+  background: '#0B0B0F',
+  accent600: '#2563EB',
+  accent400: '#60A5FA',
+  accent900: '#1E3A8A',
+  wordmarkFirst: '#F4F4F5',
+  domain: '#D4D4D8',
+} as const
+
+/** Gradient rangi (RGB) — sxema bo'yicha. */
+const SHADE: Record<SocialImageScheme, string> = {
+  dark: '0,0,0',
+  brand: '8,18,52',
+}
+
+interface Layout {
+  padding: number
+  sizes: readonly number[]
+  maxLines: number
+  lineHeight: number
+  chipFont: number
+  wordmarkFont: number
+  domainFont: number
+  /** Pastki gradient balandligi (rasm balandligining ulushi). */
+  shade: number
+}
+
+const LAYOUTS: Record<SocialImageVariant, Layout> = {
+  square: {
+    padding: 64,
+    sizes: [92, 84, 76, 68, 62, 56],
+    maxLines: 4,
+    lineHeight: 1.08,
+    chipFont: 30,
+    wordmarkFont: 40,
+    domainFont: 28,
+    shade: 0.58,
+  },
+  portrait: {
+    padding: 64,
+    sizes: [96, 88, 80, 72, 64, 58],
+    maxLines: 4,
+    lineHeight: 1.08,
+    chipFont: 30,
+    wordmarkFont: 40,
+    domainFont: 28,
+    shade: 0.55,
+  },
+  landscape: {
+    padding: 56,
+    sizes: [66, 60, 54, 48, 44],
+    maxLines: 3,
+    lineHeight: 1.08,
+    chipFont: 24,
+    wordmarkFont: 32,
+    domainFont: 22,
+    shade: 0.68,
+  },
+}
+
+const TITLE_LETTER_SPACING = -0.02
+
+let metricsPromise: Promise<FontMetrics> | null = null
+
+/** Sarlavha shrifti (Inter Display 800) metrikasi — bir marta o'qiladi. */
+export function loadTitleMetrics(): Promise<FontMetrics> {
+  metricsPromise ??= loadOgFonts()
+    .then((fonts) => {
+      const font = fonts.find((item) => item.name === 'Inter Display' && item.weight === 800)
+      if (!font) throw new Error('Inter Display 800 shrifti topilmadi')
+      return parseFontMetrics(font.data)
+    })
+    .catch((error: unknown) => {
+      metricsPromise = null
+      throw error
+    })
+  return metricsPromise
+}
+
+/** Sarlavhani variant maketiga sig'diradi. */
+export function fitSocialTitle(
+  title: string,
+  variant: SocialImageVariant,
+  metrics: FontMetrics,
+): FittedTitle {
+  const layout = LAYOUTS[variant]
+  const { width } = SOCIAL_IMAGE_SIZES[variant]
+  return fitTitle(title, metrics, {
+    // Bir oz zaxira: kerning va satori yaxlitlashi.
+    width: width - layout.padding * 2 - 8,
+    maxLines: layout.maxLines,
+    sizes: layout.sizes,
+    letterSpacingEm: TITLE_LETTER_SPACING,
+  })
+}
+
+export interface SocialCardProps {
+  variant: SocialImageVariant
+  locale: Locale
+  fitted: FittedTitle
+  category?: SocialImageInput['category']
+  scheme: SocialImageScheme
+  domain: string
+  /** `true` — shaffof fon (muqova ustiga qo'yiladi); `false` — brend foni (muqovasiz). */
+  transparent: boolean
+}
+
+export function SocialCard({
+  variant,
+  locale,
+  fitted,
+  category,
+  scheme,
+  domain,
+  transparent,
+}: SocialCardProps) {
+  const size = SOCIAL_IMAGE_SIZES[variant]
+  const layout = LAYOUTS[variant]
+  const [first, second] = BRAND_NAME[locale].split(' ')
+  const chipColor = categoryChipColor(category)
+  const shade = SHADE[scheme]
+  // Sarlavha bloki (chiziq + qatorlar + domen) qayerdan boshlanadi — gradient shunga moslanadi.
+  const barHeight = Math.max(6, Math.round(layout.sizes[0]! * 0.085))
+  const blockHeight =
+    barHeight +
+    Math.round(fitted.fontSize * 0.36) +
+    fitted.lines.length * fitted.fontSize * layout.lineHeight +
+    Math.round(layout.domainFont * 1.1) +
+    layout.domainFont * 1.25
+  const titleTop = Math.round(size.height - layout.padding - blockHeight)
+  const shadeTop = Math.max(
+    0,
+    Math.min(
+      Math.round(size.height * (1 - layout.shade)),
+      titleTop - Math.round(size.height * 0.16),
+    ),
+  )
+  const titleStop = Math.round(((titleTop - shadeTop) / (size.height - shadeTop)) * 100)
+  const background = transparent
+    ? {}
+    : {
+        backgroundColor: scheme === 'brand' ? '#0A1638' : COLORS.background,
+        backgroundImage: `radial-gradient(circle at 100% 0%, ${COLORS.accent600}A6 0%, ${COLORS.accent600}00 60%), radial-gradient(circle at 0% 100%, ${chipColor}99 0%, ${chipColor}00 55%)`,
+      }
+  return (
+    <div
+      style={{
+        width: size.width,
+        height: size.height,
+        display: 'flex',
+        position: 'relative',
+        fontFamily: 'Inter',
+        color: '#FFFFFF',
+        ...background,
+      }}
+    >
+      {transparent ? (
+        <>
+          {/* Yuqori soya — chip va wordmark yorug' muqovada ham o'qilsin. */}
+          <div
+            style={{
+              position: 'absolute',
+              left: 0,
+              top: 0,
+              width: size.width,
+              height: Math.round(size.height * 0.24),
+              backgroundImage: `linear-gradient(to bottom, rgba(${shade},0.55) 0%, rgba(${shade},0) 100%)`,
+            }}
+          />
+          {/* Pastki gradient: 0 → 92%; sarlavha tepasida kamida 62% — oq muqovada ham oq matn
+              kontrasti ≥ 6:1 (WCAG AA, katta matn ≥ 3:1). */}
+          <div
+            style={{
+              position: 'absolute',
+              left: 0,
+              top: shadeTop,
+              width: size.width,
+              height: size.height - shadeTop,
+              backgroundImage: `linear-gradient(to bottom, rgba(${shade},0) 0%, rgba(${shade},0.62) ${titleStop}%, rgba(${shade},0.84) ${Math.round((titleStop + 100) / 2)}%, rgba(${shade},0.92) 100%)`,
+            }}
+          />
+        </>
+      ) : null}
+      <div
+        style={{
+          position: 'absolute',
+          left: 0,
+          top: 0,
+          width: size.width,
+          height: size.height,
+          padding: layout.padding,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            width: '100%',
+          }}
+        >
+          {category?.name ? (
+            <div
+              style={{
+                display: 'flex',
+                backgroundColor: chipColor,
+                color: '#FFFFFF',
+                fontSize: layout.chipFont,
+                fontWeight: 600,
+                padding: `${Math.round(layout.chipFont * 0.36)}px ${Math.round(layout.chipFont * 0.8)}px`,
+                borderRadius: 9999,
+                border: '2px solid rgba(255,255,255,0.18)',
+              }}
+            >
+              {category.name}
+            </div>
+          ) : (
+            <div style={{ display: 'flex' }} />
+          )}
+          <div
+            style={{
+              display: 'flex',
+              fontFamily: 'Inter Display',
+              fontSize: layout.wordmarkFont,
+              letterSpacing: '-0.025em',
+              // Muqova ustida — yarim shaffof qorong'i "pill": yorug' fonda ham o'qiladi.
+              ...(transparent
+                ? {
+                    backgroundColor: 'rgba(11,11,15,0.62)',
+                    padding: `${Math.round(layout.chipFont * 0.22)}px ${Math.round(layout.chipFont * 0.7)}px`,
+                    borderRadius: 9999,
+                  }
+                : {}),
+            }}
+          >
+            <span style={{ fontWeight: 600, color: COLORS.wordmarkFirst }}>{first}</span>
+            <span
+              style={{
+                fontWeight: 800,
+                color: COLORS.accent400,
+                marginLeft: Math.round(layout.wordmarkFont * 0.27),
+              }}
+            >
+              {second}
+            </span>
+          </div>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <div
+            style={{
+              display: 'flex',
+              width: Math.round(layout.sizes[0]! * 0.75),
+              height: barHeight,
+              borderRadius: 9999,
+              backgroundColor: COLORS.accent400,
+              marginBottom: Math.round(fitted.fontSize * 0.36),
+            }}
+          />
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              fontFamily: 'Inter Display',
+              fontWeight: 800,
+              fontSize: fitted.fontSize,
+              lineHeight: layout.lineHeight,
+              letterSpacing: `${TITLE_LETTER_SPACING}em`,
+              ...(transparent ? { textShadow: '0 2px 16px rgba(0,0,0,0.35)' } : {}),
+            }}
+          >
+            {fitted.lines.map((line, index) => (
+              <div key={index} style={{ display: 'flex', whiteSpace: 'nowrap' }}>
+                {line}
+              </div>
+            ))}
+          </div>
+          <div
+            style={{
+              display: 'flex',
+              marginTop: Math.round(layout.domainFont * 1.1),
+              fontSize: layout.domainFont,
+              fontWeight: 500,
+              color: COLORS.domain,
+            }}
+          >
+            {domain}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value))
 }
 
 /** Rasmni `width×height` ga focal point atrofida kesadi (kichik bo'lsa — kattalashtiradi). */
-export async function cropToJpeg(
+function cropPipeline(
   source: Buffer,
+  meta: Metadata,
   target: { width: number; height: number },
-  focal: { x?: number | null; y?: number | null } = {},
-): Promise<Buffer> {
-  const image = sharp(source, { failOn: 'error' }).rotate()
-  const meta = await image.metadata()
+  focal: { x?: number | null; y?: number | null },
+): Sharp {
   // `rotate()` EXIF bo'yicha buradi — 90/270 da eni va bo'yi almashadi.
   const swap = (meta.orientation ?? 1) >= 5
   const srcW = (swap ? meta.height : meta.width) ?? 0
@@ -65,12 +380,24 @@ export async function cropToJpeg(
   const fy = clamp((focal.y ?? 50) / 100, 0, 1)
   const left = clamp(Math.round(width * fx - target.width / 2), 0, width - target.width)
   const top = clamp(Math.round(height * fy - target.height / 2), 0, height - target.height)
-  return image
+  return sharp(source, { failOn: 'error' })
+    .rotate()
     .resize(width, height, { fit: 'fill' })
     .extract({ left, top, width: target.width, height: target.height })
-    .flatten({ background: '#0B0B0F' })
-    .jpeg({ quality: SOCIAL_JPEG_QUALITY, progressive: true, mozjpeg: true })
-    .toBuffer()
+    .flatten({ background: COLORS.background })
+}
+
+const toJpeg = (image: Sharp) =>
+  image.jpeg({ quality: SOCIAL_JPEG_QUALITY, progressive: true, mozjpeg: true }).toBuffer()
+
+/** Muqovani kesib JPEG qiladi (sarlavhasiz — `overlay: false`). */
+export async function cropToJpeg(
+  source: Buffer,
+  target: { width: number; height: number },
+  focal: { x?: number | null; y?: number | null } = {},
+): Promise<Buffer> {
+  const meta = await sharp(source, { failOn: 'error' }).metadata()
+  return toJpeg(cropPipeline(source, meta, target, focal))
 }
 
 async function fetchSource(url: string, deps: SocialImageDeps): Promise<Buffer> {
@@ -83,18 +410,43 @@ async function fetchSource(url: string, deps: SocialImageDeps): Promise<Buffer> 
   return buffer
 }
 
+/** Shablon qatlami (PNG): `transparent` — muqova ustiga, aks holda to'liq kartochka. */
+async function renderCardPng(input: SocialImageInput, transparent: boolean): Promise<Buffer> {
+  const size = SOCIAL_IMAGE_SIZES[input.variant]
+  const [fonts, metrics] = await Promise.all([loadOgFonts(), loadTitleMetrics()])
+  const fitted = fitSocialTitle(input.title, input.variant, metrics)
+  const response = new ImageResponse(
+    <SocialCard
+      variant={input.variant}
+      locale={input.locale}
+      fitted={fitted}
+      category={input.category}
+      scheme={input.scheme ?? 'dark'}
+      domain={input.domain ?? ogDomain(input.locale)}
+      transparent={transparent}
+    />,
+    { ...size, fonts },
+  )
+  return Buffer.from(await response.arrayBuffer())
+}
+
 /** Muqovasiz post uchun brend kartochkasi (JPEG). */
 export async function renderCardJpeg(input: SocialImageInput): Promise<Buffer> {
+  const png = await renderCardPng(input, false)
+  return toJpeg(sharp(png).flatten({ background: COLORS.background }))
+}
+
+/** Muqova + sarlavha qatlami (JPEG). */
+export async function renderCoverJpeg(source: Buffer, input: SocialImageInput): Promise<Buffer> {
   const size = SOCIAL_IMAGE_SIZES[input.variant]
-  const response = new ImageResponse(
-    <OgCard locale={input.locale} title={input.title} category={input.category} size={size} />,
-    { ...size, fonts: await loadOgFonts() },
-  )
-  const png = Buffer.from(await response.arrayBuffer())
-  return sharp(png)
-    .flatten({ background: '#0B0B0F' })
-    .jpeg({ quality: SOCIAL_JPEG_QUALITY, progressive: true, mozjpeg: true })
-    .toBuffer()
+  const meta = await sharp(source, { failOn: 'error' }).metadata()
+  const focal = { x: input.cover?.focalX, y: input.cover?.focalY }
+  if (input.overlay === false) return toJpeg(cropPipeline(source, meta, size, focal))
+  const [base, overlay] = await Promise.all([
+    cropPipeline(source, meta, size, focal).png({ compressionLevel: 0 }).toBuffer(),
+    renderCardPng(input, true),
+  ])
+  return toJpeg(sharp(base).composite([{ input: overlay, left: 0, top: 0 }]))
 }
 
 /**
@@ -109,11 +461,7 @@ export async function renderSocialImage(
   if (input.cover?.url) {
     try {
       const source = await fetchSource(input.cover.url, deps)
-      const body = await cropToJpeg(source, SOCIAL_IMAGE_SIZES[input.variant], {
-        x: input.cover.focalX,
-        y: input.cover.focalY,
-      })
-      return { body, source: 'cover' }
+      return { body: await renderCoverJpeg(source, input), source: 'cover' }
     } catch (error) {
       onCoverError?.(error)
     }

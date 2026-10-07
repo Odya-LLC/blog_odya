@@ -24,10 +24,11 @@ describe('avtomatik nashr: ushlab qolish qoidasi', () => {
 })
 
 describe('avtomatik nashr: hujjatlar va tavsiflar (OBLOG-62)', () => {
-  it('output-schema v1.4.0 ikkala rejimni tavsiflaydi', () => {
+  it('output-schema v1.5.0 ikkala rejimni tavsiflaydi (OBLOG-94: socialTitle)', () => {
     const doc = loadGuideline('output-schema')
-    expect(doc.frontMatter.version).toBe('1.4.0')
-    expect(doc.frontMatter.updatedAt).toBe('2026-10-02')
+    expect(doc.frontMatter.version).toBe('1.5.0')
+    expect(doc.frontMatter.updatedAt).toBe('2026-10-07')
+    expect(doc.markdown).toContain('socialTitle')
     expect(doc.markdown).not.toMatch(/chop etishni faqat inson bajaradi/)
     expect(doc.markdown).toContain('shu chaqiruvning oʻzida')
     for (const term of [

@@ -630,7 +630,15 @@ export async function saveRewrite(
   const converted = markdownToLexical(input.body, { siteHost: siteHost(ctx) })
   const tagNames = input.tags.filter((tag): tag is string => typeof tag === 'string')
 
-  const checks = checkRewriteFields({ title, excerpt, body: converted.stats, tags: tagNames })
+  // OBLOG-94: berilmagan — o'zgarmaydi; '' — tozalanadi (rasm sarlavhadan avtomatik).
+  const socialTitle = input.socialTitle?.trim()
+  const checks = checkRewriteFields({
+    title,
+    excerpt,
+    body: converted.stats,
+    tags: tagNames,
+    socialTitle,
+  })
   const errors: Issue[] = [
     ...checks.errors,
     ...converted.errors.map((issue) => ({ field: 'body', ...issue })),
@@ -724,6 +732,7 @@ export async function saveRewrite(
         category: categoryId as number,
         tags: tagIds,
         ...(keepLatin !== undefined ? { keepLatin } : {}),
+        ...(socialTitle !== undefined ? { socialTitle: socialTitle || null } : {}),
         slug,
         rewrittenBy: 'ai_agent',
         aiDisclosure: true,
@@ -732,7 +741,10 @@ export async function saveRewrite(
       depth: 0,
       ...op(ctx, req),
     })
-    const cyrillic = cyrillicReport(['title', 'excerpt', 'content'], locked)
+    const cyrillic = cyrillicReport(
+      ['title', 'excerpt', 'content', ...(socialTitle ? (['socialTitle'] as const) : [])],
+      locked,
+    )
     return { updated, createdTags, tagIds, cyrillic }
   }).catch(rethrow)
 
@@ -754,6 +766,7 @@ export async function saveRewrite(
       ...postSummary(ctx, saved.updated),
       readingTime: saved.updated.readingTime ?? null,
       words: converted.stats.words,
+      socialTitle: saved.updated.socialTitle ?? null,
     },
     tags: tags.map((plan, index) => ({
       id: saved.tagIds[index],
@@ -798,6 +811,7 @@ export async function setSeo(
       answer: item.answer.trim(),
     })),
     coverAlt: input.coverAlt?.trim(),
+    socialTitle: input.socialTitle?.trim(),
   }
   const checks = checkSeoFields(seo)
   const errors: Issue[] = [...checks.errors]
@@ -840,6 +854,7 @@ export async function setSeo(
         meta: { ...post.meta, ...meta },
         ...(seo.faq ? { faq: seo.faq } : {}),
         ...(seo.coverAlt !== undefined ? { coverAlt: seo.coverAlt } : {}),
+        ...(seo.socialTitle !== undefined ? { socialTitle: seo.socialTitle || null } : {}),
         rewrittenBy: 'ai_agent',
         aiDisclosure: true,
       },
@@ -852,6 +867,7 @@ export async function setSeo(
         'meta',
         ...(seo.faq ? (['faq'] as const) : []),
         ...(seo.coverAlt !== undefined ? (['coverAlt'] as const) : []),
+        ...(seo.socialTitle ? (['socialTitle'] as const) : []),
       ],
       lockedFields(post),
     )
@@ -866,7 +882,7 @@ export async function setSeo(
     seoScore: score,
     saved: true,
     ...(mode === 'revision' ? { revision: true, note: REVISION_NOTE } : {}),
-    post: postSummary(ctx, saved.updated),
+    post: { ...postSummary(ctx, saved.updated), socialTitle: saved.updated.socialTitle ?? null },
     cyrillic: saved.cyrillic,
     next:
       'muqova (agar yo‘q bo‘lsa): upload_media / list_media → set_cover → preview_cyrillic ' +
@@ -1369,6 +1385,7 @@ export function registerWriteTools(server: McpServer, ctx: McpContext): void {
         "manba bilan o'xshashlik. Javob: { ok, errors[], warnings[], seoScore } — ok: false " +
         "bo'lsa saqlanmaydi, xatolarni tuzatib qayta yuboring. Kirill — avtomatik; glossariyda " +
         "yo'q brend/mahsulot/nashr/asl ismlarni keepLatin bilan bering (kirillda lotinda qoladi), " +
+        'socialTitle — Instagram rasmi ustidagi qisqa sarlavha (≤ 70 belgi, tavsiya etiladi), ' +
         'javobdagi cyrillic.suspicious — kirillga o‘girilgan katta harfli so‘zlar. Chop etilgan ' +
         'post — faqat admin roli kaliti bilan: qoralama versiya saqlanadi (sayt o‘zgarmaydi, slug ' +
         'saqlanadi), chop etish — submit_for_review.',
@@ -1384,7 +1401,8 @@ export function registerWriteTools(server: McpServer, ctx: McpContext): void {
       title: 'SEO maydonlari',
       description:
         "seoTitle (≤ 60), metaDescription (140–160), focusKeyword (1–4 so'z), faq (0 yoki 2–4), " +
-        'coverAlt. Javob: { ok, errors[], warnings[], seoScore }. Kirill — avtomatik. Chop ' +
+        'coverAlt, socialTitle (Instagram rasmi ustidagi qisqa sarlavha, ≤ 70). Javob: ' +
+        '{ ok, errors[], warnings[], seoScore }. Kirill — avtomatik. Chop ' +
         'etilgan post — faqat admin kaliti, qoralama versiya sifatida (save_rewrite kabi).',
       inputSchema: setSeoInput,
       annotations: { ...WRITE, idempotentHint: true },

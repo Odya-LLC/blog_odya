@@ -224,6 +224,17 @@ const text = (field: string, max: number) =>
 
 const postId = () => idSchema('postId').describe('Post ID (create_draft / list_drafts natijasidan)')
 
+/** `socialTitle` (OBLOG-94) — `save_rewrite` va `set_seo` da. Qoidalar — `validation.ts`. */
+const socialTitleArg = () =>
+  text('socialTitle', 300)
+    .optional()
+    .describe(
+      'Instagram/ijtimoiy rasm ustidagi qisqa sarlavha (OBLOG-94): ≤ 70 belgi, 3–8 soʻz, lotin; ' +
+        'mavzuni darhol ochadi (sarlavhaning qisqa varianti, clickbaitsiz). Tavsiya etiladi. ' +
+        "Berilmasa — oldingisi saqlanadi (bo'sh bo'lsa sarlavhadan avtomatik); '' — tozalanadi. " +
+        'Kirill — avtomatik',
+    )
+
 export const createDraftInput = {
   scrapedItemIds: z
     .array(idSchema('scrapedItemIds[]'), {
@@ -280,6 +291,7 @@ export const saveRewriteInput = {
         "tozalanadi. Shu nomdagi yangi teg ham brend teg bo'lib yaratiladi. 2–6 harfli katta " +
         'harfli qisqartmalar (GTA, ESL) va glossariy brendlari — avtomatik',
     ),
+  socialTitle: socialTitleArg(),
 }
 
 export const setSeoInput = {
@@ -301,6 +313,7 @@ export const setSeoInput = {
   coverAlt: text('coverAlt', 500)
     .optional()
     .describe("Muqova rasmi uchun alt matni taklifi (5–15 so'z)"),
+  socialTitle: socialTitleArg(),
 }
 
 export const submitForReviewInput = {

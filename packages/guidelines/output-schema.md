@@ -1,8 +1,8 @@
 ---
 id: output-schema
 title: Chiqish sxemasi (save_rewrite / set_seo)
-version: 1.4.0
-updatedAt: 2026-10-02
+version: 1.5.0
+updatedAt: 2026-10-07
 ---
 
 # Blog Odya — chiqish sxemasi: `save_rewrite` va `set_seo`
@@ -33,15 +33,16 @@ Umumiy qoidalar:
 
 ## `save_rewrite`
 
-| Maydon      | Tip                | Majburiy | Qoida                                                                                                                                                                                                                                             |
-| ----------- | ------------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `postId`    | number             | ha       | `create_draft` / `list_drafts` / `claim_draft` qaytargan post identifikatori                                                                                                                                                                      |
-| `title`     | string             | ha       | ≤ 70 belgi; clickbait yoʻq; oxirida nuqta yoʻq; focus keyword bor (`style.md` 4, `seo.md` 1–2)                                                                                                                                                    |
-| `excerpt`   | string             | ha       | Lid: 1–2 gap, 160–300 belgi; focus keyword bor; sarlavhani takrorlamaydi                                                                                                                                                                          |
-| `body`      | string (Markdown)  | ha       | 400–900 soʻz; `##` (H2) va `###` (H3); `#` (H1) ishlatilmaydi; 2–5 ichki havola (`/{kategoriya}/{slug}`); 1+ tashqi havola (manba). Server Markdown matnini Lexical formatiga oʻgiradi                                                            |
-| `category`  | string             | ha       | Bitta kategoriya slugi (`list_categories`): `suniy-intellekt`, `texnologiyalar`, `gadjetlar`, `dasturlash`, `kiberxavfsizlik`, `kibersport`, `oyinlar`, `startaplar`, `ilm-fan`                                                                   |
-| `tags`      | (string\|number)[] | ha       | 3–7 ta teg nomi (lotin) yoki ID. Avval mavjud teglar (`list_tags`); mos teg yoʻq boʻlsa yangisi yaratiladi                                                                                                                                        |
-| `keepLatin` | string[]           | yoʻq     | Kirill versiyasida lotinda qoladigan atamalar: glossariyda yoʻq brend, mahsulot, nashr, asl ism (`["Figure", "Game Informer"]`). Berilmasa — oldingi roʻyxat saqlanadi, `[]` — tozalanadi. Shu nomdagi yangi teg brend teg boʻladi (`style.md` 7) |
+| Maydon        | Tip                | Majburiy       | Qoida                                                                                                                                                                                                                                             |
+| ------------- | ------------------ | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `postId`      | number             | ha             | `create_draft` / `list_drafts` / `claim_draft` qaytargan post identifikatori                                                                                                                                                                      |
+| `title`       | string             | ha             | ≤ 70 belgi; clickbait yoʻq; oxirida nuqta yoʻq; focus keyword bor (`style.md` 4, `seo.md` 1–2)                                                                                                                                                    |
+| `excerpt`     | string             | ha             | Lid: 1–2 gap, 160–300 belgi; focus keyword bor; sarlavhani takrorlamaydi                                                                                                                                                                          |
+| `body`        | string (Markdown)  | ha             | 400–900 soʻz; `##` (H2) va `###` (H3); `#` (H1) ishlatilmaydi; 2–5 ichki havola (`/{kategoriya}/{slug}`); 1+ tashqi havola (manba). Server Markdown matnini Lexical formatiga oʻgiradi                                                            |
+| `category`    | string             | ha             | Bitta kategoriya slugi (`list_categories`): `suniy-intellekt`, `texnologiyalar`, `gadjetlar`, `dasturlash`, `kiberxavfsizlik`, `kibersport`, `oyinlar`, `startaplar`, `ilm-fan`                                                                   |
+| `tags`        | (string\|number)[] | ha             | 3–7 ta teg nomi (lotin) yoki ID. Avval mavjud teglar (`list_tags`); mos teg yoʻq boʻlsa yangisi yaratiladi                                                                                                                                        |
+| `keepLatin`   | string[]           | yoʻq           | Kirill versiyasida lotinda qoladigan atamalar: glossariyda yoʻq brend, mahsulot, nashr, asl ism (`["Figure", "Game Informer"]`). Berilmasa — oldingi roʻyxat saqlanadi, `[]` — tozalanadi. Shu nomdagi yangi teg brend teg boʻladi (`style.md` 7) |
+| `socialTitle` | string             | yoʻq (tavsiya) | Instagram rasmi ustidagi qisqa sarlavha — pastda, «Rasm uchun qisqa sarlavha»                                                                                                                                                                     |
 
 Ruxsat etilgan Markdown: abzaslar, `##`/`###` sarlavhalar, `**qalin**`, `*kursiv*`, roʻyxatlar, havolalar, `>` iqtibos, kod (`` ` `` va ` ``` `), jadvallar. Rasm — faqat `upload_media` orqali yuklangan fayl, alohida qatorda: `![alt](media:123)` (Lexical `upload` tuguniga aylanadi; media mavjud va litsenziyasi toʻliq boʻlishi kerak, aks holda `media_not_found` / `media_license` xatosi). Saytda rasm alt matni — media'ning `alt` maydonidan. HTML teglari, tashqi URL'li rasmlar (`![](https://…)`) va skriptlar olib tashlanadi.
 
@@ -51,14 +52,24 @@ Atributsiya (`sources`) `create_draft` paytida scraped item(lar)dan avtomatik to
 
 ## `set_seo`
 
-| Maydon            | Tip                                      | Majburiy | Qoida                                                                                  |
-| ----------------- | ---------------------------------------- | -------- | -------------------------------------------------------------------------------------- |
-| `postId`          | number                                   | ha       | Post identifikatori                                                                    |
-| `seoTitle`        | string                                   | ha       | ≤ 60 belgi; focus keyword boshida; «— Blog Odya» qoʻshilmaydi (sayt oʻzi qoʻshadi)     |
-| `metaDescription` | string                                   | ha       | 140–160 belgi; focus keyword bor; lidni soʻzma-soʻz takrorlamaydi                      |
-| `focusKeyword`    | string                                   | ha       | 1–4 soʻzli ibora, lotin; `title`, `seoTitle`, `excerpt`, `metaDescription` da uchraydi |
-| `faq`             | `{ question: string, answer: string }[]` | yoʻq     | 0 yoki 2–4 ta; savol `?` bilan tugaydi; javob 1–3 gap, faqat materialdagi faktlar      |
-| `coverAlt`        | string                                   | yoʻq     | Muqova rasmi uchun `alt` taklifi, 5–15 soʻz (`seo.md` 8)                               |
+| Maydon            | Tip                                      | Majburiy       | Qoida                                                                                  |
+| ----------------- | ---------------------------------------- | -------------- | -------------------------------------------------------------------------------------- |
+| `postId`          | number                                   | ha             | Post identifikatori                                                                    |
+| `seoTitle`        | string                                   | ha             | ≤ 60 belgi; focus keyword boshida; «— Blog Odya» qoʻshilmaydi (sayt oʻzi qoʻshadi)     |
+| `metaDescription` | string                                   | ha             | 140–160 belgi; focus keyword bor; lidni soʻzma-soʻz takrorlamaydi                      |
+| `focusKeyword`    | string                                   | ha             | 1–4 soʻzli ibora, lotin; `title`, `seoTitle`, `excerpt`, `metaDescription` da uchraydi |
+| `faq`             | `{ question: string, answer: string }[]` | yoʻq           | 0 yoki 2–4 ta; savol `?` bilan tugaydi; javob 1–3 gap, faqat materialdagi faktlar      |
+| `coverAlt`        | string                                   | yoʻq           | Muqova rasmi uchun `alt` taklifi, 5–15 soʻz (`seo.md` 8)                               |
+| `socialTitle`     | string                                   | yoʻq (tavsiya) | Instagram rasmi ustidagi qisqa sarlavha (`save_rewrite` da ham beriladi) — pastda      |
+
+### Rasm uchun qisqa sarlavha (`socialTitle`)
+
+Instagram (Make avtopost) rasmi ustiga katta harflarda yoziladigan qisqa sarlavha: feed'da oʻquvchi rasmni koʻrib, mavzuni darhol tushunishi va uni boshqa postlar bilan adashtirmasligi kerak.
+
+- **≤ 70 belgi** (oshsa — xato), tavsiya: **3–8 soʻz**, 30–50 belgi — rasmda 2–3 qatorga katta shriftda sigʻadi. Lotin; kirill versiyasi avtomatik.
+- Sarlavhaning qisqa, aniq varianti: kim/nima + asosiy fakt («iPhone 18 taqdimoti kechikadi», «GPT-6: oʻzbek tilini tushunadi»). Clickbait, undov, bosh harflar, emoji, heshteg, oxirida nuqta — yoʻq.
+- Sarlavha allaqachon qisqa (≤ 50 belgi) boʻlsa, berish shart emas. Berilmasa — sarlavha (yoki SEO sarlavha) dan avtomatik qisqartiriladi; uzun boʻlsa «…» bilan kesiladi, shuning uchun uzun sarlavhali postlarda **albatta bering**.
+- Berilmasa — oldingi qiymat saqlanadi; `""` — tozalanadi (avtomatik rejimga qaytadi).
 
 ## Server javobi
 
@@ -193,7 +204,8 @@ Namunadagi faktlar shartli — faqat formatni koʻrsatish uchun.
   "excerpt": "Apple iPhone 18 taqdimotini 2026-yil oktabr oyiga koʻchirdi. Bloomberg maʼlumotiga koʻra, kechikishga yangi protsessor ishlab chiqarishdagi muammolar sabab boʻlgan.",
   "body": "Kompaniya rasmiy sanani hali eʼlon qilmagan...\n\n## Kechikish sababi\n\n...\n\n## Oʻzbekiston uchun ahamiyati\n\n...",
   "category": "gadjetlar",
-  "tags": ["Apple", "iPhone", "iPhone 18", "Bloomberg"]
+  "tags": ["Apple", "iPhone", "iPhone 18", "Bloomberg"],
+  "socialTitle": "iPhone 18 taqdimoti oktabrga koʻchdi"
 }
 ```
 

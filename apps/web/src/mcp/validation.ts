@@ -42,6 +42,9 @@ export const LIMITS = {
   focusKeywordWords: 4,
   focusKeywordChars: 60,
   coverAltWords: { min: 5, max: 15 },
+  /** OBLOG-94: Instagram rasmi ustidagi qisqa sarlavha (`posts.socialTitle`). */
+  socialTitle: 70,
+  socialTitleWords: { min: 2, max: 10 },
 } as const
 
 /** Belgilar soni — Unicode kod nuqtalari bo'yicha (`ʻ` — bitta belgi). */
@@ -188,6 +191,8 @@ class Collector {
 }
 
 export interface RewriteInput {
+  /** OBLOG-94: berilmagan — tekshirilmaydi; `''` — tozalash. */
+  socialTitle?: string
   title: string
   excerpt: string
   /** Markdown konvertatsiyasi statistikasi. */
@@ -208,6 +213,7 @@ export function checkRewriteFields(input: RewriteInput): { errors: Issue[]; warn
     c.warn('title', 'clickbait', 'Sarlavhada undov, bosh harflar va clickbait ishlatilmaydi.')
   }
   if (/[.]$/.test(title)) c.warn('title', 'trailing_period', "Sarlavha oxirida nuqta qo'yilmaydi.")
+  checkSocialTitle(c, input.socialTitle)
 
   if (!excerpt) c.error('excerpt', 'required', "Lid (excerpt) bo'sh bo'lmasin.")
   c.maxChars('excerpt', 'Lid (excerpt)', excerpt, LIMITS.excerpt.max)
@@ -238,6 +244,29 @@ export interface SeoInput {
   focusKeyword: string
   faq?: { question: string; answer: string }[]
   coverAlt?: string
+  socialTitle?: string
+}
+
+/**
+ * `socialTitle` (OBLOG-94): lotin, ≤ 70 belgi — xato; 2–10 so'z, oxirida nuqta yo'q —
+ * ogohlantirish. Bo'sh/berilmagan — tekshirilmaydi (sarlavhadan avtomatik).
+ */
+function checkSocialTitle(c: Collector, value: string | undefined) {
+  const text = value?.trim()
+  if (!text) return
+  c.latin('socialTitle', 'socialTitle', text)
+  c.maxChars('socialTitle', 'socialTitle', text, LIMITS.socialTitle)
+  const words = text.split(/\s+/).filter(Boolean).length
+  if (words < LIMITS.socialTitleWords.min || words > LIMITS.socialTitleWords.max) {
+    c.warn(
+      'socialTitle',
+      'length',
+      `socialTitle — ${LIMITS.socialTitleWords.min}–${LIMITS.socialTitleWords.max} so'z (hozir ${words}).`,
+    )
+  }
+  if (/[^.][.]$/.test(text)) {
+    c.warn('socialTitle', 'trailing_period', "socialTitle oxirida nuqta qo'yilmaydi.")
+  }
 }
 
 /** `set_seo` maydonlari (qat'iy qoidalar). */
@@ -311,6 +340,7 @@ export function checkSeoFields(input: SeoInput): { errors: Issue[]; warnings: Is
       c.warn('coverAlt', 'starts_with_image', "«Rasm», «surat» so'zlari bilan boshlanmaydi.")
     }
   }
+  checkSocialTitle(c, input.socialTitle)
   return { errors: c.errors, warnings: c.warnings }
 }
 

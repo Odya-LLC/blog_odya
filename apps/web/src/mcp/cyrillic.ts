@@ -23,7 +23,8 @@ import { getTransliterator } from '@/translit/transliterator'
  */
 
 /** `posts` qulf kalitlari (TZ §10.3; `src/translit/sync-config.ts`). */
-export type CyrlLockKey = 'title' | 'excerpt' | 'content' | 'meta' | 'faq' | 'coverAlt'
+export type CyrlLockKey =
+  'title' | 'excerpt' | 'content' | 'meta' | 'faq' | 'coverAlt' | 'socialTitle'
 
 export function lockedFields(post: Pick<Post, 'cyrlLocked'>): Set<CyrlLockKey> {
   return new Set(Object.keys(parseCyrlLocked(post.cyrlLocked)) as CyrlLockKey[])

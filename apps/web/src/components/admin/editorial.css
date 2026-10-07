@@ -410,6 +410,70 @@
   color: var(--theme-elevation-500);
 }
 
+/* Instagram rasmi oldindan ko'rinishi (OBLOG-94) */
+.social-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--theme-elevation-100);
+}
+
+.social-preview__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.social-preview__toolbar strong {
+  margin-right: auto;
+}
+
+.social-preview__tab {
+  padding: 2px 8px;
+  border: 1px solid var(--theme-elevation-200);
+  border-radius: var(--style-radius-s);
+  background: var(--theme-elevation-0);
+  color: var(--theme-text);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.social-preview__tab--active {
+  border-color: var(--theme-success-500);
+  font-weight: 600;
+}
+
+.social-preview__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  align-items: start;
+}
+
+.social-preview__item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+}
+
+.social-preview__item img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--style-radius-s);
+  border: 1px solid var(--theme-elevation-150);
+  background: var(--theme-elevation-100);
+}
+
+.social-preview__item figcaption,
+.social-preview__error {
+  color: var(--theme-elevation-500);
+  font-size: 12px;
+}
+
 @media (max-width: 900px) {
   .editorial__row {
     grid-template-columns: 40px minmax(0, 1fr);

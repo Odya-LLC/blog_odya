@@ -2,9 +2,12 @@ import { DEFAULT_LOCALE, type Locale } from '@blog-odya/shared/locales'
 import type { Payload } from 'payload'
 
 import type { Category, Media, Post, Tag } from '@/payload-types'
+import { postProtectedTerms } from '@/translit/post-terms'
+import { getTransliterator } from '@/translit/transliterator'
 
 import type { SocialImageCover } from './image'
 import type { MakePostInput } from './make/payload'
+import { resolveSocialTitle } from './title'
 
 /**
  * Ijtimoiy tarmoqlar uchun post ma'lumoti (OBLOG-91): Make webhook JSON'i va JPEG rasm route'i
@@ -16,6 +19,58 @@ export interface SocialPost {
   category: Category
   input: MakePostInput
   cover: SocialImageCover | null
+  /** Rasm ustidagi qisqa sarlavha (OBLOG-94). */
+  socialTitle: string
+}
+
+export interface LoadSocialPostOptions {
+  /**
+   * Admin oldindan ko'rish (OBLOG-94): oxirgi qoralama versiya, chop etilmagan post ham.
+   * Faqat autentifikatsiyadan o'tgan admin/muharrir uchun chaqiriladi.
+   */
+  preview?: boolean
+}
+
+const CYRILLIC = /[Ѐ-ӿ]/
+const LATIN = /[A-Za-z]/
+
+/**
+ * Qisqa sarlavha shu yozuvda. Kirill: `socialTitle` odatda sinxron hook bilan yoziladi; yo'q
+ * bo'lsa Payload lotin qiymatini qaytaradi (fallback) — u holda shu yerda translit qilinadi.
+ */
+async function socialTitleFor(payload: Payload, post: Post, locale: Locale): Promise<string> {
+  let social = post.socialTitle?.trim() || null
+  if (social && locale === 'uz-Cyrl' && !CYRILLIC.test(social) && LATIN.test(social)) {
+    const terms = await postProtectedTerms(payload, { keepLatin: post.keepLatin, tags: post.tags })
+    social = (await getTransliterator(payload)).withProtectedTerms(terms).toCyrillic(social)
+  }
+  return resolveSocialTitle({ socialTitle: social, title: post.title, metaTitle: post.meta?.title })
+}
+
+/** `?v=` uchun rasm mazmuni kaliti: sarlavha, kategoriya, muqova (id, vaqt, focal point). */
+export function socialImageKey(parts: {
+  locale: Locale
+  socialTitle: string
+  category: Pick<Category, 'id' | 'name' | 'slug' | 'color'>
+  media: Pick<Media, 'id' | 'updatedAt' | 'focalX' | 'focalY' | 'filename'> | null
+}): string {
+  return JSON.stringify([
+    parts.locale,
+    parts.socialTitle,
+    parts.category.id,
+    parts.category.name,
+    parts.category.slug,
+    parts.category.color ?? null,
+    parts.media
+      ? [
+          parts.media.id,
+          parts.media.updatedAt,
+          parts.media.filename ?? null,
+          parts.media.focalX ?? null,
+          parts.media.focalY ?? null,
+        ]
+      : null,
+  ])
 }
 
 function populated<T extends object>(value: unknown): T | null {
@@ -83,6 +138,7 @@ export async function loadSocialPost(
   postId: number,
   locale: Locale,
   origin: string,
+  options: LoadSocialPostOptions = {},
 ): Promise<SocialPost | null> {
   // `req` berilmaydi: job'da parallel ishlaydigan boshqa yozuv `req.locale` ni buzmasin.
   const post = (await payload.findByID({
@@ -91,11 +147,14 @@ export async function loadSocialPost(
     locale,
     fallbackLocale: DEFAULT_LOCALE,
     depth: 1,
-    draft: false,
+    draft: options.preview === true,
     overrideAccess: true,
     disableErrors: true,
   })) as Post | null
-  if (!post || post._status !== 'published' || post.workflowStatus !== 'published') return null
+  if (!post) return null
+  if (!options.preview && (post._status !== 'published' || post.workflowStatus !== 'published')) {
+    return null
+  }
   const category = populated<Category>(post.category)
   if (!category?.slug || !post.slug) return null
   const tags = (post.tags ?? [])
@@ -104,10 +163,12 @@ export async function loadSocialPost(
     .map((tag) => ({ slug: tag.slug, name: tag.name }))
   const media = populated<Media>(post.coverImage)
   const cover = coverSource(media, origin)
+  const socialTitle = await socialTitleFor(payload, post, locale)
   return {
     post,
     category,
     cover,
+    socialTitle,
     input: {
       id: post.id,
       slug: post.slug,
@@ -121,6 +182,8 @@ export async function loadSocialPost(
       hashtagNames: await latinNames(payload, post, category),
       coverAlt: media?.alt || post.coverAlt,
       hasCover: Boolean(cover),
+      socialTitle,
+      imageKey: socialImageKey({ locale, socialTitle, category, media: cover ? media : null }),
     },
   }
 }

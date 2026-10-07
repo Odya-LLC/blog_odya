@@ -11,7 +11,7 @@
  *   havola" chaqiruvi; rasm — ommaviy **JPEG**, nisbat 4:5 … 1.91:1 (`/og/{yozuv}/social/...`).
  * - Threads matni ≤ 500 belgi; X — 280 "og'irlikdagi" belgi, har URL = 23.
  */
-import { createHmac } from 'node:crypto'
+import { createHash, createHmac } from 'node:crypto'
 
 import type { Locale } from '@blog-odya/shared/locales'
 
@@ -32,6 +32,39 @@ export const LEAD_MAX_CHARS = 400
 export type MakeEvent = 'post.published'
 export type SocialImageVariant = 'square' | 'portrait' | 'landscape'
 export type SocialNetwork = 'instagram' | 'facebook' | 'threads' | 'x' | 'linkedin'
+
+/**
+ * Ijtimoiy rasm shabloni versiyasi (OBLOG-94) — `?v=` kalitiga kiradi: dizayn o'zgarsa oshiring,
+ * Instagram/Make va CDN yangi rasmni oladi.
+ */
+export const SOCIAL_TEMPLATE_VERSION = 2
+
+export type SocialImageScheme = 'dark' | 'brand'
+
+export interface SocialImageStyle {
+  /** "Rasm ustida sarlavha" (standart — yoqiq). */
+  overlay: boolean
+  scheme: SocialImageScheme
+}
+
+export const DEFAULT_SOCIAL_IMAGE_STYLE: SocialImageStyle = { overlay: true, scheme: 'dark' }
+
+/**
+ * Rasm URL'ining `?v=` qiymati: qisqa sarlavha, muqova (id, yangilangan vaqti, focal point),
+ * kategoriya, shablon sozlamalari va versiyasi xeshi (12 hex). Shulardan biri o'zgarsa — yangi
+ * URL (CDN 24 soat keshlaydi, eski URL eski rasmni qaytarishi mumkin).
+ */
+export function socialImageVersion(
+  imageKey: string,
+  style: SocialImageStyle = DEFAULT_SOCIAL_IMAGE_STYLE,
+): string {
+  return createHash('sha1')
+    .update(
+      JSON.stringify([SOCIAL_TEMPLATE_VERSION, imageKey, style.overlay ? 1 : 0, style.scheme]),
+    )
+    .digest('hex')
+    .slice(0, 12)
+}
 
 /** Rasm variantlari (JPEG): Instagram 1:1 va 4:5, boshqalar — 1.91:1. */
 export const SOCIAL_IMAGE_SIZES: Record<SocialImageVariant, { width: number; height: number }> = {
@@ -234,6 +267,10 @@ export interface MakePostInput {
   hashtagNames: string[]
   coverAlt?: string | null
   hasCover: boolean
+  /** Rasm ustidagi qisqa sarlavha (OBLOG-94, `resolveSocialTitle`). */
+  socialTitle?: string | null
+  /** Rasm mazmuni kaliti (`socialImageVersion` uchun); bo'lmasa — `updatedAt`. */
+  imageKey?: string | null
 }
 
 export interface MakePayloadOptions {
@@ -247,6 +284,8 @@ export interface MakePayloadOptions {
   brandHashtag?: string | null
   instagramCta?: string | null
   instagramImage: Extract<SocialImageVariant, 'square' | 'portrait'>
+  /** Rasm shabloni sozlamalari (`?v=` ga kiradi). */
+  imageStyle?: SocialImageStyle
 }
 
 export interface MakePayload {
@@ -260,6 +299,8 @@ export interface MakePayload {
     id: number
     slug: string
     title: string
+    /** Rasm ustidagi qisqa sarlavha (OBLOG-94). */
+    socialTitle: string
     excerpt: string
     lead: string
     url: string
@@ -299,7 +340,11 @@ export function buildMakePayload(post: MakePostInput, options: MakePayloadOption
       slug: post.slug,
       source,
     })
-  const version = post.updatedAt ? String(Math.floor(Date.parse(post.updatedAt) / 1000)) : null
+  const version = post.imageKey
+    ? socialImageVersion(post.imageKey, options.imageStyle)
+    : post.updatedAt
+      ? String(Math.floor(Date.parse(post.updatedAt) / 1000))
+      : null
   const image = (variant: SocialImageVariant) =>
     socialImageUrl({ origin, postId: post.id, variant, locale, version })
   const images = {
@@ -328,6 +373,7 @@ export function buildMakePayload(post: MakePostInput, options: MakePayloadOption
       id: post.id,
       slug: post.slug,
       title,
+      socialTitle: post.socialTitle?.trim() || title,
       excerpt,
       lead,
       url: urlFor(),

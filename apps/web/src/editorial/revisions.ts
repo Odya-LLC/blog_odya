@@ -67,6 +67,7 @@ const DIFF_SELECT = {
   content: true,
   coverImage: true,
   coverAlt: true,
+  socialTitle: true,
   faq: true,
   tags: true,
   category: true,

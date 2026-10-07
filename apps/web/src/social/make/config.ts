@@ -11,6 +11,8 @@ import {
 } from '@/globals/SocialSettings'
 import type { SocialSetting } from '@/payload-types'
 
+import type { SocialImageScheme } from './payload'
+
 /**
  * Make avtopost sozlamalari (OBLOG-91): `social-settings` global + env.
  *
@@ -28,6 +30,10 @@ export interface MakeConfig {
   brandHashtag: string
   instagramCta: string
   instagramImage: 'square' | 'portrait'
+  /** OBLOG-94: rasm ustida qisqa sarlavha va brend (standart — yoqiq). */
+  imageOverlay: boolean
+  /** OBLOG-94: gradient rangi — `dark` (qora) yoki `brand` (brend ko'k). */
+  imageScheme: SocialImageScheme
 }
 
 export type MakeEnv = Partial<Pick<typeof env, 'MAKE_WEBHOOK_URL' | 'MAKE_WEBHOOK_SECRET'>>
@@ -65,6 +71,8 @@ export function resolveMakeConfig(
         ? DEFAULT_INSTAGRAM_CTA
         : settings.instagramCta.trim(),
     instagramImage: settings?.instagramImage === 'portrait' ? 'portrait' : 'square',
+    imageOverlay: settings?.imageOverlay !== false,
+    imageScheme: settings?.imageScheme === 'brand' ? 'brand' : 'dark',
   }
 }
 

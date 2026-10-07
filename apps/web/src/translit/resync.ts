@@ -52,7 +52,7 @@ export interface CyrlResyncOptions {
 }
 
 export interface CyrlResyncChange {
-  /** Qulf kaliti (`title`, `excerpt`, `content`, `meta`, `faq`, `coverAlt`). */
+  /** Qulf kaliti (`title`, `excerpt`, `content`, `meta`, `faq`, `coverAlt`, `socialTitle`). */
   field: string
   /** O'zgargan so'zlar: `Фигуре → Figure` (bo'lmasa — qisqartirilgan oldin/keyin). */
   words: string[]

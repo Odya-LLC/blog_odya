@@ -42,6 +42,17 @@ export const CATEGORY_SOLID: Record<string, string> = {
   'ilm-fan': '#597F39',
 }
 
+/** Kategoriya chipi rangi: DB'dagi rang → tokens.json → brend aksenti. */
+export function categoryChipColor(
+  category?: { color?: string | null; slug?: string | null } | null,
+): string {
+  return (
+    (category?.color && /^#[0-9a-f]{6}$/i.test(category.color) ? category.color : null) ??
+    (category?.slug ? CATEGORY_SOLID[category.slug] : undefined) ??
+    COLORS.accent600
+  )
+}
+
 /** Sarlavha uzunligiga qarab shrift o'lchami (brend README §6: 3 qatorga sig'ishi uchun). */
 export function ogTitleSize(title: string): number {
   const length = [...title].length
@@ -81,10 +92,7 @@ function hexAlpha(alpha: number): string {
 export function OgCard({ locale, title, category, domain, size = OG_SIZE }: OgCardProps) {
   const [first, second] = BRAND_NAME[locale].split(' ')
   const glow = `${COLORS.accent600}${hexAlpha(COLORS.glowAlpha)}`
-  const chipColor =
-    (category?.color && /^#[0-9a-f]{6}$/i.test(category.color) ? category.color : null) ??
-    (category?.slug ? CATEGORY_SOLID[category.slug] : undefined) ??
-    COLORS.accent600
+  const chipColor = categoryChipColor(category)
   const text = clampTitle(title)
   return (
     <div
