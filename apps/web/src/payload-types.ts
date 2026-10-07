@@ -78,6 +78,7 @@ export interface Config {
     'scraped-items': ScrapedItem;
     glossary: Glossary;
     'translit-exceptions': TranslitException;
+    'social-deliveries': SocialDelivery;
     redirects: Redirect;
     'audit-logs': AuditLog;
     'payload-kv': PayloadKv;
@@ -99,6 +100,7 @@ export interface Config {
     'scraped-items': ScrapedItemsSelect<false> | ScrapedItemsSelect<true>;
     glossary: GlossarySelect<false> | GlossarySelect<true>;
     'translit-exceptions': TranslitExceptionsSelect<false> | TranslitExceptionsSelect<true>;
+    'social-deliveries': SocialDeliveriesSelect<false> | SocialDeliveriesSelect<true>;
     redirects: RedirectsSelect<false> | RedirectsSelect<true>;
     'audit-logs': AuditLogsSelect<false> | AuditLogsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
@@ -116,6 +118,7 @@ export interface Config {
     header: Header;
     footer: Footer;
     'telegram-settings': TelegramSetting;
+    'social-settings': SocialSetting;
     'scraping-settings': ScrapingSetting;
   };
   globalsSelect: {
@@ -123,6 +126,7 @@ export interface Config {
     header: HeaderSelect<false> | HeaderSelect<true>;
     footer: FooterSelect<false> | FooterSelect<true>;
     'telegram-settings': TelegramSettingsSelect<false> | TelegramSettingsSelect<true>;
+    'social-settings': SocialSettingsSelect<false> | SocialSettingsSelect<true>;
     'scraping-settings': ScrapingSettingsSelect<false> | ScrapingSettingsSelect<true>;
   };
   locale: 'uz-Latn' | 'uz-Cyrl';
@@ -140,6 +144,7 @@ export interface Config {
       'maintenance.cleanup': TaskMaintenanceCleanup;
       'telegram.post': TaskTelegramPost;
       'indexnow.submit': TaskIndexNowSubmit;
+      'make.webhook': TaskMakeWebhook;
       schedulePublish: TaskSchedulePublish;
       inline: {
         input: unknown;
@@ -301,6 +306,7 @@ export interface Post {
   isFeatured?: boolean | null;
   isBreaking?: boolean | null;
   telegramSkip?: boolean | null;
+  socialSkip?: boolean | null;
   /**
    * Lotin o‘zgargan, lekin qulflangan kirill maydonlari yangilanmadi. Tekshirib, belgini oling yoki kirillni qayta generatsiya qiling.
    */
@@ -874,6 +880,28 @@ export interface TranslitException {
   createdAt: string;
 }
 /**
+ * Make webhook’iga yuborishlar (post + yozuv bo‘yicha bir marta). Qatorni o‘chirish — qayta yuborishga ruxsat.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "social-deliveries".
+ */
+export interface SocialDelivery {
+  id: number;
+  key: string;
+  post?: (number | null) | Post;
+  target: 'make';
+  event: 'post.published';
+  script: 'uz-Latn' | 'uz-Cyrl';
+  status: 'sent' | 'retry' | 'failed';
+  httpStatus?: number | null;
+  attempts?: number | null;
+  sentAt?: string | null;
+  deliveryId?: string | null;
+  error?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "redirects".
  */
@@ -1021,6 +1049,7 @@ export interface PayloadJob {
           | 'maintenance.cleanup'
           | 'telegram.post'
           | 'indexnow.submit'
+          | 'make.webhook'
           | 'schedulePublish';
         taskID: string;
         input?:
@@ -1066,6 +1095,7 @@ export interface PayloadJob {
         | 'maintenance.cleanup'
         | 'telegram.post'
         | 'indexnow.submit'
+        | 'make.webhook'
         | 'schedulePublish'
       )
     | null;
@@ -1125,6 +1155,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'translit-exceptions';
         value: number | TranslitException;
+      } | null)
+    | ({
+        relationTo: 'social-deliveries';
+        value: number | SocialDelivery;
       } | null)
     | ({
         relationTo: 'redirects';
@@ -1252,6 +1286,7 @@ export interface PostsSelect<T extends boolean = true> {
   isFeatured?: T;
   isBreaking?: T;
   telegramSkip?: T;
+  socialSkip?: T;
   cyrlStale?: T;
   readingTime?: T;
   views?: T;
@@ -1663,6 +1698,25 @@ export interface TranslitExceptionsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "social-deliveries_select".
+ */
+export interface SocialDeliveriesSelect<T extends boolean = true> {
+  key?: T;
+  post?: T;
+  target?: T;
+  event?: T;
+  script?: T;
+  status?: T;
+  httpStatus?: T;
+  attempts?: T;
+  sentAt?: T;
+  deliveryId?: T;
+  error?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "redirects_select".
  */
 export interface RedirectsSelect<T extends boolean = true> {
@@ -1940,6 +1994,39 @@ export interface TelegramSetting {
   createdAt?: string | null;
 }
 /**
+ * Chop etilgan postlar Make.com ssenariysiga yuboriladi (Instagram va boshqalar). Qo‘llanma: docs/runbooks/social-autopost-options.md → "Tanlov: Make".
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "social-settings".
+ */
+export interface SocialSetting {
+  id: number;
+  /**
+   * O‘chiq bo‘lsa yangi chop etilgan postlar yuborilmaydi (post panelidagi “Sinov yuborish” baribir ishlaydi).
+   */
+  enabled?: boolean | null;
+  /**
+   * Make → Webhooks → Custom webhook → “Copy address”. Bo‘sh bo‘lsa — env MAKE_WEBHOOK_URL. Sir sifatida saqlang.
+   */
+  webhookUrl?: string | null;
+  /**
+   * Har yozuv — alohida webhook so‘rovi (`script` maydoni bilan). Bitta Instagram hisobi uchun odatda faqat lotin.
+   */
+  scripts?: ('uz-Latn' | 'uz-Cyrl')[] | null;
+  instagramImage?: ('square' | 'portrait') | null;
+  hashtagsCount?: number | null;
+  /**
+   * Har postga qo‘shiladi. Bo‘sh — qo‘shilmaydi.
+   */
+  brandHashtag?: string | null;
+  /**
+   * Instagram caption’dagi havola bosilmaydi — o‘quvchini bio’dagi havolaga yo‘naltiring. Kirill uchun avtomatik o‘giriladi.
+   */
+  instagramCta?: string | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "scraping-settings".
  */
@@ -2096,6 +2183,22 @@ export interface TelegramSettingsSelect<T extends boolean = true> {
   alertChatId?: T;
   notifyNewItems?: T;
   newItemsMinCount?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "social-settings_select".
+ */
+export interface SocialSettingsSelect<T extends boolean = true> {
+  enabled?: T;
+  webhookUrl?: T;
+  scripts?: T;
+  instagramImage?: T;
+  hashtagsCount?: T;
+  brandHashtag?: T;
+  instagramCta?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;
@@ -2280,6 +2383,22 @@ export interface TaskIndexNowSubmit {
     status?: string | null;
     httpStatus?: number | null;
     reason?: string | null;
+  };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskMakeWebhook".
+ */
+export interface TaskMakeWebhook {
+  input: {
+    postId: number;
+    script: 'uz-Latn' | 'uz-Cyrl';
+    attempt?: number | null;
+  };
+  output: {
+    status?: string | null;
+    reason?: string | null;
+    httpStatus?: number | null;
   };
 }
 /**

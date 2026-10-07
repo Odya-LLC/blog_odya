@@ -13,6 +13,7 @@ import { viewsTotalField } from '@/pageviews/field'
 import { slugField } from '@/fields/slug'
 import { postRedirectHooks } from '@/hooks/contentRedirects'
 import { revalidatePostAfterChange, revalidatePostAfterDelete } from '@/site/revalidate'
+import { makeEndpoint } from '@/social/make/endpoint'
 import { resyncCyrlEndpoint } from '@/translit/resync'
 
 import { applyDefaultAuthor } from './defaultAuthor'
@@ -23,6 +24,7 @@ import {
   rememberIndexNowState,
 } from './indexnow'
 import { keepRevisionMarker } from './revisionMarker'
+import { queueMakeAfterChange } from './make'
 import { preserveTelegramState, queueTelegramAfterChange } from './telegram'
 import { POST_WORKFLOW_STATUSES, WORKFLOW_STATUS_LABELS } from './workflow'
 
@@ -111,7 +113,8 @@ export const Posts: CollectionConfig = {
   defaultSort: '-updatedAt',
   // OBLOG-67: `POST /api/posts/resync-cyrl` — chop etilgan postlar kirillini qayta yaratish (admin).
   // OBLOG-64: `/:id/publish-revision`, `/:id/discard-revision` — /admin/review navbati.
-  endpoints: [resyncCyrlEndpoint, ...postRevisionEndpoints],
+  // OBLOG-91: `/:id/make` — Make sinov yuborish / qo'lda yuborish (admin).
+  endpoints: [resyncCyrlEndpoint, ...postRevisionEndpoints, makeEndpoint],
   versions: {
     drafts: {
       autosave: { interval: 10_000 },
@@ -139,6 +142,7 @@ export const Posts: CollectionConfig = {
       revalidatePostAfterChange,
       queueTelegramAfterChange,
       queueIndexNowAfterChange,
+      queueMakeAfterChange,
     ],
     afterDelete: [revalidatePostAfterDelete, queueIndexNowAfterDelete],
   },
@@ -502,6 +506,23 @@ export const Posts: CollectionConfig = {
       admin: {
         position: 'sidebar',
         components: { Field: '@/components/admin/TelegramPanel#TelegramPanel' },
+      },
+    },
+    {
+      // OBLOG-91: Make.com avtopost (Instagram va boshqalar) — chop etilganda yuborilmasin.
+      name: 'socialSkip',
+      type: 'checkbox',
+      label: 'Ijtimoiy tarmoqlarga (Make) yubormaslik',
+      defaultValue: false,
+      admin: { position: 'sidebar' },
+    },
+    // Make holati (yozuv bo'yicha: yuborilgan / navbatda / xato) + sinov tugmasi (OBLOG-91).
+    {
+      name: 'makePanel',
+      type: 'ui',
+      admin: {
+        position: 'sidebar',
+        components: { Field: '@/components/admin/MakePanel#MakePanel' },
       },
     },
     {

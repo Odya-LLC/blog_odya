@@ -63,6 +63,8 @@ export type OgCardProps = {
   category?: { name: string; color?: string | null; slug?: string | null } | null
   /** Pastki o'ngdagi domen (`blog.odya.uz` / `blog.odya.uz/kr`). */
   domain?: string
+  /** Kartochka o'lchami (standart — OG 1200×630; ijtimoiy tarmoqlar uchun 1080×1080 va h.k.). */
+  size?: { width: number; height: number }
 }
 
 export function ogDomain(locale: Locale, origin: string = siteOrigin()): string {
@@ -76,7 +78,7 @@ function hexAlpha(alpha: number): string {
     .padStart(2, '0')
 }
 
-export function OgCard({ locale, title, category, domain }: OgCardProps) {
+export function OgCard({ locale, title, category, domain, size = OG_SIZE }: OgCardProps) {
   const [first, second] = BRAND_NAME[locale].split(' ')
   const glow = `${COLORS.accent600}${hexAlpha(COLORS.glowAlpha)}`
   const chipColor =
@@ -87,8 +89,8 @@ export function OgCard({ locale, title, category, domain }: OgCardProps) {
   return (
     <div
       style={{
-        width: OG_SIZE.width,
-        height: OG_SIZE.height,
+        width: size.width,
+        height: size.height,
         padding: PADDING,
         display: 'flex',
         flexDirection: 'column',
@@ -125,7 +127,7 @@ export function OgCard({ locale, title, category, domain }: OgCardProps) {
           fontSize: ogTitleSize(text),
           lineHeight: 1.12,
           letterSpacing: '-0.025em',
-          maxWidth: OG_SIZE.width - PADDING * 2,
+          maxWidth: size.width - PADDING * 2,
           lineClamp: 3,
         }}
       >

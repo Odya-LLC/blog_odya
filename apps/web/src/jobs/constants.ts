@@ -155,3 +155,15 @@ export const TELEGRAM_API_TIMEOUT_MS = 10_000
 export const INDEXNOW_SUBMIT_TASK = 'indexnow.submit'
 /** 429/5xx/tarmoq xatosida qayta urinishlar orasidagi pauza (job `waitUntil`): 1, 5, 15 daqiqa. */
 export const INDEXNOW_RETRY_BACKOFF_MS = [60_000, 5 * 60_000, 15 * 60_000] as const
+
+// --- OBLOG-91: Make.com avtopost ---
+
+/** `make.webhook` — chop etilgan post (bitta yozuv) haqida Make webhook'iga JSON yuborish. */
+export const MAKE_WEBHOOK_TASK = 'make.webhook'
+/** Bitta webhook so'rovi timeout'i. */
+export const MAKE_WEBHOOK_TIMEOUT_MS = 15_000
+/**
+ * 429/5xx/tarmoq xatosida qayta urinishlar orasidagi pauza (job `waitUntil`): 1, 5, 15 daqiqa.
+ * Hammasi tugagach — `alertChatId` ga ogohlantirish.
+ */
+export const MAKE_RETRY_BACKOFF_MS = [60_000, 5 * 60_000, 15 * 60_000] as const
