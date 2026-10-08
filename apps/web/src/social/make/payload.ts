@@ -35,9 +35,9 @@ export type SocialNetwork = 'instagram' | 'facebook' | 'threads' | 'x' | 'linked
 
 /**
  * Ijtimoiy rasm shabloni versiyasi (OBLOG-94) — `?v=` kalitiga kiradi: dizayn o'zgarsa oshiring,
- * Instagram/Make va CDN yangi rasmni oladi.
+ * Instagram/Make va CDN yangi rasmni oladi. 3 — OBLOG-97: profil to'rining 3:4 xavfsiz zonasi.
  */
-export const SOCIAL_TEMPLATE_VERSION = 2
+export const SOCIAL_TEMPLATE_VERSION = 3
 
 export type SocialImageScheme = 'dark' | 'brand'
 

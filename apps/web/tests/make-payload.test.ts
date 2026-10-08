@@ -289,11 +289,13 @@ describe('imzo va sozlamalar', () => {
       scripts: ['uz-Latn'],
       hashtagsCount: 8,
       brandHashtag: '#BlogOdya',
-      instagramImage: 'square',
+      // OBLOG-97: standart — 4:5 (profil to'rining 3:4 kesimi).
+      instagramImage: 'portrait',
       // OBLOG-94: standart — rasm ustida sarlavha, qorong'i sxema.
       imageOverlay: true,
       imageScheme: 'dark',
     })
+    expect(resolveMakeConfig({ instagramImage: 'square' }, {}).instagramImage).toBe('square')
     expect(resolveMakeConfig({ imageOverlay: false, imageScheme: 'brand' }, {})).toMatchObject({
       imageOverlay: false,
       imageScheme: 'brand',

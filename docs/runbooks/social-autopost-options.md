@@ -161,7 +161,7 @@ Rollout: avtopost default o'chiq → test hisoblarida 5 ta qo'lda tasdiqlangan p
    - Imzo uchun (tavsiya): `MAKE_WEBHOOK_SECRET` = `openssl rand -hex 32` natijasi — **faqat Vercel env**'da (admin'da saqlanmaydi), qo'shilgach redeploy.
 6. **Maydonlarni xaritalash (post chop etmasdan).** Make'da webhook modulini oching → **Redetermine data structure** (tinglash rejimi) → Odya admin'ida istalgan **chop etilgan** postni oching → yon panel "Instagram / Make" → **Sinov yuborish**. Make "Successfully determined" deydi — endi 4-qadamdagi modullarda maydonlar ro'yxatdan tanlanadi. Admin'da natija (HTTP 200) toast'da ko'rinadi.
 7. **Sinov ishga tushirish.** Make'da **Run once** → admin'da yana "Sinov yuborish" → ssenariy oqimini ko'ring: filtr `test=true` ni to'xtatishi kerak (Instagram'ga hech narsa chiqmaydi). Haqiqiy postni tekshirish uchun filtrni vaqtincha o'chirib, test Instagram hisobida sinab ko'rish mumkin.
-8. **Yoqish.** Make'da ssenariy **ON** (Scheduling: Immediately). Admin → Ijtimoiy tarmoqlar (Make) → **Make'ga yuborish yoqilgan** ✓, "Qaysi yozuv(lar)" — odatda faqat Lotin; Instagram rasmi — kvadrat (1:1) yoki vertikal (4:5); heshteglar soni (brend bilan, ≤ 15); brend heshtegi `#BlogOdya`; chaqiruv qatori.
+8. **Yoqish.** Make'da ssenariy **ON** (Scheduling: Immediately). Admin → Ijtimoiy tarmoqlar (Make) → **Make'ga yuborish yoqilgan** ✓, "Qaysi yozuv(lar)" — odatda faqat Lotin; Instagram rasmi — **vertikal (4:5)**, standart va tavsiya (pastdagi «Profil to'ri (3:4)»); heshteglar soni (brend bilan, ≤ 15); brend heshtegi `#BlogOdya`; chaqiruv qatori.
 9. **Birinchi haqiqiy post.** Yangi postni chop eting → 5–30 soniyada post yon panelida "Make'ga yuborilgan · vaqt" → Make'da History → Instagram'da post. Muammo bo'lsa — pastdagi jadval.
 10. **Instagram bio havolasi.** Caption'dagi havola Instagram'da bosilmaydi, shuning uchun caption "To'liq maqola — profildagi havolada." bilan tugaydi. Bio'ga `https://blog.odya.uz` (yoki link-in-bio sahifasi) qo'ying.
 
@@ -177,7 +177,7 @@ Yoqilishidan oldin chop etilgan postni yuborish kerak bo'lsa — post panelidagi
 | Qayta urinish | 429 / 5xx / tarmoq / timeout (15 s) → 1, 5, 15 daqiqadan keyin; 404/410 (webhook o'chirilgan) va boshqa 4xx → darhol xato. Yakuniy xato → Telegram `alertChatId` ga ogohlantirish (webhook URL xabarga yozilmaydi). |
 | Holat | Post yon paneli "Instagram / Make": yuborilgan (vaqt), navbatda, qayta urinish (xato matni), xato. Admin uchun tugmalar: **Sinov yuborish** (`test: true`, holat yozilmaydi, Make o'chiq bo'lsa ham ishlaydi), **Make'ga yuborish**. |
 | O'chirish | Global'da "yoqilgan" belgisi (standart o'chiq), post'da **"Ijtimoiy tarmoqlarga (Make) yubormaslik"** (`socialSkip`). |
-| Sozlamalar | Global `social-settings` ("Ijtimoiy tarmoqlar (Make)", faqat admin): yoqish, webhook URL (bo'sh — env `MAKE_WEBHOOK_URL`), yozuvlar (lotin/kirill), Instagram rasmi (1:1 / 4:5), heshteglar soni (≤ 15), brend heshtegi, chaqiruv qatori. Imzo siri — faqat env `MAKE_WEBHOOK_SECRET`. |
+| Sozlamalar | Global `social-settings` ("Ijtimoiy tarmoqlar (Make)", faqat admin): yoqish, webhook URL (bo'sh — env `MAKE_WEBHOOK_URL`), yozuvlar (lotin/kirill), Instagram rasmi (4:5 — standart, OBLOG-97 / 1:1), heshteglar soni (≤ 15), brend heshtegi, chaqiruv qatori. Imzo siri — faqat env `MAKE_WEBHOOK_SECRET`. |
 | Rasm | `GET /og/{latn\|cyrl}/social/{postId}/{square\|portrait\|landscape}.jpg?v=…` — **JPEG** 1080×1080, 1080×1350, 1200×630. Shablon (OBLOG-94): fon — muqova (`sharp`, focal point bo'yicha kesilgan; focal point'ni admin'da to'g'rilang) yoki muqovasiz brend foni; pastda qorong'i gradient ustida **qisqa sarlavha** (2–4 qator, o'lchami avtomatik, sig'masa «…»), yuqorida kategoriya chipi va «Blog Odya» wordmark'i, pastda domen. Qisqa sarlavha — postning «Rasm uchun qisqa sarlavha» (`socialTitle`, ≤ 70, MCP `save_rewrite`/`set_seo` ham yozadi; kirill — avtomatik), bo'sh bo'lsa sarlavha / SEO sarlavhadan qisqartiriladi. Sozlamalar: «Rasm ustida sarlavha» (o'chiq — muqovaning oddiy kesimi) va «Rasm rang sxemasi» (qorong'i / brend). `?v=` — qisqa sarlavha, muqova (id, vaqt, focal point), kategoriya va shablon sozlamalari xeshi: ulardan biri o'zgarsa URL yangilanadi. Faqat chop etilgan post (aks holda 404), CDN'da 24 soat keshlanadi, `robots.txt` da ochiq (Meta oladi). Post panelidagi «Instagram / Make» blokida — 1:1 va 4:5 oldindan ko'rinishi (`?preview=1`, faqat admin/muharrir sessiyasi, qoralama ham). |
 
 **Sarlavhalar:** `Content-Type: application/json`, `X-Odya-Event: post.published`, `X-Odya-Delivery: <uuid>`, `X-Odya-Timestamp: <unix soniya>`, `X-Odya-Signature: sha256=<HMAC-SHA256(tana, MAKE_WEBHOOK_SECRET) hex>` (sir sozlangan bo'lsa).
@@ -252,6 +252,19 @@ Yoqilishidan oldin chop etilgan postni yuborish kerak bo'lsa — post panelidagi
 
 **Kirill:** "Qaysi yozuv(lar)" da Kirill belgilansa — alohida so'rov (`script: "uz-Cyrl"`): kirill sarlavha/lid, `/kr/…` havolalar, kirill chaqiruv qatori, kirill brend kartochkasi. Bitta Instagram hisobi uchun ikkalasini yoqmang (bir post ikki marta chiqadi) — yoki Make'da `script` bo'yicha filtr/router bilan alohida hisoblarga yo'naltiring.
 
+**Profil to'ri (3:4) — OBLOG-97:** Instagram profil sahifasi postlarni **3:4 vertikal plitka** qilib, rasmning **markazidan** kesib ko'rsatadi (postning o'zi ochilganda — to'liq rasm). Kesim faqat yonlardan:
+
+| Yuborilgan rasm | To'rda ko'rinadigan eni | Har yondan kesiladi |
+| --- | --- | --- |
+| Kvadrat 1080×1080 (1:1) | 810 px | 135 px (12,5%) |
+| Vertikal 1080×1350 (4:5) | ~1013 px | ~34 px (3,1%) |
+
+3:4 (1080×1440) ning o'zini yuborib bo'lmaydi — Instagram Content Publishing API faqat 4:5 … 1.91:1 qabul qiladi, shuning uchun **4:5 — eng yaxshi tanlov** (standart). Shablonda chip, «Blog Odya» wordmark'i, sarlavha va domen ikkala Instagram variantida ham shu 3:4 zona ichida turadi (`paddingX`: 4:5 — 100 px, 1:1 — 180 px; `src/social/image.tsx`); kvadratda sarlavha shrifti biroz kichikroq (84 px dan). Uzun kategoriya nomi chipda «…» bilan qisqaradi. Admin'dagi oldindan ko'rishda to'rda ko'rinmaydigan yonlar xira, chegarasi — punktir chiziq. Namunalar: [4:5](../assets/social-image/latn-portrait.jpg) → [to'rda](../assets/social-image/grid-3x4-latn-portrait.jpg), [1:1](../assets/social-image/latn-square.jpg) → [to'rda](../assets/social-image/grid-3x4-latn-square.jpg).
+
+- Sozlamada `square` allaqachon saqlangan bo'lsa, yangi standart uni almashtirmaydi — admin'da «Instagram rasmi» ni **Vertikal (4:5)** ga qo'lda o'zgartiring.
+- Shablon versiyasi oshirildi (`SOCIAL_TEMPLATE_VERSION = 3`) — `?v=` yangilandi, Make/CDN eski rasmni bermaydi. Allaqachon chiqqan Instagram postlari o'zgarmaydi.
+- Threads ham `images.square` ni oladi — u ham xavfsiz zonali maketda.
+
 **Platforma cheklovlari:**
 
 - Instagram: rasm — ommaviy URL, **JPEG**, nisbat 4:5 … 1.91:1, ≤ 8 MB (bizniki 1080 px, ~100–300 KB); caption ≤ 2 200 belgi, ≤ 30 heshteg; caption'dagi havola bosilmaydi; Content Publishing API — 24 soatda 50 ta post atrofida (aniq qiymat hisobga bog'liq — `content_publishing_limit`; Odya hajmi uchun yetarli).
@@ -281,6 +294,7 @@ Keyingi modullarda maydonlar Parse JSON chiqishidan olinadi. Bu variant +1 kredi
 | Sinov Instagram'ga chiqib ketdi | `test = false` filtri yo'q yoki noto'g'ri (Boolean emas, matn sifatida solishtirilgan). |
 | Post ikki marta chiqdi | Ikkala yozuv bitta hisobga yuborilmoqda (`script` filtri) yoki ssenariy ikki marta nusxalangan. Bizning tomonda (post, yozuv) bir marta — `social-deliveries`. |
 | Rasm noto'g'ri kesilgan | Media'da muqovaning focal point'ini to'g'rilang; yoki "Instagram rasmi" ni o'zgartiring. Allaqachon chiqqan post — Instagram'da qo'lda. |
+| Profil to'rida sarlavha/chip/brend yonlardan kesilgan | To'r postlarni 3:4 qilib kesadi. Admin → Ijtimoiy tarmoqlar (Make) → «Instagram rasmi» = **Vertikal (4:5)**. OBLOG-97 dan oldin chiqqan postlar o'zgarmaydi (Instagram'da rasmni almashtirib bo'lmaydi). Batafsil — «Profil to'ri (3:4)». |
 | Muqovasiz post — brend kartochkasi | Kutilgan xulq (`images.fromCover: false`). Instagram uchun muqovali post afzal. |
 
 **Xarajat eslatmasi:** Make kreditlari har ishga tushishda sarflanadi (trigger + modullar); "Sinov yuborish" va filtrda to'xtagan ishga tushishlar ham triggerni sarflaydi. Oyiga taxminiy: `postlar soni × (1 + modullar soni)`. Make → Organization → Usage'da kuzating; limit tugasa webhook'lar navbatda kutadi yoki rad etiladi — tizim 429/5xx'da qayta urinadi, 4xx'da ogohlantiradi.

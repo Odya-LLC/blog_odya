@@ -468,6 +468,32 @@
   background: var(--theme-elevation-100);
 }
 
+.social-preview__frame {
+  position: relative;
+  display: block;
+}
+
+/* OBLOG-97: profil to'rida (3:4) kesiladigan yon qismlar. */
+.social-preview__grid-crop {
+  position: absolute;
+  top: 1px;
+  bottom: 1px;
+  background: rgb(0 0 0 / 45%);
+  pointer-events: none;
+}
+
+.social-preview__grid-crop--left {
+  left: 1px;
+  border-right: 1px dashed rgb(255 255 255 / 85%);
+  border-radius: var(--style-radius-s) 0 0 var(--style-radius-s);
+}
+
+.social-preview__grid-crop--right {
+  right: 1px;
+  border-left: 1px dashed rgb(255 255 255 / 85%);
+  border-radius: 0 var(--style-radius-s) var(--style-radius-s) 0;
+}
+
 .social-preview__item figcaption,
 .social-preview__error {
   color: var(--theme-elevation-500);

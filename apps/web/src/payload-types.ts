@@ -2018,6 +2018,9 @@ export interface SocialSetting {
    * Har yozuv — alohida webhook so‘rovi (`script` maydoni bilan). Bitta Instagram hisobi uchun odatda faqat lotin.
    */
   scripts?: ('uz-Latn' | 'uz-Cyrl')[] | null;
+  /**
+   * Profil to‘ri postlarni 3:4 vertikal plitka qilib, markazdan kesib ko‘rsatadi. 4:5 eng kam yo‘qotadi (har yondan ~3%), kvadrat — har yondan 12,5%. Matn ikkalasida ham xavfsiz zonada. 3:4 ni to‘g‘ridan-to‘g‘ri yuborib bo‘lmaydi — Instagram API faqat 4:5 … 1.91:1 qabul qiladi.
+   */
   instagramImage?: ('square' | 'portrait') | null;
   hashtagsCount?: number | null;
   /**

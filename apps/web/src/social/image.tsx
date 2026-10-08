@@ -14,6 +14,11 @@
  *
  * Qatorlar satori'dan oldin o'zimiz bo'linadi (`fitTitle`, shrift glif kengliklari bo'yicha) —
  * shunda 4 qatordan oshmaydi va "…" aniq joyda turadi.
+ *
+ * Profil to'ri (OBLOG-97): Instagram profil sahifasida postlar **3:4** (vertikal) plitka bo'lib,
+ * markazdan kesib ko'rsatiladi — kvadratdan har yondan 135 px, 4:5 dan ~34 px kesiladi. Shuning
+ * uchun Instagram variantlarida (square, portrait) chip, wordmark, sarlavha va domen gorizontal
+ * "xavfsiz zona" ichida (`paddingX` ≥ kesim + ichki chekka) — to'rda ham hech narsa kesilmaydi.
  */
 import type { Locale } from '@blog-odya/shared/locales'
 import { ImageResponse } from 'next/og'
@@ -77,7 +82,10 @@ const SHADE: Record<SocialImageScheme, string> = {
 }
 
 interface Layout {
+  /** Yuqori/pastki chekka. */
   padding: number
+  /** Chap/o'ng chekka — Instagram variantlarida profil to'rining 3:4 kesimi + ichki chekka. */
+  paddingX: number
   sizes: readonly number[]
   maxLines: number
   lineHeight: number
@@ -89,9 +97,11 @@ interface Layout {
 }
 
 const LAYOUTS: Record<SocialImageVariant, Layout> = {
+  // 3:4 kesim: 135 px har yondan → 135 + 45. Matn eni 720 px — shrift biroz kichikroq.
   square: {
     padding: 64,
-    sizes: [92, 84, 76, 68, 62, 56],
+    paddingX: 180,
+    sizes: [84, 76, 70, 64, 58, 54, 50],
     maxLines: 4,
     lineHeight: 1.08,
     chipFont: 30,
@@ -99,8 +109,10 @@ const LAYOUTS: Record<SocialImageVariant, Layout> = {
     domainFont: 28,
     shade: 0.58,
   },
+  // 3:4 kesim: ~34 px har yondan → 34 + 66.
   portrait: {
     padding: 64,
+    paddingX: 100,
     sizes: [96, 88, 80, 72, 64, 58],
     maxLines: 4,
     lineHeight: 1.08,
@@ -109,8 +121,10 @@ const LAYOUTS: Record<SocialImageVariant, Layout> = {
     domainFont: 28,
     shade: 0.55,
   },
+  // Instagram'ga yuborilmaydi (Facebook/LinkedIn) — kesim yo'q.
   landscape: {
     padding: 56,
+    paddingX: 56,
     sizes: [66, 60, 54, 48, 44],
     maxLines: 3,
     lineHeight: 1.08,
@@ -122,6 +136,25 @@ const LAYOUTS: Record<SocialImageVariant, Layout> = {
 }
 
 const TITLE_LETTER_SPACING = -0.02
+
+/** Instagram profil to'ri plitkasining nisbati (eni / bo'yi). */
+export const INSTAGRAM_GRID_ASPECT = 3 / 4
+
+/**
+ * Profil to'rida variantning har yondan kesiladigan qismi (px, yuqoriga yaxlitlangan). Landscape
+ * Instagram'ga yuborilmaydi — 0.
+ */
+export function socialGridInset(variant: SocialImageVariant): number {
+  if (variant === 'landscape') return 0
+  const { width, height } = SOCIAL_IMAGE_SIZES[variant]
+  return Math.max(0, Math.ceil((width - height * INSTAGRAM_GRID_ASPECT) / 2))
+}
+
+/** Variant maketining chekkalari (testlar va oldindan ko'rish uchun). */
+export function socialSafeArea(variant: SocialImageVariant): { x: number; y: number } {
+  const layout = LAYOUTS[variant]
+  return { x: layout.paddingX, y: layout.padding }
+}
 
 let metricsPromise: Promise<FontMetrics> | null = null
 
@@ -150,7 +183,7 @@ export function fitSocialTitle(
   const { width } = SOCIAL_IMAGE_SIZES[variant]
   return fitTitle(title, metrics, {
     // Bir oz zaxira: kerning va satori yaxlitlashi.
-    width: width - layout.padding * 2 - 8,
+    width: width - layout.paddingX * 2 - 8,
     maxLines: layout.maxLines,
     sizes: layout.sizes,
     letterSpacingEm: TITLE_LETTER_SPACING,
@@ -198,6 +231,8 @@ export function SocialCard({
       titleTop - Math.round(size.height * 0.16),
     ),
   )
+  // Wordmark ("Blog Odya" pill) ~ 6.5 × shrift; qolgani — chip uchun.
+  const chipMaxWidth = size.width - layout.paddingX * 2 - Math.round(layout.wordmarkFont * 7)
   const titleStop = Math.round(((titleTop - shadeTop) / (size.height - shadeTop)) * 100)
   const background = transparent
     ? {}
@@ -251,7 +286,7 @@ export function SocialCard({
           top: 0,
           width: size.width,
           height: size.height,
-          padding: layout.padding,
+          padding: `${layout.padding}px ${layout.paddingX}px`,
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between',
@@ -269,6 +304,11 @@ export function SocialCard({
             <div
               style={{
                 display: 'flex',
+                // Uzun kategoriya nomi wordmark'ga tegmasin — "…" bilan qisqaradi.
+                maxWidth: chipMaxWidth,
+                overflow: 'hidden',
+                whiteSpace: 'nowrap',
+                textOverflow: 'ellipsis',
                 backgroundColor: chipColor,
                 color: '#FFFFFF',
                 fontSize: layout.chipFont,
