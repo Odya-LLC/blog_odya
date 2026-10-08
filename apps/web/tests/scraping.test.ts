@@ -180,9 +180,17 @@ describe('scheduler: pollIntervalMin', () => {
     expect(isFeedDue({ lastPolledAt: null }, 15, now)).toBe(true)
     expect(isFeedDue({ lastPolledAt: ago(5) }, 15, now)).toBe(false)
     expect(isFeedDue({ lastPolledAt: ago(16) }, 15, now)).toBe(true)
-    // 1 daqiqalik slack: 10 daqiqalik cron interval chegarasida kechikmaslik uchun.
+    // 1 daqiqalik slack: tick interval chegarasida bir tick'ga kechikmaslik uchun.
     expect(isFeedDue({ lastPolledAt: ago(14.5) }, 15, now)).toBe(true)
     expect(isFeedDue({ lastPolledAt: null, isActive: false }, 15, now)).toBe(false)
+  })
+
+  it('30 daqiqalik tick (OBLOG-112): ≤ 30 — har tick, 45 — har 2-tick (amalda 60 daqiqa)', () => {
+    // Oldingi tick'da o'qilgan; tick biroz erta boshlansa ham (slack 1 daqiqa) muddati kelgan.
+    expect(isFeedDue({ lastPolledAt: ago(29.5) }, 30, now)).toBe(true)
+    expect(isFeedDue({ lastPolledAt: ago(30) }, 20, now)).toBe(true)
+    expect(isFeedDue({ lastPolledAt: ago(30) }, 45, now)).toBe(false)
+    expect(isFeedDue({ lastPolledAt: ago(60) }, 45, now)).toBe(true)
   })
 })
 
@@ -194,7 +202,7 @@ describe('scraping-settings → jobs sozlamalari', () => {
       deadlineSec: 40,
       maxNewItemsPerPoll: 30,
       maxItemAgeHours: 72,
-      defaultPollIntervalMin: 15,
+      defaultPollIntervalMin: 30,
     })
     const clamped = resolveJobsSettings({
       jobsDeadlineSec: 55,
@@ -204,5 +212,11 @@ describe('scraping-settings → jobs sozlamalari', () => {
     expect(clamped.deadlineSec).toBe(45)
     expect(clamped.batchLimit).toBe(50)
     expect(clamped.isEnabled).toBe(false)
+  })
+
+  it('defaultPollIntervalMin: saqlangan qiymat ishlatiladi, chegaralar 5–1440', () => {
+    expect(resolveJobsSettings({ defaultPollIntervalMin: 60 }).defaultPollIntervalMin).toBe(60)
+    expect(resolveJobsSettings({ defaultPollIntervalMin: 1 }).defaultPollIntervalMin).toBe(5)
+    expect(resolveJobsSettings({ defaultPollIntervalMin: null }).defaultPollIntervalMin).toBe(30)
   })
 })

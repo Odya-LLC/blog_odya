@@ -43,6 +43,12 @@ barcha o'qishlar shu tranzaksiyada (`req`, `apps/web/src/lib/hookReq.ts`), nashr
 - `scrape` navbati (M2-02) faqat `S3_RAW_BUCKET` sozlangan bo'lsa ishga tushadi (raw/clean HTML gzip arxivi —
   DB'ga HTML yozilmaydi). Sozlanmagan bo'lsa `scrapeItem` job'lari kutib turadi, elementlar `Navbatda` holatida qoladi.
 
+- **Poll oralig'i** (OBLOG-112): manba `pollIntervalMin` (bo'sh bo'lsa — admin → Scraping sozlamalari →
+  `defaultPollIntervalMin`), ikkalasining standarti **30 daqiqa** — scraping tick'iga (`blog-odya-jobs-scrape`, har
+  30 daqiqa) teng. Feed faqat tick'da tekshiriladi (1 daqiqalik slack bilan), shuning uchun oraliq amalda 30 ga
+  karrali qilib yuqoriga yaxlitlanadi: ≤ 30 (masalan seed'dagi 15/20) — har tick'da o'qiladi, 45 → har 2-tick
+  (60 daqiqa), 60 → har 2-tick, 90 → har 3-tick. 30 dan kichik qiymat feed'ni tezroq o'qimaydi.
+
 - Javob (JSON): `mode`, `enqueued`, `cleanupEnqueued`, `scheduledPublish: { queued, failed }` (`mode=scrape` da `null`), `alerts: { active, sent, logged, failed }` va `newItems` (`mode=publish` da `null`), `batches`, `done: { succeeded, failed }` (ikkala bosqich yig'indisi), `phases: { publish, scrape }` (har bosqich: `batches`, `succeeded`, `failed`, `deadlineReached`; rejimga kirmagani — `null`), `remaining` (shu rejim job'lari), `deadlineReached`, `skipped` (vaqt yetmay o'tkazib yuborilgan qadamlar: `scheduledPublish`, `feedPolls`, `cleanup`, `alerts`, `newItems`), `limit`, `deadlineSec` (amaldagi), `durationMs`.
 - `401` — token noto'g'ri/yo'q; `503` — serverda `JOBS_SECRET` sozlanmagan (endpoint yopiq); `400` — `mode` noto'g'ri
   (`publish` | `scrape` | `all`).
@@ -136,7 +142,7 @@ Oraliqda (1–2 qadam orasida) chaqiruvlar `401` oladi — keyingi tick'da tikla
 | `scrapeItem` job'i `input.resume` bilan | Normal: oldingi chaqiruvda vaqt yetmay qolgan, keyingi chaqiruvda qolgan bosqichlardan davom etadi (retry emas) |
 | `deadlineReached: true`, `remaining` o'sib bormoqda (`mode=scrape`) | Yangiliklar navbati to'planmoqda — `jobsBatchLimit` ni oshiring (pool xatolari chiqmasa, yuqoridagi qator) yoki zaxira workflow'ni vaqtincha yoqing (`mode=scrape`); region mosligini ham tekshiring. Nashrga ta'sir qilmaydi — u alohida chaqiruvda |
 | Manba `stats.consecutiveFailures` o'smoqda | Feed xatosi (`feeds[].lastError`, `lastStatus`) — admin → Manbalar; 403/Cloudflare bo'lsa manbani o'chirib turing |
-| Hech narsa navbatga qo'yilmaydi (`enqueued: 0`) | Scraping sozlamalari → "Yig'ish yoqilgan" o'chiq, yoki feed'lar `pollIntervalMin` dan erta |
+| Hech narsa navbatga qo'yilmaydi (`enqueued: 0`) | Scraping sozlamalari → "Yig'ish yoqilgan" o'chiq, yoki feed'lar `pollIntervalMin` dan erta (masalan oraliq 45/60 — har 2-tick'da o'qiladi, yuqoridagi "Poll oralig'i") |
 
 ## Dedupe, klassifikatsiya, tozalash va ogohlantirishlar (M2-03)
 

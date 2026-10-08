@@ -73,7 +73,8 @@ export const sourceSchema = z
     language: z.enum(SOURCE_LANGUAGES),
     fetchMode: z.enum(FETCH_MODES),
     selectors: selectorsSchema.nullable().default(null),
-    pollIntervalMin: z.number().int().min(10).max(1440).default(15),
+    /** Scraping tick'i har 30 daqiqada (OBLOG-110) — default ham 30 (OBLOG-112). */
+    pollIntervalMin: z.number().int().min(10).max(1440).default(30),
     /** TZ §2.3: 1 so'rov / 5–10 s / domen — pastki chegara 5 s. */
     rateLimitSec: z.number().int().min(5).max(600).default(10),
     robotsCheckedAt: z.iso.date(),

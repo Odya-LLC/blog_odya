@@ -1,6 +1,7 @@
 import type { GlobalConfig } from 'payload'
 
 import { isAdmin, isAdminOrEditor } from '@/access'
+import { DEFAULT_POLL_INTERVAL_MIN } from '@/jobs/constants'
 
 /**
  * Scraping sozlamalari (TZ §3.5, §10.15): score chegarasi va jobs/cron limitlari.
@@ -93,9 +94,13 @@ export const ScrapingSettings: GlobalConfig = {
           name: 'defaultPollIntervalMin',
           type: 'number',
           label: 'Standart poll oralig‘i (daqiqa)',
-          defaultValue: 15,
+          defaultValue: DEFAULT_POLL_INTERVAL_MIN,
           min: 5,
-          admin: { width: '33%' },
+          admin: {
+            width: '33%',
+            description:
+              'Scraping har 30 daqiqada ishlaydi — oraliq 30 ga karrali qilib yuqoriga yaxlitlanadi (≤ 30 → har tick, 45 → 60 daqiqa)',
+          },
         },
         {
           name: 'maxItemAgeHours',

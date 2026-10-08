@@ -603,6 +603,9 @@ export interface Source {
   language: 'en' | 'ru';
   fetchMode: 'rss_only' | 'rss_plus_page';
   priority?: number | null;
+  /**
+   * Scraping har 30 daqiqada ishlaydi — oraliq 30 ga karrali qilib yuqoriga yaxlitlanadi (≤ 30 → har tick, 45 → 60 daqiqa)
+   */
   pollIntervalMin?: number | null;
   rateLimitSec?: number | null;
   /**
@@ -2063,6 +2066,9 @@ export interface ScrapingSetting {
    */
   jobsDeadlineSec?: number | null;
   maxNewItemsPerPoll?: number | null;
+  /**
+   * Scraping har 30 daqiqada ishlaydi — oraliq 30 ga karrali qilib yuqoriga yaxlitlanadi (≤ 30 → har tick, 45 → 60 daqiqa)
+   */
   defaultPollIntervalMin?: number | null;
   /**
    * Feed’dagi bundan eski yozuvlar olinmaydi

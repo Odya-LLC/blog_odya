@@ -33,6 +33,8 @@ Qayta tekshirish (qo'lda, CI'da o'chiq): 7-bo'limga qarang.
 | 5c | Cybersport.ru | RU | **`rss_only`** | 25 | 20 | 10 | 1 | ~65 (≈⅔ kibersport) | description (~140 belgi, qirqilgan) | ✅ Nuxt SSR (ToS sababli yuklanmaydi) |
 | — | 3DNews (zaxira) | RU | `rss_only` | 20 | 30 | 10 | 1 (manba o'chiq) | ~37 | description (~400 belgi) | tekshirilmadi |
 
+> `pollIntervalMin` — seed qiymati. Scraping har 30 daqiqada ishlaydi (OBLOG-110), oraliq 30 ga karrali qilib yuqoriga yaxlitlanadi: 15 va 20 amalda 30 ga teng (har tick'da o'qiladi). Yangi manba uchun standart — 30 (OBLOG-112); batafsil — [jobs-scheduler runbook](runbooks/jobs-scheduler.md).
+
 > Dexerto va HLTV — TZ §2.2 da bitta qator, lekin `sources` da **ikkita alohida yozuv**: domen, `robots.txt`, rate limit va `fetchMode` har xil (`homepageUrl` bitta bo'lishi kerak).
 
 Jami faol manbalar kuniga ~250–350 material beradi (OBLOG-54 dan keyin Cybersport.ru bilan) (feedlar orasidagi dublikatlar `urlHash` bilan olib tashlangandan keyin taxminan 150–250) — TZ §2.1 dagi 100–200 mo'ljaliga mos.
@@ -51,7 +53,7 @@ Jami faol manbalar kuniga ~250–350 material beradi (OBLOG-54 dan keyin Cybersp
 | `https://www.theverge.com/rss/tech/index.xml` | 200 | 10 | 12.6 | Tech | `texnologiyalar` | ✅ |
 | `https://www.theverge.com/rss/index.xml` | 200 | 10 | 30–50 | All (umumiy) | `texnologiyalar` | ✅ |
 
-- **Format:** Atom, har bir feedda faqat **10 ta** yozuv; `<category term>` bor (AI, Tech, Gaming, Policy...). 15 daqiqalik so'rov bilan yo'qotish xavfi past.
+- **Format:** Atom, har bir feedda faqat **10 ta** yozuv; `<category term>` bor (AI, Tech, Gaming, Policy...). 30 daqiqalik so'rov (scraping tick'i, OBLOG-110) bilan yo'qotish xavfi past.
 - **Topilgan xato:** `/rss/gaming/index.xml` — HTTP 200, lekin **bo'sh** feed (0 yozuv). To'g'ri manzil — `/rss/games/index.xml`.
 - **robots.txt:** `User-agent: *` uchun maqola yo'llari ochiq (`/admin`, `/login`, `/search`, `/share` va h.k. yopiq). ~100 ta AI/crawler bot nomma-nom bloklangan (ClaudeBot, CCBot, Bytespider, Crawl4AI, FirecrawlAgent...). `OdyaBlogBot` ro'yxatda yo'q.
 - **ToS:** sayt footeri **PMC Terms of Use** (`pmc.com/terms-of-use`) ga olib boradi. Unda robot, spider, crawler, scraper va **AI vositalari** bilan kontentni olish, nusxalash va agregatsiya qilish aniq taqiqlangan; RSS kontentiga reklama qo'shish va uni tijoriy maqsadda qayta nashr qilish ham taqiqlangan.

@@ -649,7 +649,7 @@ GA4 + Yandex Metrica (cookie bannersiz, har bir tashrifchida — egasi qarori, O
 | language | select: en, ru | |
 | fetchMode | select: rss_only, rss_plus_page | Huquqiy auditga qarab |
 | selectors | json | Maxsus CSS selektorlar |
-| pollIntervalMin, rateLimitSec | number | default 15 / 10 |
+| pollIntervalMin, rateLimitSec | number | default 30 / 10 (poll oralig'i scraping tick'iga — har 30 daqiqa — teng, OBLOG-112; bo'sh bo'lsa `scraping-settings.defaultPollIntervalMin`, default 30) |
 | robotsCheckedAt, tosNotes | date, textarea | |
 | priority | number 0–50 | score'ga ta'sir |
 | keywordRules | array { keyword, category, boost } | |

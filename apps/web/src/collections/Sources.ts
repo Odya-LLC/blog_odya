@@ -3,6 +3,7 @@ import type { CollectionBeforeChangeHook, CollectionConfig } from 'payload'
 
 import { isAdmin, isAdminOrEditor } from '@/access'
 import { slugField } from '@/fields/slug'
+import { DEFAULT_POLL_INTERVAL_MIN } from '@/jobs/constants'
 import { FEED_ERROR_KINDS } from '@/scraping/feed'
 import { CLEAR_FEED_BACKOFF } from '@/scraping/feedBackoff'
 
@@ -281,10 +282,14 @@ export const Sources: CollectionConfig = {
           name: 'pollIntervalMin',
           type: 'number',
           label: 'Poll oralig‘i (daqiqa)',
-          defaultValue: 15,
+          defaultValue: DEFAULT_POLL_INTERVAL_MIN,
           min: 5,
           max: 1440,
-          admin: { width: '50%' },
+          admin: {
+            width: '50%',
+            description:
+              'Scraping har 30 daqiqada ishlaydi — oraliq 30 ga karrali qilib yuqoriga yaxlitlanadi (≤ 30 → har tick, 45 → 60 daqiqa)',
+          },
         },
         {
           name: 'rateLimitSec',
