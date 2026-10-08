@@ -53,7 +53,8 @@ describe('lighthouserc.cjs', () => {
       LHCI_PATHS: '/,/a/b',
     }).ci.collect
     expect(preview.settings.skipAudits).toEqual(['is-crawlable'])
-    expect(JSON.parse(preview.settings.extraHeaders!)).toMatchObject({
+    // OBLOG-113: faqat bypass sarlavhasi — `x-vercel-set-bypass-cookie` 307 redirect'lar beradi.
+    expect(JSON.parse(preview.settings.extraHeaders!)).toEqual({
       'x-vercel-protection-bypass': 'sir',
     })
     expect(preview.url).toHaveLength(2)
