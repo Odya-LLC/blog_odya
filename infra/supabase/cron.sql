@@ -92,6 +92,7 @@ select cron.schedule(
 );
 
 -- Har 30 daqiqada (:05, :35): yangiliklar va xizmat ishlari (`?mode=scrape`).
+-- Manbaning `pollIntervalMin` i (standart 30, OBLOG-112) shu kadensga karrali qilib yuqoriga yaxlitlanadi.
 select cron.schedule(
   'blog-odya-jobs-scrape',
   '5,35 * * * *',

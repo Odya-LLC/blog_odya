@@ -169,6 +169,14 @@ describe('sources.json', () => {
   })
 })
 
+describe('sourceSchema — standart qiymatlar', () => {
+  it('pollIntervalMin berilmasa — 30 (scraping tick’i har 30 daqiqada, OBLOG-112)', () => {
+    const habr = sourcesSeedSchema.parse(sourcesJson).find((s) => s.slug === 'habr')!
+    const { pollIntervalMin: _omit, ...rest } = habr
+    expect(sourceSchema.parse(rest).pollIntervalMin).toBe(30)
+  })
+})
+
 describe('sourceSchema — noto‘g‘ri ma’lumotni rad etadi', () => {
   const valid = sourcesSeedSchema.parse(sourcesJson).find((s) => s.slug === 'habr')!
 

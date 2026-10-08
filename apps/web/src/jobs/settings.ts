@@ -3,6 +3,7 @@ import type { Payload } from 'payload'
 import {
   DEFAULT_BATCH_LIMIT,
   DEFAULT_DEADLINE_SEC,
+  DEFAULT_POLL_INTERVAL_MIN,
   MAX_BATCH_LIMIT,
   MAX_DEADLINE_SEC,
 } from './constants'
@@ -30,7 +31,7 @@ export function resolveJobsSettings(raw: Record<string, unknown> | null | undefi
     deadlineSec: clamp(data.jobsDeadlineSec, 5, MAX_DEADLINE_SEC, DEFAULT_DEADLINE_SEC),
     maxNewItemsPerPoll: clamp(data.maxNewItemsPerPoll, 1, 500, 30),
     maxItemAgeHours: clamp(data.maxItemAgeHours, 1, 24 * 365, 72),
-    defaultPollIntervalMin: clamp(data.defaultPollIntervalMin, 5, 1440, 15),
+    defaultPollIntervalMin: clamp(data.defaultPollIntervalMin, 5, 1440, DEFAULT_POLL_INTERVAL_MIN),
   }
 }
 

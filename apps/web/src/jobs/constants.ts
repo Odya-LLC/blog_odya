@@ -105,6 +105,13 @@ export const MIN_FETCH_WINDOW_MS = 3_000
  */
 export const DUE_SLACK_MS = 60_000
 
+/**
+ * Standart poll oralig'i (daqiqa, OBLOG-112) — scraping tick'iga (har 30 daqiqa) teng: kichikroq
+ * qiymat foyda bermaydi (manba baribir har tick'da o'qiladi), kattarog'i amalda 30 ga karrali
+ * qilib yuqoriga yaxlitlanadi (45 → har 2-tick, ya'ni 60 daqiqa).
+ */
+export const DEFAULT_POLL_INTERVAL_MIN = 30
+
 /** `processing` holatida shuncha vaqtdan ortiq qolgan job — uzilgan (function timeout) deb qaytariladi. */
 export const STALE_JOB_MS = 5 * 60_000
 
