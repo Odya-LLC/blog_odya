@@ -15,11 +15,31 @@ export const BRAND_NAME: Record<Locale, string> = {
 /** `<title>` qo'shimchasi: `{seoTitle} — Blog Odya` / `— Блог Одя` (TZ §8.2). */
 export const TITLE_SEPARATOR = ' — '
 
+/**
+ * Favicon va ilova ikonkalari (`public/`): "b" belgisi qorong'i plitkada (OBLOG-96). Manba —
+ * design/brand/icons, generatsiya — design/brand/scripts/logo.mjs.
+ */
+export const BRAND_ICONS = {
+  /** 16 + 32 + 48 px. */
+  ico: '/favicon.ico',
+  /** SVG favicon (dark rejimda plitka och rangga almashadi). */
+  svg: '/brand/icon.svg',
+  /** 180×180, burchaklari to'liq (iOS o'zi yumaloqlaydi). */
+  apple: '/brand/apple-touch-icon.png',
+  icon192: '/brand/icon-192.png',
+  icon512: '/brand/icon-512.png',
+  /** Web manifest `purpose: 'maskable'` — belgi markaziy xavfsiz doira ichida. */
+  maskable512: '/brand/icon-maskable-512.png',
+} as const
+
+/** Brendning qorong'i rangi (tokens.json → neutral 950) — logotip foni, web manifest. */
+export const BRAND_DARK = '#0B0B0F'
+
 /** Tashkilot (publisher) — Odya LLC (TZ §8.3 E-E-A-T). */
 export const ORGANIZATION = {
   legalName: 'Odya LLC',
-  /** `public/brand/icon-512.png` — kvadrat belgi (design/brand/icons/blue). */
-  logoPath: '/brand/icon-512.png',
+  /** `public/brand/icon-512.png` — "b" belgisi qorong'i plitkada (Google: ≥ 112 px, raster). */
+  logoPath: BRAND_ICONS.icon512,
   logoSize: 512,
 } as const
 

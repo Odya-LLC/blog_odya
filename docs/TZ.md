@@ -782,10 +782,10 @@ erDiagram
 > Egasida namuna yo'q ("yordaming kerak") — quyidagi yo'nalish taklif qilinadi va qabul qilingan. Designer vazifalari: PLAN M0/M1, TASKS.
 
 ### 12.1. Brend
-- **Nomi:** "Blog Odya" (kirillda "Блог Одя"). Logo yo'q → **matnli wordmark**: "Blog **Odya**" (ikkinchi so'z aksent rangda yoki qalin), kvadrat belgisi (favicon, Telegram avatar) — "O" harfi yoki "BO" monogrammasi.
+- **Nomi:** "Blog Odya" (kirillda "Блог Одя"). **Logotip** (OBLOG-96) — "b" belgisi (yuqorida to'la doira, chapda ustun, pastda halqa; oq/qora, bir rangli) + **matnli wordmark** "Blog **Odya**" (ikkinchi so'z aksent rangda va qalin). Belgi yozuvga bog'liq emas — favicon, ilova ikonkalari va ikkala Telegram kanal avatari uchun bir xil. Fayllar va qoidalar — `design/brand/README.md`.
 - **Ranglar:** neytral asos (oq / deyarli qora `#0B0B0F`) + **bitta aksent** (masalan, elektr-ko'k `#2563EB` yoki binafsha `#7C3AED` — designer 2 variant beradi, egasi tanlaydi). Kategoriya rang teglari — yumshoq, kam to'yingan.
 - **Shrift:** lotin kengaytirilgan + kirill subsetli, `ʻ` (U+02BB) to'g'ri ko'rinadigan: **Inter** (matn/UI) yoki **Manrope**; sarlavhalar uchun o'sha shriftning 700–800 og'irligi. `next/font` orqali self-hosted.
-- **OG rasm shabloni:** 1200×630 — sarlavha (2–3 qator), kategoriya belgisi, wordmark, fon — aksent gradient yoki muqova rasmi + qorong'i qatlam. `next/og` bilan generatsiya; lotin va kirill.
+- **OG rasm shabloni:** 1200×630 — sarlavha (2–3 qator), kategoriya belgisi, belgi + wordmark, fon — aksent gradient yoki muqova rasmi + qorong'i qatlam. `next/og` bilan generatsiya; lotin va kirill.
 
 ### 12.2. Uslub va namunalar
 | Namuna | Nima olinadi |
@@ -795,7 +795,7 @@ erDiagram
 | **kun.uz / daryo.uz** | Mahalliy auditoriyaga tanish tuzilma: "So'nggi yangiliklar" xronologik lentasi, vaqt belgilari, lotin/kirill almashtirgich joylashuvi |
 
 ### 12.3. Sahifa tuzilmasi (mobil-birinchi)
-- **Header:** wordmark, kategoriyalar menyusi (mobilda gorizontal scroll yoki burger), qidiruv, **"Lotin / Кирилл"** almashtirgich, light/dark rejim tugmasi, Telegram tugmasi (joriy yozuvdagi kanalga).
+- **Header:** belgi + wordmark, kategoriyalar menyusi (mobilda gorizontal scroll yoki burger), qidiruv, **"Lotin / Кирилл"** almashtirgich, light/dark rejim tugmasi, Telegram tugmasi (joriy yozuvdagi kanalga).
 - **Bosh sahifa:** asosiy yangilik (hero) + 2–4 ta ikkinchi darajali; "So'nggi yangiliklar" lentasi (vaqt bilan); kategoriya bloklari (AI, Kibersport, Gadjetlar…); "Mashhur" (M4); Telegram obuna banneri.
 - **Maqola:** o'qish kengligi ≤ 680 px, matn 18 px / 1.7; kategoriya → sarlavha → lid → muallif, sana, o'qish vaqti → muqova 16:9 → matn → **manba bloki** ("Manba: …") → teglar → ulashish (Telegram birinchi) → o'xshash maqolalar → Telegram CTA.
 - **Kategoriya / teg:** sarlavha + SEO tavsif, kartochkalar ro'yxati, sahifalash.

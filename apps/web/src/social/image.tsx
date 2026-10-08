@@ -5,7 +5,7 @@
  * Shablon (`SocialCard`): fon — muqova (focal point bo'yicha kesilgan) yoki muqovasiz brend foni;
  * pastki ~55% qismida qorong'i gradient; pastda **qisqa sarlavha** (Inter Display 800, 2–4
  * qator, o'lchami avtomatik, sig'masa "…"), uning tepasida aksent chiziq, ostida domen; yuqorida —
- * kategoriya chipi (chapda) va "Blog Odya" wordmark'i (o'ngda).
+ * kategoriya chipi (chapda) va "b" belgisi + "Blog Odya" wordmark'i (o'ngda).
  *
  * - Muqova bor — `sharp` bilan kesiladi, ustiga `next/og` (satori) chizgan shaffof qatlam
  *   (gradient + matn) qo'yiladi → JPEG (sifat 85, progressive, mozjpeg).
@@ -25,7 +25,7 @@ import { ImageResponse } from 'next/og'
 import sharp, { type Metadata, type Sharp } from 'sharp'
 
 import { BRAND_NAME } from '@/site/seo/config'
-import { categoryChipColor, loadOgFonts, ogDomain } from '@/site/seo/og'
+import { categoryChipColor, loadOgFonts, OgMark, ogDomain } from '@/site/seo/og'
 
 import { type FontMetrics, parseFontMetrics } from './font-metrics'
 import { SOCIAL_IMAGE_SIZES, type SocialImageScheme, type SocialImageVariant } from './make/payload'
@@ -326,6 +326,7 @@ export function SocialCard({
           <div
             style={{
               display: 'flex',
+              alignItems: 'center',
               fontFamily: 'Inter Display',
               fontSize: layout.wordmarkFont,
               letterSpacing: '-0.025em',
@@ -339,6 +340,11 @@ export function SocialCard({
                 : {}),
             }}
           >
+            <OgMark
+              height={Math.round(layout.wordmarkFont * 1.2)}
+              color={COLORS.wordmarkFirst}
+              style={{ marginRight: Math.round(layout.wordmarkFont * 0.35) }}
+            />
             <span style={{ fontWeight: 600, color: COLORS.wordmarkFirst }}>{first}</span>
             <span
               style={{

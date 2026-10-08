@@ -2,7 +2,7 @@
  * Avtomatik OG rasm (TZ §8.2): 1200×630, `next/og` (satori). Maket — brend README §6
  * (M0-06, `design/brand/scripts/build.mjs` → `ogElement`): "Fon A" (muqovasiz) — qorong'i fon +
  * aksent nurlari, yuqorida kategoriya chipi, o'rtada sarlavha (Inter Display 800, ≤ 3 qator),
- * pastda wordmark va domen. Ikkala yozuv: kirillda "Блог Одя" va `…/kr`.
+ * pastda belgi + wordmark va domen. Ikkala yozuv: kirillda "Блог Одя" va `…/kr`.
  *
  * Shriftlar — `assets/og-fonts/*.ttf` (Inter 4.1, SIL OFL 1.1; satori WOFF2/variable'ni
  * qo'llamaydi): lotin + kirill subset, `fs` bilan yuklanadi (runtime `nodejs`).
@@ -12,6 +12,8 @@ import path from 'node:path'
 
 import type { Locale } from '@blog-odya/shared'
 import { ImageResponse } from 'next/og'
+
+import { BRAND_MARK } from '@/components/blog/brand-mark'
 
 import { BRAND_NAME, siteOrigin } from './config'
 
@@ -89,6 +91,33 @@ function hexAlpha(alpha: number): string {
     .padStart(2, '0')
 }
 
+/**
+ * Brend belgisi "b" (OBLOG-96) satori uchun — inline SVG. Wordmark yonida balandligi shrift
+ * o'lchamidan ~1.2 baravar katta (sayt header'idagi nisbat bilan bir xil).
+ */
+export function OgMark({
+  height,
+  color,
+  style,
+}: {
+  height: number
+  color: string
+  style?: Record<string, string | number>
+}) {
+  const width = Math.round((BRAND_MARK.width / BRAND_MARK.height) * height * 100) / 100
+  return (
+    <svg
+      width={width}
+      height={height}
+      viewBox={BRAND_MARK.viewBox}
+      xmlns="http://www.w3.org/2000/svg"
+      style={{ flexShrink: 0, ...style }}
+    >
+      <path fill={color} fillRule="evenodd" d={BRAND_MARK.d} />
+    </svg>
+  )
+}
+
 export function OgCard({ locale, title, category, domain, size = OG_SIZE }: OgCardProps) {
   const [first, second] = BRAND_NAME[locale].split(' ')
   const glow = `${COLORS.accent600}${hexAlpha(COLORS.glowAlpha)}`
@@ -152,11 +181,13 @@ export function OgCard({ locale, title, category, domain, size = OG_SIZE }: OgCa
         <div
           style={{
             display: 'flex',
+            alignItems: 'center',
             fontFamily: 'Inter Display',
             fontSize: 40,
             letterSpacing: '-0.025em',
           }}
         >
+          <OgMark height={48} color={COLORS.wordmarkFirst} style={{ marginRight: 14 }} />
           <span style={{ fontWeight: 600, color: COLORS.wordmarkFirst }}>{first}</span>
           <span style={{ fontWeight: 800, color: COLORS.wordmarkAccent, marginLeft: 11 }}>
             {second}

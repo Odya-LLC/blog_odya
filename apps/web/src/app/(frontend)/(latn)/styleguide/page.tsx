@@ -15,6 +15,7 @@ import { Footer } from '@/components/blog/Footer'
 import { Header } from '@/components/blog/Header'
 import { HeroBlock } from '@/components/blog/HeroBlock'
 import { LatestFeed } from '@/components/blog/LatestFeed'
+import { LogoMark } from '@/components/blog/LogoMark'
 import { NotFound } from '@/components/blog/NotFound'
 import { Pagination } from '@/components/blog/Pagination'
 import { PostCard } from '@/components/blog/PostCard'
@@ -130,6 +131,11 @@ export default async function StyleguidePage({ searchParams }: Props) {
         >
           <div className="grid gap-6 md:grid-cols-2">
             <div className="flex flex-col gap-4 rounded-lg border border-border p-6">
+              <div className="flex items-end gap-4">
+                <LogoMark title="Blog Odya" className="h-16" />
+                <LogoMark className="h-8" />
+                <LogoMark className="h-4" />
+              </div>
               <Wordmark locale="uz-Latn" className="h-7" />
               <Wordmark locale="uz-Cyrl" className="h-7" />
               <div className="rounded-md bg-[#39577F] p-4 text-white">

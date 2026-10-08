@@ -1,8 +1,8 @@
 # Blog Odya — brend to'plami
 
-Asos: [TZ.md](../../docs/TZ.md) §12.1, §12.2, §10.4. Vazifa: M0-06 / OBLOG-7.
+Asos: [TZ.md](../../docs/TZ.md) §12.1, §12.2, §10.4. Vazifa: M0-06 / OBLOG-7, logotip — OBLOG-96.
 
-Logo yo'q — **matnli wordmark** "Blog **Odya**" (kirillda "Блог **Одя**"): birinchi so'z — asosiy matn rangida (600), ikkinchisi — aksent rangida va qalin (800). Kvadrat belgi — "O" monogrammasi (favicon, ilova ikonkalari), Telegram avatarlarida — "BO" / "БО".
+**Logotip** — "b" belgisi (bir rangli: oq yoki qora) + **matnli wordmark** "Blog **Odya**" (kirillda "Блог **Одя**"): birinchi so'z — asosiy matn rangida (600), ikkinchisi — aksent rangida va qalin (800). Belgi yozuvga bog'liq emas — favicon, ilova ikonkalari va ikkala Telegram kanal avatari uchun bitta.
 
 > **Aksent tanlovi:** egasi ikki variantdan birini tanlaydi (pastda yonma-yon). Tanlov bo'lmaguncha **1-variant (ko'k)** ishlatiladi — `tokens.json` → `"activeAccent": "blue"`.
 
@@ -13,24 +13,61 @@ design/brand/
 ├── README.md                 — shu hujjat
 ├── tokens.json               — rang/shrift tokenlari (manba, Tailwind uchun)
 ├── tokens.css                — CSS o'zgaruvchilari (tokens.json dan generatsiya)
+├── logo/                     — "b" belgisi (OBLOG-96)
+│   ├── source-1080.jpg       — dizayner fayli (manba, 1080×1080)
+│   ├── mark.svg              — vektor belgi, currentColor (tor viewBox 217.5×346)
+│   ├── mark-black.svg, mark-white.svg     — qat'iy rangli
+│   ├── mark-small.svg        — 16–48 px uchun (halqa qalinroq)
+│   ├── mark-{black|white}-{512|1024}.png  — shaffof fon
+│   └── logo-square-1080.{svg,png}         — dizayner faylining toza vektor nusxasi
 ├── wordmark/                 — SVG wordmark (matn konturga aylantirilgan)
 │   ├── wordmark-{latn|cyrl}-light-{blue|violet}.svg   — och fon uchun
 │   ├── wordmark-{latn|cyrl}-dark-{blue|violet}.svg    — qorong'i fon uchun
 │   └── wordmark-{latn|cyrl}-mono.svg                  — currentColor (bir rangli)
-├── icons/{blue|violet}/      — favicon to'plami
-│   ├── icon.svg              — asosiy kvadrat belgi (SVG favicon)
-│   ├── icon-512.png, icon-192.png         — web manifest
+├── icons/                    — favicon to'plami ("b" belgisi qorong'i plitkada)
+│   ├── icon.svg              — SVG favicon (dark rejimda plitka och rangga almashadi)
+│   ├── icon-512.png, icon-192.png         — web manifest, JSON-LD logo
 │   ├── icon-maskable-512.png              — manifest "maskable"
 │   ├── apple-touch-icon.png  — 180×180, burchaklari to'liq (iOS o'zi yumaloqlaydi)
 │   ├── favicon-32.png, favicon-16.png
 │   └── favicon.ico           — 16 + 32 + 48
-├── telegram/                 — kanal avatarlari 640×640 (PNG + SVG manba)
-│   └── avatar-{latn|cyrl}-{blue|violet}.{png,svg}
+├── telegram/avatar.{png,svg} — kanal avatari 640×640 (ikkala kanal uchun bitta)
 ├── og/                       — OG rasm namunalari 1200×630 (satori = next/og dvigateli)
-├── previews/                 — ko'rib chiqish rasmlari (variantlar, kategoriyalar, shrift)
+├── previews/                 — ko'rib chiqish rasmlari (logotip, variantlar, kategoriyalar, shrift)
 ├── fonts/OFL.txt             — Inter litsenziyasi (SIL OFL 1.1)
-└── scripts/                  — generatsiya skriptlari (build.mjs, contrast.mjs, fonts.mjs)
+└── scripts/                  — generatsiya skriptlari (logo.mjs, build.mjs, contrast.mjs, fonts.mjs)
 ```
+
+## 0. Logotip — "b" belgisi
+
+![Logotip: och va qorong'i fonda, ikonkalar, kichik o'lchamlar](previews/logo.png)
+
+Belgi faqat aylanalardan tuzilgan (birliklar — `mark.svg` viewBox, 217.5×346):
+
+| Element            | Geometriya                                                                     |
+| ------------------ | ------------------------------------------------------------------------------ |
+| Yuqori to'la doira | markaz (84.75, 84.75), r = 84.75                                               |
+| Chap ustun         | x = 0 … doira chap cheti, doira markazidan halqa markazi balandligigacha       |
+| Halqa              | markaz (108.75, 237.25), tashqi R = 108.75, qalinlik 17 (ichki r = 91.75)      |
+| Ustun ichki yoyi   | markaz (84.75, 237.25), r = 67.75 — doira pastidan halqa ichki chetiga urinadi |
+
+O'lchamlar dizayner faylidan (`logo/source-1080.jpg`) piksel bo'yicha moslab topilgan: IoU 0.985, farq faqat halqa yuqori doiraga tutashgan joydagi kulrang artefaktda (vektorda u oq). Belgi asl faylda kanvas markazida, balandligi 32%.
+
+Qoidalar:
+
+- Ranglar: faqat bir rangli — och fonda qora (`#0B0B0F`), qorong'i/rangli/rasmli fonda oq. Sayt ichida `currentColor` (`LogoMark` komponenti, matn rangi). Cho'zmang, aylantirmang, soya/gradient qo'shmang, halqani to'ldirmang.
+- **Wordmark bilan (lockup):** belgi chapda, balandligi wordmark balandligidan ~1.2 baravar katta (vertikal markazlangan), oraliq — belgi balandligining ~25–30%. Header: wordmark 22/24/28 px → belgi 26/29/32 px; footer: 24 → 29 px; OG: shrift 40 px → belgi 48 px.
+- Minimal balandlik — 16 px; 16–48 px'da `mark-small.svg` (halqa qalinligi 17 → 26) ishlatiladi.
+- Atrofidagi bo'sh joy — kamida halqa qalinligining 2 baravari.
+- Yolg'iz belgi ekran o'quvchilar uchun: `alt="Blog Odya"` / `<LogoMark title="Blog Odya" />`; wordmark yonida — dekorativ (`aria-hidden`).
+
+| Fayl                             | Qayerda                                                                                                 |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `logo/mark.svg`                  | Vektor manba (currentColor) — `apps/web/src/components/blog/brand-mark.ts` shundan generatsiya qilinadi |
+| `logo/mark-black-*.png`          | Och fonli joylar (hujjatlar, hamkorlar, press-kit)                                                      |
+| `logo/mark-white-*.png`          | Qorong'i/rasmli fon (video, banner)                                                                     |
+| `logo/logo-square-1080.png`      | Ijtimoiy tarmoq profil rasmi (qora fon)                                                                 |
+| `apps/web/public/brand/logo.svg` | Tashqi havola uchun qora belgi (`/brand/logo.svg`)                                                      |
 
 ## 1. Wordmark
 
@@ -56,27 +93,25 @@ Qoidalar:
 
 ## 2. Kvadrat belgi va favicon
 
-| O'lcham    | Fayl                               | Next.js (App Router) joyi                        |
-| ---------- | ---------------------------------- | ------------------------------------------------ |
-| SVG        | `icon.svg`                         | `app/icon.svg`                                   |
-| 16, 32, 48 | `favicon.ico`                      | `app/favicon.ico`                                |
-| 180        | `apple-touch-icon.png`             | `app/apple-icon.png`                             |
-| 192, 512   | `icon-192.png`, `icon-512.png`     | `public/` + `app/manifest.ts` (`purpose: 'any'`) |
-| 512        | `icon-maskable-512.png`            | `public/` + manifest (`purpose: 'maskable'`)     |
-| 16, 32     | `favicon-16.png`, `favicon-32.png` | kerak bo'lsa `<link rel="icon" sizes>`           |
+| O'lcham    | Fayl                               | Next.js (App Router) joyi                                                                                |
+| ---------- | ---------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| SVG        | `icon.svg`                         | `public/brand/icon.svg`                                                                                  |
+| 16, 32, 48 | `favicon.ico`                      | `public/favicon.ico`                                                                                     |
+| 180        | `apple-touch-icon.png`             | `public/brand/apple-touch-icon.png`                                                                      |
+| 192, 512   | `icon-192.png`, `icon-512.png`     | `public/brand/` + `app/manifest.ts` (`purpose: 'any'`); 512 — JSON-LD `Organization.logo`, RSS `<image>` |
+| 512        | `icon-maskable-512.png`            | `public/brand/` + manifest (`purpose: 'maskable'`)                                                       |
+| 16, 32     | `favicon-16.png`, `favicon-32.png` | kerak bo'lsa `<link rel="icon" sizes>`                                                                   |
 
-- Belgi: oq **"O"** (Inter ExtraBold) aksent-600 fonda, burchak radiusi 22%. "О" lotin va kirillda bir xil — favicon ikkala yozuvga umumiy.
-- 16/32 px uchun harf kattaroq (70%) — kichik o'lchamda ham o'qiladi.
-- Qaysi aksent tanlansa, `icons/<aksent>/` dagi fayllar ishlatiladi.
+Havolalar: sayt — `rootLayoutMetadata()` (`site/seo/pages.ts`, yo'llar `BRAND_ICONS` — `site/seo/config.ts`); admin panel — `payload.config.ts` → `admin.meta.icons`. Admin login logotipi va navigatsiya belgisi — `admin.components.graphics` (`components/admin/BrandGraphics.tsx`).
 
-## 3. Telegram kanal avatarlari
+- Belgi: oq **"b"** qorong'i (`#0B0B0F`) plitkada, burchak radiusi 22% (`any`); apple-touch va maskable — burchaklari to'liq. Belgi balandligi: `any` — 60%, maskable — 50% (markaziy xavfsiz doira ichida), favicon — 74–80%.
+- 16–48 px (favicon, `icon.svg`) — `mark-small` (halqa qalinroq), aks holda 16 px'da halqa yo'qolib qoladi.
+- `icon.svg` da `prefers-color-scheme: dark` — qorong'i brauzer panelida plitka oq, belgi qora.
+- Fayllar aksentga bog'liq emas (belgi bir rangli).
 
-| Kanal        | Fayl                                   |
-| ------------ | -------------------------------------- |
-| Lotin kanal  | `telegram/avatar-latn-blue.png` — "BO" |
-| Kirill kanal | `telegram/avatar-cyrl-blue.png` — "БО" |
+## 3. Telegram kanal avatari
 
-640×640 PNG, aksent gradient (500 → 700) fonda oq monogramma. Telegram avatarni doira qilib kesadi — monogramma markazdagi doira ichida (chetidan ≥ 20% bo'sh joy). Kanal yuklashda PNG'ning o'zi ishlatiladi (M0-03, egasi).
+`telegram/avatar.png` — 640×640, qorong'i fonda oq "b" belgisi; lotin va kirill kanallari uchun bitta (belgi yozuvga bog'liq emas). Telegram avatarni doira qilib kesadi — belgi markazda, balandligi 52%. Kanallarga PNG'ning o'zi yuklanadi (egasi, qo'lda).
 
 ## 4. Palitra
 
@@ -97,7 +132,7 @@ Qoidalar:
 
 Dark rejimda aksent 400 tonga ko'tariladi (600 qorong'i fonda kontrastdan o'tmaydi — tugmada matn qora `#0B0B0F`). To'liq 50–950 shkalalar — `tokens.json` → `color.accent`.
 
-**Variantni almashtirish:** `tokens.json` da `"activeAccent": "violet"` → `node scripts/build.mjs` (tokens.css qayta yoziladi); ilovada `icons/violet/` va `*-violet.svg` fayllari olinadi. Runtime'da solishtirish uchun `<html data-accent="violet">` ham ishlaydi (`tokens.css`).
+**Variantni almashtirish:** `tokens.json` da `"activeAccent": "violet"` → `node scripts/build.mjs` (tokens.css qayta yoziladi); ilovada `*-violet.svg` wordmark fayllari olinadi (logotip va ikonkalar aksentga bog'liq emas). Runtime'da solishtirish uchun `<html data-accent="violet">` ham ishlaydi (`tokens.css`).
 
 ### 4.2. Neytral asos
 
@@ -196,7 +231,7 @@ Namunalar `satori` (next/og ichidagi dvigatel) bilan xuddi shu shriftlar bilan c
 | Kategoriya chip      | Yuqori chap. Inter 600, 26 px; `padding: 10px 22px`; `border-radius: 9999px`; fon — kategoriya `solid`, matn oq                                         |
 | Sarlavha             | Inter Display 800, oq; `line-height: 1.12`; `letter-spacing: -0.025em`; maks. kenglik 1056 px; **maks. 3 qator** (`lineClamp: 3`, oxiri "…")            |
 | Sarlavha o'lchami    | uzunlikka qarab: ≤ 50 belgi — 72 px; ≤ 80 — 64 px; ≤ 110 — 56 px; undan uzun — 48 px                                                                    |
-| Wordmark             | Pastki chap. Inter Display 40 px: "Blog" 600 `#F4F4F5` + "Odya" 800 aksent (dark `accent`), oraliq 11 px                                                |
+| Belgi + wordmark     | Pastki chap. "b" belgisi 48 px (`#F4F4F5`), oraliq 14 px; Inter Display 40 px: "Blog" 600 `#F4F4F5` + "Odya" 800 aksent (dark `accent`), oraliq 11 px   |
 | Domen                | Pastki o'ng. Inter 500, 26 px, `#A1A1AA`: `blog.odya.uz` / `blog.odya.uz/kr`                                                                            |
 | Fon A (muqovasiz)    | `#0B0B0F` + `radial-gradient(circle at 100% 0%, accent-600 @ 55% → shaffof 62%)` + `radial-gradient(circle at 0% 100%, accent-900 @ 40% → shaffof 45%)` |
 | Fon B (muqova bilan) | Muqova rasm `cover` + `linear-gradient(180deg, rgba(11,11,15,.60) 0%, .78 45%, .92 100%)`                                                               |
@@ -303,12 +338,13 @@ Hisoblash: `node scripts/contrast.mjs` — `tokens.json` dagi barcha matn/fon ju
 ```bash
 cd design/brand/scripts
 npm install --no-package-lock   # node_modules gitignore'da; workspace'ga kirmaydi
-node build.mjs                  # hamma SVG/PNG/ICO, tokens.css, fonts/OFL.txt
+node logo.mjs                   # logotip: logo/, icons/, telegram/, previews/logo.png + apps/web (public/, brand-mark.ts)
+node build.mjs                  # wordmark, OG namunalari, preview'lar, tokens.css, fonts/OFL.txt (logo.mjs dan keyin)
 node contrast.mjs               # kontrast jadvali → shu README (exit 1, agar AA'dan o'tmasa)
 cd ../../.. && pnpm prettier --write design/brand
 ```
 
-`build.mjs` Inter 4.1 relizini (≈ 34 MB) GitHub'dan bir marta yuklab, keshga (`$BRAND_CACHE` yoki `/tmp/blog-odya-brand`) ochadi. Vositalar: `opentype.js` (matn → kontur), `@resvg/resvg-js` (SVG → PNG), `satori` (OG va preview), `png-to-ico`.
+`build.mjs` Inter 4.1 relizini (≈ 34 MB) GitHub'dan bir marta yuklab, keshga (`$BRAND_CACHE` yoki `/tmp/blog-odya-brand`) ochadi. Vositalar: `opentype.js` (matn → kontur), `@resvg/resvg-js` (SVG → PNG), `satori` (OG va preview), `png-to-ico`. `logo.mjs` shriftsiz ishlaydi: belgi geometriyasi (aylanalar) skriptning o'zida — o'lchamni o'zgartirish kerak bo'lsa, `BASE` ni tahrirlab qayta ishga tushiring.
 
 ## 9. Litsenziya
 
@@ -317,4 +353,5 @@ Inter — © The Inter Project Authors, SIL Open Font License 1.1 ([fonts/OFL.tx
 ## 10. Ochiq savollar
 
 - **Aksent tanlovi** — egasi 1-variant (ko'k) yoki 2-variant (binafsha) ni tanlaydi. Hozir ko'k.
-- Telegram avatarlari "BO" / "БО" — kanallar ro'yxatida farqlanadi; bir xil "O" afzal bo'lsa, `iconSvg()` da `text` o'zgartiriladi.
+- **Logotip manbasi** — dizaynerdan vektor fayl (SVG/AI/PDF) olinsa, `logo.mjs` geometriyasi u bilan solishtiriladi (hozir 1080 px JPG'dan tiklangan). Halqa yuqori doiraga tutashgan joydagi kulrang bo'lak ataylabmi (masalan, halqa doira ostidan o'tishi) — dizayner tasdiqlashi kerak; hozir oq.
+- **Gorizontal lockup** (belgi + wordmark bitta fayl) va logotipning rasmiy rang palitrasi — dizayner tasdiqlaydi; hozir lockup kodda yig'iladi (`LogoMark` + `Wordmark`).

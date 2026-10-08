@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <style>@media (prefers-color-scheme: dark) { .bg { fill: #FFFFFF; } .fg { fill: #0B0B0F; } }</style>
+  <rect class="bg" width="512" height="512" rx="113" fill="#0B0B0F"/>
+  <path class="fg" fill="#FFFFFF" fill-rule="evenodd" transform="translate(133.74 66.56) scale(1.12427)" d="M0 228.25V84.75A84.75 84.75 0 1 1 156.17 130.38A108.75 108.75 0 1 1 0 228.25ZM26 228.25A58.75 58.75 0 0 1 84.75 169.5A84.75 84.75 0 0 0 137.86 150.79A82.75 82.75 0 1 1 26 228.25Z"/>
+</svg>

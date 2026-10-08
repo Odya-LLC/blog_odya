@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils'
 
 import { HeaderMobileMenu } from './HeaderMobileMenu'
 import { HeaderMoreMenu } from './HeaderMoreMenu'
+import { LogoMark } from './LogoMark'
 import { TelegramIcon } from './icons'
 import { newTabProps } from './link-props'
 import { ScriptSwitcher } from './ScriptSwitcher'
@@ -32,7 +33,7 @@ type HeaderProps = {
  * Sayt header'i (TZ §12.3). Server komponent; client orollar faqat: yozuv almashtirgich,
  * tema tugmasi, mobil menyu, "Yana" menyusi.
  *
- * 1-qator: wordmark · qidiruv (≥1024) · Lotin/Кирилл · tema · Telegram (≥640) · burger (<1024).
+ * 1-qator: belgi + wordmark · qidiruv (≥1024) · Lotin/Кирилл · tema · Telegram (≥640) · burger (<1024).
  * 2-qator: kategoriyalar — mobilda gorizontal scroll, desktop'da to'liq + "Yana".
  */
 export function Header({
@@ -53,8 +54,10 @@ export function Header({
         <Link
           href={withLocalePrefix(locale, '/')}
           aria-label={`${t.siteName} — ${t.home}`}
-          className="shrink-0 rounded-sm py-1"
+          className="flex shrink-0 items-center gap-2 rounded-sm py-1 lg:gap-2.5"
         >
+          {/* Belgi wordmark'dan ~1.2 baravar baland — optik jihatdan teng ko'rinadi (brend README §1). */}
+          <LogoMark className="h-[26px] sm:h-[29px] lg:h-8" />
           <Wordmark locale={locale} className="h-[22px] sm:h-6 lg:h-7" />
         </Link>
 

@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "node build.mjs",
+    "logo": "node logo.mjs",
     "contrast": "node contrast.mjs"
   },
   "dependencies": {

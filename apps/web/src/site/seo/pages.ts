@@ -29,10 +29,10 @@ import {
 } from '../paths'
 import {
   absoluteUrl,
+  BRAND_ICONS,
   BRAND_NAME,
   isIndexingAllowed,
   OG_LOCALE,
-  ORGANIZATION,
   siteOrigin,
 } from './config'
 import {
@@ -375,8 +375,16 @@ export function rootLayoutMetadata(locale: Locale, options: Options = {}): Metad
     title: `${t.siteName} — ${t.tagline}`,
     description: t.tagline,
     applicationName: BRAND_NAME[locale],
-    // Brend belgisi (`/favicon.ico` 404 bo'lmasin — Lighthouse "errors-in-console").
-    icons: { icon: ORGANIZATION.logoPath, apple: ORGANIZATION.logoPath },
+    // Brend belgisi (OBLOG-96): ICO — eski brauzerlar, SVG — zamonaviylari, iOS — apple-touch-icon.
+    icons: {
+      icon: [
+        { url: BRAND_ICONS.ico, sizes: '32x32' },
+        { url: BRAND_ICONS.svg, type: 'image/svg+xml' },
+      ],
+      apple: { url: BRAND_ICONS.apple, sizes: '180x180' },
+    },
+    // `app/manifest.ts` — fayl konvensiyasi ham shu havolani beradi; bu yerda aniq ko'rsatilgan.
+    manifest: '/manifest.webmanifest',
     openGraph: { siteName: BRAND_NAME[locale], locale: OG_LOCALE, type: 'website' },
     twitter: { card: 'summary_large_image' },
   }
