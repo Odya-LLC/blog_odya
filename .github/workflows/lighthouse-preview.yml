@@ -80,5 +80,6 @@ jobs:
         with:
           name: lighthouse-preview-reports
           path: apps/web/.lighthouseci/
+          include-hidden-files: true
           retention-days: 7
           if-no-files-found: ignore

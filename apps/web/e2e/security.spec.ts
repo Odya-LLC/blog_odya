@@ -5,7 +5,8 @@ import { SEED_POSTS } from '../src/seed/data'
 /**
  * OBLOG-23 (TZ §9.2, §9.4, §9.5): security headers, `/api/health`, CSP buzilishlari yo'qligi.
  * OBLOG-60: cookie banner yo'q — GA4/Metrica ID'lar bo'lsa, analitika hech qanday harakatsiz
- * yuklanadi; ID'lar bo'lmasa — hech narsa. `next start` (haqiqiy sarlavhalar).
+ * yuklanadi (OBLOG-111: `load` paytida emas — birinchi faollikda yoki 5 s dan keyin); ID'lar
+ * bo'lmasa — hech narsa. `next start` (haqiqiy sarlavhalar).
  * Oldindan: `pnpm seed && pnpm build`.
  *
  * ID'lar bilan tekshiruv: `site-settings` da ID'lar bor bo'lsa — o'shalar bilan; bo'lmasa va
@@ -116,6 +117,7 @@ test.describe('xavfsizlik va monitoring (OBLOG-23)', () => {
     page,
     request,
   }) => {
+    test.setTimeout(60_000)
     const original = await readAnalyticsIds(request)
     let ids = original
     let token: string | null = null
@@ -131,23 +133,28 @@ test.describe('xavfsizlik va monitoring (OBLOG-23)', () => {
     try {
       const requests = await captureAnalytics(page)
       const configured = Boolean(ids.ga4MeasurementId || ids.yandexMetrikaId)
-      for (const path of ['/', '/kr', article]) {
+      for (const [index, path] of ['/', '/kr', article].entries()) {
         requests.length = 0
         await page.goto(path, { waitUntil: 'load' })
-        if (!configured) {
-          await page.waitForTimeout(1000)
-          expect(requests).toEqual([])
-          continue
-        }
-        // Hech qanday bosish/rozilik yo'q — `load` + idle'dan keyin o'zi.
+        // OBLOG-111: sahifa yuklanishi paytida (Lighthouse oynasi) analitika hali yo'q.
+        await page.waitForTimeout(1000)
+        expect(requests).toEqual([])
+        if (!configured) continue
+        // Rozilik yo'q. Birinchi sahifa — faolliksiz, fallback (5 s) dan keyin o'zi;
+        // qolganlari — birinchi faollikda (scroll).
+        if (index > 0) await page.mouse.wheel(0, 200)
+        const timeout = index === 0 ? 15_000 : 5_000
         if (ids.ga4MeasurementId) {
           await expect
-            .poll(() => requests.some((url) => url.includes(`gtag/js?id=${ids.ga4MeasurementId}`)))
+            .poll(
+              () => requests.some((url) => url.includes(`gtag/js?id=${ids.ga4MeasurementId}`)),
+              { timeout },
+            )
             .toBe(true)
         }
         if (ids.yandexMetrikaId) {
           await expect
-            .poll(() => requests.some((url) => url.includes('/metrika/tag.js')))
+            .poll(() => requests.some((url) => url.includes('/metrika/tag.js')), { timeout })
             .toBe(true)
         }
         const contentGroup = path === '/kr' ? 'cyrl' : 'latn'

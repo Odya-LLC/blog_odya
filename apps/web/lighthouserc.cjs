@@ -44,7 +44,17 @@ const paths = (process.env.LHCI_PATHS || DEFAULT_PATHS.join(','))
 const isPreview = process.env.LHCI_PREVIEW === '1'
 const bypass = process.env.VERCEL_AUTOMATION_BYPASS_SECRET
 
-/** Birinchi yuklash JS byudjeti (gzip, uzatilgan hajm): 150 KB (TZ §8.4). */
+/**
+ * Birinchi yuklash JS byudjeti (gzip, uzatilgan hajm): 150 KB (TZ §8.4).
+ *
+ * `resource-summary` o'lchov oynasida yuklangan **barcha** skriptlarni sanaydi, uchinchi
+ * tomonnikini ham. OBLOG-111: OBLOG-60 (cookie banner olib tashlandi, 8f6de33) dan beri GA4
+ * `gtag.js` (~190 KB) + Metrica `tag.js` (~90 KB) `load` + idle'da yuklanardi — preview'da
+ * 3 URL'da ~436–441 KB va TBT tufayli kategoriya Performance 0.81–0.88 (oxirgi yashil preview —
+ * 2026-09-28, OBLOG-57; `ci.yml` o'lchovi o'tardi, chunki demo seed'da analitika ID'lari yo'q).
+ * Endi ular birinchi faollikda yoki 5 s dan keyin yuklanadi (`src/site/analytics.ts`) — o'lchov
+ * oynasidan tashqarida. Byudjet o'zgarmagan; Next/React freymvorkining o'zi ~145 KB, zaxira ~5 KB.
+ */
 const JS_BUDGET_BYTES = 150 * 1024
 
 /** CI: `next start` ni LHCI o'zi ishga tushiradi (`LHCI_START_SERVER=1`, cwd — `apps/web`). */
