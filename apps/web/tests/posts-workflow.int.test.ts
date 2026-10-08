@@ -2,6 +2,8 @@ import type { Payload } from 'payload'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { CLAIM_LOCK_MS } from '@/collections/Posts/workflow'
+import { SCHEDULE_PUBLISH_MAX_ATTEMPTS } from '@/jobs/constants'
+import { ensureScheduledPublishJobs } from '@/jobs/scheduledPublish'
 import type { Category, Post } from '@/payload-types'
 
 import {
@@ -327,8 +329,96 @@ describe('posts: workflow (TZ §4.1)', () => {
       expect(jobs.docs).toHaveLength(1)
       expect(new Date(jobs.docs[0]?.waitUntil ?? 0).getTime()).toBe(later.getTime())
 
-      // scheduled → faqat published.
-      await rejects400(update(post.id, { workflowStatus: 'review' }), 'scheduled → review')
+      // scheduled → draft/rejected — yo'q (faqat published yoki bekor qilish).
+      await rejects400(update(post.id, { workflowStatus: 'draft' }), 'scheduled → draft')
+      await rejects400(
+        update(post.id, { workflowStatus: 'rejected', rejectReason: 'x' }),
+        'scheduled → rejected',
+      )
+    })
+
+    it('OBLOG-100: bekor qilish — scheduled → review, kutilayotgan job o‘chadi', async () => {
+      const post = await postInReview()
+      await update(post.id, {
+        workflowStatus: 'scheduled',
+        scheduledAt: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+      })
+      expect((await pendingJobs(post.id)).docs).toHaveLength(1)
+      const back = await update(post.id, { workflowStatus: 'review' })
+      expect(back).toMatchObject({ workflowStatus: 'review', _status: 'draft' })
+      expect((await pendingJobs(post.id)).docs).toHaveLength(0)
+      // Qayta rejalashtirish mumkin.
+      await update(post.id, {
+        workflowStatus: 'scheduled',
+        scheduledAt: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
+      })
+      expect((await pendingJobs(post.id)).docs).toHaveLength(1)
+    })
+
+    describe('OBLOG-100: xavfsizlik to‘ri (ensureScheduledPublishJobs)', () => {
+      async function scheduledWithoutJob(at: Date): Promise<Post> {
+        const post = await postInReview()
+        await update(post.id, { workflowStatus: 'scheduled', scheduledAt: at.toISOString() })
+        // Job yo'qolgan (admin oynasida o'chirilgan / xato bilan tugagan) holatni yasaymiz.
+        await payload.delete({
+          collection: 'payload-jobs',
+          where: {
+            taskSlug: { equals: 'schedulePublish' },
+            'input.doc.value': { equals: post.id },
+          },
+        })
+        return post
+      }
+
+      it('vaqti o‘tgan, job’i yo‘q post — qayta navbatga qo‘yiladi va shu tsiklda chop etiladi', async () => {
+        const post = await scheduledWithoutJob(new Date(Date.now() + 60 * 60 * 1000))
+        // Vaqt "o'tdi": scheduledAt ni to'g'ridan-to'g'ri DB'da orqaga suramiz (hook'larsiz).
+        const past = new Date(Date.now() - 5 * 60 * 1000).toISOString()
+        await payload.db.updateOne({
+          collection: 'posts',
+          id: post.id,
+          data: { scheduledAt: past },
+          returning: false,
+        })
+        const first = await ensureScheduledPublishJobs(payload)
+        expect(first.queued).toBeGreaterThanOrEqual(1)
+        const [job] = (await pendingJobs(post.id)).docs
+        expect(job).toBeTruthy()
+        expect(new Date(job!.waitUntil ?? 0).toISOString()).toBe(past)
+        // Ikkinchi chaqiruv — dublikat yo'q.
+        await ensureScheduledPublishJobs(payload)
+        expect((await pendingJobs(post.id)).docs).toHaveLength(1)
+
+        await payload.jobs.run({ queue: 'default', where: { id: { equals: job!.id } } })
+        const fresh = await payload.findByID({ collection: 'posts', id: post.id, depth: 0 })
+        expect(fresh).toMatchObject({ _status: 'published', workflowStatus: 'published' })
+        expect(new Date(fresh.publishedAt ?? 0).getTime()).toBeGreaterThan(Date.parse(past))
+      })
+
+      it(`xatoli urinishlar ${SCHEDULE_PUBLISH_MAX_ATTEMPTS} taga yetsa — qayta qo‘yilmaydi`, async () => {
+        const post = await scheduledWithoutJob(new Date(Date.now() + 60 * 60 * 1000))
+        for (let i = 0; i < SCHEDULE_PUBLISH_MAX_ATTEMPTS; i++) {
+          const job = await payload.jobs.queue({
+            task: 'schedulePublish',
+            input: { type: 'publish', doc: { relationTo: 'posts', value: post.id } },
+          })
+          await payload.update({
+            collection: 'payload-jobs',
+            id: job.id,
+            data: { hasError: true, waitUntil: new Date(Date.now() + 3_600_000).toISOString() },
+          })
+        }
+        const result = await ensureScheduledPublishJobs(payload)
+        expect(result.failed).toBeGreaterThanOrEqual(1)
+        const jobs = (await pendingJobs(post.id)).docs
+        expect(jobs).toHaveLength(SCHEDULE_PUBLISH_MAX_ATTEMPTS)
+        expect(jobs.every((job) => job.hasError)).toBe(true)
+        // Vaqt o'zgartirilsa — eski xatoli job'lar o'chadi, yangisi qo'yiladi.
+        await update(post.id, { scheduledAt: new Date(Date.now() + 7_200_000).toISOString() })
+        const fresh = (await pendingJobs(post.id)).docs
+        expect(fresh).toHaveLength(1)
+        expect(fresh[0]?.hasError).toBeFalsy()
+      })
     })
 
     it('vaqti kelganda scheduler postni chop etadi (scheduled → published)', async () => {

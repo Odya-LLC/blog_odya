@@ -7,6 +7,7 @@ import { DEFAULT_BATCH_LIMIT } from './constants'
 import { runAlertChecks } from './alerts'
 import { runNewItemsNotification } from './newItemsNotify'
 import { activeRunQueues } from './scrapeDeps'
+import { ensureScheduledPublishJobs } from './scheduledPublish'
 import { enqueueDailyCleanup, enqueueDueFeedPolls, releaseStaleJobs } from './scheduler'
 import { withErrorCapture } from './sentry'
 import { feedPollTask } from './tasks/feedPoll'
@@ -34,7 +35,9 @@ import { scrapeItemWorkflow } from './workflows/scrapeItem'
  * `item.dedupe` + `item.classify` (workflow davomi) va `maintenance.cleanup` (kuniga 1 marta),
  * ogohlantirishlar — har scheduler chaqiruvida (M2-03), `telegram.post` — post chop etilganda
  * (`default` navbati, M3-01), `indexnow.submit` — publish/unpublish/slug o'zgarishida (OBLOG-57),
- * `make.webhook` — birinchi chop etishda Make.com webhook'iga (OBLOG-91).
+ * `make.webhook` — birinchi chop etishda Make.com webhook'iga (OBLOG-91). `schedulePublish` —
+ * Payload'ning rejalashtirilgan nashri (`default` navbati); job'i yo'qolgan/xato bergan
+ * rejalashtirilgan postlar har chaqiruvda qayta navbatga qo'yiladi (`./scheduledPublish.ts`, OBLOG-100).
  * Task xatolari Sentry'ga ham yuboriladi (`./sentry.ts`, OBLOG-23).
  */
 export function buildJobsConfig(mode: Env['JOBS_MODE'] = 'endpoint'): JobsConfig {
@@ -68,6 +71,7 @@ export function buildJobsConfig(mode: Env['JOBS_MODE'] = 'endpoint'): JobsConfig
           })),
           shouldAutoRun: async (payload) => {
             await releaseStaleJobs(payload)
+            await ensureScheduledPublishJobs(payload)
             await enqueueDueFeedPolls(payload)
             await enqueueDailyCleanup(payload)
             await runAlertChecks(payload)

@@ -49,9 +49,18 @@ export function compactGlossary(glossary: GlossarySnapshot = seedGlossary()): st
   return `Glossariy (v${glossary.version}; to'liq — ${GLOSSARY_URI} yoki get_glossary):\n${lines.join('\n')}`
 }
 
+/** OBLOG-100: "keyinroq chop et" — publishAt (darhol emas). */
+const PUBLISH_LATER_HINT =
+  'Yangilik KEYINROQ chiqishi kerak bo‘lsa (foydalanuvchi vaqt aytgan, embargo, "ertalab" va ' +
+  'h.k.) — submit_for_review(postId, publishAt: "2026-10-09T09:00") bering: post darhol emas, ' +
+  'o‘sha vaqtda chop etiladi (zona yozilmasa — Toshkent vaqti; 10 daqiqagacha kechikish). ' +
+  'Rejalashtirilganlar — list_scheduled; vaqtni o‘zgartirish — reschedule_post; bekor qilish — ' +
+  'cancel_schedule.'
+
 /**
  * Oxirgi qadam — joriy rejimga qarab (OBLOG-61, `scraping-settings.mcpAutoPublish`): o'chiq —
- * tekshiruvga, yoqilgan — `submit_for_review` postni darhol chop etadi.
+ * tekshiruvga, yoqilgan — `submit_for_review` postni darhol chop etadi (yoki `publishAt` bilan
+ * rejalashtiradi, OBLOG-100).
  */
 export function submitStep(autoPublish: boolean): string {
   return autoPublish
@@ -62,9 +71,11 @@ export function submitStep(autoPublish: boolean): string {
         'ga yozing yoki needsHumanReview: true bering: bunday post chop etilmaydi, review da ' +
         'muharrirni kutadi (javobda heldForReview: true, reason). notesForEditor ga faqat muharrir ' +
         "hal qilishi kerak bo'lgan narsani yozing. Yuborilgan postni qayta tuzatish — " +
-        'withdraw_from_review; chop etilganini — faqat admin kaliti.'
+        'withdraw_from_review; chop etilganini — faqat admin kaliti. ' +
+        PUBLISH_LATER_HINT
     : 'submit_for_review(postId, notesForEditor) — post tekshiruvga (review) tushadi, chop etishni ' +
-        'muharrir bajaradi.'
+        'muharrir bajaradi. Yangilik keyinroq chiqishi kerak bo‘lsa — publishAt bering (vaqt ' +
+        'muharrirga taklif sifatida saqlanadi).'
 }
 
 const WORKFLOW_STEPS = [

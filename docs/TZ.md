@@ -347,7 +347,7 @@ Barcha tashqi bog'liqliklar env orqali: `DATABASE_URL`, `DATABASE_URL_DIRECT`, `
 | `draft` (qoralama) | Editor / AI agent (MCP) | `posts` yaratildi (bo'sh yoki manba havolasi bilan) |
 | `in_progress` | Editor / AI agent | Kimdir "oldi" (lock, `assignee`), qayta yozilmoqda |
 | `review` | Editor / AI agent | Tekshiruvga tayyor |
-| `scheduled` | Admin / editor | Chop etish vaqti belgilangan |
+| `scheduled` | Admin / editor / AI agent (MCP `submit_for_review(publishAt)`, avtomatik nashr yoqilganda — OBLOG-100) | Chop etish vaqti belgilangan; vaqt kelgach scheduler (`schedulePublish` job, pg_cron tsikli — ≤ 10 daqiqa kechikish) chop etadi. Bekor qilish — `review` (muharrir) yoki `in_progress` (MCP `cancel_schedule`) |
 | `published` | Admin / editor / scheduler | Saytda ochiq (lotin + kirill), ikkala Telegram kanalga yuborildi |
 | `rejected` | Admin / editor | Rad etildi (sabab majburiy) |
 | `archived` | Admin | Saytdan olib tashlangan (410 yoki redirect) |
@@ -363,6 +363,8 @@ stateDiagram-v2
     review --> scheduled: Editor vaqt belgiladi
     review --> published: Editor darhol chop etdi
     scheduled --> published: Scheduler
+    scheduled --> review: Rejalashtirish bekor qilindi (muharrir)
+    scheduled --> in_progress: cancel_schedule (MCP)
     published --> archived: Admin
     draft --> rejected
     review --> rejected
@@ -385,7 +387,7 @@ stateDiagram-v2
 | Postni tahrirlash (har qanday) | ✅ | ✅ | ✅ (faqat `draft` / `in_progress` holatdagi) |
 | Kirill versiyasini qo'lda tuzatish | ✅ | ✅ | ❌ |
 | `review` ga yuborish | ✅ | ✅ | ✅ |
-| **Publish / schedule** | ✅ | ✅ | ❌ (MCP'da publish tool yo'q) |
+| **Publish / schedule** | ✅ | ✅ | ⚠️ Alohida publish tool yo'q; admin avtomatik nashrni yoqsa (OBLOG-61) — `submit_for_review` darhol chop etadi yoki `publishAt` bilan rejalashtiradi (OBLOG-100; `list_scheduled`, `reschedule_post`, `cancel_schedule` — [docs/mcp.md](mcp.md)) |
 | Kategoriya/teg/menyu/glossariy boshqarish | ✅ | ✅ | ❌ (faqat o'qish) |
 | Manbalar (`sources`) boshqarish | ✅ | ❌ | ❌ |
 | Foydalanuvchilar, API kalitlar (boshqalar uchun) | ✅ | ❌ | ❌ |

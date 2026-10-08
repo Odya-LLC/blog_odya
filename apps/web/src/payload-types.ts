@@ -295,7 +295,7 @@ export interface Post {
   lockedUntil?: string | null;
   publishedAt?: string | null;
   /**
-   * "Rejalashtirilgan" holatida shu vaqtda avtomatik chop etiladi
+   * "Rejalashtirilgan" holatida shu vaqtda avtomatik chop etiladi (scheduler har 10 daqiqada — 10 daqiqagacha kechikish mumkin). Bekor qilish — holatni "Tekshiruvda" ga qaytaring. "Tekshiruvda" holatida — agent taklif qilgan vaqt.
    */
   scheduledAt?: string | null;
   rewrittenBy?: ('human' | 'ai_agent') | null;

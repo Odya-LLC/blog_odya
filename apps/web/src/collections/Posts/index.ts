@@ -118,6 +118,7 @@ export const Posts: CollectionConfig = {
       'category',
       'assignee',
       'publishedAt',
+      'scheduledAt',
       'viewsTotal',
       'updatedAt',
     ],
@@ -467,7 +468,9 @@ export const Posts: CollectionConfig = {
       admin: {
         position: 'sidebar',
         date: { pickerAppearance: 'dayAndTime' },
-        description: '"Rejalashtirilgan" holatida shu vaqtda avtomatik chop etiladi',
+        // OBLOG-100: MCP submit_for_review(publishAt) ham shu maydon + holat orqali rejalashtiradi.
+        description:
+          '"Rejalashtirilgan" holatida shu vaqtda avtomatik chop etiladi (scheduler har 10 daqiqada — 10 daqiqagacha kechikish mumkin). Bekor qilish — holatni "Tekshiruvda" ga qaytaring. "Tekshiruvda" holatida — agent taklif qilgan vaqt.',
       },
     },
     {

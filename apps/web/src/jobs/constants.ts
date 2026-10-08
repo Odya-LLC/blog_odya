@@ -28,6 +28,15 @@ export const ITEM_CLASSIFY_TASK = 'item.classify'
 export const MAINTENANCE_CLEANUP_TASK = 'maintenance.cleanup'
 export const SCRAPE_ITEM_WORKFLOW = 'scrapeItem'
 
+/**
+ * Payload'ning o'z rejalashtirilgan nashr task'i (`versions.drafts.schedulePublish`), `default`
+ * navbatida. Retry'siz — bitta xato job'ni yakunlaydi; post `scheduled` da qolib ketmasligi
+ * uchun scheduler uni qayta navbatga qo'yadi (`ensureScheduledPublishJobs`, OBLOG-100).
+ */
+export const SCHEDULE_PUBLISH_TASK = 'schedulePublish'
+/** Bitta rejalashtirilgan post uchun ko'pi bilan shuncha xatoli urinish (keyin — Sentry, qo'lda). */
+export const SCHEDULE_PUBLISH_MAX_ATTEMPTS = 3
+
 /** `feed.poll` va `maintenance.cleanup` navbati — endpoint shu navbatni ishlatadi. */
 export const DEFAULT_QUEUE = 'default'
 

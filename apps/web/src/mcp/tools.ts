@@ -5,6 +5,7 @@ import type { CollectionSlug, Where } from 'payload'
 import type { z } from 'zod'
 
 import { dayRange, isValidDate, OPEN_STATUSES } from '@/editorial/queue'
+import { SCHEDULE_PUBLISH_TASK } from '@/jobs/constants'
 import type { Category, Post, ScrapedItem, Source, Tag, User } from '@/payload-types'
 import { postPath } from '@/site/paths'
 import { parseSearchQuery } from '@/site/search/normalize'
@@ -17,6 +18,7 @@ import {
 
 import { localApiArgs, type McpContext } from './context'
 import { jsonResult, McpToolError, safeTool, textResult } from './result'
+import { formatTashkent } from './schedule'
 import {
   getGlossaryInput,
   getGuidelinesInput,
@@ -24,6 +26,7 @@ import {
   GUIDELINE_SECTIONS,
   listCategoriesInput,
   listDraftsInput,
+  listScheduledInput,
   listScrapedInput,
   listSourcesInput,
   listTagsInput,
@@ -514,6 +517,7 @@ export async function listDrafts(
       category: true,
       assignee: true,
       lockedUntil: true,
+      scheduledAt: true,
       rewrittenBy: true,
       sources: { url: true, name: true, scrapedItem: true },
       updatedAt: true,
@@ -539,6 +543,7 @@ export async function listDrafts(
           : { id: assigneeId, name: assignee?.name ?? null, isMe: assigneeId === ctx.user.id },
       lockedUntil,
       isLocked: lockedUntil ? new Date(lockedUntil).getTime() > now : false,
+      scheduledAt: post.scheduledAt ?? null,
       rewrittenBy: post.rewrittenBy ?? null,
       sources: (post.sources ?? []).map((source) => ({
         scrapedItem: relationId(source.scrapedItem),
@@ -550,6 +555,106 @@ export async function listDrafts(
     }
   })
   return jsonResult({ docs, ...pageInfo(result) })
+}
+
+// ---------------------------------------------------------------------------
+// list_scheduled (OBLOG-100)
+// ---------------------------------------------------------------------------
+
+/**
+ * Chop etish job'i holati: `queued` — navbatda (o'z vaqtida bajariladi), `failed` — urinish(lar)
+ * xato bilan tugagan, `missing` — job yo'q. Ikkala oxirgisida ham keyingi scheduler tsikli
+ * (`ensureScheduledPublishJobs`) job'ni qayta qo'yadi (urinishlar tugamagan bo'lsa).
+ */
+export type ScheduledJobStatus = 'queued' | 'failed' | 'missing'
+
+export async function listScheduled(
+  ctx: McpContext,
+  input: Input<typeof listScheduledInput>,
+): Promise<CallToolResult> {
+  const and: Where[] = [{ workflowStatus: { equals: 'scheduled' } }]
+  if (input.assignee === 'me') and.push({ assignee: { equals: ctx.user.id } })
+  const result = await ctx.payload.find({
+    collection: 'posts',
+    where: { and },
+    sort: 'scheduledAt',
+    page: input.page,
+    limit: input.limit,
+    depth: 1,
+    locale: LOCALE,
+    select: {
+      title: true,
+      slug: true,
+      workflowStatus: true,
+      category: true,
+      assignee: true,
+      scheduledAt: true,
+      updatedAt: true,
+    },
+    populate: { categories: { name: true, slug: true }, users: { name: true } },
+    ...localApiArgs(ctx, 'list_scheduled'),
+  })
+  const posts = result.docs as Post[]
+  // Job holati — tizim o'qishi (`payload-jobs` kalit egasiga ochiq emas), faqat shu postlar uchun.
+  const jobs = posts.length
+    ? (
+        await ctx.payload.find({
+          collection: 'payload-jobs',
+          where: {
+            and: [
+              { taskSlug: { equals: SCHEDULE_PUBLISH_TASK } },
+              { completedAt: { exists: false } },
+              { 'input.doc.relationTo': { equals: 'posts' } },
+            ],
+          },
+          select: { input: true, hasError: true, waitUntil: true },
+          depth: 0,
+          pagination: false,
+          limit: 0,
+          overrideAccess: true,
+        })
+      ).docs
+    : []
+  const now = Date.now()
+  const docs = posts.map((post) => {
+    const own = jobs.filter((job) => {
+      const value = (job.input as { doc?: { value?: unknown } } | null)?.doc?.value
+      return value !== undefined && value !== null && String(value) === String(post.id)
+    })
+    const pending = own.find((job) => job.hasError !== true)
+    const status: ScheduledJobStatus = pending ? 'queued' : own.length ? 'failed' : 'missing'
+    const assigneeId = relationId(post.assignee)
+    const assignee = relationDoc<User>(post.assignee)
+    const scheduledAt = post.scheduledAt ? new Date(post.scheduledAt) : null
+    return {
+      id: post.id,
+      title: post.title ?? null,
+      slug: post.slug ?? null,
+      category: categoryRef(post.category),
+      assignee:
+        assigneeId === null
+          ? null
+          : { id: assigneeId, name: assignee?.name ?? null, isMe: assigneeId === ctx.user.id },
+      scheduledAt: scheduledAt?.toISOString() ?? null,
+      scheduledAtLocal: scheduledAt ? formatTashkent(scheduledAt) : null,
+      overdue: scheduledAt ? scheduledAt.getTime() < now : false,
+      job: {
+        status,
+        waitUntil: pending?.waitUntil ?? null,
+        failedAttempts: own.length - (pending ? 1 : 0),
+      },
+      adminUrl: new URL(`/admin/collections/posts/${post.id}`, ctx.siteUrl).toString(),
+    }
+  })
+  return jsonResult({
+    docs,
+    ...pageInfo(result),
+    note:
+      'Vaqt kelgach post keyingi scheduler tsiklida chop etiladi (10 daqiqagacha kechikish). ' +
+      'overdue: true + job.status: queued — navbatdagi tsiklni kutmoqda; failed/missing — ' +
+      'scheduler job’ni qayta qo‘yadi, takrorlansa muharrirga ayting. Vaqtni o‘zgartirish — ' +
+      'reschedule_post, bekor qilish — cancel_schedule.',
+  })
 }
 
 // ---------------------------------------------------------------------------
@@ -729,6 +834,7 @@ export const READ_TOOL_NAMES = [
   'list_scraped',
   'get_source',
   'list_drafts',
+  'list_scheduled',
   'search_posts',
   'list_categories',
   'list_tags',
@@ -813,6 +919,20 @@ export function registerReadTools(server: McpServer, ctx: McpContext): void {
       annotations: READ_ONLY,
     },
     safeTool('list_drafts', (input) => listDrafts(ctx, input)),
+  )
+
+  server.registerTool(
+    'list_scheduled',
+    {
+      title: 'Rejalashtirilgan postlar',
+      description:
+        'Chop etishga rejalashtirilgan (scheduled) postlar, eng yaqin vaqt birinchi (OBLOG-100): ' +
+        'scheduledAt (UTC) va scheduledAtLocal (Toshkent), overdue, job.status (queued | failed | ' +
+        'missing). Filtr: assignee (me | all).',
+      inputSchema: listScheduledInput,
+      annotations: READ_ONLY,
+    },
+    safeTool('list_scheduled', (input) => listScheduled(ctx, input)),
   )
 
   server.registerTool(

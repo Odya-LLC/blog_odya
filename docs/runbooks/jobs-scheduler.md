@@ -9,6 +9,7 @@ Supabase pg_cron (*/10) ──pg_net──▶ POST https://blog.odya.uz/api/jobs
                                           │
                                           │  (hamma vaqt chegaralari SO'ROV BOSHIDAN — Payload init/sovuq start ham kiradi)
                                           ├─ processing'da qolib ketgan job'larni bo'shatish (> 5 daqiqa, bitta UPDATE)
+                                          ├─ job'i yo'qolgan rejalashtirilgan postlar uchun schedulePublish (OBLOG-100)
                                           ├─ muddati kelgan manbalar uchun feed.poll navbatga (pollIntervalMin)
                                           ├─ maintenance.cleanup — kuniga 1 marta (Toshkent kuni, idempotent)
                                           │    (bu ikkisi deadline allaqachon o'tgan bo'lsa — keyingi tick'ga, `skipped`)
@@ -22,7 +23,7 @@ Supabase pg_cron (*/10) ──pg_net──▶ POST https://blog.odya.uz/api/jobs
 - `scrape` navbati (M2-02) faqat `S3_RAW_BUCKET` sozlangan bo'lsa ishga tushadi (raw/clean HTML gzip arxivi —
   DB'ga HTML yozilmaydi). Sozlanmagan bo'lsa `scrapeItem` job'lari kutib turadi, elementlar `Navbatda` holatida qoladi.
 
-- Javob (JSON): `enqueued`, `cleanupEnqueued`, `alerts: { active, sent, logged, failed }`, `batches`, `done: { succeeded, failed }`, `remaining`, `deadlineReached`, `skipped` (vaqt yetmay o'tkazib yuborilgan qadamlar: `feedPolls`, `cleanup`, `alerts`), `limit`, `deadlineSec` (amaldagi), `durationMs`.
+- Javob (JSON): `enqueued`, `cleanupEnqueued`, `scheduledPublish: { queued, failed }`, `alerts: { active, sent, logged, failed }`, `batches`, `done: { succeeded, failed }`, `remaining`, `deadlineReached`, `skipped` (vaqt yetmay o'tkazib yuborilgan qadamlar: `scheduledPublish`, `feedPolls`, `cleanup`, `alerts`, `newItems`), `limit`, `deadlineSec` (amaldagi), `durationMs`.
 - `401` — token noto'g'ri/yo'q; `503` — serverda `JOBS_SECRET` sozlanmagan (endpoint yopiq).
 - `?limit=N` (1–50) — batch hajmini vaqtincha o'zgartirish; default — admin → Scraping sozlamalari → `jobsBatchLimit`.
   Payload batch'dagi job'larni **parallel** bajaradi (default 10), DB pool esa 3 ulanish. Function region DB bilan bir
@@ -166,6 +167,34 @@ Oraliqda (1–2 qadam orasida) chaqiruvlar `401` oladi — keyingi tick'da tikla
   ichida, uzunrog'i — job `waitUntil` bilan keyingi tsiklda), keyin (yoki 400/403 kabi qayta urinib bo'lmaydigan
   xatoda) — `alertChatId` (bo'lmasa `TELEGRAM_ALERT_CHAT_ID`) ga ogohlantirish va `telegram[].error`. Xato bergan
   kanal postni keyingi publish qilishda qayta uriniladi.
+
+## Rejalashtirilgan nashr — `schedulePublish` (OBLOG-100)
+
+- **Qanday rejalashtiriladi:** admin'da post holati **Rejalashtirilgan** + **Rejalashtirilgan vaqt** (`review` dan),
+  yoki MCP `submit_for_review(publishAt)` (avtomatik nashr yoqilgan bo'lsa; [docs/mcp.md](../mcp.md) §4). Ikkalasida
+  ham `syncScheduledPublish` hook'i Payload'ning `schedulePublish` job'ini **`default`** navbatiga `waitUntil =
+  scheduledAt` bilan qo'yadi; vaqt o'zgarsa — ko'chiradi, holatdan chiqilsa (`→ review`/`in_progress`, qo'lda
+  Publish) — o'chiradi.
+- **Kim bajaradi:** `/api/jobs/run` (`default` navbati birinchi, FIFO — eski job'lar birinchi) yoki `autorun`
+  tick'i. Job postni rejalashtirgan foydalanuvchi nomidan chop etadi (`scheduled → published`, `publishedAt` —
+  haqiqiy vaqt); keyin Telegram/IndexNow/Make job'lari o'sha chaqiruvning keyingi batch'ida bajariladi, sayt keshi
+  (`revalidateTag`) — darhol. Audit: `publish`, `channel = job`.
+- **Kechikish:** pg_cron `*/10` — post belgilangan vaqtdan **0–10 daqiqa** keyin chiqadi (navbatda ko'p job bo'lsa
+  va deadline yetmasa — keyingi tick). Aniqroq kerak bo'lsa — `infra/supabase/cron.sql` dagi jadvalni `*/5` ga
+  o'zgartirib, SQL'ni Supabase'da qayta bajaring (Vercel invocation'lar 2 baravar; feed.poll baribir
+  `pollIntervalMin` bo'yicha). Hozircha o'zgartirilmagan.
+- **Xavfsizlik to'ri:** Payload task'ida retry yo'q — har chaqiruv boshida (`ensureScheduledPublishJobs`,
+  `apps/web/src/jobs/scheduledPublish.ts`) `scheduled` holatidagi, lekin bajarilishi mumkin bo'lgan job'i yo'q
+  (xato bilan tugagan yoki "Schedule publish" oynasida o'chirilgan) postlar uchun job qayta qo'yiladi (vaqti o'tgan
+  bo'lsa — shu chaqiruvda bajariladi; tizim nomidan). Javobda `scheduledPublish: { queued, failed }`. 3 ta xatoli
+  urinishdan keyin qayta qo'yilmaydi: log'da `error` va Sentry (bir marta) — admin'da post'ni oching, xatoni
+  `payload-jobs` da ko'ring (`taskSlug = schedulePublish`), vaqtni o'zgartiring (eski xatoli job'lar o'chadi) yoki
+  qo'lda **Publish** qiling.
+- **Bekor qilish:** holatni **Tekshiruvda** ga qaytaring (MCP — `cancel_schedule`). Faqat "Schedule publish"
+  oynasidagi job'ni o'chirish yetarli emas — post `scheduled` da qolsa, scheduler job'ni qayta qo'yadi.
+- **Payload'ning "Schedule publish" oynasi** (Publish tugmasi menyusi) holatni o'zgartirmaydi: `review` dagi post
+  uchun ishlaydi (vaqtida `published`), `draft`/`in_progress` dagisi uchun job vaqtida workflow xatosi bilan tugaydi.
+  Tavsiya — holat + vaqt maydonlari.
 
 ## Zaxira: GitHub Actions
 

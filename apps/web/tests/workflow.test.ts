@@ -24,6 +24,8 @@ const DIAGRAM_EDGES: ReadonlyArray<readonly [WorkflowState, WorkflowState]> = [
   ['review', 'scheduled'],
   ['review', 'published'],
   ['scheduled', 'published'],
+  ['scheduled', 'review'],
+  ['scheduled', 'in_progress'],
   ['published', 'archived'],
   ['draft', 'rejected'],
   ['review', 'rejected'],

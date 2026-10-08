@@ -5,6 +5,7 @@ import { POST_WORKFLOW_STATUSES } from '@/collections/Posts/workflow'
 import { SCRAPED_ITEM_STATUSES } from '@/collections/ScrapedItems'
 
 import { MEDIA_LICENSE_VALUES } from './media-policy'
+import { PUBLISH_AT_MAX_DAYS, SCHEDULER_INTERVAL_MIN } from './schedule'
 
 /**
  * MCP o'qish toollarining kirish sxemalari (TZ §6.3). Xato matnlari o'zbekcha — SDK ularni
@@ -222,6 +223,25 @@ const text = (field: string, max: number) =>
     })
     .max(max, { error: `${field}: ko'pi bilan ${max} belgi` })
 
+/** `publishAt` (OBLOG-100) qoidasi — tekshiruv `schedule.ts` da (`parsePublishAt`). */
+const PUBLISH_AT_RULES =
+  'Format — ISO 8601: "2026-10-09T09:00" (vaqt zonasi yozilmasa — Toshkent vaqti, UTC+05:00), ' +
+  '"2026-10-09T09:00:00+05:00" yoki "...Z" (UTC). Kamida 1 daqiqa keyin, ko‘pi bilan ' +
+  `${PUBLISH_AT_MAX_DAYS} kun ichida. Chop etish — belgilangan vaqtdan keyingi scheduler ` +
+  `tsiklida (${SCHEDULER_INTERVAL_MIN} daqiqagacha kechikish mumkin)`
+
+const publishAtArg = () =>
+  z
+    .string({
+      error: (issue) =>
+        issue.input === undefined
+          ? 'publishAt: majburiy maydon'
+          : 'publishAt: matn (ISO 8601 sana-vaqt) bo‘lishi kerak',
+    })
+    .trim()
+    .min(1, { error: "publishAt: bo'sh bo'lmasin" })
+    .max(40, { error: "publishAt: ko'pi bilan 40 belgi" })
+
 const postId = () => idSchema('postId').describe('Post ID (create_draft / list_drafts natijasidan)')
 
 /** `socialTitle` (OBLOG-94) — `save_rewrite` va `set_seo` da. Qoidalar — `validation.ts`. */
@@ -340,6 +360,34 @@ export const submitForReviewInput = {
       "Standart — true (sozlamaga amal qilinadi). false — avtomatik nashr yoqilgan bo'lsa ham " +
         'post chop etilmaydi, tekshiruvga (review) yuboriladi',
     ),
+  publishAt: publishAtArg()
+    .optional()
+    .describe(
+      'KEYINROQ chop etish vaqti (OBLOG-100). Berilmasa — darhol (avtomatik nashr yoqilgan ' +
+        "bo'lsa shu chaqiruvda). Berilsa — post shu vaqtga rejalashtiriladi (scheduled), hozir " +
+        "chop etilmaydi; avtomatik nashr o'chiq yoki post ushlab qolinsa — vaqt muharrirga " +
+        `taklif sifatida saqlanadi. ${PUBLISH_AT_RULES}`,
+    ),
+}
+
+export const reschedulePostInput = {
+  postId: postId(),
+  publishAt: publishAtArg().describe(`Yangi chop etish vaqti. ${PUBLISH_AT_RULES}`),
+}
+
+export const cancelScheduleInput = {
+  postId: postId(),
+  reason: text('reason', 1000)
+    .optional()
+    .describe('Nima uchun bekor qilinmoqda (server logi va javob uchun; postga yozilmaydi)'),
+}
+
+export const listScheduledInput = {
+  assignee: z
+    .enum(['me', 'all'], { error: "assignee: 'me' yoki 'all'" })
+    .default('all')
+    .describe("me — faqat o'zingizga biriktirilgan postlar, all — hammasi (standart)"),
+  ...paginationShape(),
 }
 
 export const withdrawFromReviewInput = {

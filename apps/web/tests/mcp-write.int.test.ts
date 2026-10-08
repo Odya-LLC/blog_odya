@@ -5,6 +5,7 @@ import { createLocalReq, type Payload } from 'payload'
 import sharp from 'sharp'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
+import { runWithAuditChannel } from '@/audit/channel'
 import { apiKeyRateLimiter } from '@/auth/rate-limit'
 import { indexNowHookDeps } from '@/collections/Posts/indexnow'
 import { telegramHookDeps } from '@/collections/Posts/telegram'
@@ -15,6 +16,8 @@ import { getEditorialStats } from '@/editorial/stats'
 import { DEFAULT_TELEGRAM_TEMPLATE } from '@/globals/TelegramSettings'
 import { indexNowDeps } from '@/indexnow'
 import { INDEXNOW_SUBMIT_TASK, TELEGRAM_POST_TASK } from '@/jobs/constants'
+import { runWithDeadline } from '@/jobs/context'
+import { ensureScheduledPublishJobs } from '@/jobs/scheduledPublish'
 import { createMcpRoute, MCP_PATH } from '@/mcp/route'
 import { MEDIA_TOOL_NAMES } from '@/mcp/media-tools'
 import { READ_TOOL_NAMES } from '@/mcp/tools'
@@ -272,7 +275,8 @@ describe('MCP yozish toollari (/api/mcp)', () => {
     expect(tools.map((tool) => tool.name).sort()).toEqual(
       [...READ_TOOL_NAMES, ...WRITE_TOOL_NAMES, ...MEDIA_TOOL_NAMES].sort(),
     )
-    expect(tools.some((tool) => /publish|delete|schedule/.test(tool.name))).toBe(false)
+    // Alohida publish/delete tool yo'q; rejalashtirish — submit_for_review(publishAt) (OBLOG-100).
+    expect(tools.some((tool) => /publish|delete/.test(tool.name))).toBe(false)
     const save = tools.find((tool) => tool.name === 'save_rewrite')
     expect(Object.keys(save?.inputSchema.properties ?? {}).sort()).toEqual(
       ['body', 'category', 'excerpt', 'keepLatin', 'postId', 'socialTitle', 'tags', 'title'].sort(),
@@ -987,6 +991,287 @@ describe('MCP yozish toollari (/api/mcp)', () => {
       const json = jsonOf(await call(client, 'submit_for_review', { postId }))
       expect(json).toMatchObject({ ok: true, published: false, post: { workflowStatus: 'review' } })
       await client.close()
+    })
+
+    describe('rejalashtirilgan nashr (OBLOG-100, publishAt)', () => {
+      const HOUR = 60 * 60 * 1000
+      /** Toshkent mahalliy vaqti, zonasiz: "YYYY-MM-DDTHH:mm" (daqiqagacha). */
+      const tashkentLocal = (ms: number) => new Date(ms + 5 * HOUR).toISOString().slice(0, 16)
+      const fromLocal = (local: string) => Date.parse(`${local}:00+05:00`)
+
+      const scheduleJobs = (postId: number) =>
+        jobsFor('schedulePublish', (input) => {
+          const value = (input as { doc?: { value?: unknown } }).doc?.value
+          return String(value) === String(postId)
+        })
+
+      /** Runner'dagi kabi: audit kanali `job`, deadline konteksti (Telegram `after()` emas). */
+      const runJob = (id: number | string) =>
+        runWithAuditChannel('job', () =>
+          runWithDeadline({ taskDeadlineAt: Date.now() + 30_000 }, () =>
+            payload.jobs.run({ queue: 'default', where: { id: { equals: id } } }),
+          ),
+        )
+
+      it('yoqilgan: publishAt → scheduled, job; list/reschedule; vaqtida bir marta chop etiladi', async () => {
+        await setAutoPublish(true)
+        const client = await connect(editorKey)
+        const postId = await readyPost(client)
+        autoPublished.add(postId)
+        const local = tashkentLocal(Date.now() + 3 * HOUR)
+        const result = await call(client, 'submit_for_review', { postId, publishAt: local })
+        expect(result.isError).toBeFalsy()
+        const json = jsonOf(result)
+        const latin = await readPost(postId)
+        expect(json).toMatchObject({
+          ok: true,
+          submitted: true,
+          published: false,
+          scheduled: true,
+          autoPublish: true,
+          heldForReview: false,
+          scheduledAt: new Date(fromLocal(local)).toISOString(),
+          scheduledAtLocal: `${local.replace('T', ' ')} (Toshkent, UTC+05:00)`,
+          url: `${SITE_URL}/${category.slug}/${latin.slug}`,
+          post: { id: postId, workflowStatus: 'scheduled' },
+        })
+        expect(json.note).toMatch(/reschedule_post/)
+        expect(latin).toMatchObject({
+          workflowStatus: 'scheduled',
+          _status: 'draft',
+          rewrittenBy: 'ai_agent',
+          aiDisclosure: true,
+          lockedUntil: null,
+          publishedAt: null,
+        })
+        // Hali saytda yo'q, yon ta'sirlar yo'q.
+        await expect(
+          payload.findByID({ collection: 'posts', id: postId, depth: 0, ...as(null) }),
+        ).rejects.toThrow()
+        expect(await telegramJobs(postId)).toHaveLength(0)
+        expect(await indexNowJobs(latin.slug)).toHaveLength(0)
+        expect(deferred).toHaveLength(0)
+
+        let jobs = await scheduleJobs(postId)
+        expect(jobs).toHaveLength(1)
+        expect(new Date(jobs[0]!.waitUntil ?? 0).getTime()).toBe(fromLocal(local))
+        expect(jobs[0]!.queue).toBe('default')
+        expect(jobs[0]!.input).toMatchObject({ type: 'publish', user: { value: users.editor.id } })
+
+        // list_scheduled: eng yaqin birinchi, job holati.
+        const listed = jsonOf(await call(client, 'list_scheduled', { assignee: 'me' }))
+        const row = listed.docs.find((doc: { id: number }) => doc.id === postId)
+        expect(row).toMatchObject({
+          scheduledAt: json.scheduledAt,
+          overdue: false,
+          job: { status: 'queued', failedAttempts: 0 },
+          assignee: { id: users.editor.id, isMe: true },
+        })
+        // list_drafts ham vaqtni ko'rsatadi.
+        const drafts = jsonOf(await call(client, 'list_drafts', { status: ['scheduled'] }))
+        expect(drafts.docs.find((doc: { id: number }) => doc.id === postId)?.scheduledAt).toBe(
+          json.scheduledAt,
+        )
+
+        // Qayta yuborib bo'lmaydi; tahrirlash — cancel_schedule orqali.
+        const again = await call(client, 'submit_for_review', { postId })
+        expect(again.isError).toBe(true)
+        expect(textOf(again)).toMatch(/rejalashtirilgan.*cancel_schedule/s)
+        const edit = await call(client, 'save_rewrite', goodRewrite(postId))
+        expect(edit.isError).toBe(true)
+        expect(textOf(edit)).toMatch(/cancel_schedule/)
+
+        // Boshqa muharrir vaqtni o'zgartira olmaydi.
+        const other = await connect(editor2Key)
+        const foreign = await call(other, 'reschedule_post', {
+          postId,
+          publishAt: tashkentLocal(Date.now() + 5 * HOUR),
+        })
+        expect(foreign.isError).toBe(true)
+        expect(textOf(foreign)).toMatch(/sizga biriktirilmagan/)
+        await other.close()
+
+        // reschedule_post: job yangi vaqtga ko'chadi (bitta job).
+        const laterUtc = new Date(Date.now() + 4 * HOUR)
+        laterUtc.setUTCSeconds(0, 0)
+        const moved = jsonOf(
+          await call(client, 'reschedule_post', { postId, publishAt: laterUtc.toISOString() }),
+        )
+        expect(moved).toMatchObject({
+          rescheduled: true,
+          previous: { scheduledAt: json.scheduledAt },
+          scheduledAt: laterUtc.toISOString(),
+          post: { workflowStatus: 'scheduled' },
+        })
+        jobs = await scheduleJobs(postId)
+        expect(jobs).toHaveLength(1)
+        expect(new Date(jobs[0]!.waitUntil ?? 0).getTime()).toBe(laterUtc.getTime())
+
+        // Vaqt "keldi": job'ni muddati o'tgan qilamiz va runner kabi bajaramiz.
+        await payload.update({
+          collection: 'payload-jobs',
+          id: jobs[0]!.id,
+          data: { waitUntil: new Date(Date.now() - 1000).toISOString() },
+        })
+        const before = Date.now()
+        await runJob(jobs[0]!.id)
+
+        const published = await readPost(postId)
+        expect(published).toMatchObject({ workflowStatus: 'published', _status: 'published' })
+        const publishedAt = new Date(published.publishedAt ?? 0).getTime()
+        expect(publishedAt).toBeGreaterThanOrEqual(before - 1000)
+        expect(publishedAt).toBeLessThanOrEqual(Date.now())
+        expect(await scheduleJobs(postId)).toHaveLength(0)
+        // Ommaviy — endi ko'rinadi.
+        const visible = await payload.findByID({
+          collection: 'posts',
+          id: postId,
+          depth: 0,
+          ...as(null),
+        })
+        expect(visible.id).toBe(postId)
+
+        // Hook'lar — admin'dagi Publish bilan bir xil, har biri bir marta; `after()` emas
+        // (runner keyingi batch'da bajaradi).
+        const tg = await telegramJobs(postId)
+        expect(tg.map((job) => (job.input as { script: string }).script).sort()).toEqual([
+          'uz-Cyrl',
+          'uz-Latn',
+        ])
+        expect(await indexNowJobs(published.slug)).toHaveLength(1)
+        expect(revalidated.length).toBeGreaterThan(0)
+        expect(deferred).toHaveLength(0)
+
+        const audit = await payload.find({
+          collection: 'audit-logs',
+          where: {
+            and: [
+              { collection: { equals: 'posts' } },
+              { docId: { equals: String(postId) } },
+              { action: { equals: 'publish' } },
+            ],
+          },
+          pagination: false,
+          depth: 0,
+        })
+        expect(audit.docs).toHaveLength(1)
+        expect(audit.docs[0]).toMatchObject({ channel: 'job', user: users.editor.id })
+
+        // Scheduler'ning keyingi tsikli: job yo'q, post chop etilgan — hech narsa qo'yilmaydi.
+        await ensureScheduledPublishJobs(payload)
+        expect(await scheduleJobs(postId)).toHaveLength(0)
+        expect(await telegramJobs(postId)).toHaveLength(2)
+        await client.close()
+      })
+
+      it('validatsiya: o‘tgan vaqt, noto‘g‘ri format, juda uzoq — hech narsa o‘zgarmaydi', async () => {
+        await setAutoPublish(true)
+        const client = await connect(editorKey)
+        const postId = await readyPost(client)
+        for (const [publishAt, pattern] of [
+          [tashkentLocal(Date.now() - HOUR), /o'tgan yoki juda yaqin/],
+          ['2026-10-09', /noto'g'ri format/],
+          ['ertaga 9:00', /noto'g'ri format/],
+          [tashkentLocal(Date.now() + 40 * 24 * HOUR), /juda uzoq/],
+        ] as const) {
+          const result = await call(client, 'submit_for_review', { postId, publishAt })
+          expect(result.isError, publishAt).toBe(true)
+          expect(textOf(result), publishAt).toMatch(pattern)
+        }
+        expect(await readPost(postId)).toMatchObject({
+          workflowStatus: 'in_progress',
+          _status: 'draft',
+          scheduledAt: null,
+        })
+        expect(await scheduleJobs(postId)).toHaveLength(0)
+
+        // Rejalashtirilmagan postda reschedule/cancel — tushunarli xato.
+        for (const [tool, args] of [
+          ['reschedule_post', { postId, publishAt: tashkentLocal(Date.now() + HOUR) }],
+          ['cancel_schedule', { postId }],
+        ] as const) {
+          const result = await call(client, tool, args)
+          expect(result.isError, tool).toBe(true)
+          expect(textOf(result), tool).toMatch(/faqat rejalashtirilgan/)
+        }
+        await client.close()
+      })
+
+      it('cancel_schedule → in_progress, job o‘chadi; publishAt siz qayta yuborish — darhol', async () => {
+        await setAutoPublish(true)
+        const client = await connect(editorKey)
+        const postId = await readyPost(client)
+        autoPublished.add(postId)
+        await call(client, 'submit_for_review', {
+          postId,
+          publishAt: tashkentLocal(Date.now() + 2 * HOUR),
+        })
+        expect(await scheduleJobs(postId)).toHaveLength(1)
+
+        const cancelled = jsonOf(
+          await call(client, 'cancel_schedule', { postId, reason: 'Embargo bekor qilindi' }),
+        )
+        expect(cancelled).toMatchObject({
+          cancelled: true,
+          reason: 'Embargo bekor qilindi',
+          post: { workflowStatus: 'in_progress', assignee: users.editor.id },
+        })
+        expect(cancelled.previous.scheduledAt).toBeTruthy()
+        expect(await scheduleJobs(postId)).toHaveLength(0)
+        const post = await readPost(postId)
+        expect(post).toMatchObject({ workflowStatus: 'in_progress', scheduledAt: null })
+        expect(new Date(post.lockedUntil ?? 0).getTime()).toBeGreaterThan(Date.now())
+
+        const now = jsonOf(await call(client, 'submit_for_review', { postId }))
+        expect(now).toMatchObject({ ok: true, published: true, scheduled: false })
+        expect(await scheduleJobs(postId)).toHaveLength(0)
+        await client.close()
+      })
+
+      it('o‘chiq yoki ushlab qolingan: publishAt — muharrirga taklif (review, job yo‘q)', async () => {
+        const client = await connect(editorKey)
+        const local = tashkentLocal(Date.now() + 6 * HOUR)
+        for (const [auto, extra] of [
+          [false, {}],
+          [true, { needsHumanReview: true }],
+        ] as const) {
+          await setAutoPublish(auto)
+          const postId = await readyPost(client)
+          const json = jsonOf(
+            await call(client, 'submit_for_review', { postId, publishAt: local, ...extra }),
+          )
+          expect(json).toMatchObject({
+            ok: true,
+            published: false,
+            scheduled: false,
+            requestedPublishAt: { scheduledAt: new Date(fromLocal(local)).toISOString() },
+            post: { workflowStatus: 'review' },
+          })
+          expect(json.note).toMatch(/Taklif qilingan chop etish vaqti/)
+          expect(await readPost(postId)).toMatchObject({
+            workflowStatus: 'review',
+            scheduledAt: new Date(fromLocal(local)).toISOString(),
+          })
+          expect(await scheduleJobs(postId)).toHaveLength(0)
+          // Muharrir tasdiqlaydi: holat → Rejalashtirilgan (taklif qilingan vaqt bilan).
+          const approved = await payload.update({
+            collection: 'posts',
+            id: postId,
+            data: { workflowStatus: 'scheduled' },
+            ...as(users.editor),
+          })
+          expect(approved.workflowStatus).toBe('scheduled')
+          expect(await scheduleJobs(postId)).toHaveLength(1)
+          await payload.update({
+            collection: 'posts',
+            id: postId,
+            data: { workflowStatus: 'review' },
+            ...as(users.editor),
+          })
+          expect(await scheduleJobs(postId)).toHaveLength(0)
+        }
+        await client.close()
+      })
     })
 
     describe('ushlab qolish va agent nazorati (OBLOG-62)', () => {

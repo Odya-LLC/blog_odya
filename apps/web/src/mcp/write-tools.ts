@@ -31,9 +31,12 @@ import {
 } from './markdown'
 import { absoluteUrl, loadBlockedDomains, mediaUsageIssues } from './media-library'
 import { jsonResult, McpToolError, safeTool, textResult } from './result'
+import { formatTashkent, parsePublishAt, SCHEDULE_DELAY_NOTE, scheduleView } from './schedule'
 import {
+  cancelScheduleInput,
   createDraftInput,
   postIdInput,
+  reschedulePostInput,
   saveRewriteInput,
   setSeoInput,
   submitForReviewInput,
@@ -55,11 +58,13 @@ import {
 
 /**
  * MCP yozish toollari (TZ §5.1, §5.3, §6.3, M2-07): `create_draft`, `claim_draft`, `release_draft`,
- * `save_rewrite`, `set_seo`, `preview_cyrillic`, `submit_for_review`, `withdraw_from_review`.
+ * `save_rewrite`, `set_seo`, `preview_cyrillic`, `submit_for_review`, `withdraw_from_review`,
+ * `reschedule_post`, `cancel_schedule`.
  * Alohida publish tool yo'q: admin `scraping-settings.mcpAutoPublish` ni yoqsa (OBLOG-61),
  * `submit_for_review` postni tekshiruvdan o'tkazib darhol chop etadi (`in_progress → review →
  * published`, bitta tranzaksiya) — agar ushlab qolish sababi bo'lmasa (OBLOG-62: `notesForEditor`,
- * `needsHumanReview`, `autoPublish: false` → `review`).
+ * `needsHumanReview`, `autoPublish: false` → `review`). `publishAt` berilsa (OBLOG-100) — chop
+ * etish o'rniga `review → scheduled`: Payload `schedulePublish` job'i o'sha vaqtda chop etadi.
  *
  * Qoidalar (TZ §4.1, §4.2):
  * - Barcha yozuvlar Local API orqali kalit egasi nomidan (`overrideAccess: false`), audit kanali —
@@ -94,6 +99,8 @@ export const WRITE_TOOL_NAMES = [
   'preview_cyrillic',
   'submit_for_review',
   'withdraw_from_review',
+  'reschedule_post',
+  'cancel_schedule',
 ] as const
 
 // ---------------------------------------------------------------------------
@@ -161,10 +168,24 @@ function statusError(post: Post): McpToolError {
       : post.workflowStatus === 'review'
         ? ` Post tekshiruvda — withdraw_from_review(postId: ${post.id}) bilan qaytarib oling ` +
           '(yoki muharrir qaytaradi), so‘ng qayta tahrirlash mumkin.'
-        : ''
+        : post.workflowStatus === 'scheduled'
+          ? ` ${SCHEDULED_HINT(post.id)}`
+          : ''
   return new McpToolError(
     `Post #${post.id} "${post.workflowStatus}" holatida — MCP orqali faqat draft yoki ` +
       `in_progress holatidagi postlarni o'zgartirish mumkin.${tail}`,
+  )
+}
+
+const SCHEDULED_HINT = (id: number) =>
+  `Post chop etishga rejalashtirilgan — vaqtni o‘zgartirish: reschedule_post(postId: ${id}); ` +
+  `tuzatish yoki darhol chop etish: avval cancel_schedule(postId: ${id}).`
+
+/** `submit_for_review` rejalashtirilgan postga (OBLOG-100). */
+function scheduledError(post: Post): McpToolError {
+  const at = post.scheduledAt ? ` (${formatTashkent(new Date(post.scheduledAt))})` : ''
+  return new McpToolError(
+    `Post #${post.id} allaqachon chop etishga rejalashtirilgan${at}. ${SCHEDULED_HINT(post.id)}`,
   )
 }
 
@@ -1000,11 +1021,21 @@ export async function submitForReview(
 ): Promise<CallToolResult> {
   const req = await mcpReq(ctx, 'submit_for_review')
   const post = await loadPost(ctx, req, input.postId)
+  if (post.workflowStatus === 'scheduled') throw scheduledError(post)
   const mode = editModeFor(ctx, post)
   if (mode === 'revision' && post._status !== 'draft') {
     throw new McpToolError(
       `Post #${post.id} chop etilgan va unda saqlanmagan o'zgarish yo'q — avval save_rewrite / ` +
         'set_seo bilan tuzating, so‘ng submit_for_review.',
+    )
+  }
+  // OBLOG-100: keyinroq chop etish vaqti — xato bo'lsa hech narsa o'zgarmaydi.
+  const publishAt = input.publishAt !== undefined ? parsePublishAt(input.publishAt) : null
+  if (publishAt && mode === 'revision') {
+    throw new McpToolError(
+      `Post #${post.id} allaqachon chop etilgan — uning o'zgarishlarini rejalashtirib bo'lmaydi ` +
+        '(publishAt faqat yangi post uchun). publishAt siz yuboring — o‘zgarish darhol chop ' +
+        'etiladi yoki tekshiruvga tushadi.',
     )
   }
   // OBLOG-61: sozlama har chaqiruvda o'qiladi — admin o'chirsa, keyingi post tekshiruvga tushadi.
@@ -1020,10 +1051,13 @@ export async function submitForReview(
       })
     : null
   const willPublish = autoPublish && hold === null
+  // Avtomatik nashr + publishAt: chop etish o'rniga rejalashtiriladi (`review → scheduled`).
+  const willSchedule = willPublish && publishAt !== null
   const decision = {
     autoPublish,
     heldForReview: hold !== null,
     ...(hold ? { reason: hold } : {}),
+    scheduled: willSchedule,
   }
 
   const body = post.content ? statsFromLexical(post.content, { siteHost: siteHost(ctx) }) : null
@@ -1196,6 +1230,8 @@ export async function submitForReview(
     })
   }
 
+  // Oxirgi yuborish hal qiladi: publishAt berilmasa — avvalgi taklif qilingan vaqt o'chiriladi.
+  const scheduledAt = publishAt ? publishAt.toISOString() : null
   const updated = await inTransaction(req, async () => {
     if (post.workflowStatus === 'draft') {
       await ctx.payload.update({
@@ -1209,10 +1245,21 @@ export async function submitForReview(
     const reviewed = await ctx.payload.update({
       collection: 'posts',
       id: post.id,
-      data: { workflowStatus: 'review', ...notesData },
+      data: { workflowStatus: 'review', scheduledAt, ...notesData },
       depth: 0,
       ...op(ctx, req),
     })
+    if (willSchedule) {
+      // OBLOG-100: `review → scheduled` — admin'da "Holat: Rejalashtirilgan" bilan bir xil yo'l;
+      // `syncScheduledPublish` hook'i `schedulePublish` job'ini shu tranzaksiyada navbatga qo'yadi.
+      return ctx.payload.update({
+        collection: 'posts',
+        id: post.id,
+        data: { workflowStatus: 'scheduled', rewrittenBy: 'ai_agent', aiDisclosure: true },
+        depth: 0,
+        ...op(ctx, req),
+      })
+    }
     if (!willPublish) return reviewed
     // Avtomatik nashr: `review → published` — admin'dagi "Publish" bilan bir xil yo'l (kalit
     // egasi nomidan, `overrideAccess: false`; `enforceWorkflow` o'tish va rolni tekshiradi).
@@ -1228,7 +1275,8 @@ export async function submitForReview(
     })
   }).catch(rethrow)
 
-  if (!willPublish) {
+  if (willSchedule) {
+    const urls = await publishedPostUrls(ctx, req, updated)
     return result({
       ok: true,
       errors: [],
@@ -1237,12 +1285,41 @@ export async function submitForReview(
       submitted: true,
       published: false,
       ...decision,
+      ...scheduleView(updated.scheduledAt),
+      // Chop etilgandan keyin ochiladigan manzillar (hozircha 404).
+      url: urls?.url ?? null,
+      urlCyrl: urls?.urlCyrl ?? null,
+      post: { ...postSummary(ctx, updated), ...scheduleView(updated.scheduledAt) },
+      note:
+        `Post ${formatTashkent(new Date(updated.scheduledAt ?? 0))} ga rejalashtirildi ` +
+        `(scheduled) — hozir saytda yo‘q, url'lar chop etilgandan keyin ochiladi. ` +
+        `${SCHEDULE_DELAY_NOTE} Vaqtni o‘zgartirish — reschedule_post, bekor qilish (tuzatish ` +
+        'yoki darhol chop etish uchun) — cancel_schedule; ro‘yxat — list_scheduled.',
+    })
+  }
+
+  if (!willPublish) {
+    const proposed = publishAt
+      ? ` Taklif qilingan chop etish vaqti (${formatTashkent(publishAt)}) postda saqlandi — ` +
+        'muharrir tasdiqlasa, holatni "Rejalashtirilgan" ga o‘tkazadi (yoki darhol chop etadi).'
+      : ''
+    return result({
+      ok: true,
+      errors: [],
+      warnings,
+      seoScore: score,
+      submitted: true,
+      published: false,
+      ...decision,
+      ...(publishAt ? { requestedPublishAt: scheduleView(publishAt) } : {}),
       post: postSummary(ctx, updated),
       reviewUrl: new URL('/admin/review', ctx.siteUrl).toString(),
-      note: hold
-        ? `${HOLD_NOTES[hold]} Post tekshiruvda (review), chop etishni muharrir bajaradi. ` +
-          `Qaytarib olish — withdraw_from_review(postId: ${post.id}).`
-        : 'Post tekshiruvga yuborildi. Chop etishni muharrir bajaradi (avtomatik nashr o‘chiq).',
+      note:
+        (hold
+          ? `${HOLD_NOTES[hold]} Post tekshiruvda (review), chop etishni muharrir bajaradi. ` +
+            `Qaytarib olish — withdraw_from_review(postId: ${post.id}).`
+          : 'Post tekshiruvga yuborildi. Chop etishni muharrir bajaradi (avtomatik nashr o‘chiq).') +
+        proposed,
     })
   }
   const urls = await publishedPostUrls(ctx, req, updated)
@@ -1323,6 +1400,103 @@ export async function withdrawFromReview(
       'Post in_progress holatiga qaytdi va sizga 2 soatga biriktirildi — tuzating va qayta ' +
       'yuboring. notesForEditor dagi eski izoh saqlanadi: muammo hal bo‘lsa, ' +
       'submit_for_review(notesForEditor: "") bilan tozalang.',
+    next: 'save_rewrite / set_seo → submit_for_review',
+  })
+}
+
+// ---------------------------------------------------------------------------
+// reschedule_post / cancel_schedule (OBLOG-100)
+// ---------------------------------------------------------------------------
+
+/**
+ * Rejalashtirilgan postni boshqarish huquqi: holat `scheduled` va post kalit egasiga biriktirilgan
+ * (o'zi rejalashtirgan); admin kaliti — har qanday rejalashtirilgan post.
+ */
+function assertScheduleOwner(ctx: McpContext, post: Post): void {
+  if (post.workflowStatus !== 'scheduled') {
+    throw new McpToolError(
+      `Post #${post.id} "${post.workflowStatus}" holatida — faqat rejalashtirilgan (scheduled) ` +
+        'postning vaqtini o‘zgartirish yoki bekor qilish mumkin.' +
+        (isEditableStatus(post.workflowStatus) || post.workflowStatus === 'review'
+          ? ' Rejalashtirish — submit_for_review(postId, publishAt).'
+          : ''),
+    )
+  }
+  const assignee = relationId(post.assignee)
+  if (assignee !== ctx.user.id && !isAdminUser(ctx.user)) {
+    throw new McpToolError(
+      `Post #${post.id} sizga biriktirilmagan` +
+        (assignee === null ? '' : ` (user #${assignee})`) +
+        ' — faqat o‘zingiz rejalashtirgan postni boshqarasiz (yoki muharrir admin panelda).',
+    )
+  }
+}
+
+/** Rejalashtirilgan post vaqtini o'zgartirish: `schedulePublish` job'i yangi vaqtga ko'chadi. */
+export async function reschedulePost(
+  ctx: McpContext,
+  input: Input<typeof reschedulePostInput>,
+): Promise<CallToolResult> {
+  const req = await mcpReq(ctx, 'reschedule_post')
+  const post = await loadPost(ctx, req, input.postId)
+  assertScheduleOwner(ctx, post)
+  const publishAt = parsePublishAt(input.publishAt)
+  const previous = scheduleView(post.scheduledAt)
+  const updated = await ctx.payload
+    .update({
+      collection: 'posts',
+      id: post.id,
+      data: { scheduledAt: publishAt.toISOString() },
+      depth: 0,
+      ...op(ctx, req),
+    })
+    .catch(rethrow)
+  return jsonResult({
+    rescheduled: true,
+    previous,
+    ...scheduleView(updated.scheduledAt),
+    post: { ...postSummary(ctx, updated), ...scheduleView(updated.scheduledAt) },
+    note: `Yangi vaqt: ${formatTashkent(publishAt)}. ${SCHEDULE_DELAY_NOTE}`,
+  })
+}
+
+/**
+ * Rejalashtirishni bekor qilish: `scheduled → in_progress`, post kalit egasiga 2 soatga
+ * biriktiriladi, kutilayotgan `schedulePublish` job'i o'chiriladi (`syncScheduledPublish`).
+ */
+export async function cancelSchedule(
+  ctx: McpContext,
+  input: Input<typeof cancelScheduleInput>,
+): Promise<CallToolResult> {
+  const req = await mcpReq(ctx, 'cancel_schedule')
+  const post = await loadPost(ctx, req, input.postId)
+  assertScheduleOwner(ctx, post)
+  const previous = scheduleView(post.scheduledAt)
+  const updated = await ctx.payload
+    .update({
+      collection: 'posts',
+      id: post.id,
+      data: { ...lockData(ctx.user.id), scheduledAt: null },
+      depth: 0,
+      ...op(ctx, req),
+    })
+    .catch(rethrow)
+  const reason = input.reason?.trim() || null
+  ctx.payload.logger.info({
+    postId: post.id,
+    userId: ctx.user.id,
+    reason,
+    msg: 'MCP: rejalashtirilgan nashr bekor qilindi (cancel_schedule)',
+  })
+  return jsonResult({
+    cancelled: true,
+    reason,
+    previous,
+    post: postSummary(ctx, updated),
+    note:
+      'Rejalashtirish bekor qilindi — post chop etilmaydi. Post in_progress holatida va sizga ' +
+      '2 soatga biriktirildi: tuzating (save_rewrite / set_seo) va qayta yuboring — ' +
+      'submit_for_review(publishAt: yangi vaqt) yoki publishAt siz (darhol chop etish).',
     next: 'save_rewrite / set_seo → submit_for_review',
   })
 }
@@ -1434,9 +1608,13 @@ export function registerWriteTools(server: McpServer, ctx: McpContext): void {
         'muharrir bajaradi. YOQILGAN — post SHU CHAQIRUVNING O‘ZIDA (kechikishsiz, bitta ' +
         'tranzaksiyada) chop etiladi va saytda ko‘rinadi; istisno — post review da qoladi: ' +
         "notesForEditor bo'sh emas (yoki postda avvalgi izoh bor), needsHumanReview: true yoki " +
-        'autoPublish: false. Javob: { ok, submitted, published, autoPublish, heldForReview, ' +
-        'reason? (agent_opt_out | needs_human_review | notes_for_editor), publishedAt?, url?, ' +
-        'urlCyrl?, errors[], warnings[], seoScore }. Matn va SEO to‘ldirilgan bo‘lishi kerak, ' +
+        'autoPublish: false. KEYINROQ chop etish kerak bo‘lsa (masalan, "ertaga 9:00 da") — ' +
+        'publishAt bering: post scheduled holatiga o‘tadi va o‘sha vaqtda avtomatik chop etiladi ' +
+        '(vaqt zonasi yozilmasa — Toshkent, UTC+05:00; kechikish — 10 daqiqagacha); boshqarish — ' +
+        'list_scheduled, reschedule_post, cancel_schedule. Javob: { ok, submitted, published, ' +
+        'scheduled, autoPublish, heldForReview, reason? (agent_opt_out | needs_human_review | ' +
+        'notes_for_editor), publishedAt?, scheduledAt?, scheduledAtLocal?, url?, urlCyrl?, ' +
+        'errors[], warnings[], seoScore }. Matn va SEO to‘ldirilgan bo‘lishi kerak, ' +
         "aks holda ok: false (hech narsa o'zgarmaydi). Chop etishda muqova litsenziyasi muammosi " +
         "va save_rewrite qilinmagan post — xato. Chop etilgan postning qoralama o'zgarishlari " +
         '(faqat admin kaliti) — xuddi shu qoidalar bilan yangi versiya chop etiladi.',
@@ -1458,5 +1636,35 @@ export function registerWriteTools(server: McpServer, ctx: McpContext): void {
       annotations: { ...WRITE, idempotentHint: true },
     },
     safeTool('withdraw_from_review', (input) => withdrawFromReview(ctx, input)),
+  )
+
+  server.registerTool(
+    'reschedule_post',
+    {
+      title: 'Rejalashtirilgan vaqtni o‘zgartirish',
+      description:
+        'Rejalashtirilgan (scheduled) postning chop etish vaqtini o‘zgartiradi (OBLOG-100). Faqat ' +
+        'o‘zingiz rejalashtirgan post (admin kaliti — har qanday). publishAt — yangi vaqt ' +
+        '(ISO 8601; zona yozilmasa — Toshkent). Javob: { rescheduled, previous, scheduledAt, ' +
+        'scheduledAtLocal, post }.',
+      inputSchema: reschedulePostInput,
+      annotations: { ...WRITE, idempotentHint: true },
+    },
+    safeTool('reschedule_post', (input) => reschedulePost(ctx, input)),
+  )
+
+  server.registerTool(
+    'cancel_schedule',
+    {
+      title: 'Rejalashtirishni bekor qilish',
+      description:
+        'Rejalashtirilgan (scheduled) postni chop etish navbatidan oladi (OBLOG-100): post ' +
+        'in_progress ga qaytadi va sizga 2 soatga biriktiriladi — tuzatib, qayta ' +
+        'submit_for_review (publishAt bilan yoki darhol) qilish mumkin. Faqat o‘zingiz ' +
+        "rejalashtirgan post (admin kaliti — har qanday). reason — ixtiyoriy izoh (log'ga).",
+      inputSchema: cancelScheduleInput,
+      annotations: { ...WRITE, idempotentHint: true },
+    },
+    safeTool('cancel_schedule', (input) => cancelSchedule(ctx, input)),
   )
 }
