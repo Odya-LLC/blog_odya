@@ -41,13 +41,17 @@ export const WORKFLOW_STATUS_LABELS: Record<WorkflowState, string> = {
   archived: 'Arxivlangan',
 }
 
-/** TZ §4.1 diagrammasi: ruxsat etilgan o'tishlar (qolganlari rad etiladi). */
+/**
+ * TZ §4.1 diagrammasi: ruxsat etilgan o'tishlar (qolganlari rad etiladi).
+ * OBLOG-100: rejalashtirishni bekor qilish — `scheduled → review` (muharrir, admin panel) va
+ * `scheduled → in_progress` (MCP `cancel_schedule`: agent tuzatib qayta yuboradi).
+ */
 export const WORKFLOW_TRANSITIONS: Record<WorkflowState, readonly WorkflowState[]> = {
   scraped: ['draft', 'rejected'],
   draft: ['in_progress', 'rejected'],
   in_progress: ['review'],
   review: ['in_progress', 'scheduled', 'published', 'rejected'],
-  scheduled: ['published'],
+  scheduled: ['in_progress', 'review', 'published'],
   published: ['archived'],
   rejected: [],
   archived: [],

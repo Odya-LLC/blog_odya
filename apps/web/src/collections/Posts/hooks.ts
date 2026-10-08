@@ -6,6 +6,7 @@ import {
 } from 'payload'
 
 import { isAdminUser, roleOf } from '@/access'
+import { SCHEDULE_PUBLISH_TASK } from '@/jobs/constants'
 import { readingTimeMinutes } from '@/lib/lexical'
 import type { Post } from '@/payload-types'
 
@@ -49,7 +50,8 @@ function forbidden(message: string): APIError {
  *   (qoralama saqlash asosiy hujjatni o'zgartirmaydi).
  * - `in_progress`: `assignee` va `lockedUntil` (2 soat) qo'yiladi; qulf faol bo'lsa boshqa editor
  *   postni o'zgartira olmaydi (admin — mumkin).
- * - `rejected` — sabab majburiy; `scheduled` — kelajakdagi `scheduledAt` majburiy.
+ * - `rejected` — sabab majburiy; `scheduled` — kelajakdagi `scheduledAt` majburiy. Bekor qilish
+ *   (OBLOG-100) — `scheduled → review` (admin) yoki `→ in_progress` (MCP `cancel_schedule`).
  */
 export const enforceWorkflow: CollectionBeforeChangeHook<Post> = ({
   data,
@@ -191,7 +193,7 @@ export const deriveFields: CollectionBeforeChangeHook<Post> = ({
   return next
 }
 
-const SCHEDULE_TASK = 'schedulePublish'
+const SCHEDULE_TASK = SCHEDULE_PUBLISH_TASK
 
 /**
  * Rejalashtirilgan chop etish (TZ §7: Payload `schedulePublish`, jobs queue): post `scheduled`

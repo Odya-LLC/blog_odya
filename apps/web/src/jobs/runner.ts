@@ -23,6 +23,7 @@ import {
   enqueueDueFeedPolls,
   releaseStaleJobs,
 } from './scheduler'
+import { ensureScheduledPublishJobs, type EnsureScheduledResult } from './scheduledPublish'
 import { getJobsSettings } from './settings'
 
 /**
@@ -112,13 +113,18 @@ export function isAuthorized(header: string | null, secret: string): boolean {
 export const ALERTS_HARD_LIMIT_MS = RESPONSE_BUDGET_MS
 
 /** Pre-step'lar deadline'ni yeb qo'ysa o'tkazib yuboriladigan qadamlar (keyingi tick'da). */
-export type SkippedStep = 'feedPolls' | 'cleanup' | 'alerts' | 'newItems'
+export type SkippedStep = 'scheduledPublish' | 'feedPolls' | 'cleanup' | 'alerts' | 'newItems'
 
 export interface JobsRunResponse {
   ok: true
   enqueued: number
   /** Shu chaqiruvda `maintenance.cleanup` navbatga qo'yildimi (kuniga 1 marta). */
   cleanupEnqueued: boolean
+  /**
+   * Rejalashtirilgan postlar (OBLOG-100): job'i yo'qolgan/xato bergan postlar uchun qayta
+   * navbatga qo'yilganlar va urinishlari tugaganlar; vaqt yetmasa — null.
+   */
+  scheduledPublish: EnsureScheduledResult | null
   /** Ogohlantirishlar: faol shartlar / yuborilgan / faqat log / xato; vaqt yetmasa — null. */
   alerts: AlertRunResult | null
   /** "Yangi yangiliklar" xabari (OBLOG-55); vaqt yetmasa — null (keyingi tick'da yig'iladi). */
@@ -201,6 +207,10 @@ async function runJobsRequest(
 
     // Bitta UPDATE — har doim (aks holda uzilgan job'lar navbatni to'sib turadi).
     const releasedStale = await releaseStaleJobs(payload)
+    // Rejalashtirilgan postlar: job'i yo'q bo'lsa — shu chaqiruvda bajarilishi uchun batch'dan oldin.
+    const scheduledPublish =
+      now() < batchDeadlineAt ? await ensureScheduledPublishJobs(payload, now()) : null
+    if (!scheduledPublish) skipped.push('scheduledPublish')
     // Deadline pre-step'larning o'zida o'tib ketgan bo'lsa (sekin sovuq start), navbatga qo'yish
     // keyingi tick'ga qoldiriladi: bu chaqiruvda baribir bajarib bo'lmaydi.
     const polls = now() < batchDeadlineAt ? await enqueueDueFeedPolls(payload, { settings }) : null
@@ -239,6 +249,7 @@ async function runJobsRequest(
       ok: true,
       enqueued: polls?.enqueued ?? 0,
       cleanupEnqueued,
+      scheduledPublish,
       alerts,
       newItems,
       scrapingDisabled: polls?.disabled ?? !settings.isEnabled,

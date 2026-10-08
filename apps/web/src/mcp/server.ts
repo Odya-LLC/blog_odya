@@ -24,7 +24,12 @@ export const MCP_INSTRUCTIONS =
   'chop etilmasin desangiz: notesForEditor yozing, needsHumanReview: true yoki autoPublish: ' +
   'false bering — post review da qoladi (heldForReview: true). Review dagi o‘z postingizni ' +
   'withdraw_from_review bilan qaytarib olib tuzatish mumkin. Chop etilgan postni faqat admin ' +
-  'roli kaliti tuzatadi (save_rewrite / set_seo — qoralama versiya, so‘ng submit_for_review).'
+  'roli kaliti tuzatadi (save_rewrite / set_seo — qoralama versiya, so‘ng submit_for_review). ' +
+  'KEYINROQ chop etish (OBLOG-100): submit_for_review(publishAt: "2026-10-09T09:00") — ' +
+  'avtomatik nashr yoqilgan bo‘lsa post o‘sha vaqtda chop etiladi (scheduled; vaqt zonasi ' +
+  'yozilmasa — Toshkent, UTC+05:00; 10 daqiqagacha kechikish), aks holda vaqt muharrirga ' +
+  'taklif. Foydalanuvchi "keyinroq", "ertaga", aniq vaqt desa — publishAt siz yubormang. ' +
+  'Boshqarish: list_scheduled, reschedule_post, cancel_schedule.'
 
 /**
  * Server tarkibi (TZ §6.3): o'qish (M2-06), yozish (M2-07) va media (OBLOG-44) toollari, prompts
