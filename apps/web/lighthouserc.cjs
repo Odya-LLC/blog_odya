@@ -11,10 +11,11 @@
  * - `LHCI_PREVIEW=1` — Vercel Preview: `is-crawlable` auditi o'tkazib yuboriladi (pastga qarang);
  * - `VERCEL_AUTOMATION_BYPASS_SECRET` — Preview "Vercel Authentication" bilan yopiq bo'lsa,
  *   `x-vercel-protection-bypass` sarlavhasi (Vercel → Settings → Deployment Protection →
- *   Protection Bypass for Automation). OBLOG-113: faqat shu sarlavha — `x-vercel-set-bypass-cookie`
- *   yuborilmaydi: u har sahifa oldidan 307 redirect'lar beradi (cookie o'rnatish, LCP +1–4 s).
- *   `extraHeaders` har so'rovga (shu jumladan `media.odya.uz` rasmlariga) qo'shiladi — `<img>`
- *   so'rovlari CORS preflight qilmaydi, media domeni sarlavhani e'tiborsiz qoldiradi;
+ *   Protection Bypass for Automation) + `x-vercel-set-bypass-cookie: true`. Cookie sarlavhasi
+ *   SHART (OBLOG-113): Lighthouse'ning `robots.txt` so'rovi va `extraHeaders`siz boshqa so'rovlar
+ *   faqat bypass cookie bilan o'tadi — usiz Vercel login HTML'i qaytadi, `robots-txt` auditi
+ *   yiqiladi (SEO 0.89). Har sahifa oldidagi bitta 307 (~1 s) — Vercel Deployment Protection'ning
+ *   o'zidan, cookie sarlavhasidan emas; uni konfiguratsiya bilan olib tashlab bo'lmaydi;
  * - `LHCI_RUNS` — har bir URL necha marta o'lchanadi (standart 3; natija — mediana);
  * - `LHCI_START_SERVER=1` — `next start -p 3100` ni LHCI o'zi ishga tushiradi (CI).
  *
@@ -85,6 +86,7 @@ module.exports = {
           ? {
               extraHeaders: JSON.stringify({
                 'x-vercel-protection-bypass': bypass,
+                'x-vercel-set-bypass-cookie': 'true',
               }),
             }
           : {}),
