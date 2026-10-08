@@ -1,0 +1,206 @@
+# Kunlik DB backup (TZ §9.3, §3.7.2; OBLOG-24): Supabase prod → pg_dump | gzip | age → R2
+# `blog-odya-backups/db/{yyyy-mm-dd}.sql.gz.age`. Supabase Free'da yuklab olinadigan backup yo'q —
+# bu workflow uning o'rnini bosadi. Muvaffaqiyatsizlikda — Telegram ogohlantirish.
+# Qo'lda: `gh workflow run backup --ref main`. Tiklash: docs/runbooks/restore.md.
+#
+# Kerakli repo secrets: DATABASE_URL_DIRECT_PROD (Supavisor SESSION pooler, 5432), BACKUP_AGE_PUBLIC_KEY
+# (`age1...` — FAQAT ochiq kalit), R2_ENDPOINT, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY (token
+# `blog-odya-backups` ga yozish huquqi bilan). Ixtiyoriy: TELEGRAM_BOT_TOKEN + TELEGRAM_ALERT_CHAT_ID
+# (alert), repo variable BACKUP_BUCKET (default `blog-odya-backups`).
+# Saqlash muddati — R2 Lifecycle rule (14 kun, TZ §9.3), workflow eski fayllarni o'chirmaydi.
+name: backup
+
+on:
+  schedule:
+    - cron: '30 2 * * *' # 02:30 UTC = 07:30 Toshkent
+  workflow_dispatch:
+
+concurrency:
+  group: backup
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    name: pg_dump → age → R2
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    # `shell: bash` aniq ko'rsatilsa — `bash -eo pipefail` (standart `bash -e` da `... | tee` xatoni yashiradi).
+    defaults:
+      run:
+        shell: bash
+    # `environment` yo'q ataylab: kunlik `schedule` approval kutib qolmasin, har kuni deployment
+    # yozuvi yaratilmasin. Sirlar — repo darajasida.
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL_DIRECT_PROD }}
+      BACKUP_AGE_PUBLIC_KEY: ${{ secrets.BACKUP_AGE_PUBLIC_KEY }}
+      R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: auto
+      # aws-cli ≥ 2.23 standart CRC checksum'lari R2 bilan mos emas — faqat talab qilinganda.
+      AWS_REQUEST_CHECKSUM_CALCULATION: when_required
+      AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
+      BACKUP_BUCKET: ${{ vars.BACKUP_BUCKET || 'blog-odya-backups' }}
+      # Ilova jadvallari faqat `public` da (Payload). Supabase ichki sxemalari (auth, storage,
+      # realtime, vault, cron, extensions…) ilova tomonidan ishlatilmaydi — backup'ga kirmaydi.
+      BACKUP_SCHEMAS: public
+      BACKUP_EXTENSIONS: pg_trgm
+      AGE_VERSION: v1.3.2
+      AGE_SHA256: cbe24006683f8eb669266162894b9a522a1af52f2665fbc63a4bb032ed26ac10
+      # psql topilmasa ishlatiladigan Postgres major (Supabase yangi loyihalari — 17).
+      PG_MAJOR_FALLBACK: '17'
+
+    steps:
+      - name: Check secrets
+        run: |
+          missing=()
+          [ -n "$DATABASE_URL" ] || missing+=(DATABASE_URL_DIRECT_PROD)
+          [ -n "$BACKUP_AGE_PUBLIC_KEY" ] || missing+=(BACKUP_AGE_PUBLIC_KEY)
+          [ -n "$R2_ENDPOINT" ] || missing+=(R2_ENDPOINT)
+          [ -n "$AWS_ACCESS_KEY_ID" ] || missing+=(R2_ACCESS_KEY_ID)
+          [ -n "$AWS_SECRET_ACCESS_KEY" ] || missing+=(R2_SECRET_ACCESS_KEY)
+          if [ "${#missing[@]}" -gt 0 ]; then
+            echo "::error::Secret(lar) berilmagan: ${missing[*]} (Settings → Secrets and variables → Actions; docs/runbooks/restore.md)."
+            exit 1
+          fi
+          # Parol (URL ichidan, %-kodlangan va ochilgan holda) — har qanday logda yashirilsin.
+          pass="$(printf '%s' "$DATABASE_URL" | sed -nE 's#^[a-z]+://[^:/@]+:([^@]*)@.*#\1#p')"
+          if [ -n "$pass" ]; then
+            echo "::add-mask::$pass"
+            decoded="$(printf '%s' "$pass" | python3 -c 'import sys, urllib.parse; print(urllib.parse.unquote(sys.stdin.read()))')"
+            [ "$decoded" = "$pass" ] || echo "::add-mask::$decoded"
+          fi
+          host="$(printf '%s' "$DATABASE_URL" | sed -E 's#^[a-z]+://[^@]*@([^:/?]+).*#\1#')"
+          case "$host" in
+            db.*.supabase.co)
+              echo "::error::DATABASE_URL_DIRECT_PROD direct host'ga ishora qiladi — u faqat IPv6, GitHub runner'da ENOTFOUND. Session pooler (aws-0-<region>.pooler.supabase.com:5432) ishlating."
+              exit 1
+              ;;
+          esac
+          case "$BACKUP_AGE_PUBLIC_KEY" in
+            AGE-SECRET-KEY-*)
+              echo "::error::BACKUP_AGE_PUBLIC_KEY da YOPIQ kalit turibdi! Uni darhol almashtiring (yangi juftlik, docs/runbooks/restore.md)."
+              exit 1
+              ;;
+          esac
+
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: infra/backup
+          persist-credentials: false
+
+      # pg_dump major ≥ server major bo'lishi shart. Server versiyasi runner'dagi psql bilan
+      # aniqlanadi va aynan o'sha major'ning klienti PGDG apt repo'dan o'rnatiladi.
+      - name: Install postgresql-client and age
+        run: |
+          major=""
+          if command -v psql >/dev/null; then
+            num="$(psql "$DATABASE_URL" -X -At -c 'show server_version_num' 2>/dev/null || true)"
+            [[ "$num" =~ ^[0-9]+$ ]] && major=$((num / 10000))
+          fi
+          major="${major:-$PG_MAJOR_FALLBACK}"
+          echo "Server major: $major"
+          if [ ! -x "/usr/lib/postgresql/$major/bin/pg_dump" ]; then
+            list="$(grep -rls 'apt.postgresql.org' /etc/apt/sources.list.d/ || true)"
+            if [ -z "$list" ]; then
+              sudo install -d /usr/share/postgresql-common/pgdg
+              sudo curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \
+                https://www.postgresql.org/media/keys/ACCC4CF8.asc
+              . /etc/os-release
+              list=/etc/apt/sources.list.d/pgdg.list
+              echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt ${VERSION_CODENAME}-pgdg main" \
+                | sudo tee "$list" >/dev/null
+            fi
+            # Faqat PGDG ro'yxati yangilanadi (to'liq `apt-get update` dan ancha tez).
+            list="$(printf '%s\n' "$list" | head -n1)"
+            sudo apt-get update -qq -o Dir::Etc::sourcelist="$list" -o Dir::Etc::sourceparts=- \
+              -o APT::Get::List-Cleanup=0
+            sudo apt-get install -y -qq --no-install-recommends "postgresql-client-$major" >/dev/null
+          fi
+          echo "/usr/lib/postgresql/$major/bin" >> "$GITHUB_PATH"
+          "/usr/lib/postgresql/$major/bin/pg_dump" --version
+
+          curl -fsSL -o "$RUNNER_TEMP/age.tar.gz" \
+            "https://github.com/FiloSottile/age/releases/download/$AGE_VERSION/age-$AGE_VERSION-linux-amd64.tar.gz"
+          echo "$AGE_SHA256  $RUNNER_TEMP/age.tar.gz" | sha256sum -c --quiet
+          tar -xzf "$RUNNER_TEMP/age.tar.gz" -C "$RUNNER_TEMP"
+          sudo install -m 0755 "$RUNNER_TEMP/age/age" /usr/local/bin/age
+          age --version
+
+      - name: Dump and encrypt
+        id: dump
+        run: |
+          date="$(date -u +%F)"
+          file="$RUNNER_TEMP/backup/$date.sql.gz.age"
+          start=$(date +%s)
+          bash infra/backup/backup.sh "$file" | tee "$RUNNER_TEMP/backup.meta"
+          {
+            echo "date=$date"
+            echo "file=$file"
+            echo "key=db/$date.sql.gz.age"
+            echo "seconds=$(( $(date +%s) - start ))"
+            cat "$RUNNER_TEMP/backup.meta"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Upload to R2
+        env:
+          FILE: ${{ steps.dump.outputs.file }}
+          KEY: ${{ steps.dump.outputs.key }}
+          BYTES: ${{ steps.dump.outputs.bytes }}
+          SHA256: ${{ steps.dump.outputs.sha256 }}
+          SERVER_VERSION: ${{ steps.dump.outputs.server_version_num }}
+        run: |
+          # Shifrlangan fayl diskda tayyor bo'lgachgina yuklanadi — dump yarim yo'lda uzilsa R2'ga
+          # chala fayl tushmaydi. Bir kunda qayta ishga tushirish shu kungi faylni almashtiradi.
+          aws s3 cp "$FILE" "s3://$BACKUP_BUCKET/$KEY" --endpoint-url "$R2_ENDPOINT" \
+            --content-type application/octet-stream \
+            --metadata "sha256=$SHA256,server-version-num=$SERVER_VERSION" --only-show-errors
+          size="$(aws s3api head-object --bucket "$BACKUP_BUCKET" --key "$KEY" \
+            --endpoint-url "$R2_ENDPOINT" --query ContentLength --output text)"
+          if [ "$size" != "$BYTES" ]; then
+            echo "::error::R2'dagi hajm ($size) lokal fayldan ($BYTES) farq qiladi"
+            exit 1
+          fi
+          echo "R2: $BACKUP_BUCKET/$KEY ($size bayt) — tekshirildi"
+
+      - name: Summary
+        env:
+          KEY: ${{ steps.dump.outputs.key }}
+          BYTES: ${{ steps.dump.outputs.bytes }}
+          SHA256: ${{ steps.dump.outputs.sha256 }}
+          SECONDS_TAKEN: ${{ steps.dump.outputs.seconds }}
+          SERVER_VERSION: ${{ steps.dump.outputs.server_version_num }}
+          PG_DUMP: ${{ steps.dump.outputs.pg_dump_version }}
+        run: |
+          {
+            echo "### DB backup"
+            echo "| | |"
+            echo "|---|---|"
+            echo "| Obyekt | \`$BACKUP_BUCKET/$KEY\` |"
+            echo "| Hajm | $BYTES bayt |"
+            echo "| SHA-256 | \`$SHA256\` |"
+            echo "| Server / pg_dump | $SERVER_VERSION / $PG_DUMP |"
+            echo "| Dump vaqti | $SECONDS_TAKEN s |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Telegram alert
+        if: failure()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_ALERT_CHAT_ID: ${{ secrets.TELEGRAM_ALERT_CHAT_ID }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ -z "$TELEGRAM_BOT_TOKEN" ] || [ -z "$TELEGRAM_ALERT_CHAT_ID" ]; then
+            echo "::warning::TELEGRAM_BOT_TOKEN / TELEGRAM_ALERT_CHAT_ID secret'lari yo'q — Telegram ogohlantirishi yuborilmadi (GitHub email xabari baribir keladi)."
+            exit 0
+          fi
+          text="blog-odya: kunlik DB backup MUVAFFAQIYATSIZ ($(date -u +%F)). Log: $RUN_URL"
+          code="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 20 \
+            "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" \
+            --data-urlencode "chat_id=$TELEGRAM_ALERT_CHAT_ID" \
+            --data-urlencode "text=$text" \
+            --data-urlencode "disable_web_page_preview=true" || true)"
+          echo "Telegram HTTP $code"

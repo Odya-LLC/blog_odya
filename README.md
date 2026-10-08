@@ -36,7 +36,9 @@ apps/web/             Next.js (App Router) + Payload CMS 3: sayt, /admin, REST/G
 packages/shared/      Umumiy kod: locale'lar, keyinchalik slugify-uz, translit
 packages/guidelines/  Tahririyat ko'rsatmalari (MCP prompt/resource)
 infra/docker-compose.dev.yml   Lokal Postgres 16 + MinIO
+infra/backup/                  DB backup (pg_dump | gzip | age) va tiklash skriptlari
 .github/workflows/ci.yml       CI: lint → typecheck → test → seed → build → e2e
+.github/workflows/backup.yml   Kunlik prod DB backup → R2 (docs/runbooks/restore.md)
 ```
 
 ## Lokal ishga tushirish
@@ -190,6 +192,10 @@ gh workflow run seed-prod --ref main -f demo=true # + 3 demo post, teglar, muqov
 - **Demo o'chiq** (`SEED_DEMO=false`, default): teglar, demo postlar va muqovalar yaratilmaydi, S3 ga hech narsa yuklanmaydi; header/footer faqat kategoriya va huquqiy sahifalarga havola qiladi.
 - **Sirlar:** `DATABASE_URL_DIRECT_PROD` (session pooler, `DATABASE_URL` va `DATABASE_URL_DIRECT` sifatida), `R2_ENDPOINT`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` (`S3_*`, bucket `media`). `PAYLOAD_SECRET` — har run'da `openssl rand -hex 32` (seed foydalanuvchi/API kalit yaratmaydi — Vercel'dagi sir kerak emas). `JOBS_MODE=endpoint`; `JOBS_SECRET`, `TELEGRAM_BOT_TOKEN`, `SENTRY_DSN` berilmaydi.
 - **Huquqiy sahifa o'rinbosarlari:** repo yoki `Production` environment **Variables** (`SEED_CONTACT_EMAIL`, `SEED_EDITORIAL_EMAIL`, ..., `TELEGRAM_CHANNEL_LATN/CYRL`) — workflow ularni env sifatida beradi. Sahifa faqat bir marta yaratiladi, shuning uchun ularni birinchi run'dan oldin qo'ying; to'ldirilmaganlari Summary'dagi `Diqqat:` qatorida — keyin admin'da tahrirlang.
+
+### Kunlik DB backup
+
+Supabase Free'da yuklab olinadigan backup yo'q (TZ §9.3) — [`.github/workflows/backup.yml`](.github/workflows/backup.yml) har kuni 02:30 UTC da (va qo'lda: `gh workflow run backup --ref main`) prod bazaning `public` sxemasini `pg_dump | gzip | age` bilan shifrlab R2 `blog-odya-backups/db/{yyyy-mm-dd}.sql.gz.age` ga yuklaydi; xato bo'lsa — Telegram ogohlantirish. Sirlar: `DATABASE_URL_DIRECT_PROD`, `BACKUP_AGE_PUBLIC_KEY` (faqat ochiq kalit), `R2_ENDPOINT`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`; ixtiyoriy `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ALERT_CHAT_ID`, variable `BACKUP_BUCKET`. Kalitlar, 14 kunlik lifecycle, tiklash (lokal Docker yoki yangi Supabase loyiha) va tiklash sinovlari jurnali — [docs/runbooks/restore.md](docs/runbooks/restore.md).
 
 ## Holat
 
