@@ -3,6 +3,12 @@ import { describe, expect, it } from 'vitest'
 
 import { dailyBatchPrompt, submitStep } from '@/mcp/guidance'
 import { getMcpRegistry } from '@/mcp/registry'
+import {
+  PUBLISH_AT_MAX_DAYS,
+  PUBLISH_AT_MIN_LEAD_MS,
+  SCHEDULER_INTERVAL_MIN,
+  TASHKENT_OFFSET,
+} from '@/mcp/schedule'
 import { MCP_INSTRUCTIONS } from '@/mcp/server'
 import { holdReason } from '@/mcp/write-tools'
 
@@ -24,10 +30,10 @@ describe('avtomatik nashr: ushlab qolish qoidasi', () => {
 })
 
 describe('avtomatik nashr: hujjatlar va tavsiflar (OBLOG-62)', () => {
-  it('output-schema v1.5.0 ikkala rejimni tavsiflaydi (OBLOG-94: socialTitle)', () => {
+  it('output-schema v1.6.0 ikkala rejimni tavsiflaydi (OBLOG-94: socialTitle, OBLOG-101: publishAt)', () => {
     const doc = loadGuideline('output-schema')
-    expect(doc.frontMatter.version).toBe('1.5.0')
-    expect(doc.frontMatter.updatedAt).toBe('2026-10-07')
+    expect(doc.frontMatter.version).toBe('1.6.0')
+    expect(doc.frontMatter.updatedAt).toBe('2026-10-08')
     expect(doc.markdown).toContain('socialTitle')
     expect(doc.markdown).not.toMatch(/chop etishni faqat inson bajaradi/)
     expect(doc.markdown).toContain('shu chaqiruvning oʻzida')
@@ -37,9 +43,22 @@ describe('avtomatik nashr: hujjatlar va tavsiflar (OBLOG-62)', () => {
       'notes_for_editor',
       'withdraw_from_review',
       'Chop etilgan postni tuzatish',
+      // OBLOG-101: rejalashtirilgan nashr (OBLOG-100) — maydonlar va toollar.
+      'publishAt',
+      'scheduledAtLocal',
+      'requestedPublishAt',
+      'list_scheduled',
+      'reschedule_post',
+      'cancel_schedule',
     ]) {
       expect(doc.markdown, term).toContain(term)
     }
+    // publishAt chegaralari kod bilan mos (`schedule.ts`).
+    expect(PUBLISH_AT_MIN_LEAD_MS).toBe(60_000)
+    expect(doc.markdown).toContain('Kamida **1 daqiqa** keyin')
+    expect(doc.markdown).toContain(`koʻpi bilan **${PUBLISH_AT_MAX_DAYS} kun**`)
+    expect(doc.markdown).toContain(`**${SCHEDULER_INTERVAL_MIN} daqiqagacha kechikish**`)
+    expect(doc.markdown).toContain(`(Toshkent, UTC${TASHKENT_OFFSET})`)
   })
 
   it('server instructions — rejimga bog‘liq, eski "publish yo‘q" matnisiz', () => {

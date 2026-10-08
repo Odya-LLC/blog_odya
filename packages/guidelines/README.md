@@ -2,15 +2,15 @@
 
 Tahririyat hujjatlari: AI agent (MCP orqali) va muharrirlar ishlatadigan ko'rsatmalar, glossariy, transliteratsiya istisnolari va huquqiy sahifalar matni (TZ §2.3, §3.6, §5.2, §8.5, §9.6). Barcha matnlar o'zbek tilida, lotin yozuvida (`oʻ`/`gʻ` — `ʻ` U+02BB, tutuq belgisi — `ʼ` U+02BC).
 
-| Fayl                            | Mazmuni                                                                                          | Foydalanuvchi                                   |
-| ------------------------------- | ------------------------------------------------------------------------------------------------ | ----------------------------------------------- |
-| `style.md`                      | Stil qo'llanma: til, yozuv, murojaat, raqam/sana/valyuta, sarlavhalar, namunalar                 | MCP `odya://guidelines/style`, `get_guidelines` |
-| `copyright.md`                  | Mualliflik qoidalari: faktlar asosida qayta yozish, iqtiboslar, atributsiya, rasmlar             | MCP `odya://guidelines/copyright`               |
-| `seo.md`                        | SEO qoidalari: uzunliklar, focus keyword, H2/H3, havolalar, teglar, FAQ                          | MCP `odya://guidelines/seo`                     |
-| `output-schema.md`              | `save_rewrite` / `set_seo` / `submit_for_review` maydonlari                                      | MCP `odya://guidelines/output-schema`           |
-| `glossary.seed.json`            | Glossariy: EN/RU atama → o'zbekcha, brendlar (`doNotTranslate`, `doNotTransliterate`)            | `glossary` kolleksiyasi seed (M1-03), MCP       |
-| `translit-exceptions.seed.json` | Lotin → kirill istisnolari (`whole_word` / `prefix`)                                             | `translit-exceptions` kolleksiyasi seed (M1-03) |
-| `legal/*.md`                    | 6 ta huquqiy sahifa (Biz haqimizda, Aloqa, Tahririyat siyosati, Maxfiylik, Mualliflik, Shartlar) | `pages` kolleksiyasi seed (M1-02)               |
+| Fayl                            | Mazmuni                                                                                             | Foydalanuvchi                                   |
+| ------------------------------- | --------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| `style.md`                      | Stil qo'llanma: til, yozuv, murojaat, raqam/sana/valyuta, sarlavhalar, namunalar                    | MCP `odya://guidelines/style`, `get_guidelines` |
+| `copyright.md`                  | Mualliflik qoidalari: faktlar asosida qayta yozish, iqtiboslar, atributsiya, rasmlar                | MCP `odya://guidelines/copyright`               |
+| `seo.md`                        | SEO qoidalari: uzunliklar, focus keyword, H2/H3, havolalar, teglar, FAQ                             | MCP `odya://guidelines/seo`                     |
+| `output-schema.md`              | `save_rewrite` / `set_seo` / `submit_for_review` maydonlari, `publishAt` va rejalashtirish toollari | MCP `odya://guidelines/output-schema`           |
+| `glossary.seed.json`            | Glossariy: EN/RU atama → o'zbekcha, brendlar (`doNotTranslate`, `doNotTransliterate`)               | `glossary` kolleksiyasi seed (M1-03), MCP       |
+| `translit-exceptions.seed.json` | Lotin → kirill istisnolari (`whole_word` / `prefix`)                                                | `translit-exceptions` kolleksiyasi seed (M1-03) |
+| `legal/*.md`                    | 6 ta huquqiy sahifa (Biz haqimizda, Aloqa, Tahririyat siyosati, Maxfiylik, Mualliflik, Shartlar)    | `pages` kolleksiyasi seed (M1-02)               |
 
 Har bir Markdown faylda front-matter (`id`, `title`, `version`, `updatedAt`, huquqiy sahifalarda `slug`), JSON fayllarda yuqori darajadagi `version` va `updatedAt` bor. Mazmun o'zgarganda versiya va sana yangilanadi.
 
