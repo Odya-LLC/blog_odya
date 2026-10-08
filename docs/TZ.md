@@ -285,7 +285,7 @@ Har bir bosqich — alohida Payload **task**, `scrapeItem` **workflow** ularni k
 | Scheduler | **Supabase `pg_cron` + `pg_net`** | Har 10 daqiqada `POST /api/jobs/run` (`JOBS_SECRET`). SQL migratsiya fayli `infra/supabase/cron.sql` da |
 | Media | **Cloudflare R2** (bepul kvota) | `@payloadcms/storage-s3` + **`clientUploads: true`** (Vercel so'rov tanasi 4.5 MB bilan cheklangan). Ommaviy domen `media.odya.uz`. Lifecycle rule: `raw/` — 30 kun, `backups/` — 14 kun |
 | DNS / CDN | **Cloudflare Free** | `blog.odya.uz` → Vercel (**DNS-only**, proxy o'chiq — Vercel oldiga proxy qo'yish tavsiya etilmaydi); `media.odya.uz` → R2 (proxy, kesh) |
-| Backup | **GitHub Actions** (kuniga 1 marta) | `pg_dump` → `age` → R2 `backups/` |
+| Backup | **GitHub Actions** (kuniga 1 marta) | `pg_dump` → `age` → R2 `blog-odya-backups/db/` (`.github/workflows/backup.yml`, `docs/runbooks/restore.md`) |
 | Monitoring | Sentry Free, UptimeRobot Free | `/api/health` har 5 daqiqada (DB so'rovi bilan) |
 | Telegram | Payload job (Vercel ichida) | 2 kanal |
 
@@ -598,7 +598,7 @@ Usullar: ISR + `revalidateTag`, RSC, `next/image` custom loader (tayyor WebP var
 ### 9.3. Backup va tiklash
 | Bosqich | Postgres | Media |
 |---|---|---|
-| MVP (Supabase Free) | Free tarifda yuklab olinadigan backup/PITR yo'q → **o'zimizning kunlik `pg_dump`** (GitHub Actions `schedule`, kuniga 1 marta → `age` bilan shifrlangan → R2 `backups/` bucket, 14 kun; R2 bepul kvotaga sig'adi) | R2 — haftalik `rclone` nusxa boshqa joyga (masalan, Contabo serveri) |
+| MVP (Supabase Free) | Free tarifda yuklab olinadigan backup/PITR yo'q → **o'zimizning kunlik `pg_dump`** (GitHub Actions `schedule`, kuniga 1 marta → `age` bilan shifrlangan → R2 `blog-odya-backups/db/{yyyy-mm-dd}.sql.gz.age`, 14 kun (lifecycle); faqat `public` sxema — `.github/workflows/backup.yml`; R2 bepul kvotaga sig'adi) | R2 — haftalik `rclone` nusxa boshqa joyga (masalan, Contabo serveri) |
 | Contabo | `pg_dump` kunlik + WAL-G (PITR), 7/4/6 rotatsiya, tashqi saqlash | `mc mirror` / `rclone` tashqi joyga |
 
 **RPO ≤ 24 soat, RTO ≤ 4 soat**; oyiga bir marta tiklash sinovi (`docs/runbooks/restore.md`).
