@@ -36,6 +36,8 @@ import { SourcePanel as SourcePanel_e697dd7c357ed0647e57c7670abed832 } from '@/c
 import { TelegramPanel as TelegramPanel_20c391eb8802bb3ab76c62754086c6d8 } from '@/components/admin/TelegramPanel'
 import { MakePanel as MakePanel_21fc957981e9b80c25543140b5b51898 } from '@/components/admin/MakePanel'
 import { CyrlSyncPanel as CyrlSyncPanel_4eef73d2e5280a89a41a17db41eee449 } from '../../../components/cyrl/CyrlSyncPanel'
+import { AdminIcon as AdminIcon_9a449b16d99ac2a976faf4a055a65036 } from '@/components/admin/BrandGraphics'
+import { AdminLogo as AdminLogo_9a449b16d99ac2a976faf4a055a65036 } from '@/components/admin/BrandGraphics'
 import { EditorialStats as EditorialStats_0f051e64f942452e9fce2678e0c4d5ce } from '@/components/admin/EditorialStats'
 import { EditorialNavLinks as EditorialNavLinks_60680023464659b414314bf8361bc3a3 } from '@/components/admin/EditorialNavLinks'
 import { S3ClientUploadHandler as S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24 } from '@payloadcms/storage-s3/client'
@@ -84,6 +86,8 @@ export const importMap = {
   "@/components/admin/TelegramPanel#TelegramPanel": TelegramPanel_20c391eb8802bb3ab76c62754086c6d8,
   "@/components/admin/MakePanel#MakePanel": MakePanel_21fc957981e9b80c25543140b5b51898,
   "/components/cyrl/CyrlSyncPanel#CyrlSyncPanel": CyrlSyncPanel_4eef73d2e5280a89a41a17db41eee449,
+  "@/components/admin/BrandGraphics#AdminIcon": AdminIcon_9a449b16d99ac2a976faf4a055a65036,
+  "@/components/admin/BrandGraphics#AdminLogo": AdminLogo_9a449b16d99ac2a976faf4a055a65036,
   "@/components/admin/EditorialStats#EditorialStats": EditorialStats_0f051e64f942452e9fce2678e0c4d5ce,
   "@/components/admin/EditorialNavLinks#EditorialNavLinks": EditorialNavLinks_60680023464659b414314bf8361bc3a3,
   "@payloadcms/storage-s3/client#S3ClientUploadHandler": S3ClientUploadHandler_f97aa6c64367fa259c5bc0567239ef24,

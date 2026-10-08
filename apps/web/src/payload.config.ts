@@ -40,6 +40,7 @@ import { buildJobsConfig } from './jobs'
 import { ADMIN_LANGUAGE, uz } from './i18n/uz'
 import { capturePayloadError } from './lib/sentry'
 import { revalidateRedirectsAfterChange } from './site/revalidate'
+import { BRAND_ICONS } from './site/seo/config'
 import { cyrlSyncPlugin } from './translit/cyrlSync'
 import { CYRL_SYNC } from './translit/sync-config'
 
@@ -73,8 +74,21 @@ export default buildConfig({
     importMap: {
       baseDir: path.resolve(dirname),
     },
+    // Brend belgisi (OBLOG-96): Payload standart favicon'i o'rniga sayt ikonkalari.
+    meta: {
+      icons: [
+        { rel: 'icon', type: 'image/x-icon', url: BRAND_ICONS.ico, sizes: '32x32' },
+        { rel: 'icon', type: 'image/svg+xml', url: BRAND_ICONS.svg },
+        { rel: 'apple-touch-icon', url: BRAND_ICONS.apple, sizes: '180x180' },
+      ],
+    },
     // Tahririyat (M2-04, TZ §6.1): navbat va review view'lari, dashboard vidjeti.
     components: {
+      // Login sahifasi logotipi va navigatsiya belgisi (OBLOG-96).
+      graphics: {
+        Logo: '@/components/admin/BrandGraphics#AdminLogo',
+        Icon: '@/components/admin/BrandGraphics#AdminIcon',
+      },
       beforeNavLinks: ['@/components/admin/EditorialNavLinks#EditorialNavLinks'],
       beforeDashboard: ['@/components/admin/EditorialStats#EditorialStats'],
       views: {

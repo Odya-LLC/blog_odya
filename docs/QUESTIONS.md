@@ -13,7 +13,7 @@ Holat: **barcha savollar yopildi (2026-09-23, 2-tur).** Egasi ishlab chiqishni b
 | # | Savol | Qaror | Holat | TZ/PLAN'dagi natija |
 |---|---|---|---|---|
 | Q1 | Domen | **blog.odya.uz** | ✅ | `media.odya.uz` — media |
-| Q1-b | Brend nomi va logo | **"Blog Odya"**, logo yo'q | ✅ | Matnli wordmark, favicon, OG shablon — TASKS M0-06; TZ §12.1 |
+| Q1-b | Brend nomi va logo | **"Blog Odya"**, logo yo'q → keyin logotip ("b" belgisi) berildi | ✅ | Matnli wordmark, favicon, OG shablon — TASKS M0-06; logotip — OBLOG-96; TZ §12.1 |
 | Q2 | Mualliflik huquqi modeli | **(a)** faktlar asosida qayta yozish + atributsiya | ✅ | TZ §2.3 |
 | Q3 | Manbalar | **Ma'qul** (The Verge, TechCrunch, Habr, iXBT, Dexerto/HLTV) | ✅ | TZ §2.2, TASKS M0-04 |
 | Q7 | Rollar va publish | **admin va editor**, ikkalasida publish | ✅ | TZ §4.2 |

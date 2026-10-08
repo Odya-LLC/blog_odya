@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils'
  * aksent varianti (data-accent) CSS o'zgaruvchilari orqali avtomatik almashadi, qo'shimcha so'rov yo'q.
  * Balandlik: mobil 22–24 px, desktop 28 px, minimal 16 px (brend README §1).
  */
-const WORDMARKS = {
+export const WORDMARKS = {
   'uz-Latn': {
     label: 'Blog Odya',
     viewBox: '6 -74 444 96',

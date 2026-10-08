@@ -5,7 +5,6 @@ import { Resvg } from '@resvg/resvg-js'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import pngToIco from 'png-to-ico'
 import satori from 'satori'
 import { loadFonts } from './fonts.mjs'
 
@@ -142,74 +141,8 @@ for (const script of ['latn', 'cyrl']) {
 }
 
 // ---------------------------------------------------------------------------
-// 2. Kvadrat belgi (monogramma "O") — favicon va ilova ikonkalari.
-//    Kirillda ham "О" bir xil ko'rinadi, shuning uchun favicon ikkala yozuvga umumiy.
+// 2–3. Logotip ("b" belgisi), favicon/ilova ikonkalari va Telegram avatari — logo.mjs (OBLOG-96).
 // ---------------------------------------------------------------------------
-function glyphCentered(fontName, text, box, targetH, tracking = 0) {
-  const probe = textPath(fontName, text, 100, 0, 0, tracking)
-  const k = targetH / (probe.bbox.y2 - probe.bbox.y1)
-  const size = 100 * k
-  const t0 = textPath(fontName, text, size, 0, 0, tracking)
-  const dx = box / 2 - (t0.bbox.x1 + t0.bbox.x2) / 2
-  const dy = box / 2 - (t0.bbox.y1 + t0.bbox.y2) / 2
-  return textPath(fontName, text, size, dx, dy, tracking)
-}
-
-function iconSvg(
-  accent,
-  { rounded = true, glyphScale = 0.62, text = 'O', tracking = 0, gradient = false } = {},
-) {
-  const S = 512
-  const a = tokens.color.accent[accent]
-  const g = glyphCentered('Inter-ExtraBold', text, S, S * glyphScale, tracking)
-  const r = rounded ? Math.round(S * 0.22) : 0
-  const fill = gradient ? 'url(#bg)' : a['600']
-  const defs = gradient
-    ? `<defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${a['500']}"/><stop offset="1" stop-color="${a['700']}"/></linearGradient></defs>`
-    : ''
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${S} ${S}" width="${S}" height="${S}">${defs}
-  <rect width="${S}" height="${S}" rx="${r}" fill="${fill}"/>
-  <path fill="#FFFFFF" d="${g.d}"/>
-</svg>
-`
-}
-
-for (const accent of ACCENTS) {
-  const dir = `icons/${accent}`
-  const icon = iconSvg(accent)
-  const fullBleed = iconSvg(accent, { rounded: false })
-  const maskable = iconSvg(accent, { rounded: false, glyphScale: 0.46 })
-  // Kichik o'lchamlarda harf kattaroq — 16 px'da ham o'qiladi.
-  const small = iconSvg(accent, { glyphScale: 0.7 })
-  write(`${dir}/icon.svg`, icon)
-  write(`${dir}/icon-512.png`, png(icon, 512))
-  write(`${dir}/icon-192.png`, png(icon, 192))
-  write(`${dir}/icon-maskable-512.png`, png(maskable, 512))
-  write(`${dir}/apple-touch-icon.png`, png(fullBleed, 180))
-  const p32 = png(small, 32)
-  const p16 = png(small, 16)
-  write(`${dir}/favicon-32.png`, p32)
-  write(`${dir}/favicon-16.png`, p16)
-  write(`${dir}/favicon.ico`, await pngToIco([p16, p32, png(small, 48)]))
-}
-
-// ---------------------------------------------------------------------------
-// 3. Telegram kanal avatarlari 640×640 (Telegram doira shaklida kesadi — belgi markazda).
-// ---------------------------------------------------------------------------
-const AVATAR_TEXT = { latn: 'BO', cyrl: 'БО' }
-for (const accent of ACCENTS) {
-  for (const script of ['latn', 'cyrl']) {
-    const svg = iconSvg(accent, {
-      rounded: false,
-      gradient: true,
-      glyphScale: 0.34,
-      text: AVATAR_TEXT[script],
-      tracking: -0.02,
-    })
-    write(`telegram/avatar-${script}-${accent}.svg`, svg)
-    write(`telegram/avatar-${script}-${accent}.png`, png(svg, 640))
-  }
-}
 
 // ---------------------------------------------------------------------------
 // 4. OG rasm namunasi (satori — next/og ichidagi dvigatel).
@@ -314,7 +247,13 @@ function ogElement({ script, title, category, accent, cover }) {
       { justifyContent: 'space-between', alignItems: 'center', width: '100%' },
       h(
         'div',
-        { fontFamily: 'Inter Display', fontSize: 40, letterSpacing: '-0.025em' },
+        {
+          alignItems: 'center',
+          fontFamily: 'Inter Display',
+          fontSize: 40,
+          letterSpacing: '-0.025em',
+        },
+        markImg(48, tokens.theme.dark.text, { marginRight: 14 }),
         h('span', { fontWeight: 600, color: tokens.theme.dark.text }, w1),
         h(
           'span',
@@ -329,6 +268,25 @@ function ogElement({ script, title, category, accent, cover }) {
       ),
     ),
   )
+}
+
+// "b" belgisi (OBLOG-96) — logo.mjs generatsiya qilgan logo/mark.svg (oldin `node logo.mjs`).
+const markSource = fs.readFileSync(path.join(brand, 'logo/mark.svg'), 'utf8')
+const [, , markW, markH] = markSource
+  .match(/viewBox="([^"]+)"/)[1]
+  .split(' ')
+  .map(Number)
+function markImg(height, color, style = {}) {
+  const svg = markSource.replace('currentColor', color)
+  return {
+    type: 'img',
+    props: {
+      src: `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`,
+      width: Math.round((markW / markH) * height * 100) / 100,
+      height,
+      style,
+    },
+  }
 }
 
 async function renderOg(opts) {

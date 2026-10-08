@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 
 import { TelegramIcon } from './icons'
 import { newTabProps } from './link-props'
+import { LogoMark } from './LogoMark'
 import type { FooterColumn, LinkItem, Locale, NavCategory, TelegramLinks } from './types'
 import { Wordmark } from './Wordmark'
 
@@ -59,8 +60,9 @@ export function Footer({
           <Link
             href={withLocalePrefix(locale, '/')}
             aria-label={`${t.siteName} — ${t.home}`}
-            className="w-fit rounded-sm"
+            className="flex w-fit items-center gap-2 rounded-sm"
           >
+            <LogoMark className="h-[29px]" />
             <Wordmark locale={locale} className="h-6" />
           </Link>
           <p className="max-w-xs text-sm text-muted">{t.footerAbout}</p>
