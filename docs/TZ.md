@@ -182,7 +182,7 @@ flowchart LR
     end
 
     PG[(Supabase Postgres Free<br/>Supavisor pooler)]
-    CRON[Supabase pg_cron + pg_net<br/>har 10 daqiqa]
+    CRON[Supabase pg_cron + pg_net<br/>nashr — har 10, yangiliklar — har 30 daqiqa]
     UPT[UptimeRobot<br/>/api/health har 5 daqiqa]
     R2[(Cloudflare R2<br/>media + raw HTML)]
     CFM[Cloudflare CDN<br/>media.odya.uz]
@@ -234,7 +234,7 @@ Har bir bosqich — alohida Payload **task**, `scrapeItem` **workflow** ularni k
 
 | # | Task | Vazifa | Trigger |
 |---|---|---|---|
-| 1 | `feed.poll` | Faol `source` RSS'ini o'qish, yangi URL'larni topish, `urlHash` bilan dedupe, `ETag`/`Last-Modified` | Scheduler (har 10 daqiqada) — `pollIntervalMin` o'tgan manbalar |
+| 1 | `feed.poll` | Faol `source` RSS'ini o'qish, yangi URL'larni topish, `urlHash` bilan dedupe, `ETag`/`Last-Modified` | Scraping scheduler (har 30 daqiqada, OBLOG-110) — `pollIntervalMin` o'tgan manbalar |
 | 2 | `item.fetch` | Sahifani yuklash (oddiy HTTP), `robots.txt` tekshiruvi, domen bo'yicha rate limit (Postgres'da oxirgi so'rov vaqti) | yangi URL |
 | 3 | `item.extract` | Readability bilan matnni ajratish; sarlavha, muallif, sana, teglar, `og:*`; raw HTML va tozalangan HTML (gzip) → R2 `raw/` (TTL 30 kun); DB'ga faqat `extractedText` (Markdown); manba rasmlari yuklanmaydi — faqat URL saqlanadi | fetch'dan keyin |
 | 4 | `item.dedupe` | `contentHash` (SimHash), Hamming ≤ 3 → bitta `clusterId` | extract'dan keyin |
@@ -242,7 +242,7 @@ Har bir bosqich — alohida Payload **task**, `scrapeItem` **workflow** ularni k
 | 6 | `post.onPublish` | ISR `revalidateTag`, sitemap, Telegram post (ikkala kanal) | post published bo'lganda |
 | 7 | `maintenance.cleanup` | Eskirgan `scraped-items` matnini tozalash, eski versiyalarni kesish, DB hajmini o'lchash (> 70% → ogohlantirish) | kuniga 1 marta |
 
-**Scheduler:** Vercel Hobby'da cron kuniga ko'pi bilan 1 marta ishlaydi — shuning uchun asosiy scheduler **Supabase `pg_cron` + `pg_net`**: har 10 daqiqada `POST https://blog.odya.uz/api/jobs/run` (`Authorization: Bearer <JOBS_SECRET>`). Endpoint `payload.jobs.run({ limit })` ni chaqiradi — kichik batch (masalan, 5–10 job), vaqt limitidan oldin to'xtaydi (ichki `deadline` ≈ 40 s). Zaxira: GitHub Actions `schedule` (har 30 daqiqa; yopiq repo'da bepul daqiqalar cheklangan) va Vercel Hobby kunlik cron. Scheduler tanlovi env/infra darajasida — kod bir xil.
+**Scheduler:** Vercel Hobby'da cron kuniga ko'pi bilan 1 marta ishlaydi — shuning uchun asosiy scheduler **Supabase `pg_cron` + `pg_net`** (`Authorization: Bearer <JOBS_SECRET>`), ikki kadens (OBLOG-110): har 10 daqiqada `POST https://blog.odya.uz/api/jobs/run?mode=publish` — faqat nashr (rejalashtirilgan postlar, Telegram, Make, IndexNow; ketma-ket, scraping'siz) va har 30 daqiqada `?mode=scrape` — yangiliklar (feed.poll → scrapeItem), tozalash, ogohlantirishlar. Endpoint `payload.jobs.run({ limit })` ni chaqiradi — kichik batch (masalan, 5–10 job), vaqt limitidan oldin to'xtaydi (ichki `deadline` ≈ 40 s); `mode` siz chaqiruv — avval nashr, keyin scraping. Zaxira: GitHub Actions `schedule` (har 30 daqiqa; yopiq repo'da bepul daqiqalar cheklangan) va Vercel Hobby kunlik cron. Scheduler tanlovi env/infra darajasida — kod bir xil.
 
 **Saqlanadigan "to'liq manba" (`scraped-items`):** DB'da — asl URL, canonical, sarlavha, muallif, sana, til, teglar, `og:image`, `extractedText` (Markdown), manba rasmlari URL'lari, HTTP metadata; R2'da — `raw/{source}/{yyyy-mm}/{id}.html.gz` va `.clean.html.gz` (30 kun).
 
@@ -282,7 +282,7 @@ Har bir bosqich — alohida Payload **task**, `scrapeItem` **workflow** ularni k
 |---|---|---|
 | Next.js + Payload (sayt, admin, API, MCP, jobs endpoint) | **Vercel Hobby** | Fluid compute yoqilgan; function region Supabase regioniga yaqin (masalan, `fra1` + Supabase `eu-central-1`) |
 | Postgres | **Supabase Free** | Runtime: **Supavisor pooler** (transaction mode, port 6543) — serverless uchun majburiy; migratsiyalar: direct/session connection. Supabase Data API/`anon` ishlatilmaydi |
-| Scheduler | **Supabase `pg_cron` + `pg_net`** | Har 10 daqiqada `POST /api/jobs/run` (`JOBS_SECRET`). SQL migratsiya fayli `infra/supabase/cron.sql` da |
+| Scheduler | **Supabase `pg_cron` + `pg_net`** | Har 10 daqiqada `POST /api/jobs/run?mode=publish` (nashr), har 30 daqiqada `?mode=scrape` (yangiliklar) — `JOBS_SECRET`. SQL migratsiya fayli `infra/supabase/cron.sql` da |
 | Media | **Cloudflare R2** (bepul kvota) | `@payloadcms/storage-s3` + **`clientUploads: true`** (Vercel so'rov tanasi 4.5 MB bilan cheklangan). Ommaviy domen `media.odya.uz`. Lifecycle rule: `raw/` — 30 kun, `backups/` — 14 kun |
 | DNS / CDN | **Cloudflare Free** | `blog.odya.uz` → Vercel (**DNS-only**, proxy o'chiq — Vercel oldiga proxy qo'yish tavsiya etilmaydi); `media.odya.uz` → R2 (proxy, kesh) |
 | Backup | **GitHub Actions** (kuniga 1 marta) | `pg_dump` → `age` → R2 `blog-odya-backups/db/` (`.github/workflows/backup.yml`, `docs/runbooks/restore.md`) |
@@ -296,12 +296,12 @@ Har bir bosqich — alohida Payload **task**, `scrapeItem` **workflow** ularni k
 | Xizmat | Cheklov | Ta'sir | Yechim |
 |---|---|---|---|
 | **Vercel Hobby** | **Foydalanish shartlari: faqat shaxsiy, notijorat foydalanish** | Kompaniya blogi — "kulrang zona"; reklama/monetizatsiya — aniq tijorat | Boshlash va sinov uchun egasi xavfni qabul qiladi. **Reklama yoki har qanday monetizatsiyadan oldin — majburiy ravishda Vercel Pro yoki Contabo'ga o'tish** |
-| Vercel Hobby | Cron — kuniga ko'pi bilan 1 marta | Har 10 daqiqalik scraping Vercel Cron bilan ishlamaydi | Supabase `pg_cron` + `pg_net` (asosiy); zaxira — GitHub Actions `schedule` (har 30 daqiqa) |
+| Vercel Hobby | Cron — kuniga ko'pi bilan 1 marta | Har 10 daqiqalik nashr va har 30 daqiqalik scraping Vercel Cron bilan ishlamaydi | Supabase `pg_cron` + `pg_net` (asosiy); zaxira — GitHub Actions `schedule` (har 30 daqiqa) |
 | Vercel Hobby | Function bajarilish vaqti cheklangan (Pro'dan qisqa; aniq qiymat Vercel hujjatida — M0 da tekshiriladi) | Uzoq job'lar uziladi | Har chaqiruvda kichik batch, ichki deadline ≈ 40 s, har task ≤ 30 s (1 feed yoki 1 maqola) |
 | Vercel Hobby | Oylik kvotalar (bandwidth, function invocations, Image Optimization transformatsiyalari) | Kvota tugasa — sayt cheklanadi | ISR kesh (DB'ga kam murojaat), media — R2/Cloudflare'dan (Vercel bandwidth'ga kirmaydi), `next/image` custom loader (Vercel Image Optimization ishlatilmaydi) |
 | Vercel Hobby | Jamoa a'zolari yo'q (bitta shaxsiy hisob) | Bir nechta dasturchi Vercel'ga kira olmaydi | Deploy GitHub orqali; Vercel'ga faqat egasi kiradi |
 | **Supabase Free** | DB hajmi **500 MB** | Kontent + lokalizatsiya + versiyalar tez o'sadi | DB'da faqat `extractedText`; raw/clean HTML — R2'da; `maxPerDoc: 10` versiya; qoralamaga aylanmagan scraped matn 30 kunda tozalanadi; hajm monitoringi (≥ 70% → ogohlantirish) |
-| Supabase Free | **7 kun faoliyatsizlikdan keyin loyiha pauza qilinadi** | Sayt ishlamay qoladi | Scheduler (har 10 daqiqa) va UptimeRobot `/api/health` (har 5 daqiqa) doimiy faollik beradi. "Faollik" ta'rifi Supabase tomonidan o'zgarishi mumkin — pauza holati UptimeRobot orqali darhol aniqlanadi |
+| Supabase Free | **7 kun faoliyatsizlikdan keyin loyiha pauza qilinadi** | Sayt ishlamay qoladi | Scheduler (nashr — har 10 daqiqa) va UptimeRobot `/api/health` (har 5 daqiqa) doimiy faollik beradi. "Faollik" ta'rifi Supabase tomonidan o'zgarishi mumkin — pauza holati UptimeRobot orqali darhol aniqlanadi |
 | Supabase Free | Backup/PITR yuklab olib bo'lmaydi | Ma'lumot yo'qolishi xavfi | O'z kunlik `pg_dump` (9.3) |
 | Supabase Free | 2 ta faol loyiha | Faqat production ishlatiladi (staging yo'q) | `blog-odya-prod`; lokal dev — Docker Postgres |
 | Supabase Free | Ulanishlar soni cheklangan | Serverless'da ulanish tugashi | Supavisor transaction pooler, `pool.max` = 2–3 |

@@ -50,6 +50,16 @@ export const SCRAPE_QUEUE = 'scrape'
 /** `/api/jobs/run` (va `autorun`) ishga tushiradigan navbatlar, tartib bo'yicha. */
 export const RUN_QUEUES: readonly string[] = [DEFAULT_QUEUE, SCRAPE_QUEUE]
 
+/**
+ * `/api/jobs/run?mode=` (OBLOG-110) — scheduler kadensi:
+ * - `publish` — har 10 daqiqada: faqat **nashr** job'lari ({@link PUBLISH_TASKS});
+ * - `scrape` — har 30 daqiqada: yangiliklar (feed.poll, `scrapeItem`), kunlik tozalash,
+ *   ogohlantirishlar, "yangi yangiliklar" xabari;
+ * - `all` (default, parametr yo'q) — avval nashr, keyin scraping (eski cron, GitHub zaxira).
+ */
+export const JOBS_RUN_MODES = ['publish', 'scrape', 'all'] as const
+export type JobsRunMode = (typeof JOBS_RUN_MODES)[number]
+
 /** `item.fetch` / `item.extract`: 3 retry, eksponensial backoff (30 s, 60 s, 120 s). */
 export const SCRAPE_TASK_RETRIES = {
   attempts: 3,
@@ -89,7 +99,10 @@ export const FEED_FETCH_TIMEOUT_MS = 10_000
 /** Qolgan vaqt bundan kam bo'lsa yangi feed so'rovi boshlanmaydi. */
 export const MIN_FETCH_WINDOW_MS = 3_000
 
-/** Scheduler har 10 daqiqada — interval chegarasidagi feed'lar bir tick'ga kechikmasligi uchun. */
+/**
+ * Scraping tick'i har 30 daqiqada (`mode=scrape`, OBLOG-110) — interval chegarasidagi feed'lar
+ * bir tick'ga kechikmasligi uchun.
+ */
 export const DUE_SLACK_MS = 60_000
 
 /** `processing` holatida shuncha vaqtdan ortiq qolgan job — uzilgan (function timeout) deb qaytariladi. */
@@ -176,3 +189,24 @@ export const MAKE_WEBHOOK_TIMEOUT_MS = 15_000
  * Hammasi tugagach — `alertChatId` ga ogohlantirish.
  */
 export const MAKE_RETRY_BACKOFF_MS = [60_000, 5 * 60_000, 15 * 60_000] as const
+
+// --- OBLOG-110: nashr bosqichi ---
+
+/**
+ * Nashr va undan keyingi ishlar (`default` navbati): `/api/jobs/run` ularni scraping'dan **oldin**
+ * va ketma-ket bajaradi (`mode=publish|all`); `mode=scrape` ularga tegmaydi.
+ */
+export const PUBLISH_TASKS: readonly string[] = [
+  SCHEDULE_PUBLISH_TASK,
+  TELEGRAM_POST_TASK,
+  MAKE_WEBHOOK_TASK,
+  INDEXNOW_SUBMIT_TASK,
+]
+
+/**
+ * Nashr bosqichi batch'i: **ketma-ket** (`sequential`), bir batch'da ko'pi bilan shuncha job.
+ * Har publish — bitta tranzaksiya (pool ulanishi, `RUNTIME_POOL_MAX` = 3): `jobsBatchLimit` (10)
+ * ta parallel publish pool'ni to'ldirib, bir-birini kutib `Failed query` bilan yiqilardi. Batch
+ * kichik — deadline har batch oldidan tekshiriladi, boshlangan batch ko'pi bilan 3 ta job.
+ */
+export const PUBLISH_BATCH_LIMIT = 3

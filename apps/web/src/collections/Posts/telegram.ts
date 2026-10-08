@@ -98,9 +98,9 @@ export const queueTelegramAfterChange: CollectionAfterChangeHook<Post> = async (
   if (scripts.length === 0) return doc
 
   const { payload } = req
-  // `req` berilmaydi: sozlamalar tranzaksiyaga bog'liq emas, Local API esa `req.locale` /
-  // `req.fallbackLocale` ni qayta yozishi mumkin.
-  const config = await loadTelegramConfig(payload)
+  // Shu tranzaksiyada (`req`; `req.locale` tiklanadi): `req`siz o'qish pool'dan ikkinchi ulanishni
+  // kutardi — parallel publish'larda `Failed query` (OBLOG-110).
+  const config = await loadTelegramConfig(payload, req)
   if (!config.token) {
     payload.logger.warn({
       postId: doc.id,

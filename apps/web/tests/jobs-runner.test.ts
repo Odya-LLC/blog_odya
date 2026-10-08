@@ -1,9 +1,31 @@
+import { readFileSync } from 'node:fs'
+
 import type { Payload } from 'payload'
 import { describe, expect, it, vi } from 'vitest'
 
-import { BATCH_START_LIMIT_MS, RESPONSE_BUDGET_MS, TASK_GRACE_MS } from '@/jobs/constants'
+import {
+  BATCH_START_LIMIT_MS,
+  DEFAULT_QUEUE,
+  FEED_POLL_TASK,
+  INDEXNOW_SUBMIT_TASK,
+  MAKE_WEBHOOK_TASK,
+  PUBLISH_BATCH_LIMIT,
+  PUBLISH_TASKS,
+  RESPONSE_BUDGET_MS,
+  SCHEDULE_PUBLISH_TASK,
+  TASK_GRACE_MS,
+  TELEGRAM_POST_TASK,
+} from '@/jobs/constants'
 import { boundedTimeout, getRunDeadline, runWithDeadline } from '@/jobs/context'
-import { handleJobsRunRequest, isAuthorized, runJobsWithDeadline } from '@/jobs/runner'
+import {
+  handleJobsRunRequest,
+  isAuthorized,
+  NON_PUBLISH_WHERE,
+  parseRunMode,
+  PUBLISH_WHERE,
+  runJobsWithDeadline,
+  runPublishJobs,
+} from '@/jobs/runner'
 import { outOfRunTime } from '@/jobs/workflows/scrapeItem'
 
 /** DB'siz: auth va deadline mantig'i (soxta `payload.jobs.run` va soat bilan). */
@@ -203,6 +225,92 @@ describe('runJobsWithDeadline', () => {
     })
     expect(seen).toEqual([1_000_000 + 50_000])
     expect(getRunDeadline()).toBeUndefined()
+  })
+})
+
+describe('kadens: ?mode= (OBLOG-110)', () => {
+  it('parseRunMode: yo‘q/bo‘sh — all; publish/scrape/all; boshqasi — null', () => {
+    expect(parseRunMode(null)).toBe('all')
+    expect(parseRunMode('')).toBe('all')
+    expect(parseRunMode('publish')).toBe('publish')
+    expect(parseRunMode('scrape')).toBe('scrape')
+    expect(parseRunMode('all')).toBe('all')
+    expect(parseRunMode('PUBLISH')).toBeNull()
+    expect(parseRunMode('everything')).toBeNull()
+  })
+
+  it('noto‘g‘ri mode — 400, Payload ishga tushirilmaydi', async () => {
+    const getPayload = vi.fn<() => Promise<Payload>>()
+    const response = await handleJobsRunRequest(
+      new Request('http://localhost/api/jobs/run?mode=scraping', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${SECRET}` },
+      }),
+      { getPayload, secret: SECRET },
+    )
+    expect(response.status).toBe(400)
+    expect(getPayload).not.toHaveBeenCalled()
+  })
+
+  it('runPublishJobs: faqat `default` navbatidagi nashr task’lari, ketma-ket, 3 tadan', async () => {
+    let queued = 7
+    const run = vi.fn(async ({ limit }: { limit: number }) => {
+      const take = Math.min(limit, queued)
+      queued -= take
+      const jobStatus = Object.fromEntries(
+        Array.from({ length: take }, (_, i) => [String(i), { status: 'success' as const }]),
+      )
+      return { jobStatus, remainingJobsFromQueried: 0 }
+    })
+    const result = await runPublishJobs(asJobs(run), { deadlineMs: 35_000 })
+    expect(result).toEqual({ batches: 3, succeeded: 7, failed: 0, deadlineReached: false })
+    expect(PUBLISH_BATCH_LIMIT).toBe(3)
+    for (const [args] of run.mock.calls as unknown as [Record<string, unknown>][]) {
+      expect(args).toEqual({
+        queue: DEFAULT_QUEUE,
+        limit: PUBLISH_BATCH_LIMIT,
+        where: PUBLISH_WHERE,
+        sequential: true,
+      })
+    }
+    expect(PUBLISH_WHERE).toEqual({
+      taskSlug: {
+        in: [SCHEDULE_PUBLISH_TASK, TELEGRAM_POST_TASK, MAKE_WEBHOOK_TASK, INDEXNOW_SUBMIT_TASK],
+      },
+    })
+  })
+
+  it('scraping filtri nashr task’larini chiqaradi, workflow job’larini (taskSlug yo‘q) qoldiradi', () => {
+    expect(NON_PUBLISH_WHERE).toEqual({
+      or: [{ taskSlug: { not_in: [...PUBLISH_TASKS] } }, { taskSlug: { exists: false } }],
+    })
+    expect(PUBLISH_TASKS).not.toContain(FEED_POLL_TASK)
+  })
+
+  it('cron.sql: nashr har 10, scraping har 30 daqiqada (ustma-ust emas), eski jadval o‘chiriladi', () => {
+    const sql = readFileSync(new URL('../../../infra/supabase/cron.sql', import.meta.url), 'utf8')
+    const job = (name: string) =>
+      sql.match(
+        new RegExp(`cron\\.schedule\\(\\s*'${name}',\\s*'([^']+)'[\\s\\S]*?\\$cron\\$\\s*\\)`),
+      )
+    const publish = job('blog-odya-jobs-publish')
+    const scrape = job('blog-odya-jobs-scrape')
+    expect(publish?.[1]).toBe('*/10 * * * *')
+    expect(publish?.[0]).toContain("'?mode=publish'")
+    expect(scrape?.[1]).toBe('5,35 * * * *')
+    expect(scrape?.[0]).toContain("'?mode=scrape'")
+    expect(sql).not.toMatch(/cron\.schedule\(\s*'blog-odya-jobs-run'/)
+    expect(sql).toMatch(/where jobname in \(\s*'blog-odya-jobs-run',/)
+  })
+
+  it('nashr bosqichi ham deadline’ga bo‘ysunadi', async () => {
+    const clock = fakeClock()
+    const run = vi.fn(async () => {
+      clock.advance(20_000)
+      return { jobStatus: { x: { status: 'success' as const } }, remainingJobsFromQueried: 1 }
+    })
+    const result = await runPublishJobs(asJobs(run), { deadlineMs: 35_000, now: clock.now })
+    expect(result).toMatchObject({ batches: 2, deadlineReached: true })
   })
 })
 

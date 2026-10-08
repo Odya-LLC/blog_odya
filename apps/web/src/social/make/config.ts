@@ -1,5 +1,5 @@
 import { LOCALES, type Locale } from '@blog-odya/shared/locales'
-import type { Payload } from 'payload'
+import type { Payload, PayloadRequest } from 'payload'
 
 import { env } from '@/env'
 import {
@@ -9,6 +9,7 @@ import {
   MAX_SOCIAL_HASHTAGS,
   validateWebhookUrl,
 } from '@/globals/SocialSettings'
+import { keepReqLocale } from '@/lib/hookReq'
 import type { SocialSetting } from '@/payload-types'
 
 import type { SocialImageScheme } from './payload'
@@ -80,12 +81,17 @@ export function resolveMakeConfig(
 /** Testlar uchun: `undefined` — global + env; obyekt — shu konfiguratsiya. */
 export const makeConfigOverride: { current?: MakeConfig } = {}
 
-/** Global + env. `req` berilmaydi (Telegram config bilan bir xil sabab — `req.locale`). */
-export async function loadMakeConfig(payload: Payload): Promise<MakeConfig> {
+/**
+ * Global + env. Hook ichida `req` uzatiladi — post saqlash tranzaksiyasida o'qiladi (OBLOG-110:
+ * alohida ulanish kutilmaydi), `req.locale` tiklanadi (Telegram config bilan bir xil).
+ */
+export async function loadMakeConfig(payload: Payload, req?: PayloadRequest): Promise<MakeConfig> {
   if (makeConfigOverride.current) return makeConfigOverride.current
   let settings: SocialSetting | null = null
   try {
-    settings = await payload.findGlobal({ slug: 'social-settings', depth: 0 })
+    settings = await keepReqLocale(req, () =>
+      payload.findGlobal({ slug: 'social-settings', depth: 0, ...(req ? { req } : {}) }),
+    )
   } catch (error) {
     payload.logger.warn({ err: error, msg: 'social-settings o‘qilmadi — Make o‘chiq deb olinadi' })
   }

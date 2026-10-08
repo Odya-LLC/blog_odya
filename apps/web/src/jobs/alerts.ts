@@ -33,7 +33,7 @@ import {
  *
  * Takrorlanmaslik (`planAlerts`): har bir shart kaliti bo'yicha `stats.alerts[key].sentAt`;
  * shart saqlanib qolsa — `remindAfterMs` (default 24 soat) da bir marta eslatma, yo'qolsa —
- * kalit o'chiriladi (keyingi safar darhol yuboriladi). Tekshiruv har `/api/jobs/run` chaqiruvida (har 10 daqiqa) — arzon
+ * kalit o'chiriladi (keyingi safar darhol yuboriladi). Tekshiruv har scraping chaqiruvida (`/api/jobs/run?mode=scrape`, har 30 daqiqa) — arzon
  * (2 ta so'rov), Telegram faqat yangi/eslatma shartlarda chaqiriladi.
  */
 

@@ -6,6 +6,7 @@ import type { Env } from '@/env'
 import { DEFAULT_BATCH_LIMIT } from './constants'
 import { runAlertChecks } from './alerts'
 import { runNewItemsNotification } from './newItemsNotify'
+import { runPublishJobs } from './runner'
 import { activeRunQueues } from './scrapeDeps'
 import { ensureScheduledPublishJobs } from './scheduledPublish'
 import { enqueueDailyCleanup, enqueueDueFeedPolls, releaseStaleJobs } from './scheduler'
@@ -21,15 +22,20 @@ import { makeWebhookTask } from './tasks/makeWebhook'
 import { telegramPostTask } from './tasks/telegramPost'
 import { scrapeItemWorkflow } from './workflows/scrapeItem'
 
+/** `autorun` tick'ida (har daqiqa) nashr bosqichi uchun vaqt — qolgani keyingi tick'da. */
+const AUTORUN_PUBLISH_DEADLINE_MS = 45_000
+
 /**
  * Payload Jobs registri (TZ §3.5, §10.14).
  *
  * `JOBS_MODE` (TZ §3.7.3) — scheduler tanlovi, kod bir xil:
- * - `endpoint` (Vercel): job'larni tashqi scheduler ishga tushiradi — Supabase pg_cron + pg_net
- *   har 10 daqiqada `POST /api/jobs/run` (`infra/supabase/cron.sql`), zaxira — GitHub Actions
+ * - `endpoint` (Vercel): job'larni tashqi scheduler ishga tushiradi — Supabase pg_cron + pg_net:
+ *   har 10 daqiqada `POST /api/jobs/run?mode=publish` (nashr), har 30 daqiqada `?mode=scrape`
+ *   (yangiliklar) — `infra/supabase/cron.sql`, OBLOG-110; zaxira — GitHub Actions
  *   (`.github/workflows/jobs-fallback.yml`). Serverless'da `autoRun` ishlatilmaydi.
  * - `autorun` (Contabo worker, doimiy jarayon): Payload har daqiqada o'zi ishga tushiradi;
- *   har tick oldidan muddati kelgan `feed.poll` lar navbatga qo'yiladi.
+ *   har tick oldidan nashr job'lari ketma-ket bajariladi va muddati kelgan `feed.poll` lar
+ *   navbatga qo'yiladi.
  *
  * Task'lar: `feed.poll` (M2-01), `item.fetch` + `item.extract` (`scrapeItem` workflow, M2-02),
  * `item.dedupe` + `item.classify` (workflow davomi) va `maintenance.cleanup` (kuniga 1 marta),
@@ -72,6 +78,8 @@ export function buildJobsConfig(mode: Env['JOBS_MODE'] = 'endpoint'): JobsConfig
           shouldAutoRun: async (payload) => {
             await releaseStaleJobs(payload)
             await ensureScheduledPublishJobs(payload)
+            // Nashr — scraping'dan oldin va ketma-ket (OBLOG-110), endpoint rejimi bilan bir xil.
+            await runPublishJobs(payload.jobs, { deadlineMs: AUTORUN_PUBLISH_DEADLINE_MS })
             await enqueueDueFeedPolls(payload)
             await enqueueDailyCleanup(payload)
             await runAlertChecks(payload)

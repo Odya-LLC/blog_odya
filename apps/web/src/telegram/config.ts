@@ -1,8 +1,9 @@
 import { LOCALES, type Locale } from '@blog-odya/shared/locales'
-import type { Payload } from 'payload'
+import type { Payload, PayloadRequest } from 'payload'
 
 import { env } from '@/env'
 import { DEFAULT_TELEGRAM_TEMPLATE } from '@/globals/TelegramSettings'
+import { keepReqLocale } from '@/lib/hookReq'
 import type { TelegramSetting } from '@/payload-types'
 
 import { DEFAULT_HASHTAGS_COUNT } from './caption'
@@ -87,14 +88,20 @@ export function resolveTelegramConfig(
 export const telegramConfigOverride: { current?: TelegramConfig } = {}
 
 /**
- * Global + env. `req` ataylab berilmaydi: sozlamalar tranzaksiyaga bog'liq emas, Local API esa
- * uzatilgan `req` ning `locale`/`fallbackLocale` ini qayta yozadi (hook/job/admin render ichida).
+ * Global + env. Hook ichida (post saqlash tranzaksiyasi) `req` uzatiladi — o'qish shu
+ * tranzaksiya ulanishida, pool'dan ikkinchi ulanish kutilmaydi (OBLOG-110); Local API qayta
+ * yozadigan `req.locale` / `req.fallbackLocale` tiklanadi (`keepReqLocale`).
  */
-export async function loadTelegramConfig(payload: Payload): Promise<TelegramConfig> {
+export async function loadTelegramConfig(
+  payload: Payload,
+  req?: PayloadRequest,
+): Promise<TelegramConfig> {
   if (telegramConfigOverride.current) return telegramConfigOverride.current
   let settings: TelegramSetting | null = null
   try {
-    settings = await payload.findGlobal({ slug: 'telegram-settings', depth: 0 })
+    settings = await keepReqLocale(req, () =>
+      payload.findGlobal({ slug: 'telegram-settings', depth: 0, ...(req ? { req } : {}) }),
+    )
   } catch (error) {
     // Global o'qilmasa — faqat env qiymatlari.
     payload.logger.warn({ err: error, msg: 'telegram-settings o‘qilmadi — env ishlatiladi' })

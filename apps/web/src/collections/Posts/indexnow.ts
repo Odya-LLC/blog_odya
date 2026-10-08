@@ -11,6 +11,7 @@ import type {
 import { INDEXNOW_SKIP_MESSAGES, indexNowDeps, indexNowReadiness } from '@/indexnow'
 import { DEFAULT_QUEUE, INDEXNOW_SUBMIT_TASK } from '@/jobs/constants'
 import { getRunDeadline } from '@/jobs/context'
+import { keepReqLocale } from '@/lib/hookReq'
 import type { Post } from '@/payload-types'
 import { postPath } from '@/site/paths'
 import { absoluteUrl } from '@/site/seo/config'
@@ -54,23 +55,32 @@ export const indexNowHookDeps: { runAfter: (task: () => Promise<void>) => boolea
 
 type PostState = Pick<Post, 'slug' | 'category' | 'workflowStatus' | '_status'>
 
-async function categorySlug(payload: Payload, value: unknown): Promise<string | null> {
+async function categorySlug(
+  payload: Payload,
+  value: unknown,
+  req: PayloadRequest,
+): Promise<string | null> {
   if (value && typeof value === 'object') {
     const slug = (value as { slug?: unknown }).slug
     if (typeof slug === 'string' && slug) return slug
     value = (value as { id?: unknown }).id
   }
   if (typeof value !== 'number' && typeof value !== 'string') return null
-  // `req` berilmaydi: kategoriya shu tranzaksiyada o'zgarmaydi, Local API esa `req.locale` ni
-  // qayta yozadi.
-  const category = await payload.findByID({
-    collection: 'categories',
-    id: value,
-    depth: 0,
-    overrideAccess: true,
-    disableErrors: true,
-    select: { slug: true },
-  })
+  const id = value
+  // Shu tranzaksiyada (`req`): alohida ulanish kutilmaydi. OBLOG-110: `req` siz bu so'rov pool
+  // (`max: 3`) bo'shashini kutib, parallel rejalashtirilgan publish'larni `Failed query` bilan
+  // yiqitardi. Local API qayta yozadigan `req.locale` tiklanadi.
+  const category = await keepReqLocale(req, () =>
+    payload.findByID({
+      collection: 'categories',
+      id,
+      depth: 0,
+      overrideAccess: true,
+      disableErrors: true,
+      select: { slug: true },
+      req,
+    }),
+  )
   return category?.slug || null
 }
 
@@ -78,11 +88,12 @@ async function categorySlug(payload: Payload, value: unknown): Promise<string | 
 async function publicState(
   payload: Payload,
   doc: PostState | null | undefined,
+  req: PayloadRequest,
 ): Promise<PublicState> {
   if (!doc || doc._status !== 'published' || doc.workflowStatus === 'archived' || !doc.slug) {
     return null
   }
-  const category = await categorySlug(payload, doc.category)
+  const category = await categorySlug(payload, doc.category, req)
   return category ? { path: postPath('uz-Latn', category, doc.slug) } : null
 }
 
@@ -154,7 +165,7 @@ export const rememberIndexNowState: CollectionBeforeChangeHook<Post> = async ({
       ? originalDoc
       : // Shu tranzaksiyada (asosiy qator hali o'zgarmagan) — alohida ulanish olinmaydi.
         await readMainState(req.payload, originalDoc.id, req)
-  snapshots(req)[String(originalDoc.id)] = await publicState(req.payload, main)
+  snapshots(req)[String(originalDoc.id)] = await publicState(req.payload, main, req)
   return data
 }
 
@@ -211,9 +222,9 @@ export const queueIndexNowAfterChange: CollectionAfterChangeHook<Post> = async (
   // bo'lganda tekshiriladi.
   let next: PublicState
   if (doc._status === 'published') {
-    next = await publicState(req.payload, doc)
+    next = await publicState(req.payload, doc, req)
   } else if (prev) {
-    next = await publicState(req.payload, await readMainState(req.payload, doc.id, req))
+    next = await publicState(req.payload, await readMainState(req.payload, doc.id, req), req)
   } else {
     return doc
   }
@@ -227,7 +238,7 @@ export const queueIndexNowAfterChange: CollectionAfterChangeHook<Post> = async (
 
 export const queueIndexNowAfterDelete: CollectionAfterDeleteHook<Post> = async ({ doc, req }) => {
   if (req.context?.skipIndexNow) return doc
-  const prev = await publicState(req.payload, doc)
+  const prev = await publicState(req.payload, doc, req)
   if (!prev) return doc
   const origin = readyOrigin(req.payload, doc.id)
   if (!origin) return doc
