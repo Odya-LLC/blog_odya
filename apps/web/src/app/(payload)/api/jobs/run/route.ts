@@ -7,7 +7,8 @@ import { handleJobsRunRequest } from '@/jobs/runner'
 /**
  * `POST /api/jobs/run` — Payload Jobs'ni tashqi scheduler ishga tushiradi (TZ §3.5):
  * Supabase pg_cron + pg_net (`infra/supabase/cron.sql`), zaxira — GitHub Actions.
- * Auth: `Authorization: Bearer <JOBS_SECRET>`. Mantiq — `src/jobs/runner.ts`.
+ * Auth: `Authorization: Bearer <JOBS_SECRET>`. Mantiq — `src/jobs/runner.ts`. `?mode=publish`
+ * (har 10 daqiqa, nashr) | `scrape` (har 30 daqiqa, yangiliklar) | `all` (default) — OBLOG-110.
  *
  * Byudjet so'rov boshidan (`src/jobs/constants.ts`): yangi batch ≤ 35 s, task'lar + 10 s grace,
  * javob ≤ 50 s — `maxDuration` (60 s) gacha sovuq start uchun zaxira. Function region Supabase

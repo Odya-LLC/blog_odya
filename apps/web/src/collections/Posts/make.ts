@@ -84,7 +84,8 @@ export async function queueMakeDeliveries(
 ): Promise<(number | string)[]> {
   const ids: (number | string)[] = []
   for (const script of scripts) {
-    const delivery = await findMakeDelivery(payload, makeDeliveryKey(postId, MAKE_EVENT, script))
+    const key = makeDeliveryKey(postId, MAKE_EVENT, script)
+    const delivery = await findMakeDelivery(payload, key, req)
     if (delivery?.status === 'sent') continue
     if (await hasPendingMakeJob(payload, postId, script, req)) continue
     const job = await payload.jobs.queue({
@@ -110,7 +111,8 @@ export const queueMakeAfterChange: CollectionAfterChangeHook<Post> = async ({
   if (previousDoc?.workflowStatus === 'published') return doc
 
   const { payload } = req
-  const config = await loadMakeConfig(payload)
+  // Barcha o'qishlar shu tranzaksiyada (`req`) — OBLOG-110 (pool `max: 3`, parallel publish).
+  const config = await loadMakeConfig(payload, req)
   if (!config.enabled || config.scripts.length === 0) return doc
   if (!config.webhookUrl) {
     payload.logger.warn({

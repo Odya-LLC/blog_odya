@@ -4,7 +4,8 @@
 #
 # `schedule` STANDART HOLATDA O'CHIQ: yopiq repo'da bepul daqiqalar cheklangan (~2 000/oy;
 # har 30 daqiqada ≈ 1 440 ishga tushirish/oy). Yoqish uchun pastdagi `schedule` blokini
-# izohdan chiqaring (docs/runbooks/jobs-scheduler.md → "Zaxira: GitHub Actions").
+# izohdan chiqaring (docs/runbooks/jobs-scheduler.md → "Zaxira: GitHub Actions"). Jadvaldan
+# chaqiruv `mode=all` — avval nashr, keyin scraping (OBLOG-110).
 #
 # Kerakli repo secrets: JOBS_RUN_URL (https://blog.odya.uz/api/jobs/run), JOBS_SECRET.
 name: Jobs fallback
@@ -12,8 +13,14 @@ name: Jobs fallback
 on:
   workflow_dispatch:
     inputs:
+      mode:
+        description: 'all — nashr + scraping; publish — faqat nashr; scrape — faqat yangiliklar (OBLOG-110)'
+        required: false
+        type: choice
+        options: [all, publish, scrape]
+        default: all
       limit:
-        description: 'Batch hajmi (1–50, bo‘sh — scraping-settings bo‘yicha)'
+        description: 'Scraping batch hajmi (1–50, bo‘sh — scraping-settings bo‘yicha)'
         required: false
         default: ''
   # schedule:
@@ -37,13 +44,15 @@ jobs:
           JOBS_RUN_URL: ${{ secrets.JOBS_RUN_URL }}
           JOBS_SECRET: ${{ secrets.JOBS_SECRET }}
           LIMIT: ${{ inputs.limit }}
+          # `schedule` dan ishga tushganda input yo'q — `all` (nashr + scraping).
+          MODE: ${{ inputs.mode || 'all' }}
         run: |
           if [ -z "$JOBS_RUN_URL" ] || [ -z "$JOBS_SECRET" ]; then
             echo "::error::JOBS_RUN_URL va JOBS_SECRET repo secrets'da sozlanmagan"
             exit 1
           fi
-          url="$JOBS_RUN_URL"
-          if [ -n "$LIMIT" ]; then url="$url?limit=$LIMIT"; fi
+          url="$JOBS_RUN_URL?mode=$MODE"
+          if [ -n "$LIMIT" ]; then url="$url&limit=$LIMIT"; fi
           status=$(curl -sS -o response.json -w '%{http_code}' --max-time 90 \
             -X POST -H "Authorization: Bearer $JOBS_SECRET" -H 'Content-Type: application/json' \
             "$url")

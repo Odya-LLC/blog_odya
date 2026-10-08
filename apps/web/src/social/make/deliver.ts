@@ -28,6 +28,7 @@ import {
   MAKE_WEBHOOK_TASK,
   MAKE_WEBHOOK_TIMEOUT_MS,
 } from '@/jobs/constants'
+import { keepReqLocale } from '@/lib/hookReq'
 import { escapeTelegramHtml, sendTelegramMessage } from '@/lib/telegram'
 import type { SocialDelivery } from '@/payload-types'
 import { siteOrigin } from '@/site/seo/config'
@@ -174,17 +175,25 @@ export async function buildMakePayloadFor(
 // Holat (`social-deliveries`)
 // ---------------------------------------------------------------------------
 
+/**
+ * `req` — faqat post hook'idan (saqlash tranzaksiyasi ulanishida o'qish, OBLOG-110); job va
+ * endpoint'lar `req`siz chaqiradi.
+ */
 export async function findMakeDelivery(
   payload: Payload,
   key: string,
+  req?: PayloadRequest,
 ): Promise<SocialDelivery | null> {
-  const { docs } = await payload.find({
-    collection: 'social-deliveries',
-    where: { key: { equals: key } },
-    depth: 0,
-    limit: 1,
-    overrideAccess: true,
-  })
+  const { docs } = await keepReqLocale(req, () =>
+    payload.find({
+      collection: 'social-deliveries',
+      where: { key: { equals: key } },
+      depth: 0,
+      limit: 1,
+      overrideAccess: true,
+      ...(req ? { req } : {}),
+    }),
+  )
   return docs[0] ?? null
 }
 

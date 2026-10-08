@@ -131,11 +131,18 @@ export async function releaseStaleJobs(payload: Payload, now = Date.now()): Prom
   return result.rows.length
 }
 
-/** Berilgan navbatlardagi hali bajarilmagan (retry kutayotganlari ham) job'lar soni. */
-export async function countRemainingJobs(payload: Payload, queues: readonly string[]) {
+/**
+ * Berilgan navbatlardagi hali bajarilmagan (retry kutayotganlari ham) job'lar soni; `where` —
+ * qo'shimcha filtr (masalan, faqat nashr task'lari — `/api/jobs/run?mode=publish`).
+ */
+export async function countRemainingJobs(
+  payload: Payload,
+  queues: readonly string[],
+  where?: Where,
+) {
   const { totalDocs } = await payload.count({
     collection: 'payload-jobs',
-    where: { and: [{ queue: { in: [...queues] } }, ...unfinished] },
+    where: { and: [{ queue: { in: [...queues] } }, ...unfinished, ...(where ? [where] : [])] },
   })
   return totalDocs
 }
