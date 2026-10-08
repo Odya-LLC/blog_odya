@@ -14,12 +14,23 @@ type StaticImageProps = Omit<ImageProps, 'loader' | 'onLoad' | 'onError' | 'onLo
  * `next/image` o'rnini bosuvchi server komponent: `getImageProps()` bilan xuddi shu `srcset`/`sizes`
  * (custom loader — tayyor WebP variantlar, `src/lib/image-loader.ts`) oddiy `<img>` sifatida
  * chiziladi — client JS'siz (M1-07: `next/image` client komponenti ≈ 6 KB gzip edi, birinchi
- * yuklash JS ≤ 150 KB, TZ §8.4). `priority` — `loading="eager"` va
+ * yuklash JS ≤ 150 KB, TZ §8.4). `priority` — `loading="eager"`, `fetchpriority="high"` va
  * `<link rel="preload" as="image" fetchpriority="high">` (LCP rasmi).
+ *
+ * OBLOG-113: Next 16 `getImgProps` `priority` uchun `fetchPriority`/`loading` qo'ymaydi — ular shu
+ * yerda aniq beriladi. `<img fetchpriority="high">` preload uchun ham muhim: React SSR (Fizz)
+ * `<img>` uchun o'zi `<link rel="preload">` yaratadi va kalit (srcset + sizes) bo'yicha takrorni
+ * tashlaydi; RSC'dagi `preload()` hint'i undan keyin yetib kelsa, `<link>` `fetchpriority`siz
+ * qolardi (prod HTML'da shunday edi). Endi qaysi biri birinchi bo'lmasin — `fetchpriority="high"`.
  */
 export function StaticImage({ alt, priority, ...rest }: StaticImageProps) {
   const { props } = getImgProps(
-    { alt, priority, ...rest },
+    {
+      alt,
+      priority,
+      ...(priority ? { loading: 'eager' as const, fetchPriority: 'high' as const } : {}),
+      ...rest,
+    },
     {
       defaultLoader,
       // Next.js define plugin'i `next.config.ts` → `images` bilan almashtiradi.
