@@ -70,7 +70,8 @@ export function resolveMakeConfig(
       settings?.instagramCta === undefined || settings.instagramCta === null
         ? DEFAULT_INSTAGRAM_CTA
         : settings.instagramCta.trim(),
-    instagramImage: settings?.instagramImage === 'portrait' ? 'portrait' : 'square',
+    // OBLOG-97: standart — 4:5 (profil to'rining 3:4 kesimida eng kam yo'qotadi).
+    instagramImage: settings?.instagramImage === 'square' ? 'square' : 'portrait',
     imageOverlay: settings?.imageOverlay !== false,
     imageScheme: settings?.imageScheme === 'brand' ? 'brand' : 'dark',
   }

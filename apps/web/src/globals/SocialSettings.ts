@@ -82,12 +82,18 @@ export const SocialSettings: GlobalConfig = {
           name: 'instagramImage',
           type: 'select',
           label: 'Instagram rasmi',
-          defaultValue: 'square',
+          // OBLOG-97: profil to'ri 3:4 plitka — 4:5 dan har yondan ~34 px, kvadratdan 135 px kesiladi.
+          defaultValue: 'portrait',
           options: [
+            // Tartib — DB enum tartibi (o'zgartirmang).
             { label: 'Kvadrat 1080×1080 (1:1)', value: 'square' },
-            { label: 'Vertikal 1080×1350 (4:5)', value: 'portrait' },
+            { label: 'Vertikal 1080×1350 (4:5) — tavsiya', value: 'portrait' },
           ],
-          admin: { width: '50%' },
+          admin: {
+            width: '50%',
+            description:
+              'Profil to‘ri postlarni 3:4 vertikal plitka qilib, markazdan kesib ko‘rsatadi. 4:5 eng kam yo‘qotadi (har yondan ~3%), kvadrat — har yondan 12,5%. Matn ikkalasida ham xavfsiz zonada. 3:4 ni to‘g‘ridan-to‘g‘ri yuborib bo‘lmaydi — Instagram API faqat 4:5 … 1.91:1 qabul qiladi.',
+          },
         },
         {
           name: 'hashtagsCount',

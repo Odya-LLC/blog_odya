@@ -8,9 +8,16 @@ type Script = 'uz-Latn' | 'uz-Cyrl'
 const SCRIPT_PATH: Record<Script, 'latn' | 'cyrl'> = { 'uz-Latn': 'latn', 'uz-Cyrl': 'cyrl' }
 const SCRIPT_LABEL: Record<Script, string> = { 'uz-Latn': 'Lotin', 'uz-Cyrl': 'Kirill' }
 const VARIANTS = [
-  { variant: 'square', label: 'Kvadrat 1:1' },
-  { variant: 'portrait', label: 'Vertikal 4:5' },
+  { variant: 'square', label: 'Kvadrat 1:1', width: 1080, height: 1080 },
+  { variant: 'portrait', label: 'Vertikal 4:5', width: 1080, height: 1350 },
 ] as const
+
+/**
+ * OBLOG-97: Instagram profil to'ri postni 3:4 plitka qilib markazdan kesadi — har yondan
+ * kesiladigan ulush (%): kvadrat — 12,5%, 4:5 — ~3,1%.
+ */
+const gridInsetPercent = (width: number, height: number) =>
+  Math.max(0, ((width - (height * 3) / 4) / 2 / width) * 100)
 
 interface Props {
   postId: number
@@ -20,7 +27,8 @@ interface Props {
 /**
  * Instagram rasmining oldindan ko'rinishi (OBLOG-94): `/og/{yozuv}/social/{id}/{variant}.jpg?
  * preview=1` — admin sessiyasi bilan, oxirgi saqlangan (qoralama) versiya bo'yicha. Saqlangandan
- * keyin (`lastUpdateTime`) yoki "Yangilash" tugmasida qayta yuklanadi.
+ * keyin (`lastUpdateTime`) yoki "Yangilash" tugmasida qayta yuklanadi. Xira yon chiziqlar —
+ * profil to'rida (3:4) ko'rinmaydigan qism (OBLOG-97).
  */
 export function SocialImagePreview({ postId, scripts }: Props) {
   const { lastUpdateTime } = useDocumentInfo()
@@ -57,9 +65,10 @@ export function SocialImagePreview({ postId, scripts }: Props) {
         </button>
       </div>
       <div className="social-preview__grid">
-        {VARIANTS.map(({ variant, label }) => {
+        {VARIANTS.map(({ variant, label, width, height }) => {
           const src = `/og/${SCRIPT_PATH[script]}/social/${postId}/${variant}.jpg?preview=1&t=${key}`
           const id = `${script}-${variant}-${key}`
+          const inset = `${gridInsetPercent(width, height).toFixed(3)}%`
           return (
             <figure key={variant} className="social-preview__item">
               {failed[id] ? (
@@ -67,7 +76,13 @@ export function SocialImagePreview({ postId, scripts }: Props) {
                   Rasm tayyor emas — kategoriya va sarlavhani saqlang.
                 </span>
               ) : (
-                <a href={src} target="_blank" rel="noreferrer">
+                <a
+                  href={src}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="social-preview__frame"
+                  title="Xira chetlar — Instagram profil to‘rida (3:4) ko‘rinmaydi"
+                >
                   {/* eslint-disable-next-line @next/next/no-img-element -- admin preview, dinamik JPEG */}
                   <img
                     src={src}
@@ -75,9 +90,19 @@ export function SocialImagePreview({ postId, scripts }: Props) {
                     loading="lazy"
                     onError={() => setFailed((value) => ({ ...value, [id]: true }))}
                   />
+                  <span
+                    aria-hidden="true"
+                    className="social-preview__grid-crop social-preview__grid-crop--left"
+                    style={{ width: inset }}
+                  />
+                  <span
+                    aria-hidden="true"
+                    className="social-preview__grid-crop social-preview__grid-crop--right"
+                    style={{ width: inset }}
+                  />
                 </a>
               )}
-              <figcaption>{label}</figcaption>
+              <figcaption>{label} · chiziqlar — profil to‘ri (3:4)</figcaption>
             </figure>
           )
         })}

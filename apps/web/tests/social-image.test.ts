@@ -10,6 +10,8 @@ import {
   fitSocialTitle,
   loadTitleMetrics,
   renderSocialImage,
+  socialGridInset,
+  socialSafeArea,
   type SocialImageDeps,
   type SocialImageInput,
 } from '@/social/image'
@@ -34,6 +36,40 @@ async function saveSample(name: string, body: Buffer) {
   if (!SAMPLES_DIR) return
   await mkdir(SAMPLES_DIR, { recursive: true })
   await writeFile(path.join(SAMPLES_DIR, name), body)
+}
+
+/** Bir xil rangli muqova — gradientlar faqat vertikal, demak matn bo'lmagan ustunlar bir xil. */
+async function solidCover(): Promise<Buffer> {
+  return sharp({
+    create: { width: 1600, height: 1000, channels: 3, background: { r: 128, g: 128, b: 128 } },
+  })
+    .jpeg({ quality: 95 })
+    .toBuffer()
+}
+
+/**
+ * `[left, left + width)` ustunlarida har qator gorizontal bo'yicha bir xilmi (matn, chip, wordmark
+ * yo'q). Qaytaradi: qatorlar ichidagi eng katta farq (0–255).
+ */
+async function maxRowSpread(body: Buffer, left: number, width: number): Promise<number> {
+  const { data, info } = await sharp(body)
+    .extract({ left, top: 0, width, height: (await sharp(body).metadata()).height! })
+    .raw()
+    .toBuffer({ resolveWithObject: true })
+  let spread = 0
+  for (let y = 0; y < info.height; y += 1) {
+    for (let c = 0; c < info.channels; c += 1) {
+      let min = 255
+      let max = 0
+      for (let x = 0; x < info.width; x += 1) {
+        const value = data[(y * info.width + x) * info.channels + c]!
+        if (value < min) min = value
+        if (value > max) max = value
+      }
+      spread = Math.max(spread, max - min)
+    }
+  }
+  return spread
 }
 
 /** "Fotosurat"ga o'xshash muqova: yorug' osmon (eng yomon holat — oq fon ustida oq matn). */
@@ -112,7 +148,7 @@ describe('qisqa sarlavha manbai', () => {
 describe('sarlavhani sig‘dirish', () => {
   it('qisqa sarlavha — katta shrift, ≤ 4 qator', () => {
     const fitted = fitSocialTitle('GPT-6 chiqdi', 'square', metrics)
-    expect(fitted.fontSize).toBe(92)
+    expect(fitted.fontSize).toBe(84)
     expect(fitted.lines).toEqual(['GPT-6 chiqdi'])
     expect(fitted.truncated).toBe(false)
   })
@@ -124,7 +160,7 @@ describe('sarlavhani sig‘dirish', () => {
     expect(fitted.truncated).toBe(false)
     expect(fitted.lines.join(' ')).toBe(title)
     for (const line of fitted.lines) {
-      expect(measureText(metrics, line, fitted.fontSize, -0.02)).toBeLessThanOrEqual(1080 - 128)
+      expect(measureText(metrics, line, fitted.fontSize, -0.02)).toBeLessThanOrEqual(1080 - 360)
     }
   })
 
@@ -206,6 +242,45 @@ describe('JPEG rasm', () => {
     })
     await saveSample('latn-square-no-cover.jpg', body)
   })
+
+  // OBLOG-97: Instagram profil to'ri 3:4 plitka — markazdan kesadi.
+  it('profil to‘ri: xavfsiz zona kesimdan kamida 40 px ichkarida', () => {
+    expect(socialGridInset('square')).toBe(135)
+    expect(socialGridInset('portrait')).toBe(34)
+    expect(socialGridInset('landscape')).toBe(0)
+    for (const variant of ['square', 'portrait'] as const) {
+      expect(socialSafeArea(variant).x - socialGridInset(variant)).toBeGreaterThanOrEqual(40)
+    }
+  })
+
+  it.each(['square', 'portrait'] as const)(
+    '%s: 3:4 kesimdan tashqarida matn/chip/wordmark yo‘q',
+    async (variant) => {
+      const solid = await solidCover()
+      const solidDeps: SocialImageDeps = {
+        fetch: async () => new Response(new Uint8Array(solid), { status: 200 }),
+      }
+      const { body, source } = await renderSocialImage(
+        {
+          ...base,
+          variant,
+          title: `${LONG_TITLE} ${LONG_TITLE}`,
+          category: { name: 'Juda uzun kategoriya nomi: texnologiya va innovatsiyalar' },
+        },
+        solidDeps,
+      )
+      expect(source).toBe('cover')
+      await saveSample(`grid-safe-${variant}.jpg`, body)
+      const inset = socialGridInset(variant)
+      const { width } = SOCIAL_IMAGE_SIZES[variant]
+      // Kesiladigan chap va o'ng chiziqlar — faqat vertikal gradient (har qator bir xil rang).
+      expect(await maxRowSpread(body, 0, inset)).toBeLessThanOrEqual(8)
+      expect(await maxRowSpread(body, width - inset, inset)).toBeLessThanOrEqual(8)
+      // Nazorat: xavfsiz zona ichida esa matn bor.
+      const safe = socialSafeArea(variant).x
+      expect(await maxRowSpread(body, safe, width - safe * 2)).toBeGreaterThan(100)
+    },
+  )
 
   it('muqova yuklanmasa — kartochka; overlay o‘chiq — oddiy kesim', async () => {
     const errors: unknown[] = []
