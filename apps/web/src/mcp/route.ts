@@ -15,7 +15,8 @@ import { MCP_INSTRUCTIONS, MCP_SERVER_INFO, registerOdyaMcp } from './server'
  * - `POST` — JSON-RPC. Majburiy `Authorization: Bearer <API kalit>` (yoki `users API-Key <kalit>`):
  *   egasini aniqlash (401) va kalit bo'yicha rate limit (`API_KEY_RATE_LIMIT_PER_MIN`, standart
  *   60/daqiqa, 429; `admin` roliga qo'llanmaydi). Toollar Local API'ni kalit egasi nomidan
- *   (`overrideAccess: false`) chaqiradi; audit kanali — `mcp`.
+ *   (`overrideAccess: false`) chaqiradi; audit kanali — `mcp`. Buzuq JSON tana — 400 + JSON-RPC
+ *   `-32700` (OBLOG-114).
  * - `GET` — health: autentifikatsiyasiz 200 (UptimeRobot). `Accept: text/event-stream` bilan
  *   (serverdan oqim so'rovi) — 405: stateless serverda server → mijoz oqimi yo'q (MCP spetsifikatsiyasi
  *   bo'yicha ruxsat etilgan javob).
@@ -69,6 +70,40 @@ export function healthResponse(): Response {
   )
 }
 
+/** SDK transportidagi bilan bir xil javob (`createJsonErrorResponse(400, -32700, ...)`). */
+function parseErrorResponse(): Response {
+  return Response.json(
+    { jsonrpc: '2.0', error: { code: -32700, message: 'Parse error: Invalid JSON' }, id: null },
+    { status: 400, headers: NO_STORE },
+  )
+}
+
+/**
+ * OBLOG-114: `application/json` tanani `mcp-handler` dan oldin tekshirish. `mcp-handler@1.1.0`
+ * `req.json()` ni try'siz chaqiradi va o'z handler'ini `await` qilmaydi: buzuq JSON (masalan,
+ * agentning `{"postId":}}}` argumentlari) `SyntaxError` → unhandled rejection (Sentry'da xato),
+ * javob esa umuman qaytmaydi. Bu mijoz xatosi — JSON-RPC `-32700` / 400 qaytaramiz.
+ *
+ * Tana o'qilgani uchun handler'ga xuddi shu matnli yangi `Request` uzatiladi. Autentifikatsiyadan
+ * keyin chaqiriladi: kalitsiz so'rov tana tahlilisiz 401 oladi.
+ */
+async function preparseJsonBody(request: Request): Promise<Request | Response> {
+  const contentType = request.headers.get('content-type') ?? ''
+  if (!contentType.includes('application/json')) return request
+  const body = await request.text()
+  try {
+    JSON.parse(body)
+  } catch {
+    return parseErrorResponse()
+  }
+  return new Request(request.url, {
+    method: request.method,
+    headers: request.headers,
+    body,
+    signal: request.signal,
+  })
+}
+
 export function createMcpRoute(deps: McpRouteDeps) {
   async function POST(request: Request): Promise<Response> {
     const payload = await deps.getPayload()
@@ -77,6 +112,9 @@ export function createMcpRoute(deps: McpRouteDeps) {
       ...(deps.failureLimiter ? { failureLimiter: deps.failureLimiter } : {}),
     })
     if (!auth.ok) return apiKeyErrorResponse(auth)
+
+    const parsed = await preparseJsonBody(request)
+    if (parsed instanceof Response) return parsed
 
     const ctx: McpContext = {
       payload,
@@ -90,7 +128,7 @@ export function createMcpRoute(deps: McpRouteDeps) {
       { basePath: MCP_BASE_PATH, maxDuration: MCP_MAX_DURATION, disableSse: true },
     )
     // Toollar ichidagi har qanday Local API chaqiruvi (hatto `context` uzatilmagan) — `mcp` kanali.
-    return runWithAuditChannel('mcp', () => handler(request))
+    return runWithAuditChannel('mcp', () => handler(parsed))
   }
 
   async function GET(request: Request): Promise<Response> {
