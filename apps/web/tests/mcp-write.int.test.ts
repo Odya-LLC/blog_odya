@@ -24,7 +24,7 @@ import { READ_TOOL_NAMES } from '@/mcp/tools'
 import { WRITE_TOOL_NAMES } from '@/mcp/write-tools'
 import type { Category, Post, ScrapedItem, Source, User } from '@/payload-types'
 import { setRevalidator } from '@/site/revalidate'
-import { telegramConfigOverride } from '@/telegram/config'
+import { resolveDigestSettings, telegramConfigOverride } from '@/telegram/config'
 
 import {
   as,
@@ -771,6 +771,8 @@ describe('MCP yozish toollari (/api/mcp)', () => {
         disabled: [],
         template: DEFAULT_TELEGRAM_TEMPLATE,
         hashtagsCount: 3,
+        mode: 'post',
+        digest: resolveDigestSettings(null),
       }
       // `after()` test muhitida yo'q — vazifalar yig'iladi va bajarilmaydi (tarmoqqa chiqilmaydi).
       telegramHookDeps.runAfter = collect
@@ -867,8 +869,8 @@ describe('MCP yozish toollari (/api/mcp)', () => {
       const postId = await readyPost(client)
       autoPublished.add(postId)
       const before = Date.now()
-      // Izohsiz (OBLOG-62: izohli post avtomatik chop etilmaydi).
-      const submitted = await call(client, 'submit_for_review', { postId })
+      // Izohsiz (OBLOG-62: izohli post avtomatik chop etilmaydi). OBLOG-116: dayjest muhimligi.
+      const submitted = await call(client, 'submit_for_review', { postId, digestPriority: 2 })
       expect(submitted.isError).toBeFalsy()
       const json = jsonOf(submitted)
       const latin = await readPost(postId)
@@ -891,6 +893,8 @@ describe('MCP yozish toollari (/api/mcp)', () => {
         rewrittenBy: 'ai_agent',
         aiDisclosure: true,
         lockedUntil: null,
+        digestPriority: 2,
+        telegramUrgent: false,
       })
       expect(json.heldForReview).toBe(false)
       expect(json.reason).toBeUndefined()

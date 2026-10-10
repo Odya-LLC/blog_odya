@@ -74,6 +74,20 @@ export class FakeTelegram {
             caption: body.caption,
           },
         })
+      case 'sendMediaGroup': {
+        // OBLOG-116: galereya — har rasmga alohida xabar (birinchisida caption).
+        const media = (body.media as Record<string, unknown>[] | undefined) ?? []
+        return Response.json({
+          ok: true,
+          result: media.map((item) => ({
+            message_id: this.nextMessageId++,
+            chat,
+            date,
+            photo: [],
+            ...(item.caption ? { caption: item.caption } : {}),
+          })),
+        })
+      }
       case 'sendMessage':
         return Response.json({
           ok: true,

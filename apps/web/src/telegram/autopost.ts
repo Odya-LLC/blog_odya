@@ -180,11 +180,11 @@ export async function lockPostRow(
 // Qayta urinishlar
 // ---------------------------------------------------------------------------
 
-type CallResult<T> =
+export type CallResult<T> =
   | { ok: true; value?: T; notModified?: boolean }
   | { ok: false; failure: TelegramFailure; retryScheduled: boolean }
 
-interface RetryContext {
+export interface RetryContext {
   attempt: number
   requeue: (attempt: number, waitMs: number) => Promise<void>
   deps: TelegramDeps
@@ -196,7 +196,10 @@ function canWaitInline(waitMs: number, deps: TelegramDeps): boolean {
   return deadline === undefined || deps.now() + waitMs + TELEGRAM_API_TIMEOUT_MS <= deadline
 }
 
-async function callWithRetries<T>(op: () => Promise<T>, ctx: RetryContext): Promise<CallResult<T>> {
+export async function callWithRetries<T>(
+  op: () => Promise<T>,
+  ctx: RetryContext,
+): Promise<CallResult<T>> {
   let attempt = ctx.attempt
   for (;;) {
     try {
@@ -225,7 +228,7 @@ async function callWithRetries<T>(op: () => Promise<T>, ctx: RetryContext): Prom
 // Xabar
 // ---------------------------------------------------------------------------
 
-function populated<T extends object>(value: unknown): T | null {
+export function populated<T extends object>(value: unknown): T | null {
   return value && typeof value === 'object' ? (value as T) : null
 }
 
@@ -262,14 +265,14 @@ export async function prepareMessage(
   }
 }
 
-function textFor(message: PreparedMessage, kind: TelegramMessageKind): string {
+export function textFor(message: PreparedMessage, kind: TelegramMessageKind): string {
   const text = buildMessageText(message.template, message.values, MESSAGE_LIMITS[kind])
   if (text) return text
   // Shablonning o'zi chegaradan uzun — faqat sarlavha va havola.
   return buildMessageText('<b>{{title}}</b>\n\n{{url}}', message.values, MESSAGE_LIMITS[kind])!
 }
 
-async function sendAlert(
+export async function sendAlert(
   payload: Payload,
   api: TelegramApi,
   config: TelegramConfig,

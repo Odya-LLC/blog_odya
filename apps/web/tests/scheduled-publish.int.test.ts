@@ -20,7 +20,11 @@ import { handleJobsRunRequest, type JobsRunResponse } from '@/jobs/runner'
 import type { Category, Post } from '@/payload-types'
 import { makeDeps } from '@/social/make/deliver'
 import { telegramDeps } from '@/telegram/autopost'
-import { type TelegramConfig, telegramConfigOverride } from '@/telegram/config'
+import {
+  resolveDigestSettings,
+  type TelegramConfig,
+  telegramConfigOverride,
+} from '@/telegram/config'
 
 import {
   as,
@@ -50,6 +54,8 @@ const TELEGRAM: TelegramConfig = {
   disabled: ['uz-Cyrl'],
   template: DEFAULT_TELEGRAM_TEMPLATE,
   hashtagsCount: 0,
+  mode: 'post',
+  digest: resolveDigestSettings(null),
 }
 
 let payload: Payload

@@ -430,7 +430,7 @@ describe('jobs endpoint + feed.poll', () => {
       // Batch hajmi — admin sozlamasidan (`jobsBatchLimit`), qattiq chegara yo'q.
       limit: 10,
     })
-    expect(body.skipped).toEqual(['scheduledPublish', 'feedPolls', 'cleanup'])
+    expect(body.skipped).toEqual(['scheduledPublish', 'telegramDigest', 'feedPolls', 'cleanup'])
     // 36 s "o'tgan", javob 50 s byudjet ichida; feed'lar so'ralmagan.
     expect(body.durationMs).toBeGreaterThanOrEqual(36_000)
     expect(body.durationMs).toBeLessThan(50_000)

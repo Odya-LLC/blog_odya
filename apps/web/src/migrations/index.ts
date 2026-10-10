@@ -25,6 +25,7 @@ import * as migration_20261007_083607_oblog_91_make_autopost from './20261007_08
 import * as migration_20261007_140927_oblog_94_social_title from './20261007_140927_oblog_94_social_title';
 import * as migration_20261008_052303_oblog_97_instagram_portrait from './20261008_052303_oblog_97_instagram_portrait';
 import * as migration_20261008_120000_oblog_112_poll_interval_30 from './20261008_120000_oblog_112_poll_interval_30';
+import * as migration_20261010_021505_oblog_116_telegram_digest from './20261010_021505_oblog_116_telegram_digest';
 
 export const migrations = [
   {
@@ -160,6 +161,11 @@ export const migrations = [
   {
     up: migration_20261008_120000_oblog_112_poll_interval_30.up,
     down: migration_20261008_120000_oblog_112_poll_interval_30.down,
-    name: '20261008_120000_oblog_112_poll_interval_30'
+    name: '20261008_120000_oblog_112_poll_interval_30',
+  },
+  {
+    up: migration_20261010_021505_oblog_116_telegram_digest.up,
+    down: migration_20261010_021505_oblog_116_telegram_digest.down,
+    name: '20261010_021505_oblog_116_telegram_digest'
   },
 ];

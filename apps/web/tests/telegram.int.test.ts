@@ -8,7 +8,11 @@ import { DEFAULT_QUEUE, TELEGRAM_POST_TASK } from '@/jobs/constants'
 import { runWithDeadline } from '@/jobs/context'
 import type { Category, Media, Post, Tag } from '@/payload-types'
 import { readTelegramState, saveTelegramEntry, telegramDeps } from '@/telegram/autopost'
-import { type TelegramConfig, telegramConfigOverride } from '@/telegram/config'
+import {
+  resolveDigestSettings,
+  type TelegramConfig,
+  telegramConfigOverride,
+} from '@/telegram/config'
 
 import {
   as,
@@ -41,6 +45,8 @@ const CONFIG: TelegramConfig = {
   disabled: [],
   template: DEFAULT_TELEGRAM_TEMPLATE,
   hashtagsCount: 3,
+  mode: 'post',
+  digest: resolveDigestSettings(null),
   alertChatId: ALERT_CHAT,
 }
 

@@ -7,19 +7,24 @@ import { getRunDeadline } from '@/jobs/context'
 import type { Post } from '@/payload-types'
 import { lockPostRow, readTelegramState } from '@/telegram/autopost'
 import { loadTelegramConfig } from '@/telegram/config'
+import { queueDigestEdits } from '@/telegram/digest'
 
 /**
  * Posts ↔ Telegram avtopost (TZ §7.1).
  *
  * `queueTelegramAfterChange` (`afterChange`): post chop etilgan holatda saqlanganda (publish
  * tugmasi, MCP, scheduled publish job'i) har faol kanal uchun `telegram.post` job'i:
- * - birinchi chop etish (`workflowStatus` → `published`) — barcha faol kanallarga;
+ * - birinchi chop etish (`workflowStatus` → `published`) — barcha faol kanallarga, lekin faqat
+ *   `telegram-settings.mode = post` yoki `hybrid` + `telegramUrgent` da (OBLOG-116); `digest`
+ *   rejimida post keyingi dayjestga tushadi (`telegram/digest.ts`);
  * - allaqachon chop etilgan post qayta chop etilsa — faqat `telegram[]` da qatori bor
  *   (yuborilgan yoki xato bergan) kanallarga: job matn xeshini solishtiradi, sarlavha/lid
  *   o'zgargan bo'lsa xabarni tahrirlaydi, o'zgarmagan bo'lsa — hech narsa (dublikat yo'q).
  *   Qoralama/autosave (`_status: draft`), arxivlash va `telegramSkip` — trigger emas.
  * - (post, yozuv) uchun tugallanmagan job bo'lsa, yangisi qo'yilmaydi (u ishlaganda baribir
  *   postning oxirgi holatini o'qiydi).
+ * - qayta chop etishda post yuborilgan dayjestda bo'lsa — `telegram.digestEdit` (caption xeshi
+ *   o'zgargan bo'lsa tahrirlanadi; dayjest uchun tugallanmagan job bo'lsa — yangisi yo'q).
  *
  * Darhol bajarish: Next.js `after()` (Vercel'da `waitUntil`) — javob yuborilgach shu job'lar
  * ishga tushiriladi (≤ bir necha soniya). So'rov kontekstidan tashqarida (CLI, testlar) yoki
@@ -92,24 +97,33 @@ export const queueTelegramAfterChange: CollectionAfterChangeHook<Post> = async (
   }
   const firstPublish = previousDoc?.workflowStatus !== 'published'
   const entries = doc.telegram ?? []
-  const scripts = firstPublish
-    ? [...LOCALES]
-    : LOCALES.filter((script) => entries.some((entry) => entry.script === script))
-  if (scripts.length === 0) return doc
 
   const { payload } = req
   // Shu tranzaksiyada (`req`; `req.locale` tiklanadi): `req`siz o'qish pool'dan ikkinchi ulanishni
   // kutardi — parallel publish'larda `Failed query` (OBLOG-110).
   const config = await loadTelegramConfig(payload, req)
+  // OBLOG-116: `digest` rejimida (va `hybrid` da "Tezkor" bo'lmasa) birinchi chop etishda alohida
+  // xabar yo'q — post keyingi dayjestga tushadi (`telegram/digest.ts`, nashr tick'i).
+  const individual =
+    config.mode === 'post' || (config.mode === 'hybrid' && doc.telegramUrgent === true)
+  const scripts = firstPublish
+    ? individual
+      ? [...LOCALES]
+      : []
+    : LOCALES.filter((script) => entries.some((entry) => entry.script === script))
   if (!config.token) {
-    payload.logger.warn({
-      postId: doc.id,
-      msg: 'Telegram: TELEGRAM_BOT_TOKEN sozlanmagan — avtopost o‘tkazildi',
-    })
+    if (scripts.length > 0) {
+      payload.logger.warn({
+        postId: doc.id,
+        msg: 'Telegram: TELEGRAM_BOT_TOKEN sozlanmagan — avtopost o‘tkazildi',
+      })
+    }
     return doc
   }
 
   const ids: (number | string)[] = []
+  // Qayta chop etish: post kirgan yuborilgan dayjestlar caption'i (sarlavha o'zgargan bo'lsa).
+  if (!firstPublish) ids.push(...(await queueDigestEdits(payload, doc.id, req)))
   for (const script of scripts) {
     if (!config.channels[script]) {
       if (!config.disabled.includes(script)) {
