@@ -211,6 +211,15 @@ export const MAKE_WEBHOOK_TIMEOUT_MS = 15_000
  */
 export const MAKE_RETRY_BACKOFF_MS = [60_000, 5 * 60_000, 15 * 60_000] as const
 
+// --- OBLOG-118: Instagram dayjest karuseli (Make) ---
+
+/** Dayjestni Make'ga yuborishga urinishlar (har biri — alohida tick), keyin — `failed` + ogohlantirish. */
+export const INSTAGRAM_DIGEST_MAX_ATTEMPTS = 3
+/** `pending` qator shuncha vaqt yangilanmasa — tick uzilgan deb qayta band qilinadi. */
+export const INSTAGRAM_DIGEST_PENDING_STALE_MS = 10 * 60_000
+/** Dayjest oynasi ko'pi bilan shuncha orqaga (oxirgi muvaffaqiyatli slotdan). */
+export const INSTAGRAM_DIGEST_LOOKBACK_MAX_MS = 24 * 60 * 60_000
+
 // --- OBLOG-110: nashr bosqichi ---
 
 /**

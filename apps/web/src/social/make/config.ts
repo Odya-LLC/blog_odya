@@ -5,10 +5,17 @@ import { env } from '@/env'
 import {
   DEFAULT_BRAND_HASHTAG,
   DEFAULT_INSTAGRAM_CTA,
+  DEFAULT_INSTAGRAM_DAILY_LIMIT,
+  DEFAULT_INSTAGRAM_DIGEST_TIMES,
   DEFAULT_SOCIAL_HASHTAGS_COUNT,
+  INSTAGRAM_MODES,
+  type InstagramMode,
+  MAX_INSTAGRAM_DAILY_LIMIT,
   MAX_SOCIAL_HASHTAGS,
+  MIN_INSTAGRAM_DAILY_LIMIT,
   validateWebhookUrl,
 } from '@/globals/SocialSettings'
+import { parseSlotTimes } from '@/jobs/slots'
 import { keepReqLocale } from '@/lib/hookReq'
 import type { SocialSetting } from '@/payload-types'
 
@@ -35,6 +42,22 @@ export interface MakeConfig {
   imageOverlay: boolean
   /** OBLOG-94: gradient rangi — `dark` (qora) yoki `brand` (brend ko'k). */
   imageScheme: SocialImageScheme
+  /**
+   * OBLOG-118: `post` — har post alohida rasmli post (OBLOG-91); `story+digest` — har post story
+   * (9:16) va kuniga bir necha marta dayjest karuseli (faqat lotin yozuvi).
+   */
+  instagramMode: InstagramMode
+  /** `story+digest` rejimida story yuboriladimi (o'chiq — faqat dayjest). */
+  instagramStories: boolean
+  /** Dayjest slotlari — Toshkent vaqti, kun boshidan daqiqalar (`07:30` → 450). */
+  instagramDigestTimes: number[]
+  /** Instagram API: 24 soatda bitta hisobga ko'pi bilan shuncha nashr (story ham kiradi). */
+  instagramDailyLimit: number
+}
+
+function dailyLimit(value: unknown): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return DEFAULT_INSTAGRAM_DAILY_LIMIT
+  return Math.max(MIN_INSTAGRAM_DAILY_LIMIT, Math.min(MAX_INSTAGRAM_DAILY_LIMIT, Math.round(value)))
 }
 
 export type MakeEnv = Partial<Pick<typeof env, 'MAKE_WEBHOOK_URL' | 'MAKE_WEBHOOK_SECRET'>>
@@ -75,6 +98,15 @@ export function resolveMakeConfig(
     instagramImage: settings?.instagramImage === 'square' ? 'square' : 'portrait',
     imageOverlay: settings?.imageOverlay !== false,
     imageScheme: settings?.imageScheme === 'brand' ? 'brand' : 'dark',
+    // OBLOG-118: standart — `post` (Make ssenariysi yangilanmaguncha eski xatti-harakat).
+    instagramMode: (INSTAGRAM_MODES as readonly unknown[]).includes(settings?.instagramMode)
+      ? (settings!.instagramMode as InstagramMode)
+      : 'post',
+    instagramStories: settings?.instagramStories !== false,
+    instagramDigestTimes:
+      parseSlotTimes(settings?.instagramDigestTimes) ??
+      parseSlotTimes(DEFAULT_INSTAGRAM_DIGEST_TIMES)!,
+    instagramDailyLimit: dailyLimit(settings?.instagramDailyLimit),
   }
 }
 

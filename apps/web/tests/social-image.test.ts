@@ -7,13 +7,18 @@ import { beforeAll, describe, expect, it } from 'vitest'
 import type { FontMetrics } from '@/social/font-metrics'
 import { measureText } from '@/social/font-metrics'
 import {
+  digestCoverSafeArea,
+  fitDigestCoverTitles,
   fitSocialTitle,
   loadTitleMetrics,
+  renderDigestCoverJpeg,
   renderSocialImage,
   socialGridInset,
   socialSafeArea,
   type SocialImageDeps,
   type SocialImageInput,
+  STORY_FOOTER,
+  STORY_UI_ZONE,
 } from '@/social/image'
 import { SOCIAL_IMAGE_SIZES } from '@/social/make/payload'
 import {
@@ -70,6 +75,41 @@ async function maxRowSpread(body: Buffer, left: number, width: number): Promise<
     }
   }
   return spread
+}
+
+/** `[top, top + height)` qatorlarida har qator butun eni bo'yicha bir xilmi (eng katta farq). */
+async function maxSpreadInRows(body: Buffer, top: number, height: number): Promise<number> {
+  const { width } = await sharp(body).metadata()
+  const { data, info } = await sharp(body)
+    .extract({ left: 0, top, width: width!, height })
+    .raw()
+    .toBuffer({ resolveWithObject: true })
+  let spread = 0
+  for (let y = 0; y < info.height; y += 1) {
+    for (let c = 0; c < info.channels; c += 1) {
+      let min = 255
+      let max = 0
+      for (let x = 0; x < info.width; x += 1) {
+        const value = data[(y * info.width + x) * info.channels + c]!
+        if (value < min) min = value
+        if (value > max) max = value
+      }
+      spread = Math.max(spread, max - min)
+    }
+  }
+  return spread
+}
+
+/** Ikki rasmning `[left, left + width)` ustunlaridagi o'rtacha piksel farqi (0–255). */
+async function meanDiff(a: Buffer, b: Buffer, left: number, width: number): Promise<number> {
+  const read = async (body: Buffer) => {
+    const { height } = await sharp(body).metadata()
+    return sharp(body).extract({ left, top: 0, width, height: height! }).raw().toBuffer()
+  }
+  const [x, y] = await Promise.all([read(a), read(b)])
+  let sum = 0
+  for (let i = 0; i < x.length; i += 1) sum += Math.abs(x[i]! - y[i]!)
+  return sum / x.length
 }
 
 /** "Fotosurat"ga o'xshash muqova: yorug' osmon (eng yomon holat — oq fon ustida oq matn). */
@@ -281,6 +321,87 @@ describe('JPEG rasm', () => {
       expect(await maxRowSpread(body, safe, width - safe * 2)).toBeGreaterThan(100)
     },
   )
+
+  // OBLOG-118: story 9:16 — yuqori/pastki ~250 px Instagram interfeysi uchun bo'sh.
+  it('story: 1080×1920 JPEG, yuqori va pastki 250 px da matn yo‘q', async () => {
+    const solid = await solidCover()
+    const solidDeps: SocialImageDeps = {
+      fetch: async () => new Response(new Uint8Array(solid), { status: 200 }),
+    }
+    const { body, source } = await renderSocialImage(
+      {
+        ...base,
+        variant: 'story',
+        domain: undefined,
+        title: `${LONG_TITLE} ${LONG_TITLE}`,
+        category: { name: 'Juda uzun kategoriya nomi: texnologiya va innovatsiyalar' },
+      },
+      solidDeps,
+    )
+    expect(source).toBe('cover')
+    await saveSample('story.jpg', body)
+    expect(await sharp(body).metadata()).toMatchObject({
+      format: 'jpeg',
+      width: 1080,
+      height: 1920,
+    })
+    expect(socialGridInset('story')).toBe(0)
+    expect(socialSafeArea('story').y).toBeGreaterThanOrEqual(STORY_UI_ZONE + 30)
+    // Yuqori va pastki zona — faqat vertikal gradient (har qator bir xil rang).
+    expect(await maxSpreadInRows(body, 0, STORY_UI_ZONE)).toBeLessThanOrEqual(8)
+    expect(await maxSpreadInRows(body, 1920 - STORY_UI_ZONE, STORY_UI_ZONE)).toBeLessThanOrEqual(8)
+    // Nazorat: o'rtada matn bor.
+    expect(await maxSpreadInRows(body, STORY_UI_ZONE, 1920 - STORY_UI_ZONE * 2)).toBeGreaterThan(
+      100,
+    )
+  })
+
+  it('story: muqovasiz — brend kartochkasi, pastida "Batafsil — profildagi havola"', async () => {
+    const { body, source } = await renderSocialImage({
+      ...base,
+      variant: 'story',
+      domain: undefined,
+      cover: null,
+    })
+    expect(source).toBe('card')
+    expect(await sharp(body).metadata()).toMatchObject({ width: 1080, height: 1920 })
+    expect(STORY_FOOTER['uz-Latn']).toBe('Batafsil — profildagi havola')
+    await saveSample('story-no-cover.jpg', body)
+  })
+
+  it('dayjest muqova slaydi: 1080×1350, 3:4 kesimdan tashqarida matn yo‘q, ≤ 5 sarlavha', async () => {
+    const titles = Array.from({ length: 9 }, (_, index) =>
+      index === 0 ? `${LONG_TITLE} ${LONG_TITLE}` : `Yangilik ${index + 1}: qisqa sarlavha`,
+    )
+    const body = await renderDigestCoverJpeg({ locale: 'uz-Latn', date: '10-oktabr', titles })
+    await saveSample('digest-cover.jpg', body)
+    expect(await sharp(body).metadata()).toMatchObject({
+      format: 'jpeg',
+      width: 1080,
+      height: 1350,
+    })
+    const inset = socialGridInset('portrait')
+    expect(digestCoverSafeArea().x - inset).toBeGreaterThanOrEqual(40)
+    // Fon — radial gradient (gorizontal ham o'zgaradi), shuning uchun chekka ustunlarni brend
+    // kartochkasisiz (matnsiz) holat bilan solishtiramiz: farq kichik bo'lishi kerak.
+    const empty = await renderDigestCoverJpeg({ locale: 'uz-Latn', date: '', titles: [' '] })
+    expect(await meanDiff(body, empty, 0, inset)).toBeLessThan(2)
+    expect(await meanDiff(body, empty, 1080 - inset, inset)).toBeLessThan(2)
+
+    const fitted = fitDigestCoverTitles(titles.slice(0, 5), metrics)
+    expect(fitted).toHaveLength(5)
+    expect(new Set(fitted.map((item) => item.fontSize)).size).toBe(1)
+    for (const item of fitted) expect(item.lines.length).toBeLessThanOrEqual(2)
+    expect(fitted[0]!.truncated).toBe(true)
+
+    const cyrl = await renderDigestCoverJpeg({
+      locale: 'uz-Cyrl',
+      date: '10 октябр',
+      titles: ['Биринчи янгилик', 'Иккинчи янгилик', 'Учинчи янгилик'],
+    })
+    expect(await sharp(cyrl).metadata()).toMatchObject({ width: 1080, height: 1350 })
+    await saveSample('digest-cover-cyrl.jpg', cyrl)
+  })
 
   it('muqova yuklanmasa — kartochka; overlay o‘chiq — oddiy kesim', async () => {
     const errors: unknown[] = []

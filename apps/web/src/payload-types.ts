@@ -80,6 +80,7 @@ export interface Config {
     'translit-exceptions': TranslitException;
     'social-deliveries': SocialDelivery;
     'telegram-digests': TelegramDigest;
+    'instagram-digests': InstagramDigest;
     redirects: Redirect;
     'audit-logs': AuditLog;
     'payload-kv': PayloadKv;
@@ -103,6 +104,7 @@ export interface Config {
     'translit-exceptions': TranslitExceptionsSelect<false> | TranslitExceptionsSelect<true>;
     'social-deliveries': SocialDeliveriesSelect<false> | SocialDeliveriesSelect<true>;
     'telegram-digests': TelegramDigestsSelect<false> | TelegramDigestsSelect<true>;
+    'instagram-digests': InstagramDigestsSelect<false> | InstagramDigestsSelect<true>;
     redirects: RedirectsSelect<false> | RedirectsSelect<true>;
     'audit-logs': AuditLogsSelect<false> | AuditLogsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
@@ -310,7 +312,7 @@ export interface Post {
   isBreaking?: boolean | null;
   telegramSkip?: boolean | null;
   /**
-   * Telegram dayjestida: 3 — eng muhim (ro‘yxat boshida, muqovasi galereyada), 0 — oddiy. Ro‘yxatga sig‘maganlar Telegram’ga yuborilmaydi. MCP agent submit_for_review(digestPriority) bilan ham qo‘yadi.
+   * Telegram va Instagram dayjestlarida: 3 — eng muhim (ro‘yxat boshida, muqovasi galereyada), 0 — oddiy. Ro‘yxatga sig‘maganlar yuborilmaydi. Instagram kunlik limitiga yaqinlashganda story faqat muhimligi > 0 postlarga. MCP agent submit_for_review(digestPriority) bilan ham qo‘yadi.
    */
   digestPriority?: number | null;
   /**
@@ -908,9 +910,9 @@ export interface SocialDelivery {
   key: string;
   post?: (number | null) | Post;
   target: 'make';
-  event: 'post.published';
+  event: 'post.published' | 'post.story';
   script: 'uz-Latn' | 'uz-Cyrl';
-  status: 'sent' | 'retry' | 'failed';
+  status: 'sent' | 'retry' | 'failed' | 'skipped';
   httpStatus?: number | null;
   attempts?: number | null;
   sentAt?: string | null;
@@ -950,6 +952,29 @@ export interface TelegramDigest {
     | null;
   sentAt?: string | null;
   hash?: string | null;
+  error?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Make orqali Instagram’ga yuborilgan dayjest karusellari (slot bo‘yicha bir marta, faqat lotin). Sozlamalar — “Ijtimoiy tarmoqlar (Make)” → Instagram rejimi.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "instagram-digests".
+ */
+export interface InstagramDigest {
+  id: number;
+  key: string;
+  slotAt: string;
+  status: 'pending' | 'sent' | 'empty' | 'retry' | 'failed';
+  format?: ('carousel' | 'single') | null;
+  posts?: (number | Post)[] | null;
+  skippedPosts?: (number | Post)[] | null;
+  attempts?: number | null;
+  httpStatus?: number | null;
+  sentAt?: string | null;
+  deliveryId?: string | null;
+  coverUrl?: string | null;
   error?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -1218,6 +1243,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'telegram-digests';
         value: number | TelegramDigest;
+      } | null)
+    | ({
+        relationTo: 'instagram-digests';
+        value: number | InstagramDigest;
       } | null)
     | ({
         relationTo: 'redirects';
@@ -1800,6 +1829,26 @@ export interface TelegramDigestsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "instagram-digests_select".
+ */
+export interface InstagramDigestsSelect<T extends boolean = true> {
+  key?: T;
+  slotAt?: T;
+  status?: T;
+  format?: T;
+  posts?: T;
+  skippedPosts?: T;
+  attempts?: T;
+  httpStatus?: T;
+  sentAt?: T;
+  deliveryId?: T;
+  coverUrl?: T;
+  error?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "redirects_select".
  */
 export interface RedirectsSelect<T extends boolean = true> {
@@ -2145,6 +2194,22 @@ export interface SocialSetting {
    * Sarlavha ostidagi gradient rangi.
    */
   imageScheme?: ('dark' | 'brand') | null;
+  /**
+   * Almashtirishdan OLDIN Make ssenariysini yangilang (Router: type = post / story / digest — qo‘llanma: docs/runbooks/social-autopost-options.md → “Story va dayjest”). Aks holda Make yangi hodisalarni Instagram’ga chiqara olmaydi. Story va dayjest — faqat lotin yozuvi (bitta Instagram hisobi); kirill yozuvi tanlangan bo‘lsa, u odatdagi post hodisasini olishda davom etadi.
+   */
+  instagramMode: 'post' | 'story+digest';
+  /**
+   * O‘chiq — faqat dayjest karuseli (postlar alohida chiqmaydi).
+   */
+  instagramStories?: boolean | null;
+  /**
+   * HH:MM, vergul bilan (1–6 ta). Har slotda oldingi dayjestdan keyin chiqqan postlar: muqova + ko‘pi bilan 9 ta post (muhimlik, keyin yangiligi); sig‘maganlari Instagram’ga chiqmaydi. Scheduler har 10 daqiqada tekshiradi; 60 daqiqadan ko‘p kechikkan slot keyingisiga qo‘shiladi.
+   */
+  instagramDigestTimes?: string | null;
+  /**
+   * Instagram API: hisobga 24 soatda 50 ta nashr (story ham). Dayjest slotlari uchun joy qoldiriladi; limitga 5 ta qolganda faqat muhimligi > 0 postlar story’si, limitda — story yuborilmaydi (post dayjestga baribir tushadi).
+   */
+  instagramDailyLimit?: number | null;
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -2338,6 +2403,10 @@ export interface SocialSettingsSelect<T extends boolean = true> {
   instagramCta?: T;
   imageOverlay?: T;
   imageScheme?: T;
+  instagramMode?: T;
+  instagramStories?: T;
+  instagramDigestTimes?: T;
+  instagramDailyLimit?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;
@@ -2546,6 +2615,7 @@ export interface TaskMakeWebhook {
   input: {
     postId: number;
     script: 'uz-Latn' | 'uz-Cyrl';
+    event?: ('post.published' | 'post.story') | null;
     attempt?: number | null;
   };
   output: {

@@ -29,6 +29,15 @@ export const makeWebhookTask: TaskConfig<'make.webhook'> = {
         { label: 'uz-Cyrl', value: 'uz-Cyrl' },
       ],
     },
+    // OBLOG-118: `post.story` — Instagram story; bo'sh — `post.published`.
+    {
+      name: 'event',
+      type: 'select',
+      options: [
+        { label: 'post.published', value: 'post.published' },
+        { label: 'post.story', value: 'post.story' },
+      ],
+    },
     { name: 'attempt', type: 'number' },
   ],
   outputSchema: [

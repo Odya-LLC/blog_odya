@@ -531,6 +531,17 @@ Barcha o'zgarishlar (admin, REST, MCP, job): `actorType` (user, system), `user`,
   - **Idempotentlik** — `telegram-digests` kolleksiyasi, `key = digest:{script}:{slot}` UNIQUE; tick qatorni yuborishdan **oldin** atomar band qiladi (`INSERT … ON CONFLICT DO UPDATE … WHERE`), parallel tick'lar ikkinchi marta yubormaydi. Xatoda — `retry` (keyingi tick, 3 urinishgacha), keyin `failed` + ogohlantirish; uzilib qolgan `pending` 10 daqiqadan keyin qayta band qilinadi.
   - **Tahrirlash** — dayjestdagi post qayta chop etilsa `telegram.digestEdit` job'i caption'ni qayta yig'adi va xesh o'zgargan bo'lsa `editMessageCaption` (galereyaning birinchi xabari) / `editMessageText`. Post yon panelidagi "Telegram" bloki — post qaysi dayjestga (o'rni, havola) tushgani yoki sig'magani.
 
+### 7.2. Instagram (Make): story va dayjest karuseli (OBLOG-118)
+
+Instagram — Make.com webhook'i orqali (OBLOG-91, [qo'llanma](runbooks/social-autopost-options.md) → «Tanlov: Make», «Story va dayjest»). `social-settings.instagramMode`:
+
+- **`post`** (standart) — har chop etilgan post — alohida rasmli post (`type: "post"`, `post.published`).
+- **`story+digest`** — faqat lotin yozuvi (bitta hisob): har post chop etilganda — **story** (`type: "story"`, `post.story`, rasm 1080×1920: muqova, qisqa sarlavha, kategoriya, «Batafsil — profildagi havola»; yuqori/pastki ~250 px bo'sh; havola stikeri API'da yo'q). «Har post uchun story» o'chiq bo'lsa — faqat dayjest. Kuniga `instagramDigestTimes` (standart 07:30, 12:30, 18:30, Toshkent; 1–6 ta HH:MM) **karusel** (`type: "digest"`, `digest.published`): muqova slaydi (4:5 — «Kun yangiliklari», sana, 5 ta sarlavha, «Havola profilda»; imzolangan deterministik URL `/og/latn/digest/cover.jpg`) + ko'pi bilan 9 post slaydi (har postning 4:5 ijtimoiy rasmi), jami ≤ 10; caption — raqamlangan sarlavhalar, «Havola profilda.», heshteglar (≤ 2 200 belgi, ≤ 30 heshteg).
+- **Dayjest postlari** — oldingi Instagram dayjestidan (ko'pi bilan 24 soat) shu slotgacha chop etilgan, `socialSkip` siz, hech bir Instagram dayjestida bo'lmagan va alohida rasmli post bo'lib chiqmaganlar; tartib — `digestPriority`, keyin yangiligi; ortig'i Instagram'ga chiqmaydi. 1 post — odatdagi rasmli post, 0 — hech narsa.
+- **Jadval va idempotentlik** — alohida pg_cron yo'q: `/api/jobs/run?mode=publish|all` nashr bosqichida Telegram dayjestidan keyin; slot 60 daqiqadan ko'p kechiksa — keyingisiga qo'shiladi. `instagram-digests` (`key = ig-digest:{slot}` UNIQUE, atomar band qilish) — parallel/takroriy tick'da dublikat yo'q; xatoda — keyingi tick'da qayta (≤ 3), keyin ogohlantirish. Story — `social-deliveries` (`make:{postId}:post.story:uz-Latn`).
+- **Kunlik limit** — Instagram API: 24 soatda 50 nashr (story ham). `instagramDailyLimit` (50): dayjest slotlari uchun zaxira qoldiriladi; limitga 5 ta qolganda faqat `digestPriority` > 0 postlar story'si, limitda story yuborilmaydi (post dayjestga tushadi).
+- **Almashtirish tartibi** — avval Make ssenariysi (Router: `type` = post / story / digest), keyin admin'da rejim. Post panelidagi «Sinov yuborish» — turi tanlanadi (post / story / dayjest, `test: true`).
+
 ---
 
 ## 8. SEO talablari

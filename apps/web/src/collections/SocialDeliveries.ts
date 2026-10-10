@@ -6,8 +6,8 @@ import { isAdmin, isAdminOrEditor } from '@/access'
  * Ijtimoiy tarmoqlarga (hozircha — Make.com webhook'i, OBLOG-91) yuborish jurnali va
  * idempotentlik kaliti. Faqat tizim (`make.webhook` job'i, `overrideAccess`) yozadi.
  *
- * `key` = `make:{postId}:{event}:{script}` — UNIQUE: bitta post bitta yozuvda bir marta
- * yuboriladi (qayta saqlash, unpublish → publish ham dublikat bermaydi). Qatorni o'chirsangiz
+ * `key` = `make:{postId}:{event}:{script}` — UNIQUE: bitta post bitta yozuvda (har hodisa —
+ * `post.published` yoki `post.story`, OBLOG-118) bir marta yuboriladi (qayta saqlash, unpublish → publish ham dublikat bermaydi). Qatorni o'chirsangiz
  * (faqat admin) — post panelidagi "Make'ga yuborish" bilan qayta yuborish mumkin.
  */
 export const SocialDeliveries: CollectionConfig = {
@@ -54,7 +54,11 @@ export const SocialDeliveries: CollectionConfig = {
           type: 'select',
           label: 'Hodisa',
           required: true,
-          options: [{ label: 'post.published', value: 'post.published' }],
+          options: [
+            { label: 'post.published', value: 'post.published' },
+            // OBLOG-118: Instagram story (9:16).
+            { label: 'post.story (Instagram story)', value: 'post.story' },
+          ],
           admin: { width: '33%' },
         },
         {
@@ -79,6 +83,8 @@ export const SocialDeliveries: CollectionConfig = {
         { label: 'Yuborildi', value: 'sent' },
         { label: 'Qayta urinish kutilmoqda', value: 'retry' },
         { label: 'Xato', value: 'failed' },
+        // OBLOG-118: story kunlik limit sabab yuborilmadi (qayta yuborilmaydi).
+        { label: 'O‘tkazildi (kunlik limit)', value: 'skipped' },
       ],
     },
     {

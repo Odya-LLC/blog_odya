@@ -180,13 +180,14 @@ Yoqilishidan oldin chop etilgan postni yuborish kerak bo'lsa — post panelidagi
 | Sozlamalar | Global `social-settings` ("Ijtimoiy tarmoqlar (Make)", faqat admin): yoqish, webhook URL (bo'sh — env `MAKE_WEBHOOK_URL`), yozuvlar (lotin/kirill), Instagram rasmi (4:5 — standart, OBLOG-97 / 1:1), heshteglar soni (≤ 15), brend heshtegi, chaqiruv qatori. Imzo siri — faqat env `MAKE_WEBHOOK_SECRET`. |
 | Rasm | `GET /og/{latn\|cyrl}/social/{postId}/{square\|portrait\|landscape}.jpg?v=…` — **JPEG** 1080×1080, 1080×1350, 1200×630. Shablon (OBLOG-94): fon — muqova (`sharp`, focal point bo'yicha kesilgan; focal point'ni admin'da to'g'rilang) yoki muqovasiz brend foni; pastda qorong'i gradient ustida **qisqa sarlavha** (2–4 qator, o'lchami avtomatik, sig'masa «…»), yuqorida kategoriya chipi va «Blog Odya» wordmark'i, pastda domen. Qisqa sarlavha — postning «Rasm uchun qisqa sarlavha» (`socialTitle`, ≤ 70, MCP `save_rewrite`/`set_seo` ham yozadi; kirill — avtomatik), bo'sh bo'lsa sarlavha / SEO sarlavhadan qisqartiriladi. Sozlamalar: «Rasm ustida sarlavha» (o'chiq — muqovaning oddiy kesimi) va «Rasm rang sxemasi» (qorong'i / brend). `?v=` — qisqa sarlavha, muqova (id, vaqt, focal point), kategoriya va shablon sozlamalari xeshi: ulardan biri o'zgarsa URL yangilanadi. Faqat chop etilgan post (aks holda 404), CDN'da 24 soat keshlanadi, `robots.txt` da ochiq (Meta oladi). Post panelidagi «Instagram / Make» blokida — 1:1 va 4:5 oldindan ko'rinishi (`?preview=1`, faqat admin/muharrir sessiyasi, qoralama ham). |
 
-**Sarlavhalar:** `Content-Type: application/json`, `X-Odya-Event: post.published`, `X-Odya-Delivery: <uuid>`, `X-Odya-Timestamp: <unix soniya>`, `X-Odya-Signature: sha256=<HMAC-SHA256(tana, MAKE_WEBHOOK_SECRET) hex>` (sir sozlangan bo'lsa).
+**Sarlavhalar:** `Content-Type: application/json`, `X-Odya-Event: post.published` (OBLOG-118: yoki `post.story` / `digest.published` — pastdagi «Story va dayjest»), `X-Odya-Delivery: <uuid>`, `X-Odya-Timestamp: <unix soniya>`, `X-Odya-Signature: sha256=<HMAC-SHA256(tana, MAKE_WEBHOOK_SECRET) hex>` (sir sozlangan bo'lsa).
 
 **JSON (misol, lotin, haqiqiy sinovdan; domen production'ga almashtirilgan):**
 
 ```json
 {
   "version": 1,
+  "type": "post",
   "event": "post.published",
   "test": false,
   "deliveryId": "d37c7ef4-df2e-4427-9f4c-44217651ffb8",
@@ -269,6 +270,84 @@ Yoqilishidan oldin chop etilgan postni yuborish kerak bo'lsa — post panelidagi
 
 - Instagram: rasm — ommaviy URL, **JPEG**, nisbat 4:5 … 1.91:1, ≤ 8 MB (bizniki 1080 px, ~100–300 KB); caption ≤ 2 200 belgi, ≤ 30 heshteg; caption'dagi havola bosilmaydi; Content Publishing API — 24 soatda 50 ta post atrofida (aniq qiymat hisobga bog'liq — `content_publishing_limit`; Odya hajmi uchun yetarli).
 - Threads: matn ≤ 500 belgi (`threads.text` shunga moslangan). Facebook: havola preview'ni `link` dan oladi. X: 280 "og'irlikdagi" belgi, URL = 23 (`x.text` moslangan).
+
+### Story va dayjest (OBLOG-118)
+
+Admin → Ijtimoiy tarmoqlar (Make) → **Instagram: story va dayjest** → «Instagram rejimi»:
+
+- **Har post — alohida rasmli post** (`post`, standart) — yuqoridagidek, hech narsa o'zgarmaydi.
+- **Har post — story, kuniga bir necha marta dayjest karuseli** (`story+digest`): har chop etilgan post — Instagram **story** (9:16), kuniga 3 marta (standart **07:30, 12:30, 18:30** Toshkent) — **karusel**: muqova slaydi + ko'pi bilan 9 ta post. Faqat **lotin** yozuvi (bitta Instagram hisobi); kirill yozuvi tanlangan bo'lsa, u odatdagi `post.published` hodisasini olishda davom etadi (Make'da `script = uz-Latn` filtri bo'lsin).
+
+**Standart — `post`, chunki Make ssenariysi yangi hodisalarni bilmaydi.** Tartib: **avval** Make ssenariysini quyidagicha yangilang va sinovdan o'tkazing, **keyin** admin'da rejimni almashtiring. Aks holda story/dayjest JSON'lari eski "Create a Photo Post" moduliga tushib, xato beradi (yoki noto'g'ri post chiqadi).
+
+**Tizim nima yuboradi** (hammasi o'sha webhook URL'iga, o'sha imzo bilan; `type` — Router uchun):
+
+| `type` | `X-Odya-Event` | Qachon | Asosiy maydonlar |
+| --- | --- | --- | --- |
+| `post` | `post.published` | `post` rejimi; kirill yozuvi; `story+digest` da slotda bitta post bo'lsa | `instagram.imageUrl`, `instagram.caption` (yuqoridagi JSON) |
+| `story` | `post.story` | `story+digest`, lotin, post chop etilganda (story yoqiq bo'lsa) | `story.imageUrl` (1080×1920 JPEG), qolgan maydonlar — `post` dagidek (Facebook/Threads uchun ham) |
+| `digest` | `digest.published` | `story+digest`, slot vaqti (har 10 daqiqalik nashr tick'i), oynada ≥ 2 post | `slides[]` (`imageUrl`, `title`, `url`, `postId`; 1-slayd — muqova), `caption`, `instagram.imageUrls[]` |
+
+Story: rasm — `/og/latn/social/{id}/story.jpg?v=…` (muqova, qisqa sarlavha, kategoriya, pastda «Batafsil — profildagi havola»; yuqori va pastki ~250 px — Instagram interfeysi uchun bo'sh). Havola stikeri Instagram API'da yo'q — faqat matn. Admin post panelida 9:16 oldindan ko'rinishi bor.
+
+Dayjest JSON (qisqartirilgan):
+
+```json
+{
+  "version": 1,
+  "type": "digest",
+  "event": "digest.published",
+  "test": false,
+  "deliveryId": "8e0b…",
+  "script": "uz-Latn",
+  "digest": { "key": "ig-digest:2026-10-10T07:30:00.000Z", "slotAt": "2026-10-10T07:30:00.000Z", "title": "Kun yangiliklari · 10-oktabr", "count": 3 },
+  "slides": [
+    { "imageUrl": "https://blog.odya.uz/og/latn/digest/cover.jpg?at=…&p=12.9.15&v=3&s=…", "title": "Kun yangiliklari · 10-oktabr", "url": "https://blog.odya.uz/?utm_source=instagram&utm_medium=social&utm_campaign=latn", "postId": null },
+    { "imageUrl": "https://blog.odya.uz/og/latn/social/12/portrait.jpg?v=…", "title": "…", "url": "https://blog.odya.uz/ai/…?utm_source=instagram…", "postId": 12 }
+  ],
+  "caption": "Kun yangiliklari · 10-oktabr\n\n1. …\n2. …\n3. …\n\nHavola profilda.\n\n#SuniyIntellekt #BlogOdya",
+  "hashtags": ["#SuniyIntellekt", "#BlogOdya"],
+  "instagram": { "caption": "…", "imageUrls": ["…cover.jpg…", "…/12/portrait.jpg…"] }
+}
+```
+
+Muqova slaydi — 1080×1350 (4:5, profil to'ri xavfsiz zonasi bilan): «Kun yangiliklari», sana, birinchi 5 sarlavha («va yana N ta yangilik»), «Havola profilda». URL deterministik va imzolangan (`s`, Payload siri bilan; boshqa parametrlar — 404), CDN'da 24 soat keshlanadi. Post slaydlari — har postning 4:5 ijtimoiy rasmi (karuseldagi hamma slayd bir nisbatda). Caption ≤ 2 200 belgi va ≤ 30 heshteg (bizda ≤ 15; sig'masa sarlavhalar qisqaradi, keyin heshteglar tushadi).
+
+**Make ssenariysini yangilash (egasi):**
+
+1. Webhook → `test` = `false` filtri (o'zgarmaydi) → *(ikkala yozuv bo'lsa)* `script` = `uz-Latn` filtri → **Router** (Flow Control → Router), uchta yo'l, har birida filtr:
+   - **`type` = `post`** — mavjud **Instagram for Business → Create a Photo Post** (Photo URL ← `instagram.imageUrl`, Caption ← `instagram.caption`). Eski ssenariyda `type` maydoni bo'lmasa — admin'da «Sinov yuborish» (turi «Post») bilan **Redetermine data structure** qiling.
+   - **`type` = `story`** — story nashri (pastdagi «Story moduli»).
+   - **`type` = `digest`** — karusel (pastdagi «Karusel moduli»).
+2. Facebook/Threads/LinkedIn yo'llari (bo'lsa) — filtrni `type` = `post` **yoki** `type` = `story` qiling: `story+digest` rejimida lotin postlar `post` hodisasini endi faqat bitta postli slotda oladi.
+3. Maydonlarni aniqlash: webhook → **Redetermine data structure** → admin'da chop etilgan post → «Instagram / Make» → «Sinov turi»: **Story**, «Sinov yuborish»; keyin yana Redetermine → **Dayjest (karusel)** → «Sinov yuborish». Sinovlar `test: true` — filtrda to'xtaydi.
+4. Run once bilan uchala turini sinang (filtr `test=false` ni vaqtincha o'chirib — **test Instagram hisobida**), keyin ssenariyni ON qiling.
+5. **Shundan keyin** admin → «Instagram rejimi» = story + dayjest; kerak bo'lsa «Har post uchun story» ni o'chiring (faqat dayjest), «Dayjest vaqtlari» (HH:MM, vergul bilan, 1–6 ta), «Kunlik limit».
+
+**Karusel moduli.** Make'ning *Instagram for Business* ilovasida **Create a Carousel Post** moduli (mavjud bo'lsa) — Files/Media maydoni massiv kutadi: `slides[]` ni **Iterator** (Flow Control) → **Array aggregator** (har element: Media type = `IMAGE`, Image URL ← `imageUrl`) bilan yig'ib, aggregator natijasini Files maydoniga bering; Caption ← `caption`. Modul nomi va maydonlari Make versiyasiga qarab farq qilishi mumkin — Make yordamidagi joriy nomga qarang. Modul bo'lmasa — pastdagi HTTP usuli: har slayd uchun `POST /{ig-user-id}/media` (`image_url`, `is_carousel_item=true`) → `POST /{ig-user-id}/media` (`media_type=CAROUSEL`, `children=<id1,id2,…>`, `caption`) → `POST /{ig-user-id}/media_publish` (`creation_id`).
+
+**Story moduli.** Make'ning Instagram for Business ilovasida tayyor story moduli **bo'lmasligi mumkin**. Bo'lsa — uni ishlating (Image URL ← `story.imageUrl`). Bo'lmasa — Graph API orqali (ilovaning **Make an API Call** moduli, agar mavjud bo'lsa — u o'sha ulanish tokenini o'zi qo'yadi; yo'q bo'lsa — **HTTP → Make a request**, token — Make ulanishidan yoki Meta Business'da yaratilgan uzoq muddatli tokendan, Make'da sir sifatida saqlang):
+   1. `POST https://graph.facebook.com/v{versiya}/{ig-user-id}/media` — `media_type=STORIES`, `image_url={{story.imageUrl}}` → javobdagi `id` (konteyner).
+   2. Konteyner holatini kuting: `GET /{container-id}?fields=status_code` — `FINISHED` bo'lguncha (Make: **Sleep** 5–10 s + **Repeater**/qayta tekshirish, 3–5 marta; `ERROR` — xato).
+   3. `POST /{ig-user-id}/media_publish` — `creation_id={container-id}`.
+   `ig-user-id` — Instagram Business hisobining ID'si (Graph API Explorer: `GET /me/accounts?fields=instagram_business_account`). Graph API versiyasini Meta hujjatidagi joriy versiyaga moslang.
+
+**Xulq-atvor (tizim):**
+
+- Slot — Toshkent vaqti, nashr tick'i (`/api/jobs/run?mode=publish|all`, har 10 daqiqa) Telegram dayjestidan keyin tekshiradi; 60 daqiqadan ko'p kechikkan slot yuborilmaydi — postlari keyingisiga qo'shiladi. Oyna — oldingi Instagram dayjestidan (ko'pi bilan 24 soat).
+- Har slot — bitta `instagram-digests` qatori (`ig-digest:{slot}` UNIQUE, atomar band qilish): parallel/takroriy tick dublikat bermaydi. Post bitta dayjestga tushadi; 9 dan ortig'i — «Sig'magan postlar» (Instagram'ga chiqmaydi, qayta yuborilmaydi). Tartib — postdagi «Dayjestda muhimlik», keyin yangiligi. `socialSkip` postlar va oldin alohida rasmli post bo'lib chiqqanlar kirmaydi.
+- 0 post — hech narsa; 1 post — odatdagi `post` hodisasi (alohida rasmli post).
+- Make xatosi (429/5xx/4xx/tarmoq) — keyingi tick'da qayta (jami ≤ 3 urinish, `X-Odya-Delivery` o'zgarmaydi), keyin «Xato» + Telegram ogohlantirishi.
+- Admin «Tizim → Instagram dayjestlar» — jurnal (slot, holat, postlar, muqova URL'i, xato).
+
+**Kunlik limit.** Instagram API — hisobga **24 soatda 50 ta** API nashri (story ham, karusel — bitta). Sozlama «Kunlik limit» (standart 50). Qoida: oxirgi 24 soatdagi nashrlar (yuborilgan story + alohida post + karusellar) `used`; zaxira = kunlik dayjest slotlari − bugun yuborilgan dayjestlar; `used ≥ limit − zaxira` — story yuborilmaydi; chegaraga **5 ta** qolganda — faqat «Dayjestda muhimlik» > 0 postlar story'si. O'tkazilgan story — «Ijtimoiy yuborishlar» da `O'tkazildi (kunlik limit)`, qayta yuborilmaydi; post baribir dayjestga tushadi.
+
+| Belgi | Sabab / yechim |
+| --- | --- |
+| Story/dayjest Make'ga keldi, Instagram'da yo'q | Router'da `type` filtrlari, story/karusel modullari yoki HTTP so'rovlari xatosi — Make → History. Karuselda har slayd URL'i ochilishini tekshiring (`slides[].imageUrl` — JPEG). |
+| Rejim almashtirilgach Instagram'ga "Photo Post" xatolari | Make ssenariysi yangilanmagan — rejimni vaqtincha `post` ga qaytaring, ssenariyni yangilang. |
+| Story yuborilmadi, panelda «Story o'tkazildi (kunlik limit)» | 24 soatlik limitga yaqin — post dayjestda chiqadi. Limitni Instagram'dagi haqiqiy `content_publishing_limit` ga moslang. |
+| Dayjest «Xato», ogohlantirish keldi | 3 urinish ham muvaffaqiyatsiz (Make 4xx/5xx/tarmoq). Xatoda postlar band qilinmaydi — oyna oxirgi muvaffaqiyatli slotdan hisoblanadi, shuning uchun ular keyingi slot dayjestiga o'zi tushadi (24 soat ichida). |
 
 ### Imzoni tekshirish (Make'da, ixtiyoriy)
 

@@ -15,6 +15,7 @@ import { auditLogPlugin } from './audit/plugin'
 import { Authors } from './collections/Authors'
 import { Categories } from './collections/Categories'
 import { Glossary } from './collections/Glossary'
+import { InstagramDigests } from './collections/InstagramDigests'
 import { Media } from './collections/Media'
 import { Pages } from './collections/Pages'
 import { Posts } from './collections/Posts'
@@ -133,6 +134,7 @@ export default buildConfig({
     TranslitExceptions,
     SocialDeliveries,
     TelegramDigests,
+    InstagramDigests,
   ],
   globals: [SiteSettings, Header, Footer, TelegramSettings, SocialSettings, ScrapingSettings],
   editor: lexicalEditor(),

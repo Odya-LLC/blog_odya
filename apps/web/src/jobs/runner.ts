@@ -5,6 +5,7 @@ import type { Payload, Where } from 'payload'
 import { runWithAuditChannel } from '@/audit/channel'
 import { captureError, flushSentry } from '@/lib/sentry'
 import { TELEGRAM_TIMEOUT_MS } from '@/lib/telegram'
+import { type InstagramDigestRunResult, runInstagramDigests } from '@/social/instagram/digest'
 import { runTelegramDigests, type TelegramDigestRunResult } from '@/telegram/digest'
 
 import { type AlertRunResult, runAlertChecks } from './alerts'
@@ -169,7 +170,13 @@ export const ALERTS_HARD_LIMIT_MS = RESPONSE_BUDGET_MS
 
 /** Pre-step'lar deadline'ni yeb qo'ysa o'tkazib yuboriladigan qadamlar (keyingi tick'da). */
 export type SkippedStep =
-  'scheduledPublish' | 'telegramDigest' | 'feedPolls' | 'cleanup' | 'alerts' | 'newItems'
+  | 'scheduledPublish'
+  | 'telegramDigest'
+  | 'instagramDigest'
+  | 'feedPolls'
+  | 'cleanup'
+  | 'alerts'
+  | 'newItems'
 
 export interface JobsRunResponse {
   ok: true
@@ -188,6 +195,11 @@ export interface JobsRunResponse {
    * `mode=scrape`, vaqt yetmasa yoki xato bo'lsa — null.
    */
   telegramDigest: TelegramDigestRunResult | null
+  /**
+   * Instagram dayjest karuseli (OBLOG-118, Telegram dayjestidan keyin, Make orqali): rejim, slot va
+   * natija; `mode=scrape`, vaqt yetmasa yoki xato bo'lsa — null.
+   */
+  instagramDigest: InstagramDigestRunResult | null
   /** Ogohlantirishlar: faol shartlar / yuborilgan / faqat log / xato; vaqt yetmasa — null. */
   alerts: AlertRunResult | null
   /** "Yangi yangiliklar" xabari (OBLOG-55); vaqt yetmasa — null (keyingi tick'da yig'iladi). */
@@ -230,7 +242,8 @@ function json(body: unknown, status: number, headers: Record<string, string> = {
 /**
  * `POST /api/jobs/run` (pg_cron + pg_net; zaxira — GitHub Actions).
  * - `?mode=publish` — har 10 daqiqada: faqat nashr (rejalashtirilgan postlar, Telegram, Make,
- *   IndexNow) va slot vaqti kelgan bo'lsa — Telegram dayjesti (OBLOG-116); `?mode=scrape` — har 30 daqiqada: yangiliklar va xizmat ishlari; parametrsiz
+ *   IndexNow) va slot vaqti kelgan bo'lsa — Telegram dayjesti (OBLOG-116) va Instagram dayjest
+ *   karuseli (OBLOG-118); `?mode=scrape` — har 30 daqiqada: yangiliklar va xizmat ishlari; parametrsiz
  *   (`all`) — ikkalasi, avval nashr (OBLOG-110, `infra/supabase/cron.sql`).
  * - `?limit=N` — scraping batch hajmini vaqtincha o'zgartirish (1–50), default `scraping-settings`.
  *   Nashr bosqichiga ta'sir qilmaydi (u doim ketma-ket, {@link PUBLISH_BATCH_LIMIT}).
@@ -310,6 +323,7 @@ async function runJobsRequest(
     let scheduledPublish: EnsureScheduledResult | null = null
     let publish: RunWithDeadlineResult | null = null
     let telegramDigest: TelegramDigestRunResult | null = null
+    let instagramDigest: InstagramDigestRunResult | null = null
     if (publishing) {
       if (now() < batchDeadlineAt) {
         scheduledPublish = await ensureScheduledPublishJobs(payload, now())
@@ -329,6 +343,19 @@ async function runJobsRequest(
           captureError(error, { tags: { endpoint: 'jobs/run', step: 'telegramDigest' } })
         }
       } else skipped.push('telegramDigest')
+      // Instagram dayjest karuseli (OBLOG-118): Make rejimi `story+digest` va slot vaqti bo'lsa —
+      // bitta `type: "digest"` webhook. Xatosi tick'ni to'xtatmaydi.
+      if (now() < batchDeadlineAt) {
+        try {
+          instagramDigest = await runWithDeadline(
+            { taskDeadlineAt: batchDeadlineAt + (deps.overrides?.graceMs ?? TASK_GRACE_MS) },
+            () => runInstagramDigests(payload, { now: now() }),
+          )
+        } catch (error) {
+          payload.logger.error({ err: error, msg: 'Instagram dayjest bosqichi xatosi' })
+          captureError(error, { tags: { endpoint: 'jobs/run', step: 'instagramDigest' } })
+        }
+      } else skipped.push('instagramDigest')
     }
 
     // 2-bosqich — scraping. Deadline pre-step'larda o'tib ketgan bo'lsa (sekin sovuq start),
@@ -384,6 +411,7 @@ async function runJobsRequest(
       cleanupEnqueued,
       scheduledPublish,
       telegramDigest,
+      instagramDigest,
       alerts,
       newItems,
       scrapingDisabled: polls?.disabled ?? !settings.isEnabled,

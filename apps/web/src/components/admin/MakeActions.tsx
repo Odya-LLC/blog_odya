@@ -5,6 +5,13 @@ import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
 type Script = 'uz-Latn' | 'uz-Cyrl'
+type TestType = 'post' | 'story' | 'digest'
+
+const TEST_TYPES: { value: TestType; label: string }[] = [
+  { value: 'post', label: 'Post' },
+  { value: 'story', label: 'Story' },
+  { value: 'digest', label: 'Dayjest (karusel)' },
+]
 
 interface Props {
   apiRoute: string
@@ -31,19 +38,21 @@ async function call(url: string, body: unknown): Promise<Record<string, unknown>
 /**
  * Make tugmalari (OBLOG-91, faqat admin): "Sinov yuborish" — shu post JSON'i `test: true` bilan
  * (Make'da maydonlarni xaritalash uchun; Instagram oldidagi `test = false` filtri uni o'tkazmaydi);
- * "Make'ga yuborish" — hali yuborilmagan yozuvlar uchun haqiqiy yuborish (navbat).
+ * "Make'ga yuborish" — hali yuborilmagan yozuvlar uchun haqiqiy yuborish (navbat). OBLOG-118:
+ * sinov turi — post, story yoki dayjest karuseli (Make ssenariysi Router'ini sozlash uchun).
  */
 export function MakeActions({ apiRoute, postId, scripts, canSend }: Props) {
   const router = useRouter()
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
+  const [type, setType] = useState<TestType>('post')
   const url = `${apiRoute}/posts/${postId}/make`
 
   const test = async (script: Script) => {
     setBusy(true)
     setMessage(null)
     try {
-      const result = await call(url, { mode: 'test', script })
+      const result = await call(url, { mode: 'test', script, type })
       const text = `${String(result.message ?? '')} HTTP ${String(result.httpStatus ?? '—')}`
       if (result.ok) toast.success(text)
       else toast.error(text)
@@ -73,7 +82,19 @@ export function MakeActions({ apiRoute, postId, scripts, canSend }: Props) {
 
   return (
     <div className="editorial__actions" data-testid="make-actions">
-      {scripts.map((script) => (
+      <select
+        aria-label="Sinov turi"
+        value={type}
+        onChange={(event) => setType(event.target.value as TestType)}
+        disabled={busy}
+      >
+        {TEST_TYPES.map((item) => (
+          <option key={item.value} value={item.value}>
+            {item.label}
+          </option>
+        ))}
+      </select>
+      {(type === 'digest' ? (['uz-Latn'] as Script[]) : scripts).map((script) => (
         <button
           key={script}
           type="button"

@@ -1,7 +1,8 @@
 /**
  * Make.com webhook JSON'i (OBLOG-91) — sof funksiyalar (DB/tarmoqsiz, unit testlar bilan).
  *
- * Bitta so'rov — bitta post, bitta yozuv (`script`). Make ssenariysi kerakli maydonlarni
+ * Bitta so'rov — bitta post, bitta yozuv (`script`); `type` — Make Router uchun (`post` / `story`;
+ * dayjest karuseli — `../instagram/digestPayload.ts`). Make ssenariysi kerakli maydonlarni
  * oladi: Instagram — `instagram.imageUrl` + `instagram.caption`; Facebook Page —
  * `facebook.message` + `facebook.link`; Threads — `threads.text`; X — `x.text`; LinkedIn —
  * `linkedin.text` + `linkedin.link`. Sxema va misol — `docs/runbooks/social-autopost-options.md`.
@@ -29,8 +30,24 @@ export const X_URL_WEIGHT = 23
 export const LEAD_MAX_SENTENCES = 3
 export const LEAD_MAX_CHARS = 400
 
-export type MakeEvent = 'post.published'
-export type SocialImageVariant = 'square' | 'portrait' | 'landscape'
+/**
+ * Webhook hodisalari: `post.published` — odatdagi post (OBLOG-91); `post.story` — Instagram story
+ * (9:16, OBLOG-118); `digest.published` — Instagram dayjest karuseli (OBLOG-118, `../instagram`).
+ */
+export const MAKE_EVENTS = ['post.published', 'post.story', 'digest.published'] as const
+export type MakeEvent = (typeof MAKE_EVENTS)[number]
+/** Post bo'yicha hodisalar (`make.webhook` job'i, `social-deliveries`). */
+export type MakePostEvent = Exclude<MakeEvent, 'digest.published'>
+/** Make Router uchun qisqa tur (`type`): `post` / `story` / `digest`. */
+export type MakePayloadType = 'post' | 'story' | 'digest'
+
+export const MAKE_EVENT_TYPE: Record<MakeEvent, MakePayloadType> = {
+  'post.published': 'post',
+  'post.story': 'story',
+  'digest.published': 'digest',
+}
+
+export type SocialImageVariant = 'square' | 'portrait' | 'landscape' | 'story'
 export type SocialNetwork = 'instagram' | 'facebook' | 'threads' | 'x' | 'linkedin'
 
 /**
@@ -66,11 +83,12 @@ export function socialImageVersion(
     .slice(0, 12)
 }
 
-/** Rasm variantlari (JPEG): Instagram 1:1 va 4:5, boshqalar — 1.91:1. */
+/** Rasm variantlari (JPEG): Instagram 1:1 va 4:5, story 9:16 (OBLOG-118), boshqalar — 1.91:1. */
 export const SOCIAL_IMAGE_SIZES: Record<SocialImageVariant, { width: number; height: number }> = {
   square: { width: 1080, height: 1080 },
   portrait: { width: 1080, height: 1350 },
   landscape: { width: 1200, height: 630 },
+  story: { width: 1080, height: 1920 },
 }
 
 const SCRIPT_SUFFIX: Record<Locale, 'latn' | 'cyrl'> = { 'uz-Latn': 'latn', 'uz-Cyrl': 'cyrl' }
@@ -243,7 +261,7 @@ export function socialImageUrl(options: {
 
 /** `square.jpg` → `square`; noto'g'ri nom — `null`. */
 export function parseSocialImageFile(file: string): SocialImageVariant | null {
-  const match = /^(square|portrait|landscape)\.jpe?g$/.exec(file)
+  const match = /^(square|portrait|landscape|story)\.jpe?g$/.exec(file)
   return match ? (match[1] as SocialImageVariant) : null
 }
 
@@ -274,7 +292,7 @@ export interface MakePostInput {
 }
 
 export interface MakePayloadOptions {
-  event: MakeEvent
+  event: MakePostEvent
   deliveryId: string
   sentAt: string
   test: boolean
@@ -290,7 +308,9 @@ export interface MakePayloadOptions {
 
 export interface MakePayload {
   version: number
-  event: MakeEvent
+  /** Make Router uchun: `post` (odatdagi) yoki `story` (OBLOG-118). */
+  type: Extract<MakePayloadType, 'post' | 'story'>
+  event: MakePostEvent
   test: boolean
   deliveryId: string
   sentAt: string
@@ -316,6 +336,8 @@ export interface MakePayload {
     square: string
     portrait: string
     landscape: string
+    /** 1080×1920 (OBLOG-118). */
+    story: string
     alt: string
     /** `false` — muqova yo'q, rasm avtomatik brend kartochkasi. */
     fromCover: boolean
@@ -323,10 +345,21 @@ export interface MakePayload {
     height: Record<SocialImageVariant, number>
   }
   instagram: { caption: string; imageUrl: string; altText: string }
+  /** Faqat `type: "story"` da: story rasmi (9:16, havola stikersiz — API cheklovi). */
+  story?: { imageUrl: string; width: number; height: number }
   facebook: { message: string; link: string; imageUrl: string }
   threads: { text: string; link: string; imageUrl: string }
   x: { text: string }
   linkedin: { text: string; link: string; imageUrl: string }
+}
+
+/** Post rasmining `?v=` qiymati: mazmun kaliti bo'yicha xesh, bo'lmasa — `updatedAt` (sekund). */
+export function postImageVersion(
+  post: Pick<MakePostInput, 'imageKey' | 'updatedAt'>,
+  style?: SocialImageStyle,
+): string | null {
+  if (post.imageKey) return socialImageVersion(post.imageKey, style)
+  return post.updatedAt ? String(Math.floor(Date.parse(post.updatedAt) / 1000)) : null
 }
 
 /** Make webhook'iga yuboriladigan JSON. */
@@ -340,18 +373,16 @@ export function buildMakePayload(post: MakePostInput, options: MakePayloadOption
       slug: post.slug,
       source,
     })
-  const version = post.imageKey
-    ? socialImageVersion(post.imageKey, options.imageStyle)
-    : post.updatedAt
-      ? String(Math.floor(Date.parse(post.updatedAt) / 1000))
-      : null
+  const version = postImageVersion(post, options.imageStyle)
   const image = (variant: SocialImageVariant) =>
     socialImageUrl({ origin, postId: post.id, variant, locale, version })
   const images = {
     square: image('square'),
     portrait: image('portrait'),
     landscape: image('landscape'),
+    story: image('story'),
   }
+  const type = MAKE_EVENT_TYPE[options.event] as MakePayload['type']
   const title = post.title.trim()
   const excerpt = (post.excerpt ?? '').trim()
   const lead = leadText(excerpt)
@@ -364,6 +395,7 @@ export function buildMakePayload(post: MakePostInput, options: MakePayloadOption
 
   return {
     version: MAKE_PAYLOAD_VERSION,
+    type,
     event: options.event,
     test: options.test,
     deliveryId: options.deliveryId,
@@ -393,11 +425,13 @@ export function buildMakePayload(post: MakePostInput, options: MakePayloadOption
         square: SOCIAL_IMAGE_SIZES.square.width,
         portrait: SOCIAL_IMAGE_SIZES.portrait.width,
         landscape: SOCIAL_IMAGE_SIZES.landscape.width,
+        story: SOCIAL_IMAGE_SIZES.story.width,
       },
       height: {
         square: SOCIAL_IMAGE_SIZES.square.height,
         portrait: SOCIAL_IMAGE_SIZES.portrait.height,
         landscape: SOCIAL_IMAGE_SIZES.landscape.height,
+        story: SOCIAL_IMAGE_SIZES.story.height,
       },
     },
     instagram: {
@@ -405,6 +439,7 @@ export function buildMakePayload(post: MakePostInput, options: MakePayloadOption
       imageUrl: igImage,
       altText: truncateText(alt, 1000),
     },
+    ...(type === 'story' ? { story: { imageUrl: images.story, ...SOCIAL_IMAGE_SIZES.story } } : {}),
     facebook: {
       message: longText({ title, lead, hashtags }),
       link: urlFor('facebook'),
