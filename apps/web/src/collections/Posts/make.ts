@@ -5,11 +5,20 @@ import type { CollectionAfterChangeHook, Payload, PayloadRequest } from 'payload
 import { DEFAULT_QUEUE, MAKE_WEBHOOK_TASK } from '@/jobs/constants'
 import { getRunDeadline } from '@/jobs/context'
 import type { Post } from '@/payload-types'
-import { loadMakeConfig } from '@/social/make/config'
-import { findMakeDelivery, MAKE_EVENT, makeDeliveryKey } from '@/social/make/deliver'
+import { loadMakeConfig, type MakeConfig } from '@/social/make/config'
+import {
+  findMakeDelivery,
+  isFinalDelivery,
+  makeDeliveryKey,
+  makeEventFor,
+  MAKE_STORY_EVENT,
+} from '@/social/make/deliver'
 
 /**
  * Posts ↔ Make.com avtopost (OBLOG-91).
+ *
+ * OBLOG-118: Instagram rejimi `story+digest` da lotin yozuvi uchun hodisa — `post.story` (story
+ * o'chiq — job yo'q, post faqat dayjest karuseliga tushadi; `src/social/instagram/digest.ts`).
  *
  * `queueMakeAfterChange` (`afterChange`): post **birinchi marta** chop etilganda
  * (`workflowStatus` → `published`: publish tugmasi, rejalashtirilgan publish job'i, MCP
@@ -73,25 +82,28 @@ export function runMakeJobsSoon(payload: Payload, ids: (number | string)[]): boo
 }
 
 /**
- * Yuborilmagan yozuvlar uchun job qo'yadi (hook va admin "Make'ga yuborish" tugmasi). Qaytaradi:
- * yangi job id'lari.
+ * Yuborilmagan yozuvlar uchun job qo'yadi (hook va admin "Make'ga yuborish" tugmasi). Hodisa —
+ * `makeEventFor` (OBLOG-118: `story+digest` rejimida lotin — story; story o'chiq — job yo'q, post
+ * dayjestga tushadi). Qaytaradi: yangi job id'lari.
  */
 export async function queueMakeDeliveries(
   payload: Payload,
   postId: number,
-  scripts: readonly Locale[],
+  config: Pick<MakeConfig, 'scripts' | 'instagramMode' | 'instagramStories'>,
   req?: PayloadRequest,
 ): Promise<(number | string)[]> {
   const ids: (number | string)[] = []
-  for (const script of scripts) {
-    const key = makeDeliveryKey(postId, MAKE_EVENT, script)
+  for (const script of config.scripts) {
+    const event = makeEventFor(config, script)
+    if (!event) continue
+    const key = makeDeliveryKey(postId, event, script)
     const delivery = await findMakeDelivery(payload, key, req)
-    if (delivery?.status === 'sent') continue
+    if (isFinalDelivery(delivery)) continue
     if (await hasPendingMakeJob(payload, postId, script, req)) continue
     const job = await payload.jobs.queue({
       task: MAKE_WEBHOOK_TASK,
       queue: DEFAULT_QUEUE,
-      input: { postId, script },
+      input: { postId, script, ...(event === MAKE_STORY_EVENT ? { event } : {}) },
       ...(req ? { req } : {}),
     })
     ids.push(job.id)
@@ -121,7 +133,7 @@ export const queueMakeAfterChange: CollectionAfterChangeHook<Post> = async ({
     })
     return doc
   }
-  const ids = await queueMakeDeliveries(payload, doc.id, config.scripts, req)
+  const ids = await queueMakeDeliveries(payload, doc.id, config, req)
   runMakeJobsSoon(payload, ids)
   return doc
 }

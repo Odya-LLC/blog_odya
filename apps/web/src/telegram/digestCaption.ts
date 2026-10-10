@@ -69,6 +69,14 @@ export function digestPhotos(items: readonly Pick<DigestItem, 'photoUrl'>[], max
 
 /** Dayjest heshteglari: bandlardagi teg/kategoriya nomlari — ko'p uchraganlari oldin. */
 export function digestHashtags(items: readonly Pick<DigestItem, 'tagNames'>[], count: number) {
+  return buildHashtags(rankDigestTagNames(items), count)
+}
+
+/**
+ * Bandlardagi teg/kategoriya nomlari: ko'p uchraganlari oldin, teng bo'lsa — birinchi uchragani
+ * (Instagram dayjesti ham ishlatadi — OBLOG-118).
+ */
+export function rankDigestTagNames(items: readonly Pick<DigestItem, 'tagNames'>[]): string[] {
   const counts = new Map<string, { name: string; count: number; first: number }>()
   let index = 0
   for (const item of items) {
@@ -79,10 +87,9 @@ export function digestHashtags(items: readonly Pick<DigestItem, 'tagNames'>[], c
       else counts.set(key, { name: name.trim(), count: 1, first: index++ })
     }
   }
-  const names = [...counts.values()]
+  return [...counts.values()]
     .sort((a, b) => b.count - a.count || a.first - b.first)
     .map((entry) => entry.name)
-  return buildHashtags(names, count)
 }
 
 const formatters = new Map<string, Intl.DateTimeFormat>()

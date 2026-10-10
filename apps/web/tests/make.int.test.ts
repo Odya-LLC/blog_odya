@@ -52,6 +52,10 @@ const CONFIG: MakeConfig = {
   instagramImage: 'square',
   imageOverlay: true,
   imageScheme: 'dark',
+  instagramMode: 'post',
+  instagramStories: true,
+  instagramDigestTimes: [450, 750, 1110],
+  instagramDailyLimit: 50,
 }
 
 interface Call {

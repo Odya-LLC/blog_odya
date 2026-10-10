@@ -19,6 +19,9 @@
  * markazdan kesib ko'rsatiladi — kvadratdan har yondan 135 px, 4:5 dan ~34 px kesiladi. Shuning
  * uchun Instagram variantlarida (square, portrait) chip, wordmark, sarlavha va domen gorizontal
  * "xavfsiz zona" ichida (`paddingX` ≥ kesim + ichki chekka) — to'rda ham hech narsa kesilmaydi.
+ *
+ * OBLOG-118: `story` (1080×1920) — o'sha shablon, yuqori/pastki ~250 px (Instagram UI) bo'sh, domen
+ * o'rnida "Batafsil — profildagi havola"; dayjest karuseli muqovasi — `renderDigestCoverJpeg` (4:5).
  */
 import type { Locale } from '@blog-odya/shared/locales'
 import { ImageResponse } from 'next/og'
@@ -81,6 +84,17 @@ const SHADE: Record<SocialImageScheme, string> = {
   brand: '8,18,52',
 }
 
+/** Story: yuqori va pastki chekka (Instagram UI zonasi ~250 px + ichki chekka). */
+export const STORY_SAFE_Y = 288
+/** Story: Instagram interfeysi egallaydigan yuqori/pastki zona (px) — matn bo'lmasligi kerak. */
+export const STORY_UI_ZONE = 250
+
+/** Story pastki qatori (domen o'rnida) — havola stikeri API'da yo'q, o'quvchi profilga boradi. */
+export const STORY_FOOTER: Record<Locale, string> = {
+  'uz-Latn': 'Batafsil — profildagi havola',
+  'uz-Cyrl': 'Батафсил — профилдаги ҳавола',
+}
+
 interface Layout {
   /** Yuqori/pastki chekka. */
   padding: number
@@ -121,6 +135,19 @@ const LAYOUTS: Record<SocialImageVariant, Layout> = {
     domainFont: 28,
     shade: 0.55,
   },
+  // OBLOG-118: story 9:16 — profil to'rida ko'rinmaydi (kesim yo'q). Yuqori va pastki ~250 px da
+  // Instagram UI (progress, profil nomi, javob maydoni) — matn 288 px ichkarida.
+  story: {
+    padding: STORY_SAFE_Y,
+    paddingX: 88,
+    sizes: [104, 96, 88, 80, 72, 64],
+    maxLines: 5,
+    lineHeight: 1.08,
+    chipFont: 34,
+    wordmarkFont: 44,
+    domainFont: 34,
+    shade: 0.6,
+  },
   // Instagram'ga yuborilmaydi (Facebook/LinkedIn) — kesim yo'q.
   landscape: {
     padding: 56,
@@ -145,7 +172,8 @@ export const INSTAGRAM_GRID_ASPECT = 3 / 4
  * Instagram'ga yuborilmaydi — 0.
  */
 export function socialGridInset(variant: SocialImageVariant): number {
-  if (variant === 'landscape') return 0
+  // Landscape Instagram'ga yuborilmaydi, story profil to'rida ko'rinmaydi.
+  if (variant === 'landscape' || variant === 'story') return 0
   const { width, height } = SOCIAL_IMAGE_SIZES[variant]
   return Math.max(0, Math.ceil((width - height * INSTAGRAM_GRID_ASPECT) / 2))
 }
@@ -456,6 +484,11 @@ async function fetchSource(url: string, deps: SocialImageDeps): Promise<Buffer> 
   return buffer
 }
 
+/** Sarlavha ostidagi qator: story — "Batafsil — profildagi havola", boshqalar — domen. */
+function defaultFooter(variant: SocialImageVariant, locale: Locale): string {
+  return variant === 'story' ? STORY_FOOTER[locale] : ogDomain(locale)
+}
+
 /** Shablon qatlami (PNG): `transparent` — muqova ustiga, aks holda to'liq kartochka. */
 async function renderCardPng(input: SocialImageInput, transparent: boolean): Promise<Buffer> {
   const size = SOCIAL_IMAGE_SIZES[input.variant]
@@ -468,7 +501,7 @@ async function renderCardPng(input: SocialImageInput, transparent: boolean): Pro
       fitted={fitted}
       category={input.category}
       scheme={input.scheme ?? 'dark'}
-      domain={input.domain ?? ogDomain(input.locale)}
+      domain={input.domain ?? defaultFooter(input.variant, input.locale)}
       transparent={transparent}
     />,
     { ...size, fonts },
@@ -513,4 +546,260 @@ export async function renderSocialImage(
     }
   }
   return { body: await renderCardJpeg(input), source: 'card' }
+}
+
+// ---------------------------------------------------------------------------
+// Instagram dayjest karuselining muqova slaydi (OBLOG-118)
+// ---------------------------------------------------------------------------
+
+/** Muqova slaydi — 4:5 (karuseldagi post slaydlari bilan bir xil), profil to'ri xavfsiz zonasi bilan. */
+export const DIGEST_COVER_SIZE = SOCIAL_IMAGE_SIZES.portrait
+/** Muqovadagi sarlavhalar ro'yxati — ko'pi bilan (qolgani — "va yana N ta yangilik"). */
+export const DIGEST_COVER_MAX_TITLES = 5
+
+const COVER = {
+  padding: 72,
+  // OBLOG-97: 4:5 profil to'rida har yondan ~34 px kesiladi — portrait bilan bir xil chekka.
+  paddingX: LAYOUTS.portrait.paddingX,
+  labelFont: 34,
+  dateFont: 112,
+  numberWidth: 64,
+  itemSizes: [46, 42, 38, 34],
+  itemMaxLines: 2,
+  itemLineHeight: 1.12,
+  itemGap: 30,
+  footerFont: 30,
+  wordmarkFont: 40,
+} as const
+
+const COVER_TEXT: Record<Locale, { label: string; cta: string; more: (count: number) => string }> =
+  {
+    'uz-Latn': {
+      label: 'Kun yangiliklari',
+      cta: 'Havola profilda',
+      more: (count) => `va yana ${count} ta yangilik`,
+    },
+    'uz-Cyrl': {
+      label: 'Кун янгиликлари',
+      cta: 'Ҳавола профилда',
+      more: (count) => `ва яна ${count} та янгилик`,
+    },
+  }
+
+export interface DigestCoverInput {
+  locale: Locale
+  /** Sana, masalan `10-oktabr` (`digestDateParts`). */
+  date: string
+  /** Dayjestdagi postlarning qisqa sarlavhalari (tartib bo'yicha; birinchi 5 tasi chiziladi). */
+  titles: readonly string[]
+  /** Domen yozuvi (standart — `ogDomain(locale)`). */
+  domain?: string
+}
+
+/**
+ * Muqova ro'yxati sarlavhalari: hammasi uchun bitta (eng katta sig'adigan) shrift o'lchami, har
+ * sarlavha ≤ 2 qator; eng kichik o'lchamda ham sig'masa — "…".
+ */
+export function fitDigestCoverTitles(
+  titles: readonly string[],
+  metrics: FontMetrics,
+): FittedTitle[] {
+  const width = DIGEST_COVER_SIZE.width - COVER.paddingX * 2 - COVER.numberWidth - 8
+  const fit = (size: number) =>
+    titles.map((title) =>
+      fitTitle(title, metrics, {
+        width,
+        maxLines: COVER.itemMaxLines,
+        sizes: [size],
+        letterSpacingEm: TITLE_LETTER_SPACING,
+      }),
+    )
+  for (const size of COVER.itemSizes) {
+    const fitted = fit(size)
+    if (fitted.every((item) => !item.truncated)) return fitted
+  }
+  return fit(COVER.itemSizes[COVER.itemSizes.length - 1])
+}
+
+/** Xavfsiz zona (testlar uchun): matn chap/o'ng chekkadan shuncha ichkarida. */
+export function digestCoverSafeArea(): { x: number; y: number } {
+  return { x: COVER.paddingX, y: COVER.padding }
+}
+
+export function DigestCoverCard({
+  locale,
+  date,
+  items,
+  more,
+  domain,
+}: {
+  locale: Locale
+  date: string
+  items: FittedTitle[]
+  more: number
+  domain: string
+}) {
+  const { width, height } = DIGEST_COVER_SIZE
+  const text = COVER_TEXT[locale]
+  const [first, second] = BRAND_NAME[locale].split(' ')
+  return (
+    <div
+      style={{
+        width,
+        height,
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        padding: `${COVER.padding}px ${COVER.paddingX}px`,
+        fontFamily: 'Inter',
+        color: '#FFFFFF',
+        backgroundColor: COLORS.background,
+        backgroundImage: `radial-gradient(circle at 100% 0%, ${COLORS.accent600}A6 0%, ${COLORS.accent600}00 60%), radial-gradient(circle at 0% 100%, ${COLORS.accent900}CC 0%, ${COLORS.accent900}00 60%)`,
+      }}
+    >
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            fontFamily: 'Inter Display',
+            fontSize: COVER.wordmarkFont,
+            letterSpacing: '-0.025em',
+          }}
+        >
+          <OgMark
+            height={Math.round(COVER.wordmarkFont * 1.2)}
+            color={COLORS.wordmarkFirst}
+            style={{ marginRight: Math.round(COVER.wordmarkFont * 0.35) }}
+          />
+          <span style={{ fontWeight: 600, color: COLORS.wordmarkFirst }}>{first}</span>
+          <span
+            style={{
+              fontWeight: 800,
+              color: COLORS.accent400,
+              marginLeft: Math.round(COVER.wordmarkFont * 0.27),
+            }}
+          >
+            {second}
+          </span>
+        </div>
+        <div
+          style={{
+            display: 'flex',
+            marginTop: 44,
+            fontSize: COVER.labelFont,
+            fontWeight: 600,
+            color: COLORS.accent400,
+            textTransform: 'uppercase',
+            letterSpacing: '0.04em',
+          }}
+        >
+          {text.label}
+        </div>
+        <div
+          style={{
+            display: 'flex',
+            fontFamily: 'Inter Display',
+            fontWeight: 800,
+            fontSize: COVER.dateFont,
+            lineHeight: 1.05,
+            letterSpacing: `${TITLE_LETTER_SPACING}em`,
+          }}
+        >
+          {date}
+        </div>
+        <div
+          style={{
+            display: 'flex',
+            width: 84,
+            height: 8,
+            borderRadius: 9999,
+            backgroundColor: COLORS.accent400,
+            marginTop: 24,
+          }}
+        />
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        {items.map((item, index) => (
+          <div key={index} style={{ display: 'flex', marginTop: index === 0 ? 0 : COVER.itemGap }}>
+            <div
+              style={{
+                display: 'flex',
+                width: COVER.numberWidth,
+                flexShrink: 0,
+                fontFamily: 'Inter Display',
+                fontWeight: 800,
+                fontSize: item.fontSize,
+                lineHeight: COVER.itemLineHeight,
+                color: COLORS.accent400,
+              }}
+            >
+              {index + 1}
+            </div>
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                fontFamily: 'Inter Display',
+                fontWeight: 800,
+                fontSize: item.fontSize,
+                lineHeight: COVER.itemLineHeight,
+                letterSpacing: `${TITLE_LETTER_SPACING}em`,
+              }}
+            >
+              {item.lines.map((line, lineIndex) => (
+                <div key={lineIndex} style={{ display: 'flex', whiteSpace: 'nowrap' }}>
+                  {line}
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+        {more > 0 ? (
+          <div
+            style={{
+              display: 'flex',
+              marginTop: COVER.itemGap,
+              marginLeft: COVER.numberWidth,
+              fontSize: COVER.footerFont,
+              fontWeight: 600,
+              color: COLORS.domain,
+            }}
+          >
+            {text.more(more)}
+          </div>
+        ) : null}
+      </div>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          fontSize: COVER.footerFont,
+          fontWeight: 600,
+        }}
+      >
+        <div style={{ display: 'flex', color: '#FFFFFF' }}>{`${text.cta} →`}</div>
+        <div style={{ display: 'flex', fontWeight: 500, color: COLORS.domain }}>{domain}</div>
+      </div>
+    </div>
+  )
+}
+
+/** Dayjest muqova slaydi (JPEG, 1080×1350): sana, birinchi 5 sarlavha, "Havola profilda". */
+export async function renderDigestCoverJpeg(input: DigestCoverInput): Promise<Buffer> {
+  const [fonts, metrics] = await Promise.all([loadOgFonts(), loadTitleMetrics()])
+  const shown = input.titles.slice(0, DIGEST_COVER_MAX_TITLES)
+  const response = new ImageResponse(
+    <DigestCoverCard
+      locale={input.locale}
+      date={input.date}
+      items={fitDigestCoverTitles(shown, metrics)}
+      more={Math.max(0, input.titles.length - shown.length)}
+      domain={input.domain ?? ogDomain(input.locale)}
+    />,
+    { ...DIGEST_COVER_SIZE, fonts },
+  )
+  const png = Buffer.from(await response.arrayBuffer())
+  return toJpeg(sharp(png).flatten({ background: COLORS.background }))
 }

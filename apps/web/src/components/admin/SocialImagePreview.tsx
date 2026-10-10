@@ -10,6 +10,8 @@ const SCRIPT_LABEL: Record<Script, string> = { 'uz-Latn': 'Lotin', 'uz-Cyrl': 'K
 const VARIANTS = [
   { variant: 'square', label: 'Kvadrat 1:1', width: 1080, height: 1080 },
   { variant: 'portrait', label: 'Vertikal 4:5', width: 1080, height: 1350 },
+  // OBLOG-118: Instagram story (rejim "story + dayjest").
+  { variant: 'story', label: 'Story 9:16', width: 1080, height: 1920 },
 ] as const
 
 /**
@@ -102,7 +104,11 @@ export function SocialImagePreview({ postId, scripts }: Props) {
                   />
                 </a>
               )}
-              <figcaption>{label} · chiziqlar — profil to‘ri (3:4)</figcaption>
+              <figcaption>
+                {variant === 'story'
+                  ? `${label} · yuqori/pastki ~250 px — Instagram interfeysi`
+                  : `${label} · chiziqlar — profil to‘ri (3:4)`}
+              </figcaption>
             </figure>
           )
         })}

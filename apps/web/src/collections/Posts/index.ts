@@ -531,7 +531,7 @@ export const Posts: CollectionConfig = {
         position: 'sidebar',
         step: 1,
         description:
-          'Telegram dayjestida: 3 — eng muhim (ro‘yxat boshida, muqovasi galereyada), 0 — oddiy. Ro‘yxatga sig‘maganlar Telegram’ga yuborilmaydi. MCP agent submit_for_review(digestPriority) bilan ham qo‘yadi.',
+          'Telegram va Instagram dayjestlarida: 3 — eng muhim (ro‘yxat boshida, muqovasi galereyada), 0 — oddiy. Ro‘yxatga sig‘maganlar yuborilmaydi. Instagram kunlik limitiga yaqinlashganda story faqat muhimligi > 0 postlarga. MCP agent submit_for_review(digestPriority) bilan ham qo‘yadi.',
       },
     },
     {

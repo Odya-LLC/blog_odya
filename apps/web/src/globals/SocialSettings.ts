@@ -1,11 +1,38 @@
 import type { GlobalConfig } from 'payload'
 
 import { isAdmin } from '@/access'
+import { parseSlotTimes } from '@/jobs/slots'
 
 export const DEFAULT_BRAND_HASHTAG = '#BlogOdya'
 export const DEFAULT_INSTAGRAM_CTA = 'To‘liq maqola — profildagi havolada.'
 export const DEFAULT_SOCIAL_HASHTAGS_COUNT = 8
 export const MAX_SOCIAL_HASHTAGS = 15
+
+/**
+ * Instagram rejimi (OBLOG-118): `post` — har post alohida rasmli post (OBLOG-91); `story+digest` —
+ * har post story (9:16) + kuniga bir necha marta dayjest karuseli.
+ */
+export const INSTAGRAM_MODES = ['post', 'story+digest'] as const
+export type InstagramMode = (typeof INSTAGRAM_MODES)[number]
+/** Dayjest slotlari (Toshkent vaqti). */
+export const DEFAULT_INSTAGRAM_DIGEST_TIMES = '07:30, 12:30, 18:30'
+/** Instagram Graph API: hisobga 24 soatda 50 ta API orqali nashr (story ham hisoblanadi). */
+export const DEFAULT_INSTAGRAM_DAILY_LIMIT = 50
+export const MIN_INSTAGRAM_DAILY_LIMIT = 5
+export const MAX_INSTAGRAM_DAILY_LIMIT = 100
+/** Bir kunda ko'pi bilan shuncha dayjest sloti. */
+export const MAX_INSTAGRAM_DIGEST_SLOTS = 6
+
+/** `"07:30, 12:30, 18:30"` — HH:MM ro'yxati (1–6 ta). */
+export function validateDigestTimes(value: unknown): true | string {
+  if (value === null || value === undefined || value === '') return true
+  const slots = parseSlotTimes(value)
+  if (!slots) return 'Vaqtlar HH:MM ko‘rinishida, vergul bilan: 07:30, 12:30, 18:30'
+  if (slots.length > MAX_INSTAGRAM_DIGEST_SLOTS) {
+    return `Ko‘pi bilan ${MAX_INSTAGRAM_DIGEST_SLOTS} ta vaqt`
+  }
+  return true
+}
 
 /** Make webhook URL'i: bo'sh yoki `https://` (Make — `https://hook.<region>.make.com/...`). */
 export function validateWebhookUrl(value: unknown): true | string {
@@ -157,6 +184,73 @@ export const SocialSettings: GlobalConfig = {
             width: '50%',
             description: 'Sarlavha ostidagi gradient rangi.',
           },
+        },
+      ],
+    },
+    // OBLOG-118: Instagram story + dayjest karuseli.
+    {
+      type: 'collapsible',
+      label: 'Instagram: story va dayjest',
+      admin: { initCollapsed: false },
+      fields: [
+        {
+          name: 'instagramMode',
+          type: 'select',
+          label: 'Instagram rejimi',
+          required: true,
+          defaultValue: 'post',
+          options: [
+            { label: 'Har post — alohida rasmli post', value: 'post' },
+            {
+              label: 'Har post — story, kuniga bir necha marta dayjest karuseli',
+              value: 'story+digest',
+            },
+          ],
+          admin: {
+            description:
+              'Almashtirishdan OLDIN Make ssenariysini yangilang (Router: type = post / story / digest — qo‘llanma: docs/runbooks/social-autopost-options.md → “Story va dayjest”). Aks holda Make yangi hodisalarni Instagram’ga chiqara olmaydi. Story va dayjest — faqat lotin yozuvi (bitta Instagram hisobi); kirill yozuvi tanlangan bo‘lsa, u odatdagi post hodisasini olishda davom etadi.',
+          },
+        },
+        {
+          type: 'row',
+          admin: { condition: (data) => data?.instagramMode === 'story+digest' },
+          fields: [
+            {
+              name: 'instagramStories',
+              type: 'checkbox',
+              label: 'Har post uchun story',
+              defaultValue: true,
+              admin: {
+                width: '33%',
+                description: 'O‘chiq — faqat dayjest karuseli (postlar alohida chiqmaydi).',
+              },
+            },
+            {
+              name: 'instagramDigestTimes',
+              type: 'text',
+              label: 'Dayjest vaqtlari (Toshkent)',
+              defaultValue: DEFAULT_INSTAGRAM_DIGEST_TIMES,
+              validate: validateDigestTimes,
+              admin: {
+                width: '33%',
+                description:
+                  'HH:MM, vergul bilan (1–6 ta). Har slotda oldingi dayjestdan keyin chiqqan postlar: muqova + ko‘pi bilan 9 ta post (muhimlik, keyin yangiligi); sig‘maganlari Instagram’ga chiqmaydi. Scheduler har 10 daqiqada tekshiradi; 60 daqiqadan ko‘p kechikkan slot keyingisiga qo‘shiladi.',
+              },
+            },
+            {
+              name: 'instagramDailyLimit',
+              type: 'number',
+              label: 'Kunlik limit (24 soat)',
+              defaultValue: DEFAULT_INSTAGRAM_DAILY_LIMIT,
+              min: MIN_INSTAGRAM_DAILY_LIMIT,
+              max: MAX_INSTAGRAM_DAILY_LIMIT,
+              admin: {
+                width: '33%',
+                description:
+                  'Instagram API: hisobga 24 soatda 50 ta nashr (story ham). Dayjest slotlari uchun joy qoldiriladi; limitga 5 ta qolganda faqat muhimligi > 0 postlar story’si, limitda — story yuborilmaydi (post dayjestga baribir tushadi).',
+              },
+            },
+          ],
         },
       ],
     },

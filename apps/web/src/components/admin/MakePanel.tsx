@@ -5,6 +5,7 @@ import { isAdminOrEditorUser, isAdminUser } from '@/access'
 import { MAKE_WEBHOOK_TASK } from '@/jobs/constants'
 import type { SocialDelivery } from '@/payload-types'
 import { loadMakeConfig } from '@/social/make/config'
+import { isFinalDelivery, makeEventFor } from '@/social/make/deliver'
 
 import { MakeActions } from './MakeActions'
 import { SocialImagePreview } from './SocialImagePreview'
@@ -21,9 +22,17 @@ function statusOf(
   pending: boolean,
   active: boolean,
   published: boolean,
+  digestOnly: boolean,
 ): Status {
+  const story = delivery?.event === 'post.story' ? ' (story)' : ''
   if (delivery?.status === 'sent') {
-    return { tone: 'ok', text: `Make’ga yuborilgan · ${formatAdminDate(delivery.sentAt)}` }
+    return { tone: 'ok', text: `Make’ga yuborilgan${story} · ${formatAdminDate(delivery.sentAt)}` }
+  }
+  if (delivery?.status === 'skipped') {
+    return { tone: 'muted', text: `Story o‘tkazildi (kunlik limit) — dayjestga tushadi` }
+  }
+  if (digestOnly && !pending) {
+    return { tone: 'muted', text: 'Instagram dayjest karuselida chiqadi (story o‘chiq)' }
   }
   if (pending) {
     return {
@@ -74,6 +83,12 @@ export async function MakePanel({ data, req }: UIFieldServerProps) {
   )
   const published = data?.workflowStatus === 'published' && data?._status === 'published'
   const admin = isAdminUser(req.user)
+  /** Shu yozuvning joriy hodisasi (post / story, OBLOG-118) qatori, bo'lmasa — oxirgisi. */
+  const deliveryOf = (script: Locale) => {
+    const rows = deliveries.docs.filter((row) => row.script === script)
+    const event = makeEventFor(config, script)
+    return rows.find((row) => row.event === event) ?? rows[0]
+  }
 
   return (
     <details className="source-panel" open data-testid="make-panel">
@@ -93,10 +108,16 @@ export async function MakePanel({ data, req }: UIFieldServerProps) {
           <span className="editorial__muted">“Ijtimoiy tarmoqlarga yubormaslik” belgilangan.</span>
         ) : null}
         {LOCALES.map((script) => {
-          const delivery = deliveries.docs.find((row) => row.script === script)
+          const delivery = deliveryOf(script)
           const active = config.scripts.includes(script)
           if (!active && !delivery) return null
-          const status = statusOf(delivery, pending.has(script), active, published)
+          const status = statusOf(
+            delivery,
+            pending.has(script),
+            active,
+            published,
+            active && makeEventFor(config, script) === null,
+          )
           return (
             <div key={script} className="telegram-panel__row">
               <strong>{SCRIPT_LABEL[script]}</strong>
@@ -115,11 +136,16 @@ export async function MakePanel({ data, req }: UIFieldServerProps) {
               config.enabled &&
               published &&
               !data?.socialSkip &&
-              config.scripts.some(
-                (script) =>
+              config.scripts.some((script) => {
+                const event = makeEventFor(config, script)
+                return (
+                  event !== null &&
                   !pending.has(script) &&
-                  deliveries.docs.find((row) => row.script === script)?.status !== 'sent',
-              )
+                  !isFinalDelivery(
+                    deliveries.docs.find((row) => row.script === script && row.event === event),
+                  )
+                )
+              })
             }
           />
         ) : null}

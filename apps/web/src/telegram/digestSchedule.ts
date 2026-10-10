@@ -10,14 +10,13 @@
  * yuborilmaydi — uning postlari keyingi slotga qo'shiladi (oyna oxirgi muvaffaqiyatli slotdan).
  */
 
-/** Toshkent: UTC+05:00, yozgi vaqt yo'q. */
-export const TASHKENT_OFFSET_MS = 5 * 60 * 60_000
+import { dueSlot, latestSlot, previousSlot, SLOT_MAX_LATE_MS } from '@/jobs/slots'
 
-const HOUR_MS = 60 * 60_000
-const DAY_MS = 24 * HOUR_MS
+/** Toshkent: UTC+05:00, yozgi vaqt yo'q (umumiy jadval — `@/jobs/slots`, OBLOG-118). */
+export { TASHKENT_OFFSET_MS } from '@/jobs/slots'
 
 /** Slot shu vaqtdan ko'p kechiksa — yuborilmaydi (keyingi slotga qo'shiladi). */
-export const DIGEST_MAX_LATE_MS = 60 * 60_000
+export const DIGEST_MAX_LATE_MS = SLOT_MAX_LATE_MS
 
 export interface DigestSchedule {
   /** Slotlar orasidagi soat (1–12). */
@@ -38,24 +37,17 @@ export function digestSlotHours(schedule: DigestSchedule): number[] {
   return hours
 }
 
+/** Slotlar — kun boshidan daqiqalar (`@/jobs/slots`). */
+const slotMinutes = (schedule: DigestSchedule) => digestSlotHours(schedule).map((hour) => hour * 60)
+
 /** `now` dan oldingi (yoki teng) eng oxirgi slot (UTC epoch ms). */
 export function latestDigestSlot(now: number, schedule: DigestSchedule): number {
-  const hours = digestSlotHours(schedule)
-  const local = now + TASHKENT_OFFSET_MS
-  const today = Math.floor(local / DAY_MS) * DAY_MS
-  for (const day of [today, today - DAY_MS]) {
-    for (let i = hours.length - 1; i >= 0; i--) {
-      const slot = day + hours[i]! * HOUR_MS
-      if (slot <= local) return slot - TASHKENT_OFFSET_MS
-    }
-  }
-  // Bo'sh ro'yxat bo'lmaydi (kamida `startHour`) — bu yerga yetib kelinmaydi.
-  return today - DAY_MS - TASHKENT_OFFSET_MS
+  return latestSlot(now, slotMinutes(schedule))
 }
 
 /** Berilgan slotdan oldingi slot (07:00 → kechagi 22:00). */
 export function previousDigestSlot(slot: number, schedule: DigestSchedule): number {
-  return latestDigestSlot(slot - 1, schedule)
+  return previousSlot(slot, slotMinutes(schedule))
 }
 
 /**
@@ -67,6 +59,5 @@ export function dueDigestSlot(
   schedule: DigestSchedule,
   maxLateMs = DIGEST_MAX_LATE_MS,
 ): number | null {
-  const slot = latestDigestSlot(now, schedule)
-  return now - slot <= maxLateMs ? slot : null
+  return dueSlot(now, slotMinutes(schedule), maxLateMs)
 }
