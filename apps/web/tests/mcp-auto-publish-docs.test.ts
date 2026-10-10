@@ -79,6 +79,8 @@ describe('avtomatik nashr: hujjatlar va tavsiflar (OBLOG-62)', () => {
       ['needsHumanReview', false],
       ['autoPublish', false],
       ['publishAt', false],
+      ['digestPriority', false],
+      ['telegramUrgent', false],
     ])
     const withdraw = registry.tools.find((tool) => tool.name === 'withdraw_from_review')!
     expect(withdraw).toMatchObject({ group: 'write', readOnly: false })

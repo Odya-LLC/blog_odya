@@ -178,6 +178,20 @@ export const TELEGRAM_INLINE_WAIT_MAX_MS = 10_000
 /** Bitta Bot API so'rovi timeout'i. */
 export const TELEGRAM_API_TIMEOUT_MS = 10_000
 
+// --- OBLOG-116: Telegram dayjesti ---
+
+/** `telegram.digestEdit` — dayjestdagi post sarlavhasi o'zgarganda caption'ni tahrirlash. */
+export const TELEGRAM_DIGEST_EDIT_TASK = 'telegram.digestEdit'
+/** Dayjest yuborishga urinishlar (har biri — alohida tick), keyin — `failed` + ogohlantirish. */
+export const TELEGRAM_DIGEST_MAX_ATTEMPTS = 3
+/**
+ * `pending` (band qilingan) qator shuncha vaqt yangilanmasa — tick uzilgan deb hisoblanadi va
+ * qayta band qilinadi (function limiti 60 s dan ancha uzun — ishlayotgan tick bilan to'qnashmaydi).
+ */
+export const TELEGRAM_DIGEST_PENDING_STALE_MS = 10 * 60_000
+/** Dayjest oynasi ko'pi bilan shuncha orqaga (oxirgi muvaffaqiyatli slotdan; birinchi ishga tushishda). */
+export const TELEGRAM_DIGEST_LOOKBACK_MAX_MS = 24 * 60 * 60_000
+
 // --- OBLOG-57: IndexNow ---
 
 /** `indexnow.submit` — maqola URL'larini IndexNow'ga yuborish (`src/indexnow`). */
@@ -206,6 +220,7 @@ export const MAKE_RETRY_BACKOFF_MS = [60_000, 5 * 60_000, 15 * 60_000] as const
 export const PUBLISH_TASKS: readonly string[] = [
   SCHEDULE_PUBLISH_TASK,
   TELEGRAM_POST_TASK,
+  TELEGRAM_DIGEST_EDIT_TASK,
   MAKE_WEBHOOK_TASK,
   INDEXNOW_SUBMIT_TASK,
 ]

@@ -368,11 +368,39 @@ export const submitForReviewInput = {
         "chop etilmaydi; avtomatik nashr o'chiq yoki post ushlab qolinsa — vaqt muharrirga " +
         `taklif sifatida saqlanadi. ${PUBLISH_AT_RULES}`,
     ),
+  ...telegramDigestArgs(),
+}
+
+/**
+ * OBLOG-116: Telegram dayjesti — `posts.digestPriority` (0–3, `DIGEST_PRIORITY_MAX`) va
+ * `posts.telegramUrgent`. `submit_for_review` va `reschedule_post` da.
+ */
+function telegramDigestArgs() {
+  return {
+    digestPriority: int('digestPriority', { min: 0, max: 3 })
+      .optional()
+      .describe(
+        'Telegram dayjestida muhimlik: 0 — oddiy (standart), 1 — muhim, 2 — juda muhim, 3 — eng ' +
+          'muhim (kun yangiligi). Kanalga har 3 soatda bitta dayjest ketadi: ro‘yxat muhimlik, keyin ' +
+          'yangilik bo‘yicha, ko‘pi bilan 10 ta (sig‘maganlari Telegram’ga umuman chiqmaydi), ' +
+          'birinchi 5 tasining muqovasi — galereyada. 2–3 ni faqat haqiqatan muhim yangilikka bering. ' +
+          'Berilmasa — oldingi qiymat saqlanadi',
+      ),
+    telegramUrgent: z
+      .boolean({ error: "telegramUrgent: ha/yo'q (boolean) bo'lishi kerak" })
+      .optional()
+      .describe(
+        'true — Telegram’ga dayjestni kutmasdan, chop etilishi bilan alohida xabar (faqat admin ' +
+          '“Aralash” rejimini yoqqan bo‘lsa; boshqa rejimlarda ta’siri yo‘q). Faqat shoshilinch ' +
+          'xabarlar uchun. Berilmasa — oldingi qiymat saqlanadi',
+      ),
+  }
 }
 
 export const reschedulePostInput = {
   postId: postId(),
   publishAt: publishAtArg().describe(`Yangi chop etish vaqti. ${PUBLISH_AT_RULES}`),
+  ...telegramDigestArgs(),
 }
 
 export const cancelScheduleInput = {

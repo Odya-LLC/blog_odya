@@ -79,6 +79,9 @@ export function validateSocialTitle(value: unknown): true | string {
     : `Ko‘pi bilan ${SOCIAL_TITLE_MAX} belgi (hozir ${length})`
 }
 
+/** `digestPriority` (OBLOG-116): 0 — oddiy … 3 — eng muhim. */
+export const DIGEST_PRIORITY_MAX = 3
+
 /** Faqat tizim (job'lar, `overrideAccess`) yozadigan maydonlar. */
 const systemOnly: FieldAccess = () => false
 
@@ -148,7 +151,8 @@ export const Posts: CollectionConfig = {
     ],
     // Sayt keshi (ISR): publish/unpublish/arxivlash → revalidateTag (M1-05). Slug/kategoriya
     // o'zgarsa (publish'da) — 301 redirect (`hooks/contentRedirects.ts`, TZ §8.1).
-    // Telegram avtopost (M3-01, TZ §7.1): chop etilganda `telegram.post` job'lari.
+    // Telegram avtopost (M3-01, TZ §7.1): chop etilganda `telegram.post` job'lari (rejimga qarab —
+    // OBLOG-116: dayjestda yuborilgan post tahrirlansa — `telegram.digestEdit`).
     // IndexNow (OBLOG-57): publish/unpublish/slug o'zgarishida `indexnow.submit` job'i.
     afterChange: [
       syncScheduledPublish,
@@ -514,6 +518,33 @@ export const Posts: CollectionConfig = {
       label: "Telegram'ga yubormaslik",
       defaultValue: false,
       admin: { position: 'sidebar' },
+    },
+    {
+      // OBLOG-116: dayjestdagi tartib — muhimlik (kamayish), keyin chop etilgan vaqt.
+      name: 'digestPriority',
+      type: 'number',
+      label: 'Dayjestda muhimlik (0–3)',
+      defaultValue: 0,
+      min: 0,
+      max: DIGEST_PRIORITY_MAX,
+      admin: {
+        position: 'sidebar',
+        step: 1,
+        description:
+          'Telegram dayjestida: 3 — eng muhim (ro‘yxat boshida, muqovasi galereyada), 0 — oddiy. Ro‘yxatga sig‘maganlar Telegram’ga yuborilmaydi. MCP agent submit_for_review(digestPriority) bilan ham qo‘yadi.',
+      },
+    },
+    {
+      // OBLOG-116: aralash rejimda — dayjestni kutmasdan darhol alohida xabar.
+      name: 'telegramUrgent',
+      type: 'checkbox',
+      label: 'Telegram’ga darhol (alohida)',
+      defaultValue: false,
+      admin: {
+        position: 'sidebar',
+        description:
+          'Faqat “Aralash” rejimda (Telegram sozlamalari): chop etilishi bilan alohida xabar, dayjestga tushmaydi. Boshqa rejimlarda ta’siri yo‘q.',
+      },
     },
     // Telegram holati (kanal bo'yicha: yuborilgan / navbatda / xato) — faqat o'qish (M3-01).
     {

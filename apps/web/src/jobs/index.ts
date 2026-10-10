@@ -2,6 +2,7 @@ import type { JobsConfig } from 'payload'
 
 import { isAdminUser } from '@/access'
 import type { Env } from '@/env'
+import { runTelegramDigests } from '@/telegram/digest'
 
 import { DEFAULT_BATCH_LIMIT } from './constants'
 import { runAlertChecks } from './alerts'
@@ -19,6 +20,7 @@ import { itemExtractTask } from './tasks/itemExtract'
 import { itemFetchTask } from './tasks/itemFetch'
 import { maintenanceCleanupTask } from './tasks/maintenanceCleanup'
 import { makeWebhookTask } from './tasks/makeWebhook'
+import { telegramDigestEditTask } from './tasks/telegramDigestEdit'
 import { telegramPostTask } from './tasks/telegramPost'
 import { scrapeItemWorkflow } from './workflows/scrapeItem'
 
@@ -40,7 +42,8 @@ const AUTORUN_PUBLISH_DEADLINE_MS = 45_000
  * Task'lar: `feed.poll` (M2-01), `item.fetch` + `item.extract` (`scrapeItem` workflow, M2-02),
  * `item.dedupe` + `item.classify` (workflow davomi) va `maintenance.cleanup` (kuniga 1 marta),
  * ogohlantirishlar — har scheduler chaqiruvida (M2-03), `telegram.post` — post chop etilganda
- * (`default` navbati, M3-01), `indexnow.submit` — publish/unpublish/slug o'zgarishida (OBLOG-57),
+ * (`default` navbati, M3-01; rejim `post`/"Tezkor"), Telegram dayjesti — nashr tick'ida slot vaqti
+ * kelganda, `telegram.digestEdit` — dayjestdagi post tahrirlanganda (OBLOG-116), `indexnow.submit` — publish/unpublish/slug o'zgarishida (OBLOG-57),
  * `make.webhook` — birinchi chop etishda Make.com webhook'iga (OBLOG-91). `schedulePublish` —
  * Payload'ning rejalashtirilgan nashri (`default` navbati); job'i yo'qolgan/xato bergan
  * rejalashtirilgan postlar har chaqiruvda qayta navbatga qo'yiladi (`./scheduledPublish.ts`, OBLOG-100).
@@ -59,6 +62,7 @@ export function buildJobsConfig(mode: Env['JOBS_MODE'] = 'endpoint'): JobsConfig
       itemClassifyTask,
       maintenanceCleanupTask,
       telegramPostTask,
+      telegramDigestEditTask,
       indexNowSubmitTask,
       makeWebhookTask,
     ].map(withErrorCapture),
@@ -80,6 +84,10 @@ export function buildJobsConfig(mode: Env['JOBS_MODE'] = 'endpoint'): JobsConfig
             await ensureScheduledPublishJobs(payload)
             // Nashr — scraping'dan oldin va ketma-ket (OBLOG-110), endpoint rejimi bilan bir xil.
             await runPublishJobs(payload.jobs, { deadlineMs: AUTORUN_PUBLISH_DEADLINE_MS })
+            // Telegram dayjesti (OBLOG-116) — slot vaqti kelgan bo'lsa (xato tick'ni to'xtatmaydi).
+            await runTelegramDigests(payload).catch((error: unknown) => {
+              payload.logger.error({ err: error, msg: 'Telegram dayjest bosqichi xatosi' })
+            })
             await enqueueDueFeedPolls(payload)
             await enqueueDailyCleanup(payload)
             await runAlertChecks(payload)

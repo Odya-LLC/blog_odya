@@ -18,7 +18,7 @@ import {
 import type { MakePayload } from '@/social/make/payload'
 import { signMakeBody } from '@/social/make/payload'
 import { socialImageDeps } from '@/social/image'
-import { telegramConfigOverride } from '@/telegram/config'
+import { resolveDigestSettings, telegramConfigOverride } from '@/telegram/config'
 
 import {
   as,
@@ -181,6 +181,8 @@ describe('Make avtopost (make.webhook)', () => {
       disabled: ['uz-Latn', 'uz-Cyrl'],
       template: '{{title}}',
       hashtagsCount: 0,
+      mode: 'post',
+      digest: resolveDigestSettings(null),
       alertChatId: ALERT_CHAT,
     }
   })

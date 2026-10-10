@@ -14,6 +14,7 @@ import {
   RESPONSE_BUDGET_MS,
   SCHEDULE_PUBLISH_TASK,
   TASK_GRACE_MS,
+  TELEGRAM_DIGEST_EDIT_TASK,
   TELEGRAM_POST_TASK,
 } from '@/jobs/constants'
 import { boundedTimeout, getRunDeadline, runWithDeadline } from '@/jobs/context'
@@ -275,7 +276,13 @@ describe('kadens: ?mode= (OBLOG-110)', () => {
     }
     expect(PUBLISH_WHERE).toEqual({
       taskSlug: {
-        in: [SCHEDULE_PUBLISH_TASK, TELEGRAM_POST_TASK, MAKE_WEBHOOK_TASK, INDEXNOW_SUBMIT_TASK],
+        in: [
+          SCHEDULE_PUBLISH_TASK,
+          TELEGRAM_POST_TASK,
+          TELEGRAM_DIGEST_EDIT_TASK,
+          MAKE_WEBHOOK_TASK,
+          INDEXNOW_SUBMIT_TASK,
+        ],
       },
     })
   })

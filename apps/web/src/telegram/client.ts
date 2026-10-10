@@ -6,12 +6,14 @@ import { TELEGRAM_API_TIMEOUT_MS } from '@/jobs/constants'
  * grammY Bot API mijozi (TZ §7.1). Bot tokeni — faqat env (`TELEGRAM_BOT_TOKEN`); grammY xato
  * matnlariga URL/token qo'shmaydi (`sensitiveLogs: false`, default).
  *
+ * `sendMediaGroup` — dayjest galereyasi (OBLOG-116; rasmlar URL bilan, `sendPhoto` kabi).
+ *
  * `TelegramApi` — ishlatiladigan metodlar to'plami: testlar shu interfeysni soxta obyekt bilan
  * almashtiradi (`telegramDeps.createApi`), tarmoqqa chiqilmaydi.
  */
 export type TelegramApi = Pick<
   Api,
-  'sendPhoto' | 'sendMessage' | 'editMessageCaption' | 'editMessageText'
+  'sendPhoto' | 'sendMessage' | 'sendMediaGroup' | 'editMessageCaption' | 'editMessageText'
 >
 
 export function createTelegramApi(token: string): TelegramApi {

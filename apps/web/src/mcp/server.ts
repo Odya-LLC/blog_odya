@@ -29,7 +29,11 @@ export const MCP_INSTRUCTIONS =
   'avtomatik nashr yoqilgan bo‘lsa post o‘sha vaqtda chop etiladi (scheduled; vaqt zonasi ' +
   'yozilmasa — Toshkent, UTC+05:00; 10 daqiqagacha kechikish), aks holda vaqt muharrirga ' +
   'taklif. Foydalanuvchi "keyinroq", "ertaga", aniq vaqt desa — publishAt siz yubormang. ' +
-  'Boshqarish: list_scheduled, reschedule_post, cancel_schedule.'
+  'Boshqarish: list_scheduled, reschedule_post, cancel_schedule. TELEGRAM (OBLOG-116): kanalga ' +
+  'postlar har 3 soatda bitta dayjestda (07–22, Toshkent) chiqadi — ko‘pi bilan 10 ta, sig‘maganlari ' +
+  'Telegram’ga chiqmaydi. submit_for_review(digestPriority: 0–3) — muhimlik (3 — kun yangiligi, ' +
+  'ro‘yxat boshida va muqovasi galereyada; ko‘pchilik post — 0 yoki 1); telegramUrgent: true — ' +
+  'faqat shoshilinch xabar (admin aralash rejimni yoqqan bo‘lsa darhol alohida yuboriladi).'
 
 /**
  * Server tarkibi (TZ §6.3): o'qish (M2-06), yozish (M2-07) va media (OBLOG-44) toollari, prompts

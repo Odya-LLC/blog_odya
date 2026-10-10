@@ -8,7 +8,11 @@ import { handleJobsRunRequest, type JobsRunResponse } from '@/jobs/runner'
 import { scrapeDeps } from '@/jobs/scrapeDeps'
 import { mergeScrapingStats } from '@/jobs/stats'
 import { feedPollDeps } from '@/jobs/tasks/feedPoll'
-import { type TelegramConfig, telegramConfigOverride } from '@/telegram/config'
+import {
+  resolveDigestSettings,
+  type TelegramConfig,
+  telegramConfigOverride,
+} from '@/telegram/config'
 import { seed } from '@/seed'
 
 import { FeedFixtures, SEED_SOURCES } from './helpers/feeds'
@@ -30,6 +34,8 @@ const CONFIG: TelegramConfig = {
   disabled: [],
   template: DEFAULT_TELEGRAM_TEMPLATE,
   hashtagsCount: 3,
+  mode: 'post',
+  digest: resolveDigestSettings(null),
   alertChatId: ALERT_CHAT,
 }
 

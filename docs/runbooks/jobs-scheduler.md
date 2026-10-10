@@ -8,7 +8,7 @@ Ikki kadens (OBLOG-110) — nashr va yangiliklar bir-biriga xalaqit bermaydi:
 
 | pg_cron job | Jadval | Chaqiruv | Nima qiladi |
 | --- | --- | --- | --- |
-| `blog-odya-jobs-publish` | `*/10 * * * *` (har 10 daqiqa) | `POST /api/jobs/run?mode=publish` | Faqat **nashr**: vaqti kelgan rejalashtirilgan postlar (`schedulePublish`) va ulardan keyingi `telegram.post`, `make.webhook`, `indexnow.submit` |
+| `blog-odya-jobs-publish` | `*/10 * * * *` (har 10 daqiqa) | `POST /api/jobs/run?mode=publish` | Faqat **nashr**: vaqti kelgan rejalashtirilgan postlar (`schedulePublish`) va ulardan keyingi `telegram.post`, `telegram.digestEdit`, `make.webhook`, `indexnow.submit`; slot vaqti kelgan bo'lsa — **Telegram dayjesti** (OBLOG-116) |
 | `blog-odya-jobs-scrape` | `5,35 * * * *` (har 30 daqiqa) | `POST /api/jobs/run?mode=scrape` | **Yangiliklar**: `feed.poll` → `scrapeItem`, kunlik `maintenance.cleanup`, ogohlantirishlar, "yangi yangiliklar" xabari |
 
 `mode` siz chaqiruv (`all` — eski yagona jadval, GitHub zaxirasi, qo'lda `curl`) ikkalasini bajaradi: **avval nashr,
@@ -22,6 +22,8 @@ POST /api/jobs/run?mode=publish|scrape|all  (Bearer JOBS_SECRET)
    │    ├─ job'i yo'qolgan/xato bergan rejalashtirilgan postlar uchun schedulePublish (OBLOG-100)
    │    └─ default navbatidagi nashr task'lari — KETMA-KET, 3 tadan batch (`PUBLISH_BATCH_LIMIT`):
    │       schedulePublish → (hook qo'ygan) telegram.post / make.webhook / indexnow.submit
+   │    └─ Telegram dayjesti (OBLOG-116): rejim digest/hybrid va slot ≤ hozir (≤ 60 daqiqa kechikkan) —
+   │       har kanal uchun telegram-digests qatorini atomar band qilib, bitta galereya/xabar
    ├─ 2-BOSQICH, SCRAPING (scrape | all):
    │    ├─ muddati kelgan manbalar uchun feed.poll navbatga (pollIntervalMin)
    │    ├─ maintenance.cleanup — kuniga 1 marta (Toshkent kuni, idempotent)
@@ -49,7 +51,7 @@ barcha o'qishlar shu tranzaksiyada (`req`, `apps/web/src/lib/hookReq.ts`), nashr
   karrali qilib yuqoriga yaxlitlanadi: ≤ 30 (masalan seed'dagi 15/20) — har tick'da o'qiladi, 45 → har 2-tick
   (60 daqiqa), 60 → har 2-tick, 90 → har 3-tick. 30 dan kichik qiymat feed'ni tezroq o'qimaydi.
 
-- Javob (JSON): `mode`, `enqueued`, `cleanupEnqueued`, `scheduledPublish: { queued, failed }` (`mode=scrape` da `null`), `alerts: { active, sent, logged, failed }` va `newItems` (`mode=publish` da `null`), `batches`, `done: { succeeded, failed }` (ikkala bosqich yig'indisi), `phases: { publish, scrape }` (har bosqich: `batches`, `succeeded`, `failed`, `deadlineReached`; rejimga kirmagani — `null`), `remaining` (shu rejim job'lari), `deadlineReached`, `skipped` (vaqt yetmay o'tkazib yuborilgan qadamlar: `scheduledPublish`, `feedPolls`, `cleanup`, `alerts`, `newItems`), `limit`, `deadlineSec` (amaldagi), `durationMs`.
+- Javob (JSON): `mode`, `enqueued`, `cleanupEnqueued`, `scheduledPublish: { queued, failed }` (`mode=scrape` da `null`), `telegramDigest` (OBLOG-116; `mode=scrape` da `null`), `alerts: { active, sent, logged, failed }` va `newItems` (`mode=publish` da `null`), `batches`, `done: { succeeded, failed }` (ikkala bosqich yig'indisi), `phases: { publish, scrape }` (har bosqich: `batches`, `succeeded`, `failed`, `deadlineReached`; rejimga kirmagani — `null`), `remaining` (shu rejim job'lari), `deadlineReached`, `skipped` (vaqt yetmay o'tkazib yuborilgan qadamlar: `scheduledPublish`, `telegramDigest`, `feedPolls`, `cleanup`, `alerts`, `newItems`), `limit`, `deadlineSec` (amaldagi), `durationMs`.
 - `401` — token noto'g'ri/yo'q; `503` — serverda `JOBS_SECRET` sozlanmagan (endpoint yopiq); `400` — `mode` noto'g'ri
   (`publish` | `scrape` | `all`).
 - `?limit=N` (1–50) — **scraping** batch hajmini vaqtincha o'zgartirish; default — admin → Scraping sozlamalari →
@@ -215,6 +217,39 @@ Oraliqda (1–2 qadam orasida) chaqiruvlar `401` oladi — keyingi tick'da tikla
   ichida, uzunrog'i — job `waitUntil` bilan keyingi tsiklda), keyin (yoki 400/403 kabi qayta urinib bo'lmaydigan
   xatoda) — `alertChatId` (bo'lmasa `TELEGRAM_ALERT_CHAT_ID`) ga ogohlantirish va `telegram[].error`. Xato bergan
   kanal postni keyingi publish qilishda qayta uriniladi.
+- **Rejim (OBLOG-116):** yuqoridagilar — `telegram-settings.mode = post` yoki `hybrid` da "Telegram'ga darhol
+  (alohida)" belgili post uchun. Standart rejim — `digest` (quyida): birinchi chop etish `telegram.post` qo'ymaydi.
+
+## Telegram dayjesti (OBLOG-116)
+
+- **Qachon:** alohida pg_cron yo'q — `/api/jobs/run?mode=publish|all` (va `autorun` tick'i) nashr job'laridan keyin
+  `runTelegramDigests` (`apps/web/src/telegram/digest.ts`). Slotlar — Toshkent vaqti, admin → Telegram sozlamalari →
+  Dayjest: birinchi soat (7), har N soat (3), oxirgi soat (22) → 07, 10, 13, 16, 19, 22. Tick oxirgi slot ≤ hozirni
+  oladi; slot 60 daqiqadan ko'p kechikkan bo'lsa (tun, uzilish) — yuborilmaydi, postlari keyingi slotga qo'shiladi.
+  Kechikish — 0–10 daqiqa (pg_cron `*/10`). Javobda: `telegramDigest: { mode, slotAt, scripts: [{ script, status,
+  posts, skipped }] }` (`status`: `sent` | `single` | `empty` | `busy` (boshqa tick yubordi/yuboryapti) | `retry` |
+  `failed` | `skipped`), vaqt yetmasa — `skipped: ["telegramDigest"]`.
+- **Idempotentlik / poyga:** admin → Tizim → Telegram dayjestlar (`telegram-digests`), `key =
+  digest:{script}:{slot ISO}` UNIQUE. Tick qatorni Telegram'ga yuborishdan **oldin** bitta SQL bilan band qiladi
+  (`INSERT … ON CONFLICT ("key") DO UPDATE … WHERE status = 'retry' OR (pending AND 10 daqiqadan eski) … RETURNING`):
+  ikki parallel tick'dan faqat bittasi qatorni oladi, ikkinchisi — `busy`. Muvaffaqiyatda — `sent`, `posts` (ro'yxat
+  tartibida), `skippedPosts`, `messageIds`, caption `hash`. Telegram xatosida — `retry` (keyingi tick, jami 3
+  urinish), keyin `failed` + `alertChatId` ga ogohlantirish (postlari keyingi slotga tushadi). Function tick o'rtasida
+  uzilsa (`pending` qolsa) — 10 daqiqadan keyin qayta band qilinadi: Telegram xabarni qabul qilib bo'lgan, lekin
+  holat yozilmagan bo'lsa — dublikat bo'lishi mumkin (juda kam holat).
+- **Qaysi postlar:** kanal yozuvida chop etilgan, "Telegram'ga yubormaslik" siz, oxirgi `sent`/`empty` slotdan
+  (ko'pi bilan 24 soat; birinchi ishga tushishda — oldingi slotdan) shu slotgacha `publishedAt` bilan, shu kanalga
+  alohida yuborilmagan (`telegram[].messageId`) va hech bir dayjestda (`posts`/`skippedPosts`) bo'lmagan; `hybrid` da
+  "Tezkor"lar — yo'q. Tartib — "Dayjestda muhimlik" (0–3), keyin yangiligi; `maxItems` (10) dan ortig'i va caption'ga
+  sig'maganlari — `skippedPosts`, Telegram'ga **yuborilmaydi**.
+- **Xabar:** ≥ 2 muqova — `sendMediaGroup` (birinchi 5 band muqovasi, caption birinchi rasmda), 1 — `sendPhoto`,
+  0 — `sendMessage`; rasm rad etilsa (400) — matn. 1 post — odatdagi `telegram.post` formati (`format: single`,
+  holat `posts.telegram[]` da), 0 — hech narsa (`empty`).
+- **Tahrirlash:** dayjestdagi post qayta chop etilsa — `telegram.digestEdit` job'i (dayjest uchun bittadan) caption'ni
+  qayta yig'adi, xesh o'zgargan bo'lsa `editMessageCaption` / `editMessageText`. Postlar to'plami va rasmlar
+  o'zgarmaydi.
+- **Qayta yuborish (qo'lda):** `telegram-digests` qatorini o'chiring (admin) — slot hali 60 daqiqa ichida bo'lsa,
+  keyingi tick yangidan yig'adi va yuboradi. Rejimni vaqtincha `post` ga o'tkazish — dayjestni to'xtatadi.
 
 ## Rejalashtirilgan nashr — `schedulePublish` (OBLOG-100)
 

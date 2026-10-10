@@ -5,6 +5,7 @@ import type { Payload, Where } from 'payload'
 import { runWithAuditChannel } from '@/audit/channel'
 import { captureError, flushSentry } from '@/lib/sentry'
 import { TELEGRAM_TIMEOUT_MS } from '@/lib/telegram'
+import { runTelegramDigests, type TelegramDigestRunResult } from '@/telegram/digest'
 
 import { type AlertRunResult, runAlertChecks } from './alerts'
 import {
@@ -167,7 +168,8 @@ export function isAuthorized(header: string | null, secret: string): boolean {
 export const ALERTS_HARD_LIMIT_MS = RESPONSE_BUDGET_MS
 
 /** Pre-step'lar deadline'ni yeb qo'ysa o'tkazib yuboriladigan qadamlar (keyingi tick'da). */
-export type SkippedStep = 'scheduledPublish' | 'feedPolls' | 'cleanup' | 'alerts' | 'newItems'
+export type SkippedStep =
+  'scheduledPublish' | 'telegramDigest' | 'feedPolls' | 'cleanup' | 'alerts' | 'newItems'
 
 export interface JobsRunResponse {
   ok: true
@@ -181,6 +183,11 @@ export interface JobsRunResponse {
    * navbatga qo'yilganlar va urinishlari tugaganlar; vaqt yetmasa — null.
    */
   scheduledPublish: EnsureScheduledResult | null
+  /**
+   * Telegram dayjesti (OBLOG-116, nashr bosqichidan keyin): rejim, slot va kanal bo'yicha natija;
+   * `mode=scrape`, vaqt yetmasa yoki xato bo'lsa — null.
+   */
+  telegramDigest: TelegramDigestRunResult | null
   /** Ogohlantirishlar: faol shartlar / yuborilgan / faqat log / xato; vaqt yetmasa — null. */
   alerts: AlertRunResult | null
   /** "Yangi yangiliklar" xabari (OBLOG-55); vaqt yetmasa — null (keyingi tick'da yig'iladi). */
@@ -223,7 +230,7 @@ function json(body: unknown, status: number, headers: Record<string, string> = {
 /**
  * `POST /api/jobs/run` (pg_cron + pg_net; zaxira — GitHub Actions).
  * - `?mode=publish` — har 10 daqiqada: faqat nashr (rejalashtirilgan postlar, Telegram, Make,
- *   IndexNow); `?mode=scrape` — har 30 daqiqada: yangiliklar va xizmat ishlari; parametrsiz
+ *   IndexNow) va slot vaqti kelgan bo'lsa — Telegram dayjesti (OBLOG-116); `?mode=scrape` — har 30 daqiqada: yangiliklar va xizmat ishlari; parametrsiz
  *   (`all`) — ikkalasi, avval nashr (OBLOG-110, `infra/supabase/cron.sql`).
  * - `?limit=N` — scraping batch hajmini vaqtincha o'zgartirish (1–50), default `scraping-settings`.
  *   Nashr bosqichiga ta'sir qilmaydi (u doim ketma-ket, {@link PUBLISH_BATCH_LIMIT}).
@@ -302,11 +309,26 @@ async function runJobsRequest(
     // job'i yo'q/xato bergan bo'lsa — shu chaqiruvda bajarilishi uchun batch'dan oldin qo'yiladi.
     let scheduledPublish: EnsureScheduledResult | null = null
     let publish: RunWithDeadlineResult | null = null
+    let telegramDigest: TelegramDigestRunResult | null = null
     if (publishing) {
       if (now() < batchDeadlineAt) {
         scheduledPublish = await ensureScheduledPublishJobs(payload, now())
       } else skipped.push('scheduledPublish')
       publish = await runPublishJobs(payload.jobs, timing)
+      // Telegram dayjesti (OBLOG-116): slot vaqti kelgan bo'lsa — kanal bo'yicha bitta xabar.
+      // Nashr job'laridan keyin (shu tick'da chop etilgan rejalashtirilgan postlar ham kiradi).
+      // Xatosi tick'ni to'xtatmaydi; vaqt qolmasa — keyingi tick (slot 60 daqiqagacha amal qiladi).
+      if (now() < batchDeadlineAt) {
+        try {
+          telegramDigest = await runWithDeadline(
+            { taskDeadlineAt: batchDeadlineAt + (deps.overrides?.graceMs ?? TASK_GRACE_MS) },
+            () => runTelegramDigests(payload, { now: now() }),
+          )
+        } catch (error) {
+          payload.logger.error({ err: error, msg: 'Telegram dayjest bosqichi xatosi' })
+          captureError(error, { tags: { endpoint: 'jobs/run', step: 'telegramDigest' } })
+        }
+      } else skipped.push('telegramDigest')
     }
 
     // 2-bosqich — scraping. Deadline pre-step'larda o'tib ketgan bo'lsa (sekin sovuq start),
@@ -361,6 +383,7 @@ async function runJobsRequest(
       enqueued: polls?.enqueued ?? 0,
       cleanupEnqueued,
       scheduledPublish,
+      telegramDigest,
       alerts,
       newItems,
       scrapingDisabled: polls?.disabled ?? !settings.isEnabled,

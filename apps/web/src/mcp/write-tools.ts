@@ -1015,6 +1015,14 @@ const HOLD_NOTES: Record<HoldReason, string> = {
     'tuzating → submit_for_review(notesForEditor: "").',
 }
 
+/** OBLOG-116: Telegram dayjesti maydonlari — faqat berilganlari yoziladi. */
+export function telegramDigestData(input: { digestPriority?: number; telegramUrgent?: boolean }) {
+  return {
+    ...(input.digestPriority !== undefined ? { digestPriority: input.digestPriority } : {}),
+    ...(input.telegramUrgent !== undefined ? { telegramUrgent: input.telegramUrgent } : {}),
+  }
+}
+
 export async function submitForReview(
   ctx: McpContext,
   input: Input<typeof submitForReviewInput>,
@@ -1156,6 +1164,7 @@ export async function submitForReview(
     aiDisclosure: true,
   }
   const notesData = notes !== undefined ? { notesForEditor: notes || null } : {}
+  const telegramData = telegramDigestData(input)
 
   if (mode === 'revision') {
     // Chop etilgan post (admin kaliti): qoralama versiya chop etiladi yoki muharrirga qoladi.
@@ -1164,7 +1173,7 @@ export async function submitForReview(
         return ctx.payload.update({
           collection: 'posts',
           id: post.id,
-          data: { ...publishData, ...notesData },
+          data: { ...publishData, ...notesData, ...telegramData },
           draft: false,
           depth: 0,
           ...op(ctx, req),
@@ -1181,7 +1190,7 @@ export async function submitForReview(
         return await ctx.payload.update({
           collection: 'posts',
           id: post.id,
-          data: notesData,
+          data: { ...notesData, ...telegramData },
           draft: true,
           depth: 0,
           ...op(ctx, req),
@@ -1245,7 +1254,7 @@ export async function submitForReview(
     const reviewed = await ctx.payload.update({
       collection: 'posts',
       id: post.id,
-      data: { workflowStatus: 'review', scheduledAt, ...notesData },
+      data: { workflowStatus: 'review', scheduledAt, ...notesData, ...telegramData },
       depth: 0,
       ...op(ctx, req),
     })
@@ -1336,8 +1345,9 @@ export async function submitForReview(
     urlCyrl: urls?.urlCyrl ?? null,
     post: { ...postSummary(ctx, updated), publishedAt: updated.publishedAt ?? null },
     note:
-      'Avtomatik nashr yoqilgan — post shu chaqiruvda chop etildi (Telegram va IndexNow ' +
-      'navbatga qo‘yildi). Keyingi tuzatishlar — faqat admin kaliti yoki muharrir orqali.',
+      'Avtomatik nashr yoqilgan — post shu chaqiruvda chop etildi (IndexNow navbatga qo‘yildi; ' +
+      'Telegram — sozlamaga qarab keyingi dayjestda yoki darhol). Keyingi tuzatishlar — faqat ' +
+      'admin kaliti yoki muharrir orqali.',
   })
 }
 
@@ -1446,7 +1456,7 @@ export async function reschedulePost(
     .update({
       collection: 'posts',
       id: post.id,
-      data: { scheduledAt: publishAt.toISOString() },
+      data: { scheduledAt: publishAt.toISOString(), ...telegramDigestData(input) },
       depth: 0,
       ...op(ctx, req),
     })
@@ -1617,7 +1627,9 @@ export function registerWriteTools(server: McpServer, ctx: McpContext): void {
         'errors[], warnings[], seoScore }. Matn va SEO to‘ldirilgan bo‘lishi kerak, ' +
         "aks holda ok: false (hech narsa o'zgarmaydi). Chop etishda muqova litsenziyasi muammosi " +
         "va save_rewrite qilinmagan post — xato. Chop etilgan postning qoralama o'zgarishlari " +
-        '(faqat admin kaliti) — xuddi shu qoidalar bilan yangi versiya chop etiladi.',
+        '(faqat admin kaliti) — xuddi shu qoidalar bilan yangi versiya chop etiladi. Telegram: ' +
+        'kanalga postlar odatda har 3 soatlik dayjestda chiqadi — digestPriority (0–3) ro‘yxatdagi ' +
+        'o‘rnini belgilaydi, telegramUrgent: true — aralash rejimda darhol alohida xabar.',
       inputSchema: submitForReviewInput,
       annotations: { ...WRITE, idempotentHint: false },
     },
@@ -1645,7 +1657,8 @@ export function registerWriteTools(server: McpServer, ctx: McpContext): void {
       description:
         'Rejalashtirilgan (scheduled) postning chop etish vaqtini o‘zgartiradi (OBLOG-100). Faqat ' +
         'o‘zingiz rejalashtirgan post (admin kaliti — har qanday). publishAt — yangi vaqt ' +
-        '(ISO 8601; zona yozilmasa — Toshkent). Javob: { rescheduled, previous, scheduledAt, ' +
+        '(ISO 8601; zona yozilmasa — Toshkent); digestPriority / telegramUrgent — Telegram ' +
+        'dayjesti uchun (ixtiyoriy). Javob: { rescheduled, previous, scheduledAt, ' +
         'scheduledAtLocal, post }.',
       inputSchema: reschedulePostInput,
       annotations: { ...WRITE, idempotentHint: true },

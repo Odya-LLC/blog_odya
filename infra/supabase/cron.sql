@@ -8,7 +8,9 @@
 --   blog-odya-jobs-publish  */10 * * * *   POST /api/jobs/run?mode=publish
 --       Har 10 daqiqada: faqat NASHR — vaqti kelgan rejalashtirilgan postlar (`schedulePublish`)
 --       va ulardan keyingi Telegram / Make / IndexNow job'lari. Ketma-ket, scraping'siz —
---       yangiliklar navbati nashrni hech qachon kechiktirmaydi.
+--       yangiliklar navbati nashrni hech qachon kechiktirmaydi. Telegram dayjesti (OBLOG-116,
+--       07, 10, …, 22 Toshkent) ham shu chaqiruvda — slot vaqti kelgan birinchi tick'da (0–10
+--       daqiqa kechikish); alohida cron job kerak emas.
 --   blog-odya-jobs-scrape   5,35 * * * *   POST /api/jobs/run?mode=scrape
 --       Har 30 daqiqada (:05 va :35 — nashr chaqiruvlari bilan ustma-ust tushmaydi): yangiliklar
 --       (feed.poll → scrapeItem), kunlik tozalash, ogohlantirishlar, "yangi yangiliklar" xabari.

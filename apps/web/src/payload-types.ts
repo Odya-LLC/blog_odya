@@ -79,6 +79,7 @@ export interface Config {
     glossary: Glossary;
     'translit-exceptions': TranslitException;
     'social-deliveries': SocialDelivery;
+    'telegram-digests': TelegramDigest;
     redirects: Redirect;
     'audit-logs': AuditLog;
     'payload-kv': PayloadKv;
@@ -101,6 +102,7 @@ export interface Config {
     glossary: GlossarySelect<false> | GlossarySelect<true>;
     'translit-exceptions': TranslitExceptionsSelect<false> | TranslitExceptionsSelect<true>;
     'social-deliveries': SocialDeliveriesSelect<false> | SocialDeliveriesSelect<true>;
+    'telegram-digests': TelegramDigestsSelect<false> | TelegramDigestsSelect<true>;
     redirects: RedirectsSelect<false> | RedirectsSelect<true>;
     'audit-logs': AuditLogsSelect<false> | AuditLogsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
@@ -143,6 +145,7 @@ export interface Config {
       'item.classify': TaskItemClassify;
       'maintenance.cleanup': TaskMaintenanceCleanup;
       'telegram.post': TaskTelegramPost;
+      'telegram.digestEdit': TaskTelegramDigestEdit;
       'indexnow.submit': TaskIndexNowSubmit;
       'make.webhook': TaskMakeWebhook;
       schedulePublish: TaskSchedulePublish;
@@ -306,6 +309,14 @@ export interface Post {
   isFeatured?: boolean | null;
   isBreaking?: boolean | null;
   telegramSkip?: boolean | null;
+  /**
+   * Telegram dayjestida: 3 — eng muhim (ro‘yxat boshida, muqovasi galereyada), 0 — oddiy. Ro‘yxatga sig‘maganlar Telegram’ga yuborilmaydi. MCP agent submit_for_review(digestPriority) bilan ham qo‘yadi.
+   */
+  digestPriority?: number | null;
+  /**
+   * Faqat “Aralash” rejimda (Telegram sozlamalari): chop etilishi bilan alohida xabar, dayjestga tushmaydi. Boshqa rejimlarda ta’siri yo‘q.
+   */
+  telegramUrgent?: boolean | null;
   socialSkip?: boolean | null;
   /**
    * Instagram rasmi ustida yoziladi (≤ 70 belgi, 3–8 so‘z). Bo‘sh — sarlavha yoki SEO sarlavhadan avtomatik qisqartiriladi. Kirill avtomatik.
@@ -909,6 +920,41 @@ export interface SocialDelivery {
   createdAt: string;
 }
 /**
+ * Telegram kanallariga yuborilgan dayjestlar (kanal + slot bo‘yicha bir marta). Sozlamalar — “Telegram sozlamalari” (rejim, jadval).
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "telegram-digests".
+ */
+export interface TelegramDigest {
+  id: number;
+  key: string;
+  script: 'uz-Latn' | 'uz-Cyrl';
+  slotAt: string;
+  status: 'pending' | 'sent' | 'empty' | 'retry' | 'failed';
+  format?: ('album' | 'photo' | 'text' | 'single') | null;
+  chatId?: string | null;
+  attempts?: number | null;
+  posts?: (number | Post)[] | null;
+  skippedPosts?: (number | Post)[] | null;
+  /**
+   * Galereya xabarlari; birinchisi — caption’li (tahrirlanadigan).
+   */
+  messageIds?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  sentAt?: string | null;
+  hash?: string | null;
+  error?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "redirects".
  */
@@ -1055,6 +1101,7 @@ export interface PayloadJob {
           | 'item.classify'
           | 'maintenance.cleanup'
           | 'telegram.post'
+          | 'telegram.digestEdit'
           | 'indexnow.submit'
           | 'make.webhook'
           | 'schedulePublish';
@@ -1101,6 +1148,7 @@ export interface PayloadJob {
         | 'item.classify'
         | 'maintenance.cleanup'
         | 'telegram.post'
+        | 'telegram.digestEdit'
         | 'indexnow.submit'
         | 'make.webhook'
         | 'schedulePublish'
@@ -1166,6 +1214,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'social-deliveries';
         value: number | SocialDelivery;
+      } | null)
+    | ({
+        relationTo: 'telegram-digests';
+        value: number | TelegramDigest;
       } | null)
     | ({
         relationTo: 'redirects';
@@ -1293,6 +1345,8 @@ export interface PostsSelect<T extends boolean = true> {
   isFeatured?: T;
   isBreaking?: T;
   telegramSkip?: T;
+  digestPriority?: T;
+  telegramUrgent?: T;
   socialSkip?: T;
   socialTitle?: T;
   cyrlStale?: T;
@@ -1725,6 +1779,27 @@ export interface SocialDeliveriesSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "telegram-digests_select".
+ */
+export interface TelegramDigestsSelect<T extends boolean = true> {
+  key?: T;
+  script?: T;
+  slotAt?: T;
+  status?: T;
+  format?: T;
+  chatId?: T;
+  attempts?: T;
+  posts?: T;
+  skippedPosts?: T;
+  messageIds?: T;
+  sentAt?: T;
+  hash?: T;
+  error?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "redirects_select".
  */
 export interface RedirectsSelect<T extends boolean = true> {
@@ -1974,6 +2049,34 @@ export interface Footer {
 export interface TelegramSetting {
   id: number;
   /**
+   * Dayjest — jadval bo‘yicha (Toshkent vaqti) bitta xabar: eng muhim postlar muqovalari galereyasi va sarlavhalar ro‘yxati (havola bilan). Tartib — postdagi “Dayjestda muhimlik”, keyin yangiligi. Bitta post bo‘lsa — odatdagi alohida xabar, post bo‘lmasa — hech narsa. Aralash rejimda postdagi “Telegram’ga darhol (alohida)” belgilangan post chop etilishi bilan yuboriladi.
+   */
+  mode: 'post' | 'digest' | 'hybrid';
+  /**
+   * Slotlar: birinchi soatdan har N soatda, oxirgi soatgacha (standart 07, 10, 13, 16, 19, 22). Oxirgi slotdan keyin ertalabgacha xabar yuborilmaydi — tungi postlar ertalabki birinchi dayjestga tushadi. Scheduler har 10 daqiqada tekshiradi (10 daqiqagacha kechikish). Ro‘yxatga sig‘magan postlar Telegram’ga yuborilmaydi (dayjest yozuvida — “Sig‘magan postlar”).
+   */
+  digest?: {
+    intervalHours?: number | null;
+    startHour?: number | null;
+    endHour?: number | null;
+    /**
+     * Caption 1024 belgiga sig‘masa — sarlavhalar qisqaradi, keyin postlar kamayadi.
+     */
+    maxItems?: number | null;
+    /**
+     * Ro‘yxatdagi birinchi postlar muqovalari, tartib — raqam bo‘yicha.
+     */
+    maxPhotos?: number | null;
+    /**
+     * O‘rinbosarlar: {{date}} (10-oktabr), {{time}} (15:00). Kirill kanal uchun matn avtomatik kirillga o‘giriladi.
+     */
+    header?: string | null;
+    /**
+     * {{site}} — sayt havolasi (kirill kanalda — kirill bosh sahifa). Ostida — heshteglar (“Heshteglar soni”).
+     */
+    footer?: string | null;
+  };
+  /**
    * Yozuv bo'yicha qator bo'lmasa — env TELEGRAM_CHANNEL_LATN / TELEGRAM_CHANNEL_CYRL. Bot kanalda admin bo'lishi kerak.
    */
   channels?:
@@ -2192,6 +2295,18 @@ export interface FooterSelect<T extends boolean = true> {
  * via the `definition` "telegram-settings_select".
  */
 export interface TelegramSettingsSelect<T extends boolean = true> {
+  mode?: T;
+  digest?:
+    | T
+    | {
+        intervalHours?: T;
+        startHour?: T;
+        endHour?: T;
+        maxItems?: T;
+        maxPhotos?: T;
+        header?: T;
+        footer?: T;
+      };
   channels?:
     | T
     | {
@@ -2384,6 +2499,20 @@ export interface TaskTelegramPost {
     status?: string | null;
     reason?: string | null;
     messageId?: string | null;
+  };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskTelegramDigestEdit".
+ */
+export interface TaskTelegramDigestEdit {
+  input: {
+    digestId: number;
+    attempt?: number | null;
+  };
+  output: {
+    status?: string | null;
+    reason?: string | null;
   };
 }
 /**

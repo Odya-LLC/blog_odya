@@ -99,6 +99,8 @@ describe('agentga ko‘rinadigan matnlar (OBLOG-100)', () => {
     expect(tool('reschedule_post')!.args.map((arg) => [arg.name, arg.required])).toEqual([
       ['postId', true],
       ['publishAt', true],
+      ['digestPriority', false],
+      ['telegramUrgent', false],
     ])
     expect(tool('cancel_schedule')!.args.map((arg) => [arg.name, arg.required])).toEqual([
       ['postId', true],

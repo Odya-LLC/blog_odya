@@ -23,6 +23,7 @@ import { ScrapedItems } from './collections/ScrapedItems'
 import { SocialDeliveries } from './collections/SocialDeliveries'
 import { Sources } from './collections/Sources'
 import { Tags } from './collections/Tags'
+import { TelegramDigests } from './collections/TelegramDigests'
 import { TranslitExceptions } from './collections/TranslitExceptions'
 import { Users } from './collections/Users'
 import { getDatabaseMode, getDatabasePoolConfig } from './config/database'
@@ -131,6 +132,7 @@ export default buildConfig({
     Glossary,
     TranslitExceptions,
     SocialDeliveries,
+    TelegramDigests,
   ],
   globals: [SiteSettings, Header, Footer, TelegramSettings, SocialSettings, ScrapingSettings],
   editor: lexicalEditor(),
